@@ -2,5 +2,11 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<div>HOME PAGE</div>
+<div>
+    <h2>Menu</h2>
+    <ul>
+        <li><a href="/api">API</a></li>
+        <li><a href="{% url 'data_import' %}">Data import</a></li>
+    </ul>
+</div>
 {% endblock %}
