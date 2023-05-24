@@ -1,0 +1,17 @@
+{% load static i18n %}
+<!DOCTYPE html>
+{% get_current_language as language_code %}
+
+<html lang="{{ language_code }}">
+    <head>
+        <title>{% spaceless %}{% block title %}Home{% endblock %}{% endspaceless %} </title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <link rel="stylesheet" href="{% static 'css/styles.css' %}" type="text/css" />
+        <link rel="icon" type="image/x-icon" href="{% static 'img/favicon.png' %}">
+        <script type="text/javascript" src="{% static 'js/scripts.js' %}"></script>
+    </head>
+    <body>
+        {% block content %}{% endblock %}
+    </body>
+</html>
