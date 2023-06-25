@@ -1,5 +1,4 @@
 import csv
-from copy import deepcopy
 from io import StringIO
 from typing import Union
 
@@ -79,7 +78,7 @@ class ImportFileViewSet(
         return lines
 
     @staticmethod
-    def get_headers(csv_data: list, delimiter: str = ':') -> Union[list, Response]:
+    def get_headers(csv_data: list) -> Union[list, Response]:
         """Returns csv file headers. Retrieves headers from file lines if needed"""
         return list(csv_data[0].keys())
 
