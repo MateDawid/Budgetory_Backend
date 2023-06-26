@@ -1,6 +1,5 @@
 import csv
 from io import StringIO
-from typing import Union
 
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from rest_framework import viewsets, status
