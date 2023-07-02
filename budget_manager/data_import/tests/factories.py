@@ -1,4 +1,5 @@
 import factory
+import pytz
 
 from data_import.models import ImportFile
 
