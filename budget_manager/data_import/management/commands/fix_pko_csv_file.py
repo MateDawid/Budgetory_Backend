@@ -1,11 +1,12 @@
-import argparse
 import csv
-import io
 import os
-from io import StringIO
 from typing import SupportsIndex
 
 from django.core.management import BaseCommand, CommandError
+
+SIGNS_MAPPING = {
+
+}
 
 
 class Command(BaseCommand):
@@ -32,8 +33,7 @@ class Command(BaseCommand):
             return False
         return True
 
-    @staticmethod
-    def get_fixed_content(reader: csv.DictReader, temp_header_prefix: str = '__temp__') -> list:
+    def get_fixed_content(self, reader: csv.DictReader, temp_header_prefix: str = '__temp__') -> list:
         def get_temporary_headers() -> list:
             """Cleans headers from empty strings"""
             header_number = 1
@@ -71,16 +71,16 @@ class Command(BaseCommand):
             for key, value in line.items():
                 if key.startswith(temp_header_prefix) or key == last_valid_header:
                     new_key, new_value = get_fixed_key_and_value()
-                    tmp_line[new_key] = new_value
-                    tmp_line['id'].append(new_value)
-                    if new_key not in final_headers:
-                        final_headers.append(new_key)
+                    if new_key:
+                        tmp_line[new_key] = new_value
+                        tmp_line['id'].append(new_value)
+                        if new_key not in final_headers:
+                            final_headers.append(new_key)
                     continue
                 tmp_line[key] = value
-                if key not in final_headers:
+                if key and key not in final_headers:
                     final_headers.append(key)
             tmp_line['id'] = '|'.join(tmp_line['id'])
-            # fixed_line['id'] = str(fixed_line[last_valid_header])
             final_lines.append(tmp_line)
         for final_line in final_lines:
             for final_header in final_headers:
@@ -92,14 +92,16 @@ class Command(BaseCommand):
         file_path = options['file_path']
         self.is_file_path_valid(file_path)
         self.stdout.write('FIXING STARTED')
+        self.stdout.write('Processing invalid file')
         with open(file_path, 'r') as file:
             reader = csv.DictReader(file)
             lines = self.get_fixed_content(reader)
         file_directory = os.path.dirname(file_path)
         file_name = f'{os.path.basename(file_path)[:-4]}_fixed.csv'
         new_file_path = os.path.join(file_directory, file_name)
+        self.stdout.write(f'Saving file in path: {new_file_path}')
         with open(new_file_path, 'w') as new_file:
-            writer = csv.writer(new_file)
-            writer.writerow(list(lines[0].keys()))
-            for line in lines:
-                writer.writerow(line.values())
+            writer = csv.DictWriter(new_file, lines[0].keys())
+            writer.writeheader()
+            writer.writerows(lines)
+        self.stdout.write('FIXING ENDED')
