@@ -1,6 +1,7 @@
 import csv
 from io import StringIO
 
+import rest_framework.request
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from rest_framework import viewsets, status
 from rest_framework.mixins import (
@@ -45,7 +46,7 @@ class ImportFileViewSet(
         """Returns csv file headers. Retrieves headers from file lines if needed"""
         return list(csv_data[0].keys())
 
-    def create(self, request, *args, **kwargs) -> Response:
+    def create(self, request: rest_framework.request.Request, *args, **kwargs) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         csv_file = request.data['file']
