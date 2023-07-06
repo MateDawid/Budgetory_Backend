@@ -11,13 +11,13 @@ register(ImportFileFactory)
 
 
 @pytest.fixture
-def valid_csv_file_content():
+def valid_csv_file_content() -> list:
     data = [{'column_1': 1, 'column_2': 2}, {'column_1': 1, 'column_2': 2}]
     return data
 
 
 @pytest.fixture
-def valid_data_file(valid_csv_file_content):
+def valid_data_file(valid_csv_file_content) -> InMemoryUploadedFile:
     io_file = StringIO()
     writer = csv.DictWriter(io_file, fieldnames=valid_csv_file_content[0].keys())
     writer.writeheader()
