@@ -9,7 +9,6 @@ from rest_framework.mixins import (
     DestroyModelMixin,
     ListModelMixin,
     RetrieveModelMixin,
-    UpdateModelMixin,
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -19,7 +18,7 @@ from .serializers import ImportFileSerializer
 
 
 class ImportFileViewSet(
-    ListModelMixin, CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, UpdateModelMixin, viewsets.GenericViewSet
+    ListModelMixin, CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, viewsets.GenericViewSet
 ):
     permission_classes = (IsAuthenticated,)
     queryset = ImportFile.objects.all()
