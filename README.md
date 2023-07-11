@@ -1,6 +1,7 @@
 # Budget manager
 
 0. **Project setup**
+	 - [ ] Python 3.11
  	 - [ ] poetry
 	 - [ ] Dockerfile
      - [ ] swagger
