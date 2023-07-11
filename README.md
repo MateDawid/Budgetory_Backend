@@ -1,5 +1,11 @@
 # Budget manager
-  
+
+0. **Project setup**
+ 	 - [ ] poetry
+	 - [ ] Dockerfile
+     - [ ] swagger
+	 - [ ] PostgreSQL
+     - [ ] docker-compose
 
 1. **Data import** 
 Module for file importing and saving its content as DB models instances.
