@@ -23,7 +23,7 @@ def test_get_import_files_list(valid_csv_file_content, import_file_factory, api_
 
 @pytest.mark.django_db
 def test_import_file_creation(valid_data_file, valid_csv_file_content, api_rf, user):
-    url = f'api/import_file/'
+    url = 'api/import_file/'
     data = {
         'file': valid_data_file,
         'filename': 'test_file',
