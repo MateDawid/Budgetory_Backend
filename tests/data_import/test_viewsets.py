@@ -11,10 +11,10 @@ from tests.factories import UserFactory
 
 @pytest.mark.django_db
 def test_get_import_files_list(
-    valid_csv_file_content: list, import_file_factory: ImportFileFactory, api_rf: APIRequestFactory, user: UserFactory
+    valid_file_content: list, import_file_factory: ImportFileFactory, api_rf: APIRequestFactory, user: UserFactory
 ) -> None:
-    headers = list(valid_csv_file_content[0].keys())
-    import_file = import_file_factory(content=valid_csv_file_content, headers=headers)  # noqa
+    headers = list(valid_file_content[0].keys())
+    import_file = import_file_factory(content=valid_file_content, headers=headers)  # noqa
 
     view = ImportFileViewSet.as_view({'get': 'list'})
     request = api_rf.get('/import_file')
@@ -28,8 +28,8 @@ def test_get_import_files_list(
 
 
 @pytest.mark.django_db
-def test_import_file_creation(
-    valid_data_file: InMemoryUploadedFile, valid_csv_file_content: list, api_rf: APIRequestFactory, user: UserFactory
+def test_valid_import_file_creation(
+    valid_data_file: InMemoryUploadedFile, valid_file_content: list, api_rf: APIRequestFactory, user: UserFactory
 ) -> None:
     url = 'api/import_file/'
     data = {
@@ -46,6 +46,29 @@ def test_import_file_creation(
     assert ImportFile.objects.filter(filename='test_file').exists()
 
     import_file = ImportFile.objects.get(filename='test_file')
-    assert import_file.headers == list(valid_csv_file_content[0].keys())
-    assert import_file.content == valid_csv_file_content
+    assert import_file.headers == list(valid_file_content[0].keys())
+    assert import_file.content == valid_file_content
     assert str(import_file) == f'test_file ({import_file.date_added})'
+
+
+@pytest.mark.django_db
+def test_invalid_headers_import_file_creation(
+    invalid_headers_data_file: InMemoryUploadedFile,
+    invalid_headers_file_content: list,
+    api_rf: APIRequestFactory,
+    user: UserFactory,
+) -> None:
+    url = 'api/import_file/'
+    data = {
+        'file': invalid_headers_data_file,
+        'filename': 'test_file',
+    }
+
+    view = ImportFileViewSet.as_view({'post': 'create'})
+    request = api_rf.post(url, data=data)
+    force_authenticate(request, user)
+    response = view(request)
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.data['file'][0] == 'Not all headers provided in .csv file.'
+    assert not ImportFile.objects.filter(filename='test_file').exists()
