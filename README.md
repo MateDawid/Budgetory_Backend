@@ -4,9 +4,9 @@
 	 - [x] ~~Python 3.11~~
  	 - [x] ~~poetry~~
 	 - [ ] Dockerfile
-     	- [ ] swagger
+     	 - [ ] swagger
 	 - [ ] PostgreSQL
-     - [ ] docker-compose
+         - [ ] docker-compose
 
 1. **Data import** 
 Module for file importing and saving its content as DB models instances.
