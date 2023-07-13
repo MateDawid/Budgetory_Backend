@@ -1,0 +1,3 @@
+[default]
+'ENVIRONMENT.SECRET_KEY' = {must_exist=true}
+'ENVIRONMENT.ALLOWED_HOSTS' = {must_exist=true}

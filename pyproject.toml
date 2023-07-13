@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "budget-manager"
+version = "0.1.0"
+description = ""
+authors = ["MateDawid <mateusiakdawid@gmail.com>"]
+
+
+[tool.poetry.dependencies]
+python = "^3.11"
+django = "^4.2.3"
+djangorestframework = "^3.14.0"
+dynaconf = {extras = ["yaml"], version = "^3.2.0"}
+
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.3.3"
+pytest = "^7.4.0"
+pytest-cov = "^4.1.0"
+pytest-django = "^4.5.2"
+pytest-factoryboy = "^2.5.1"
+
+[tool.pytest.ini_options]
+minversion = "7.4.0"
+DJANGO_SETTINGS_MODULE = "app_config.settings"
+pythonpath  = "budget_manager tests"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
