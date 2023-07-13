@@ -14,7 +14,7 @@ def test_get_import_files_list(
     valid_csv_file_content: list, import_file_factory: ImportFileFactory, api_rf: APIRequestFactory, user: UserFactory
 ) -> None:
     headers = list(valid_csv_file_content[0].keys())
-    import_file = import_file_factory(content=valid_csv_file_content, headers=headers)
+    import_file = import_file_factory(content=valid_csv_file_content, headers=headers)  # noqa
 
     view = ImportFileViewSet.as_view({'get': 'list'})
     request = api_rf.get('/import_file')
