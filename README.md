@@ -2,9 +2,9 @@
 
 0. **Project setup**
 	 - [x] ~~Python 3.11~~
- 	 - [ ] poetry
+ 	 - [x] ~~poetry~~
 	 - [ ] Dockerfile
-     - [ ] swagger
+     	- [ ] swagger
 	 - [ ] PostgreSQL
      - [ ] docker-compose
 
