@@ -1,7 +1,7 @@
 # Budget manager
 
 0. **Project setup**
-	 - [ ] Python 3.11
+	 - [x] ~~Python 3.11~~
  	 - [ ] poetry
 	 - [ ] Dockerfile
      - [ ] swagger
@@ -11,7 +11,7 @@
 1. **Data import** 
 Module for file importing and saving its content as DB models instances.
  	 - [x] ~~ImportFile model, serializer, view~~
-	 - [ ] Possibility to send file (csv firstly), but not storing it in DB, only extract data
+	 - [x] ~~Possibility to send file (csv firstly), but not storing it in DB, only extract data~~
 	 - [ ] Validate file content
 	 - [ ] Action to generate DB objects from file content
      - [ ] Tests
