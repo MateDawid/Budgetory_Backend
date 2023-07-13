@@ -1,20 +1,13 @@
 import os
 from pathlib import Path
 
-from dotenv import load_dotenv
+from dynaconf import settings
 
-load_dotenv()
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
-
-SECRET_KEY = os.environ.get('SECRET_KEY')
-DEBUG = int(os.environ.get('DEBUG', default=0))
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS').split(' ')
+SECRET_KEY = settings.ENVIRONMENT.SECRET_KEY
+DEBUG = settings.ENVIRONMENT.get('DEBUG', 'False')
+ALLOWED_HOSTS = [host(settings) if callable(host) else host for host in settings.ENVIRONMENT.ALLOWED_HOSTS]
 
 # Application definition
 
@@ -45,7 +38,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'budget_manager.urls'
+ROOT_URLCONF = 'app_config.urls'
 
 TEMPLATES = [
     {
@@ -65,7 +58,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'budget_manager.wsgi.application'
+WSGI_APPLICATION = 'app_config.wsgi.application'
 
 
 # Database
