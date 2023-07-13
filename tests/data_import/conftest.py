@@ -18,7 +18,7 @@ def valid_csv_file_content() -> list:
 
 
 @pytest.fixture
-def valid_data_file(valid_csv_file_content) -> InMemoryUploadedFile:
+def valid_data_file(valid_csv_file_content: list) -> InMemoryUploadedFile:
     io_file = StringIO()
     writer = csv.DictWriter(io_file, fieldnames=valid_csv_file_content[0].keys())
     writer.writeheader()

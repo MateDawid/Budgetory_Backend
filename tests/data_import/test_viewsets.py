@@ -1,12 +1,18 @@
 import pytest
 from data_import.models import ImportFile
 from data_import.views import ImportFileViewSet
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from rest_framework import status
-from rest_framework.test import force_authenticate
+from rest_framework.test import APIRequestFactory, force_authenticate
+
+from tests.data_import.factories import ImportFileFactory
+from tests.factories import UserFactory
 
 
 @pytest.mark.django_db
-def test_get_import_files_list(valid_csv_file_content, import_file_factory, api_rf, user):
+def test_get_import_files_list(
+    valid_csv_file_content: list, import_file_factory: ImportFileFactory, api_rf: APIRequestFactory, user: UserFactory
+) -> None:
     headers = list(valid_csv_file_content[0].keys())
     import_file = import_file_factory(content=valid_csv_file_content, headers=headers)
 
@@ -22,7 +28,9 @@ def test_get_import_files_list(valid_csv_file_content, import_file_factory, api_
 
 
 @pytest.mark.django_db
-def test_import_file_creation(valid_data_file, valid_csv_file_content, api_rf, user):
+def test_import_file_creation(
+    valid_data_file: InMemoryUploadedFile, valid_csv_file_content: list, api_rf: APIRequestFactory, user: UserFactory
+) -> None:
     url = 'api/import_file/'
     data = {
         'file': valid_data_file,
