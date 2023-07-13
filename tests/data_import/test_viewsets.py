@@ -27,28 +27,36 @@ def test_get_import_files_list(
     assert len(response.data['results']) == len(ImportFile.objects.all())
 
 
+@pytest.mark.parametrize('provided_filename', ('test_file', None))
 @pytest.mark.django_db
 def test_valid_import_file_creation(
-    valid_data_file: InMemoryUploadedFile, valid_file_content: list, api_rf: APIRequestFactory, user: UserFactory
+    provided_filename: str | None,
+    valid_data_file: InMemoryUploadedFile,
+    valid_file_content: list,
+    api_rf: APIRequestFactory,
+    user: UserFactory,
 ) -> None:
     url = 'api/import_file/'
     data = {
         'file': valid_data_file,
-        'filename': 'test_file',
     }
-
+    if provided_filename:
+        data['filename'] = provided_filename
+        object_filename = provided_filename
+    else:
+        object_filename = valid_data_file.name
     view = ImportFileViewSet.as_view({'post': 'create'})
     request = api_rf.post(url, data=data)
     force_authenticate(request, user)
     response = view(request)
 
     assert status.HTTP_201_CREATED == response.status_code
-    assert ImportFile.objects.filter(filename='test_file').exists()
+    assert ImportFile.objects.filter(filename=object_filename).exists()
 
-    import_file = ImportFile.objects.get(filename='test_file')
+    import_file = ImportFile.objects.get(filename=object_filename)
     assert import_file.headers == list(valid_file_content[0].keys())
     assert import_file.content == valid_file_content
-    assert str(import_file) == f'test_file ({import_file.date_added})'
+    assert str(import_file) == f'{object_filename} ({import_file.date_added})'
 
 
 @pytest.mark.django_db
