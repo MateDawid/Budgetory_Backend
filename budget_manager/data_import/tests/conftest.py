@@ -12,7 +12,7 @@ register(ImportFileFactory)
 
 @pytest.fixture
 def valid_csv_file_content() -> list:
-    data = [{'column_1': 1, 'column_2': 2}, {'column_1': 1, 'column_2': 2}]
+    data = [{'column_1': '1', 'column_2': '1'}, {'column_1': '1', 'column_2': '1'}]
     return data
 
 
