@@ -1,5 +1,18 @@
 # Budget manager
 
+## Models
+
+1. User
+2. ReportPeriod - month for which report will be calculated and presented
+3. Bank
+4. Deposit (with different types, "Bank Account" is a must)
+5. Income
+6. BudgetPlan - can be shared with many Users
+7. ExpenseCategory - can be active/inactive, tree structure?
+8. ImportFile - .csv file content with User expenses
+9. Seller
+10. Expense
+
 ## Predicted data flow
 
 1. **User** creates **User** model instance (creates his/her own account).
@@ -19,21 +32,6 @@
 6. When there's no more data about incomes or expenses to upload, **User** closes **ReportPeriod**. It will also close **BudgetPlan**, that now will store report about success or failure of user's prediction.
 
 
-## Models
-
-1. User
-2. ReportPeriod - month for which report will be calculated and presented
-3. Bank
-4. Deposit (with different types, "Bank Account" is a must)
-5. Income
-6. BudgetPlan - can be shared with many Users
-7. ExpenseCategory - can be active/inactive, tree structure?
-8. ImportFile - .csv file content with User expenses
-9. Seller
-10. Expense
-
-
-
 ## Steps to do
 
 0. **Project setup**
@@ -45,48 +43,46 @@
      - [ ] docker-compose
 
 
-1. **Data import** 
-Module for file importing and saving its content as DB models instances.
+1. **Config models**
+ 	 - [ ] User model
+     - [ ] ReportPeriod model
+     - [ ] Bank model
+
+
+2. **Deposits**
+	 - [ ] Deposit model, serializer, view
+     - [ ] Tests
+     - [ ] Frontend
+
+
+3. **Incomes**
+	 - [ ] Income model, serializer, view
+     - [ ] Tests
+	 - [ ] Frontend
+
+
+4. **Budget plan**
+	 - [ ] MonthlyPlan model, serializer, view
+     - [ ] Tests
+     - [ ] Frontend
+
+
+5. **Data import**
  	 - [x] ~~ImportFile model, serializer, view~~
 	 - [x] ~~Possibility to send file (csv firstly), but not storing it in DB, only extract data~~
      - [x] ~~Tests~~
      - [ ] Frontend
 
 
-2. **Sellers**
-Module for list of sellers / shops / providers billing user for expenses.
+6. **Sellers**
 	 - [ ] Seller model, serializer, view
      - [ ] Create sellers on data import
      - [ ] Tests 
      - [ ] Frontend
 
 
-3. **Expenses**
-Module for list of expenses.
+7. **Expenses**
 	 - [ ] Expense model, serializer, view
      - [ ] Create expenses on data import
-     - [ ] Tests
-     - [ ] Frontend
-
-
-4. **Incomes**
-Module for list of incomes.
-	 - [ ] Income model, serializer, view
-     - [ ] Tests
-	 - [ ] Frontend
-
-
-5. **Deposits**
-Module for list of places, where uses stores his/hers money.
-	 - [ ] Deposit model, serializer, view
-     - [ ] Tests
-     - [ ] Frontend
-
-
-6. **Monthly plan** 
-Module for creating budget plan for indicated month.
-	 - [ ] MonthlyPlan model, serializer, view
-	 - [ ] Creating expenses plan for each month
-	 - [ ] Aggregating data from expenses and incomes endpoints
      - [ ] Tests
      - [ ] Frontend
