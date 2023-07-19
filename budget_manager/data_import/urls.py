@@ -1,6 +1,8 @@
-from django.urls import path
-from django.views.generic import TemplateView
+from data_import.views import ImportFileViewSet
+from rest_framework import routers
 
-urlpatterns = [
-    path('data_import', TemplateView.as_view(template_name='data_import.html'), name='data_import'),
-]
+router = routers.DefaultRouter()
+router.register(r'', ImportFileViewSet, basename='importfile')
+
+
+urlpatterns = router.urls
