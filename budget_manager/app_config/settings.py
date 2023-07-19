@@ -24,7 +24,7 @@ OUTER_APPS = [
     'rest_framework',
 ]
 
-CREATED_APPS = ['api', 'data_import']
+CREATED_APPS = ['api', 'data_import', 'sellers']
 
 INSTALLED_APPS = DJANGO_APPS + OUTER_APPS + CREATED_APPS
 
