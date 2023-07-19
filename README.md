@@ -4,28 +4,28 @@
 	 - [x] ~~Python 3.11~~
  	 - [x] ~~poetry~~
 	 - [ ] Dockerfile
-     	 - [ ] swagger
+     - [ ] swagger
 	 - [ ] PostgreSQL
-         - [ ] docker-compose
+     - [ ] docker-compose
 
 1. **Data import** 
 Module for file importing and saving its content as DB models instances.
  	 - [x] ~~ImportFile model, serializer, view~~
 	 - [x] ~~Possibility to send file (csv firstly), but not storing it in DB, only extract data~~
-	 - [ ] Validate file content
-	 - [ ] Action to generate DB objects from file content
-     - [ ] Tests
+     - [x] Tests
 
-2. **Expenses**
-Module for list of expenses.
-	 - [ ] Expense model, serializer, view
-	 - [ ] List of expenses on frontend side for each month
-     - [ ] Tests
-
-3. **Sellers**
+2**Sellers**
 Module for list of sellers / shops / providers billing user for expenses.
 	 - [ ] Seller model, serializer, view
 	 - [ ] List of Seller on frontend side
+     - [ ] Create sellers on data import
+     - [ ] Tests
+
+3**Expenses**
+Module for list of expenses.
+	 - [ ] Expense model, serializer, view
+	 - [ ] List of expenses on frontend side for each month
+     - [ ] Create expenses on data import
      - [ ] Tests
 
 4. **Incomes**
