@@ -1,19 +1,44 @@
 import csv
 import os
-from typing import SupportsIndex
+from copy import copy
+from typing import BinaryIO, SupportsIndex
 
 from django.core.management import BaseCommand, CommandError
 
-SIGNS_MAPPING = {
 
-}
+class Decoder:
+    MAPPING: dict = {
+        '\\xa5': 'A',
+        '\\xb9': 'a',
+        '\\xc6': 'C',
+        '\\xe6': 'c',
+        '\\xca': 'E',
+        '\\xb3': 'l',
+        '\\xa3': 'L',
+        '\\xd1': 'N',
+        '\\xd3': 'O',
+        '\\x8c': 'S',
+        '\\x9c': 's',
+        '\\x8f': 'Z',
+        '\\xaf': 'Z',
+    }
+
+    def decode_file(self, binary_file: BinaryIO) -> list:
+        return [self.get_decoded_line(line) for line in binary_file]
+
+    def get_decoded_line(self, line: bytes) -> str:
+        fixed_word = str(copy(line))[2:-5]
+        for encoded_char in self.MAPPING:
+            fixed_word = fixed_word.replace(encoded_char, self.MAPPING[encoded_char])
+        return fixed_word
 
 
 class Command(BaseCommand):
     """
     Corrects PKO .csv file to fit to data collection logic
     """
-    help = "Fixes PKO .csv file"
+
+    help = 'Fixes PKO .csv file'
 
     def add_arguments(self, parser):
         parser.add_argument('file_path', type=str, help='Path to PKO .csv file')
@@ -21,11 +46,11 @@ class Command(BaseCommand):
     @staticmethod
     def is_file_path_valid(file_path: str) -> None:
         if not os.path.exists(file_path):
-            raise CommandError(f'Provided string is not a path!')
+            raise CommandError('Provided string is not a path!')
         if not os.path.isfile(file_path):
-            raise CommandError(f'Provided string is not a path to file!')
+            raise CommandError('Provided string is not a path to file!')
         if not file_path.endswith('.csv'):
-            raise CommandError(f'Only .csv file allowed!')
+            raise CommandError('Only .csv file allowed!')
 
     @staticmethod
     def is_reader_valid(reader: csv.DictReader) -> bool:
@@ -89,11 +114,13 @@ class Command(BaseCommand):
         return final_lines
 
     def handle(self, *args, **options) -> None:
+        decoder = Decoder()
         file_path = options['file_path']
         self.is_file_path_valid(file_path)
         self.stdout.write('FIXING STARTED')
         self.stdout.write('Processing invalid file')
-        with open(file_path, 'r') as file:
+        with open(file_path, 'rb') as binary_file:
+            file = decoder.decode_file(binary_file)
             reader = csv.DictReader(file)
             lines = self.get_fixed_content(reader)
         file_directory = os.path.dirname(file_path)
