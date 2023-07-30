@@ -81,32 +81,72 @@ class Command(BaseCommand):
             return return_header
 
         def get_fixed_key_and_value() -> tuple:
-            value_parts = value.split(':')
-            fixed_key = value_parts[0].strip()
-            fixed_value = ':'.join(value_parts[1:]).strip()
-            return fixed_key, fixed_value
+            value_parts = value.split(':', maxsplit=1)
+            return value_parts[0].strip(), value_parts[1].strip()
 
         """Fill last valid key with data from empty columns"""
         reader.fieldnames = get_temporary_headers()
         last_valid_header = get_last_valid_header()
-        final_headers = []
+        final_headers = set()
         final_lines = []
         for line in reader:
-            tmp_line = {'id': []}
+            tmp_line = {}
             for key, value in line.items():
-                if key.startswith(temp_header_prefix) or key == last_valid_header:
-                    new_key, new_value = get_fixed_key_and_value()
-                    if new_key:
-                        tmp_line[new_key] = new_value
-                        tmp_line['id'].append(new_value)
-                        if new_key not in final_headers:
-                            final_headers.append(new_key)
+                if key == last_valid_header:
+                    fixed_key, fixed_value = get_fixed_key_and_value()
+                    tmp_line[fixed_key] = fixed_value
+                    final_headers.add(fixed_key)
+                    continue
+                if key.startswith(temp_header_prefix):
+                    if value.startswith('Lokalizacja: '):
+                        value = value.replace('Lokalizacja: ', '')
+                        try:
+                            location_data = {
+                                'country': {
+                                    'header': 'Kraj',
+                                    'start_index': value.index('Kraj: '),
+                                    'end_index': value.index('Miasto: '),
+                                },
+                                'city': {
+                                    'header': 'Miasto',
+                                    'start_index': value.index('Miasto: '),
+                                    'end_index': value.index('Adres: '),
+                                },
+                                'address': {
+                                    'header': 'Adres',
+                                    'start_index': value.index('Adres: '),
+                                },
+                            }
+                        except ValueError:
+                            location_data = {
+                                'address': {
+                                    'header': 'Adres',
+                                    'start_index': value.index('Adres: '),
+                                },
+                            }
+                        for detail_data in location_data:
+                            header, start_index, end_index = (
+                                location_data[detail_data].get('header'),
+                                location_data[detail_data].get('start_index'),
+                                location_data[detail_data].get('end_index'),
+                            )
+                            if end_index:
+                                tmp_line[header] = value[start_index:end_index].replace(f'{header}: ', '').strip()
+                            else:
+                                tmp_line[header] = value[start_index:].replace(f'{header}: ', '').strip()
+                            final_headers.add(header)
+                    else:
+                        try:
+                            fixed_key, fixed_value = get_fixed_key_and_value()
+                        except IndexError:
+                            continue
+                        tmp_line[fixed_key] = fixed_value
+                        final_headers.add(fixed_key)
                     continue
                 tmp_line[key] = value
-                if key and key not in final_headers:
-                    final_headers.append(key)
-            tmp_line['id'] = '|'.join(tmp_line['id'])
+                final_headers.add(key)
             final_lines.append(tmp_line)
+        # Add missing headers values for every line
         for final_line in final_lines:
             for final_header in final_headers:
                 if final_header not in final_line:
@@ -124,7 +164,7 @@ class Command(BaseCommand):
             reader = csv.DictReader(file)
             lines = self.get_fixed_content(reader)
         file_directory = os.path.dirname(file_path)
-        file_name = f'{os.path.basename(file_path)[:-4]}_fixed.csv'
+        file_name = f'FIXED_{os.path.basename(file_path)[:-4]}.csv'
         new_file_path = os.path.join(file_directory, file_name)
         self.stdout.write(f'Saving file in path: {new_file_path}')
         with open(new_file_path, 'w') as new_file:
