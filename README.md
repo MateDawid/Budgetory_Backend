@@ -8,10 +8,11 @@
 4. Deposit (with different types, "Bank Account" is a must)
 5. Income
 6. ExpenseCategory - can be active/inactive, tree structure?
-7. ExpensePrediction
-8. ImportFile - .csv file content with User expenses
-9. Seller 
-10. Expense
+7. Seller
+8. Expense
+9. ExpensePrediction
+10. ImportFile - .csv file content with User expenses
+
 
 ## Predicted data flow
 
@@ -31,55 +32,57 @@
 
 ## Steps to do
 
-0. **Project setup**
-	 - [x] ~~Python 3.11~~
- 	 - [x] ~~poetry~~
-	 - [ ] Dockerfile
-     - [ ] swagger
-	 - [ ] PostgreSQL
-     - [ ] docker-compose
+1. **Project setup**
+   - [x] ~~Python 3.11~~
+   - [x] ~~poetry~~
+   - [x] ~~pre-commit~~
+   - [ ] Dockerfile
+   - [ ] docker-compose
+   - [ ] Documentation (f.e. Swagger)
+   - [ ] PostgreSQL
 
+2. **User**
+   - [ ] User model, serializer, view
+   - [ ] Tests
 
-1. **Config models**
- 	 - [ ] User model
-     - [ ] BudgetingPeriod model
-     - [ ] Bank model
+3. **BudgetingPeriod**
+   - [ ] BudgetingPeriod model, serializer, view
+   - [ ] Tests
 
+4. **Bank**
+   - [ ] Bank model, serializer, view
+   - [ ] Tests
 
-2. **Deposits**
-	 - [ ] Deposit model, serializer, view
-     - [ ] Tests
-     - [ ] Frontend
+5. **Deposits**
+   - [ ] Deposit model, serializer, view
+   - [ ] Tests
 
+6. **Incomes**
+   - [ ] Income model, serializer, view
+   - [ ] Tests
 
-3. **Incomes**
-	 - [ ] Income model, serializer, view
-     - [ ] Tests
-	 - [ ] Frontend
+7. **Sellers**
+   - [ ] Seller model, serializer, view
+   - [ ] Tests
 
+8. **ExpenseCategory**
+   - [ ] ExpenseCategory model, serializer, view
+   - [ ] Tests
 
-4. **Budget plan**
-	 - [ ] MonthlyPlan model, serializer, view
-     - [ ] Tests
-     - [ ] Frontend
+9. **Expenses**
+   - [ ] Expense model, serializer, view
+   - [ ] Create expenses on data import
+   - [ ] Tests
 
+10. **ExpensePrediction**
+    - [ ] ExpensePrediction model, serializer, view
+    - [ ] Tests
 
-5. **Data import**
- 	 - [x] ~~ImportFile model, serializer, view~~
-	 - [x] ~~Possibility to send file (csv firstly), but not storing it in DB, only extract data~~
-     - [x] ~~Tests~~
-     - [ ] Frontend
+11. **Frontend**
+    - [ ] Implement some frontend
 
-
-6. **Sellers**
-	 - [ ] Seller model, serializer, view
-     - [ ] Create sellers on data import
-     - [ ] Tests 
-     - [ ] Frontend
-
-
-7. **Expenses**
-	 - [ ] Expense model, serializer, view
-     - [ ] Create expenses on data import
-     - [ ] Tests
-     - [ ] Frontend
+12. **ImportFile**
+    - [ ] ImportFile model, serializer, view
+    - [ ] Possibility to send file (csv firstly), but not storing it in DB, only extract data
+    - [ ] Create sellers on data import
+    - [ ] Tests
