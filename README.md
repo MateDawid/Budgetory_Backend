@@ -78,11 +78,11 @@
     - [ ] ExpensePrediction model, serializer, view
     - [ ] Tests
 
-11. **Frontend**
-    - [ ] Implement some frontend
-
-12. **ImportFile**
+11. **ImportFile**
     - [ ] ImportFile model, serializer, view
     - [ ] Possibility to send file (csv firstly), but not storing it in DB, only extract data
     - [ ] Create sellers on data import
     - [ ] Tests
+
+12. **Frontend**
+    - [ ] Implement some frontend
