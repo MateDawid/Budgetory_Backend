@@ -38,7 +38,7 @@
    - [x] ~~pre-commit~~
    - [ ] Dockerfile
    - [ ] docker-compose
-   - [ ] Documentation (f.e. Swagger)
+   - [x] ~~Documentation (f.e. Swagger)~~
    - [ ] PostgreSQL
 
 2. **User**
