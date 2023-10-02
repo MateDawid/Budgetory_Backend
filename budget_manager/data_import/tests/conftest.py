@@ -3,10 +3,9 @@ import sys
 from io import StringIO
 
 import pytest
+from data_import.tests.factories import ImportFileFactory
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from pytest_factoryboy import register
-
-from tests.data_import.factories import ImportFileFactory
 
 register(ImportFileFactory)
 
