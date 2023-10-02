@@ -11,6 +11,7 @@ django = "^4.2.3"
 djangorestframework = "^3.14.0"
 dynaconf = {extras = ["yaml"], version = "^3.2.0"}
 django-extensions = "^3.2.3"
+drf-yasg = "^1.21.7"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -23,7 +24,7 @@ pytest-factoryboy = "^2.5.1"
 [tool.pytest.ini_options]
 minversion = "7.4.0"
 DJANGO_SETTINGS_MODULE = "app_config.settings"
-pythonpath  = "budget_manager tests"
+pythonpath  = "budget_manager"
 
 [build-system]
 requires = ["poetry-core"]
