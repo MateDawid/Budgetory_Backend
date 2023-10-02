@@ -22,6 +22,7 @@ DJANGO_APPS = [
 
 OUTER_APPS = [
     'rest_framework',
+    'drf_yasg',
 ]
 
 CREATED_APPS = ['data_import']

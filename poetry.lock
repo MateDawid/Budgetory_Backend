@@ -169,6 +169,30 @@ django = ">=3.0"
 pytz = "*"
 
 [[package]]
+name = "drf-yasg"
+version = "1.21.7"
+description = "Automated generation of real Swagger/OpenAPI 2.0 schemas from Django Rest Framework code."
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "drf-yasg-1.21.7.tar.gz", hash = "sha256:4c3b93068b3dfca6969ab111155e4dd6f7b2d680b98778de8fd460b7837bdb0d"},
+    {file = "drf_yasg-1.21.7-py3-none-any.whl", hash = "sha256:f85642072c35e684356475781b7ecf5d218fff2c6185c040664dd49f0a4be181"},
+]
+
+[package.dependencies]
+django = ">=2.2.16"
+djangorestframework = ">=3.10.3"
+inflection = ">=0.3.1"
+packaging = ">=21.0"
+pytz = ">=2021.1"
+pyyaml = ">=5.1"
+uritemplate = ">=3.0.0"
+
+[package.extras]
+coreapi = ["coreapi (>=2.3.3)", "coreschema (>=0.0.4)"]
+validation = ["swagger-spec-validator (>=2.1.0)"]
+
+[[package]]
 name = "dynaconf"
 version = "3.2.0"
 description = "The dynamic configurator for your Python Project"
@@ -625,6 +649,17 @@ files = [
 ]
 
 [[package]]
+name = "uritemplate"
+version = "4.1.1"
+description = "Implementation of RFC 6570 URI Templates"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "uritemplate-4.1.1-py2.py3-none-any.whl", hash = "sha256:830c08b8d99bdd312ea4ead05994a38e8936266f84b9a7878232db50b044e02e"},
+    {file = "uritemplate-4.1.1.tar.gz", hash = "sha256:4346edfc5c3b79f694bccd6d6099a322bbeb628dbf2cd86eea55a456ce5124f0"},
+]
+
+[[package]]
 name = "virtualenv"
 version = "20.23.1"
 description = "Virtual Python Environment builder"
@@ -647,4 +682,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "7078fb9dd279cd1e089b3f021a0f94828f5b41f964aef62b20bcc37f051d32a4"
+content-hash = "fd2cc6b355576c9eb170d7d5bb62978f30af50bb39c7417a3c43dff2dc28fbe0"
