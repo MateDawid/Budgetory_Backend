@@ -6,7 +6,7 @@ from dynaconf import settings
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = settings.ENVIRONMENT.SECRET_KEY
-DEBUG = settings.ENVIRONMENT.get('DEBUG', 'False')
+DEBUG = bool(settings.ENVIRONMENT.get('DEBUG', 0))
 ALLOWED_HOSTS = [host(settings) if callable(host) else host for host in settings.ENVIRONMENT.ALLOWED_HOSTS]
 
 # Application definition
@@ -65,13 +65,24 @@ WSGI_APPLICATION = 'app_config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if 'DATABASE' in settings:
+    DATABASES = {
+        'default': {
+            'ENGINE': settings.DATABASE.ENGINE,
+            'NAME': settings.DATABASE.NAME,
+            'USER': settings.DATABASE.USER,
+            'PASSWORD': settings.DATABASE.PASSWORD,
+            'HOST': settings.DATABASE.HOST,
+            'PORT': settings.DATABASE.PORT,
+        }
     }
-}
-
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

@@ -139,3 +139,5 @@ logs
 
 #Media files
 media
+
+.secrets.yaml

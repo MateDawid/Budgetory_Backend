@@ -35,7 +35,7 @@ class ImportFileSerializer(serializers.HyperlinkedModelSerializer):
         if self.__headers is not None and self.__content is not None:
             return self.__headers, self.__content
         read_file = csv_file.read()
-        decoded_file = read_file.decode(encoding='utf-8', errors="replace")
+        decoded_file = read_file.decode(encoding='utf-8', errors='replace')
         csv_source = StringIO(decoded_file)
         reader = csv.DictReader(csv_source)
         self.__headers = reader.fieldnames
