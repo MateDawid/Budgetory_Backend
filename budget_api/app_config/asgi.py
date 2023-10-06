@@ -1,5 +1,5 @@
 """
-ASGI config for budget_manager project.
+ASGI config for budget_api project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
