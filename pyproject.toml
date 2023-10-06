@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "budget-manager"
+name = "budget-api"
 version = "0.1.0"
 description = ""
 authors = ["MateDawid <mateusiakdawid@gmail.com>"]
@@ -24,8 +24,8 @@ pytest-factoryboy = "^2.5.1"
 [tool.pytest.ini_options]
 minversion = "7.4.0"
 DJANGO_SETTINGS_MODULE = "app_config.settings"
-pythonpath  = "budget_manager"
+pythonpath  = "budget_api"
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
