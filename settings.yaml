@@ -1,7 +1,14 @@
 default:
   ENVIRONMENT:
-    SECRET_KEY: '~'
-    DEBUG: true
+    SECRET_KEY: ~
+    DEBUG: ~
     ALLOWED_HOSTS:
       - 127.0.0.1
       - localhost
+  DATABASE:
+    ENGINE: django.db.backends.postgresql
+    NAME: budget_app
+    USER: ~
+    PASSWORD: ~
+    HOST: db
+    PORT: 5432
