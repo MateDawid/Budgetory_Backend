@@ -32,14 +32,14 @@
 
 ## Steps to do
 
-1. **Project setup**
+1. ~~**Project setup**~~
    - [x] ~~Python 3.11~~
    - [x] ~~poetry~~
    - [x] ~~pre-commit~~
-   - [ ] Dockerfile
-   - [ ] docker-compose
+   - [x] ~~Dockerfile~~
+   - [x] ~~docker-compose~~
    - [x] ~~Documentation (f.e. Swagger)~~
-   - [ ] PostgreSQL
+   - [x] ~~PostgreSQL~~
 
 2. **User**
    - [ ] User model, serializer, view
