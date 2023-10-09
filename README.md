@@ -42,8 +42,10 @@
    - [x] ~~PostgreSQL~~
 
 2. **User**
-   - [ ] User model, serializer, view
-   - [ ] Tests
+   - [x] ~~User model~~
+   - [ ] User serializer
+   - [ ] User view
+   - [ ] User tests
 
 3. **BudgetingPeriod**
    - [ ] BudgetingPeriod model, serializer, view
