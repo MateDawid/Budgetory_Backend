@@ -1,8 +1,8 @@
 import pytest
+from app_users.tests.factories import UserFactory
 from pytest_django.lazy_django import skip_if_no_django
 from pytest_factoryboy import register
 from rest_framework.test import APIRequestFactory
-from users.tests.factories import UserFactory
 
 register(UserFactory)
 

@@ -25,7 +25,10 @@ OUTER_APPS = [
     'drf_yasg',
 ]
 
-CREATED_APPS = ['data_import']
+CREATED_APPS = [
+    'app_users',
+    # 'data_import'
+]
 
 INSTALLED_APPS = DJANGO_APPS + OUTER_APPS + CREATED_APPS
 
@@ -129,5 +132,7 @@ MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'media')
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = 'app_users.User'
 
 REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination', 'PAGE_SIZE': 10}
