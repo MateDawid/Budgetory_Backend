@@ -26,9 +26,8 @@ urlpatterns = [
     path('api/swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('api/redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('api/healthcheck', lambda r: HttpResponse()),
-    path('admin/', admin.site.urls),
+    path('api/admin/', admin.site.urls),
     path('api/', include(router.urls)),
-    path('api/auth/', include('rest_framework.urls')),
     path('api/users/', include('app_users.urls')),
     # path('api/data_import/', include('data_import.urls')),
 ]

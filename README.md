@@ -43,8 +43,8 @@
 
 2. **User**
    - [x] ~~User model~~
-   - [ ] User serializer
-   - [ ] User view
+   - [x] ~~User serializer~~
+   - [x] ~~User view~~
    - [ ] User tests
 
 3. **BudgetingPeriod**
