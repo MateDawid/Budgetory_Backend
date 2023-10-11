@@ -22,6 +22,7 @@ DJANGO_APPS = [
 
 OUTER_APPS = [
     'rest_framework',
+    'rest_framework.authtoken',
     'drf_yasg',
 ]
 
@@ -132,4 +133,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'app_users.User'
 
-REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination', 'PAGE_SIZE': 10}
+REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination', 'PAGE_SIZE': 100}
+
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
+    'SECURITY_DEFINITIONS': {
+        'token': {'type': 'apiKey', 'description': 'User token', 'name': 'Authorization', 'in': 'header'}
+    },
+}
