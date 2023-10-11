@@ -14,6 +14,11 @@ class ListUserView(generics.ListAPIView):
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAdminUser]
 
+    def get_queryset(self):
+        """Sort queryset before returning."""
+        queryset = self.queryset
+        return queryset.order_by('id').distinct()
+
 
 class CreateUserView(generics.CreateAPIView):
     """View to create a new user."""
