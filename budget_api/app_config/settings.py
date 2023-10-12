@@ -78,7 +78,7 @@ if 'DATABASE' in settings:
         }
     }
 else:
-    DATABASES = {
+    DATABASES = {  # pragma: no cover
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
