@@ -9,7 +9,7 @@ services:
         - DEV=true
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - ./budget_api/:/usr/src/budget_app/budget_api/docker
+      - ./budget_api/:/usr/src/budget_app/budget_api/
     ports:
       - 8000:8000
     env_file:
