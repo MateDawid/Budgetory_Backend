@@ -12,3 +12,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Test
         run: docker-compose run --rm budget_api sh -c "pytest"
+        with:
+          DEV: True
+      - name: Cleanup
+        run: docker-compose down
