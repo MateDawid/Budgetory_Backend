@@ -1,5 +1,5 @@
 ---
-name: pre-merge checks
+name: Tests
 
 on: [push]
 
