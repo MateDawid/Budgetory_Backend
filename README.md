@@ -32,7 +32,7 @@
 
 ## Steps to do
 
-1. 🔨 **Project setup**
+1. ✔️ ~~**Project setup**~~
    - [x] ~~Python 3.11~~
    - [x] ~~poetry~~
    - [x] ~~pre-commit~~
@@ -40,7 +40,7 @@
    - [x] ~~docker-compose~~
    - [x] ~~Documentation (f.e. Swagger)~~
    - [x] ~~PostgreSQL~~
-   - [ ] GitHub Actions
+   - [x] ~~GitHub Actions~~
 
 2. ✔️ ~~**User**~~
    - [x] ~~User model~~
@@ -48,7 +48,7 @@
    - [x] ~~User view~~
    - [x] ~~User tests~~
 
-3. 🔜 **BudgetingPeriod**
+3. 🔨 **BudgetingPeriod**
    - [ ] BudgetingPeriod model, serializer, view
    - [ ] Tests
 

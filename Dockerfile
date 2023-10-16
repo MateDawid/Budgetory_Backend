@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y netcat
 # Install dependencies
 ARG DEV="false"
 RUN pip install "poetry==$POETRY_VERSION"
-COPY ./poetry.lock ./pyproject.toml ./settings.yaml ./.secrets.yaml /usr/src/budget_app/
+COPY ./poetry.lock ./pyproject.toml ./settings.yaml /usr/src/budget_app/
 RUN poetry config virtualenvs.create false && \
     if [ $DEV = "true" ]; \
     then poetry install; \

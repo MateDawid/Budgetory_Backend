@@ -1,0 +1,21 @@
+---
+name: Tests
+
+on: [push]
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-20.04
+    env:
+      DEV: true
+      SECRET_KEY: test_secret_key
+      DB_USER: budget_api
+      DB_PASSWORD: budget_api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Test
+        run: docker-compose run --rm budget_api sh -c "python manage.py wait_for_db && pytest"
+      - name: Cleanup
+        run: docker-compose down
