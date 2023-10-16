@@ -59,6 +59,7 @@ class TestUserSerializer:
         'param, value', [('email', 'new@example.com'), ('password', 'newpass123'), ('name', 'New name')]
     )
     def test_user_update_successful(self, param: str, value: str):
+        """Test update user param."""
         user = get_user_model().objects.create_user(**self.payload)
         user_id = user.id
         payload = self.payload.copy()
