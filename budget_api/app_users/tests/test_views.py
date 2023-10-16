@@ -1,7 +1,8 @@
+from typing import Any
+
 import pytest
 from app_users.serializers import UserSerializer
 from django.contrib.auth import get_user_model
-from django.contrib.auth.base_user import AbstractBaseUser
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -81,9 +82,7 @@ class TestListUserView:
     """Tests for ListUserView"""
 
     @pytest.mark.django_db
-    def test_getting_user_list_as_admin(
-        self, api_client: APIClient, superuser: AbstractBaseUser, base_user: AbstractBaseUser
-    ):
+    def test_getting_user_list_as_admin(self, api_client: APIClient, superuser: Any, base_user: Any):
         """Test successful collecting user list as admin user."""
         api_client.force_authenticate(superuser)
 
@@ -95,7 +94,7 @@ class TestListUserView:
         assert response.data['results'] == serializer.data
 
     @pytest.mark.django_db
-    def test_getting_user_list_as_base_user(self, api_client: APIClient, base_user: AbstractBaseUser):
+    def test_getting_user_list_as_base_user(self, api_client: APIClient, base_user: Any):
         """Test error on collecting user list as base user."""
         api_client.force_authenticate(base_user)
         response = api_client.get(LIST_USER_URL)
@@ -113,4 +112,39 @@ class TestListUserView:
 class TestAuthenticatedUserView:
     """Tests for AuthenticatedUserView"""
 
-    pass
+    def test_retrieve_user_unauthorized(self, api_client: APIClient):
+        """Test error on retrieving user page being unauthenticated."""
+        response = api_client.get(ME_URL)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert str(response.data['detail']) == 'Authentication credentials were not provided.'
+
+    @pytest.mark.django_db
+    def test_retrieve_profile_success(self, api_client: APIClient, base_user: Any):
+        """Test retrieving profile for logged in user."""
+        api_client.force_authenticate(base_user)
+        response = api_client.get(ME_URL)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == {'name': base_user.name, 'email': base_user.email}
+
+    @pytest.mark.django_db
+    def test_post_me_not_allowed(self, api_client: APIClient, base_user: Any):
+        """Test POST is not allowed for 'me' endpoint."""
+        api_client.force_authenticate(base_user)
+        response = api_client.post(ME_URL, {})
+
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+    @pytest.mark.django_db
+    def test_update_user_profile(self, api_client: APIClient, base_user: Any):
+        """Test updating the user profile for the authenticated user."""
+        api_client.force_authenticate(base_user)
+        payload = {'name': 'Updated name', 'password': 'newpassword123'}
+
+        response = api_client.patch(ME_URL, payload)
+        base_user.refresh_from_db()
+
+        assert response.status_code == status.HTTP_200_OK
+        assert base_user.name, payload['name']
+        assert base_user.check_password(payload['password'])
