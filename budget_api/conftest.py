@@ -1,5 +1,7 @@
 import pytest
 from app_users.tests.factories import UserFactory
+from django.contrib.auth import get_user_model
+from django.contrib.auth.base_user import AbstractBaseUser
 from pytest_django.lazy_django import skip_if_no_django
 from pytest_factoryboy import register
 from rest_framework.test import APIClient, APIRequestFactory
@@ -13,7 +15,20 @@ def api_rf() -> APIRequestFactory:
     return APIRequestFactory()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 def api_client() -> APIClient:
+    """API Client for creating request."""
     skip_if_no_django()
     return APIClient()
+
+
+@pytest.fixture
+def base_user() -> AbstractBaseUser:
+    """User with base permissions."""
+    return get_user_model().objects.create_user('user@example.com', 'user123!@#')
+
+
+@pytest.fixture
+def superuser() -> AbstractBaseUser:
+    """User with admin permissions."""
+    return get_user_model().objects.create_superuser('admin@example.com', 'admin123!@#')
