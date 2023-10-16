@@ -9,8 +9,8 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       DEV: True
-      DYNACONF_DATABASE__USER: budget_api
-      DYNACONF_DATABASE__PASSWORD: budget_api
+      DB_USER: budget_api
+      DB_PASSWORD: budget_api
     steps:
       - name: Checkout
         uses: actions/checkout@v2
