@@ -6,14 +6,20 @@ services:
     build:
       context: .
       args:
-        - DEV=true
+        - DEV=${DEV}
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ./budget_api/:/usr/src/budget_app/budget_api/
+      - ./.secrets.yaml:/usr/src/budget_app/.secrets.yaml
     ports:
       - 8000:8000
-    env_file:
-      - ./.env
+    environment:
+      - DATABASE=postgres
+      - SQL_HOST=db
+      - SQL_PORT=5432
+      - DYNACONF_ENVIRONMENT__SECRET_KEY=${SECRET_KEY}
+      - DYNACONF_DATABASE__USER=${DB_USER}
+      - DYNACONF_DATABASE__PASSWORD=${DB_PASSWORD}
     depends_on:
       - db
   db:
