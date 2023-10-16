@@ -1,0 +1,14 @@
+---
+name: pre-merge checks
+
+on: [push]
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Test
+        run: docker-compose run --rm budget_api sh -c "pytest"
