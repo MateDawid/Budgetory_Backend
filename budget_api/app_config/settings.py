@@ -22,10 +22,11 @@ DJANGO_APPS = [
 
 OUTER_APPS = [
     'rest_framework',
+    'rest_framework.authtoken',
     'drf_yasg',
 ]
 
-CREATED_APPS = ['data_import']
+CREATED_APPS = ['app_users', 'data_import']
 
 INSTALLED_APPS = DJANGO_APPS + OUTER_APPS + CREATED_APPS
 
@@ -77,7 +78,7 @@ if 'DATABASE' in settings:
         }
     }
 else:
-    DATABASES = {
+    DATABASES = {  # pragma: no cover
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
@@ -130,4 +131,13 @@ MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination', 'PAGE_SIZE': 10}
+AUTH_USER_MODEL = 'app_users.User'
+
+REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination', 'PAGE_SIZE': 100}
+
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
+    'SECURITY_DEFINITIONS': {
+        'token': {'type': 'apiKey', 'description': 'User token', 'name': 'Authorization', 'in': 'header'}
+    },
+}
