@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       DEV: True
+      SECRET_KEY: test_secret_key
       DB_USER: budget_api
       DB_PASSWORD: budget_api
     steps:

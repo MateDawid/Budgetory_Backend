@@ -17,6 +17,7 @@ services:
       - DATABASE=postgres
       - SQL_HOST=db
       - SQL_PORT=5432
+      - DYNACONF_ENVIRONMENT__SECRET_KEY=${SECRET_KEY}
       - DYNACONF_DATABASE__USER=${DB_USER}
       - DYNACONF_DATABASE__PASSWORD=${DB_PASSWORD}
     depends_on:
