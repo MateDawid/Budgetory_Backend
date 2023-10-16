@@ -10,6 +10,7 @@ services:
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ./budget_api/:/usr/src/budget_app/budget_api/
+      - ./.secrets.yaml:/usr/src/budget_app/.secrets.yaml
     ports:
       - 8000:8000
     environment:
