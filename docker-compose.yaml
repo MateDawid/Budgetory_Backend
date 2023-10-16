@@ -3,7 +3,10 @@ version: "3.9"
 
 services:
   budget_api:
-    build: .
+    build:
+      context: .
+      args:
+        - DEV=true
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ./budget_api/:/usr/src/budget_app/budget_api/

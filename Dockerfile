@@ -12,10 +12,14 @@ ENV PYTHONUNBUFFERED=1 \
 RUN apt-get update && apt-get install -y netcat
 
 # Install dependencies
+ARG DEV="false"
 RUN pip install "poetry==$POETRY_VERSION"
 COPY ./poetry.lock ./pyproject.toml ./settings.yaml ./.secrets.yaml /usr/src/budget_app/
-RUN poetry config virtualenvs.create false \
-    && poetry install --no-dev
+RUN poetry config virtualenvs.create false && \
+    if [ $DEV = "true" ]; \
+    then poetry install; \
+    else poetry install --no-dev; \
+    fi
 
 # copy entrypoint.sh
 COPY ./entrypoint.sh /usr/src/budget_app/

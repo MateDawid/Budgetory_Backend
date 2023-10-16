@@ -1,11 +1,11 @@
 import pytest
+from app_users.tests.factories import UserFactory
 from data_import.models import ImportFile
 from data_import.tests.factories import ImportFileFactory
 from data_import.views import ImportFileViewSet
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from rest_framework import status
 from rest_framework.test import APIRequestFactory, force_authenticate
-from users.tests.factories import UserFactory
 
 
 @pytest.mark.django_db
