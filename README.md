@@ -32,7 +32,7 @@
 
 ## Steps to do
 
-1. ~~**Project setup**~~
+1. 🔨 **Project setup**
    - [x] ~~Python 3.11~~
    - [x] ~~poetry~~
    - [x] ~~pre-commit~~
@@ -40,51 +40,52 @@
    - [x] ~~docker-compose~~
    - [x] ~~Documentation (f.e. Swagger)~~
    - [x] ~~PostgreSQL~~
+   - [ ] GitHub Actions
 
-2. **User**
+2. ✔️ ~~**User**~~
    - [x] ~~User model~~
    - [x] ~~User serializer~~
    - [x] ~~User view~~
-   - [ ] User tests
+   - [x] ~~User tests~~
 
-3. **BudgetingPeriod**
+3. 🔜 **BudgetingPeriod**
    - [ ] BudgetingPeriod model, serializer, view
    - [ ] Tests
 
-4. **Bank**
+4. 🔜 **Bank**
    - [ ] Bank model, serializer, view
    - [ ] Tests
 
-5. **Deposits**
+5. 🔜 **Deposits**
    - [ ] Deposit model, serializer, view
    - [ ] Tests
 
-6. **Incomes**
+6. 🔜 **Incomes**
    - [ ] Income model, serializer, view
    - [ ] Tests
 
-7. **Sellers**
+7. 🔜 **Sellers**
    - [ ] Seller model, serializer, view
    - [ ] Tests
 
-8. **ExpenseCategory**
+8. 🔜 **ExpenseCategory**
    - [ ] ExpenseCategory model, serializer, view
    - [ ] Tests
 
-9. **Expenses**
+9. 🔜 **Expenses**
    - [ ] Expense model, serializer, view
    - [ ] Create expenses on data import
    - [ ] Tests
 
-10. **ExpensePrediction**
+10. 🔜 **ExpensePrediction**
     - [ ] ExpensePrediction model, serializer, view
     - [ ] Tests
 
-11. **ImportFile**
+11. 🔜 **ImportFile**
     - [ ] ImportFile model, serializer, view
     - [ ] Possibility to send file (csv firstly), but not storing it in DB, only extract data
     - [ ] Create sellers on data import
     - [ ] Tests
 
-12. **Frontend**
+12. 🔜 **Frontend**
     - [ ] Implement some frontend
