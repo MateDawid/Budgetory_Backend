@@ -1,6 +1,7 @@
 import datetime
 
 import pytest
+from django.db import DataError
 from periods.models import BudgetingPeriod
 
 
@@ -47,3 +48,15 @@ class TestBudgetingPeriodModel:
             assert budgeting_period.date_end == payload['date_end']
             assert budgeting_period.is_active is False
         assert BudgetingPeriod.objects.filter(user=user).count() == 2
+
+    @pytest.mark.django_db(transaction=True)
+    def test_error_name_too_long(self, user):
+        """Test error on creating user with name too long."""
+        payload = self.payload.copy()
+        payload['user'] = user
+        payload['name'] = 129 * 'a'
+
+        with pytest.raises(DataError) as exc:
+            BudgetingPeriod.objects.create(**payload)
+        assert str(exc.value) == 'value too long for type character varying(128)\n'
+        assert not BudgetingPeriod.objects.filter(user=user).exists()
