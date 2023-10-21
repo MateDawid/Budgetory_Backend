@@ -23,6 +23,11 @@ class BudgetingPeriod(models.Model):
         """String representation of BudgetingPeriod model instance."""
         return f'{self.name} ({self.user.email})'
 
+    def save(self, *args, **kwargs):
+        """Override save method to execute clean() method before saving model in database."""
+        self.clean()
+        super().save(*args, **kwargs)
+
     def clean_is_active(self):
         """Check if is_active field is valid. If is_active not given, pass it to default model validation."""
         if self.is_active is None:
