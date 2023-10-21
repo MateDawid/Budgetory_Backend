@@ -1,4 +1,4 @@
-import datetime
+from datetime import date
 from typing import Union
 
 import pytest
@@ -16,8 +16,8 @@ class TestBudgetingPeriodModel:
         payload = {
             'name': '2023_01',
             'user': user,
-            'date_start': datetime.date(2023, 1, 1),
-            'date_end': datetime.date(2023, 1, 31),
+            'date_start': date(2023, 1, 1),
+            'date_end': date(2023, 1, 31),
         }
 
         budgeting_period = BudgetingPeriod.objects.create(**payload)
@@ -35,14 +35,14 @@ class TestBudgetingPeriodModel:
         payload_1 = {
             'name': '2023_01',
             'user': user,
-            'date_start': datetime.date(2023, 1, 1),
-            'date_end': datetime.date(2023, 1, 31),
+            'date_start': date(2023, 1, 1),
+            'date_end': date(2023, 1, 31),
         }
         payload_2 = {
             'name': '2023_02',
             'user': user,
-            'date_start': datetime.date(2023, 2, 1),
-            'date_end': datetime.date(2023, 2, 28),
+            'date_start': date(2023, 2, 1),
+            'date_end': date(2023, 2, 28),
         }
         budgeting_period_1 = BudgetingPeriod.objects.create(**payload_1)
         budgeting_period_2 = BudgetingPeriod.objects.create(**payload_2)
@@ -59,15 +59,15 @@ class TestBudgetingPeriodModel:
         payload_1 = {
             'name': '2023_01',
             'user': user_factory(),
-            'date_start': datetime.date(2023, 1, 1),
-            'date_end': datetime.date(2023, 1, 31),
+            'date_start': date(2023, 1, 1),
+            'date_end': date(2023, 1, 31),
             'is_active': True,
         }
         payload_2 = {
             'name': '2023_01',
             'user': user_factory(),
-            'date_start': datetime.date(2023, 1, 1),
-            'date_end': datetime.date(2023, 1, 31),
+            'date_start': date(2023, 1, 1),
+            'date_end': date(2023, 1, 31),
             'is_active': True,
         }
 
@@ -84,8 +84,8 @@ class TestBudgetingPeriodModel:
         payload = {
             'name': 129 * 'a',
             'user': user,
-            'date_start': datetime.date(2023, 1, 1),
-            'date_end': datetime.date(2023, 1, 31),
+            'date_start': date(2023, 1, 1),
+            'date_end': date(2023, 1, 31),
         }
 
         with pytest.raises(DataError) as exc:
@@ -99,13 +99,13 @@ class TestBudgetingPeriodModel:
         payload = {
             'name': '2023_01',
             'user': user,
-            'date_start': datetime.date(2023, 1, 1),
-            'date_end': datetime.date(2023, 1, 31),
+            'date_start': date(2023, 1, 1),
+            'date_end': date(2023, 1, 31),
         }
         BudgetingPeriod.objects.create(**payload)
 
-        payload['date_start'] = datetime.date(2023, 2, 1)
-        payload['date_end'] = datetime.date(2023, 2, 28)
+        payload['date_start'] = date(2023, 2, 1)
+        payload['date_end'] = date(2023, 2, 28)
         with pytest.raises(IntegrityError) as exc:
             BudgetingPeriod.objects.create(**payload)
         assert f'DETAIL:  Key (name, user_id)=({payload["name"]}, {user.id}) already exists.' in str(exc.value)
@@ -116,8 +116,8 @@ class TestBudgetingPeriodModel:
         payload_1 = {
             'name': '2023_01',
             'user': user,
-            'date_start': datetime.date(2023, 1, 1),
-            'date_end': datetime.date(2023, 1, 31),
+            'date_start': date(2023, 1, 1),
+            'date_end': date(2023, 1, 31),
             'is_active': True,
         }
         active_period = BudgetingPeriod.objects.create(**payload_1)
@@ -125,8 +125,8 @@ class TestBudgetingPeriodModel:
         payload_2 = {
             'name': '2023_02',
             'user': user,
-            'date_start': datetime.date(2023, 1, 1),
-            'date_end': datetime.date(2023, 1, 31),
+            'date_start': date(2023, 1, 1),
+            'date_end': date(2023, 1, 31),
             'is_active': True,
         }
         with pytest.raises(ValidationError) as exc:
@@ -142,8 +142,8 @@ class TestBudgetingPeriodModel:
         payload = {
             'name': '2023_01',
             'user': user,
-            'date_start': datetime.date(2023, 1, 1),
-            'date_end': datetime.date(2023, 1, 31),
+            'date_start': date(2023, 1, 1),
+            'date_end': date(2023, 1, 31),
             'is_active': None,
         }
         with pytest.raises(IntegrityError) as exc:
@@ -152,12 +152,8 @@ class TestBudgetingPeriodModel:
         assert not BudgetingPeriod.objects.filter(user=user).exists()
 
     @pytest.mark.django_db(transaction=True)
-    @pytest.mark.parametrize(
-        'date_start, date_end', ((None, datetime.date.today()), (datetime.date.today(), None), (None, None))
-    )
-    def test_error_date_not_set(
-        self, user, date_start: Union[datetime.date, None], date_end: Union[datetime.date, None]
-    ):
+    @pytest.mark.parametrize('date_start, date_end', ((None, date.today()), (date.today(), None), (None, None)))
+    def test_error_date_not_set(self, user, date_start: Union[date, None], date_end: Union[date, None]):
         """Test error on creating period with date_start or date_end set to None."""
         payload = {
             'name': '2023_01',
@@ -176,8 +172,8 @@ class TestBudgetingPeriodModel:
         payload = {
             'name': '2023_01',
             'user': user,
-            'date_start': datetime.date(2023, 5, 1),
-            'date_end': datetime.date(2023, 4, 30),
+            'date_start': date(2023, 5, 1),
+            'date_end': date(2023, 4, 30),
         }
 
         with pytest.raises(ValidationError) as exc:
@@ -190,54 +186,54 @@ class TestBudgetingPeriodModel:
         'date_start, date_end',
         (
             # Date start before first existing period
-            (datetime.date(2023, 5, 1), datetime.date(2023, 6, 1)),
-            (datetime.date(2023, 5, 1), datetime.date(2023, 6, 15)),
-            (datetime.date(2023, 5, 1), datetime.date(2023, 6, 30)),
-            (datetime.date(2023, 5, 1), datetime.date(2023, 7, 1)),
-            (datetime.date(2023, 5, 1), datetime.date(2023, 7, 15)),
-            (datetime.date(2023, 5, 1), datetime.date(2023, 7, 31)),
-            (datetime.date(2023, 5, 1), datetime.date(2023, 8, 1)),
+            (date(2023, 5, 1), date(2023, 6, 1)),
+            (date(2023, 5, 1), date(2023, 6, 15)),
+            (date(2023, 5, 1), date(2023, 6, 30)),
+            (date(2023, 5, 1), date(2023, 7, 1)),
+            (date(2023, 5, 1), date(2023, 7, 15)),
+            (date(2023, 5, 1), date(2023, 7, 31)),
+            (date(2023, 5, 1), date(2023, 8, 1)),
             # Date start same as in first existing period
-            (datetime.date(2023, 6, 1), datetime.date(2023, 6, 15)),
-            (datetime.date(2023, 6, 1), datetime.date(2023, 6, 30)),
-            (datetime.date(2023, 6, 1), datetime.date(2023, 7, 1)),
-            (datetime.date(2023, 6, 1), datetime.date(2023, 7, 15)),
-            (datetime.date(2023, 6, 1), datetime.date(2023, 7, 31)),
-            (datetime.date(2023, 6, 1), datetime.date(2023, 8, 1)),
+            (date(2023, 6, 1), date(2023, 6, 15)),
+            (date(2023, 6, 1), date(2023, 6, 30)),
+            (date(2023, 6, 1), date(2023, 7, 1)),
+            (date(2023, 6, 1), date(2023, 7, 15)),
+            (date(2023, 6, 1), date(2023, 7, 31)),
+            (date(2023, 6, 1), date(2023, 8, 1)),
             # Date start between first existing period daterange
-            (datetime.date(2023, 6, 15), datetime.date(2023, 6, 30)),
-            (datetime.date(2023, 6, 15), datetime.date(2023, 7, 1)),
-            (datetime.date(2023, 6, 15), datetime.date(2023, 7, 15)),
-            (datetime.date(2023, 6, 15), datetime.date(2023, 7, 31)),
-            (datetime.date(2023, 6, 15), datetime.date(2023, 8, 1)),
+            (date(2023, 6, 15), date(2023, 6, 30)),
+            (date(2023, 6, 15), date(2023, 7, 1)),
+            (date(2023, 6, 15), date(2023, 7, 15)),
+            (date(2023, 6, 15), date(2023, 7, 31)),
+            (date(2023, 6, 15), date(2023, 8, 1)),
             # Date start same as first existing period's end date
-            (datetime.date(2023, 6, 30), datetime.date(2023, 7, 1)),
-            (datetime.date(2023, 6, 30), datetime.date(2023, 7, 15)),
-            (datetime.date(2023, 6, 30), datetime.date(2023, 7, 31)),
-            (datetime.date(2023, 6, 30), datetime.date(2023, 8, 1)),
+            (date(2023, 6, 30), date(2023, 7, 1)),
+            (date(2023, 6, 30), date(2023, 7, 15)),
+            (date(2023, 6, 30), date(2023, 7, 31)),
+            (date(2023, 6, 30), date(2023, 8, 1)),
             # Date start same as in second existing period
-            (datetime.date(2023, 7, 1), datetime.date(2023, 7, 15)),
-            (datetime.date(2023, 7, 1), datetime.date(2023, 7, 31)),
-            (datetime.date(2023, 7, 1), datetime.date(2023, 8, 1)),
+            (date(2023, 7, 1), date(2023, 7, 15)),
+            (date(2023, 7, 1), date(2023, 7, 31)),
+            (date(2023, 7, 1), date(2023, 8, 1)),
             # Date start between second existing period daterange
-            (datetime.date(2023, 7, 15), datetime.date(2023, 7, 31)),
+            (date(2023, 7, 15), date(2023, 7, 31)),
             # Date start same as second existing period's end date
-            (datetime.date(2023, 7, 31), datetime.date(2023, 8, 1)),
+            (date(2023, 7, 31), date(2023, 8, 1)),
         ),
     )
-    def test_error_date_invalid(self, user, date_start: datetime.date, date_end: datetime.date):
+    def test_error_date_invalid(self, user, date_start: date, date_end: date):
         """Test error on creating period with invalid dates."""
         payload_1 = {
             'name': '2023_06',
             'user': user,
-            'date_start': datetime.date(2023, 6, 1),
-            'date_end': datetime.date(2023, 6, 30),
+            'date_start': date(2023, 6, 1),
+            'date_end': date(2023, 6, 30),
         }
         payload_2 = {
             'name': '2023_07',
             'user': user,
-            'date_start': datetime.date(2023, 7, 1),
-            'date_end': datetime.date(2023, 7, 31),
+            'date_start': date(2023, 7, 1),
+            'date_end': date(2023, 7, 31),
         }
         payload_invalid = {
             'name': 'invalid',
