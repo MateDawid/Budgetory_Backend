@@ -13,6 +13,12 @@ class BudgetingPeriod(models.Model):
     date_end = models.DateField(null=False, blank=False)
     is_active = models.BooleanField(default=False)
 
+    class Meta:
+        unique_together = (
+            'name',
+            'user',
+        )
+
     def __str__(self):
         """String representation of BudgetingPeriod model instance."""
         return f'{self.name} ({self.user.email})'
@@ -23,13 +29,6 @@ class BudgetingPeriod(models.Model):
             return
         if self.is_active and self.user.budgeting_periods.filter(is_active=True).exclude(pk=self.pk).exists():
             raise ValidationError('is_active: User already has active budgeting period.', code='active-invalid')
-
-    def clean_name(self):
-        """Check if name field is valid. If name not given, pass it to default model validation."""
-        if self.name is None:
-            return
-        if self.name and self.user.budgeting_periods.filter(name=self.name).exclude(pk=self.pk).exists():
-            raise ValidationError("name: User's budgeting period with given name already exists.", code='name-invalid')
 
     def clean_dates(self):
         """Check if date_start and date_end fields are valid. If date_start or date_end not given,
@@ -55,5 +54,4 @@ class BudgetingPeriod(models.Model):
     def clean(self):
         """Clean BudgetingPeriod input data before saving in database."""
         self.clean_is_active()
-        self.clean_name()
         self.clean_dates()
