@@ -40,6 +40,8 @@ class BudgetingPeriod(models.Model):
         pass them to default model validation."""
         if self.date_start is None or self.date_end is None:
             return
+        if self.date_start >= self.date_end:
+            raise ValidationError('start_date: Start date should be earlier than end date.', code='date-invalid')
         if (
             self.user.budgeting_periods.filter(
                 Q(date_start__lte=self.date_start, date_end__gte=self.date_start)
@@ -53,8 +55,6 @@ class BudgetingPeriod(models.Model):
                 "date_start: Budgeting period date range collides with other user's budgeting periods.",
                 code='period-range-invalid',
             )
-        if self.date_start >= self.date_end:
-            raise ValidationError('start_date: Start date should be earlier than end date.', code='date-invalid')
 
     def clean(self):
         """Clean BudgetingPeriod input data before saving in database."""
