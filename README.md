@@ -50,7 +50,7 @@
 
 3. 🔨 **BudgetingPeriod**
    - [x] ~~BudgetingPeriod model~~
-   - [ ] BudgetingPeriod serializer
+   - [x] BudgetingPeriod serializer
    - [ ] BudgetingPeriod views
    - [ ] Tests
 
