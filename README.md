@@ -49,7 +49,9 @@
    - [x] ~~User tests~~
 
 3. 🔨 **BudgetingPeriod**
-   - [ ] BudgetingPeriod model, serializer, view
+   - [x] ~~BudgetingPeriod model~~
+   - [ ] BudgetingPeriod serializer
+   - [ ] BudgetingPeriod views
    - [ ] Tests
 
 4. 🔜 **Bank**
