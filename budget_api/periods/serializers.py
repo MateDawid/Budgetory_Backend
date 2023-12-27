@@ -8,3 +8,4 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
     class Meta:
         model = BudgetingPeriod
         fields = ['id', 'user', 'name', 'date_start', 'date_end', 'is_active']
+        read_only_fields = ['id']
