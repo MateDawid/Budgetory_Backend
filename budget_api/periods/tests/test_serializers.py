@@ -3,6 +3,7 @@ from datetime import date
 import pytest
 from periods.models import BudgetingPeriod
 from periods.serializers import BudgetingPeriodSerializer
+from rest_framework.exceptions import ValidationError
 
 
 def check_period_validated_data(serializer, payload):
@@ -84,3 +85,18 @@ class TestBudgetingPeriodSerializer:
         assert BudgetingPeriod.objects.all().count() == 2
         assert BudgetingPeriod.objects.filter(user=payload_1['user']).count() == 1
         assert BudgetingPeriod.objects.filter(user=payload_2['user']).count() == 1
+
+    def test_error_name_too_long(self, user):
+        """Test error on saving period serializer with name too long."""
+        max_length = BudgetingPeriodSerializer.Meta.model._meta.get_field('name').max_length
+        payload = {
+            'name': (max_length + 1) * 'a',
+            'user': user.id,
+            'date_start': date(2023, 1, 1),
+            'date_end': date(2023, 1, 31),
+        }
+        serializer = BudgetingPeriodSerializer(data=payload)
+        with pytest.raises(ValidationError) as exc:
+            serializer.is_valid(raise_exception=True)
+        assert 'name' in exc.value.detail
+        assert exc.value.detail['name'][0] == f'Ensure this field has no more than {max_length} characters.'

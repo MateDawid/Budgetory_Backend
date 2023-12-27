@@ -81,8 +81,9 @@ class TestBudgetingPeriodModel:
     @pytest.mark.django_db(transaction=True)
     def test_error_name_too_long(self, user):
         """Test error on creating period with name too long."""
+        max_length = BudgetingPeriod._meta.get_field('name').max_length
         payload = {
-            'name': 129 * 'a',
+            'name': (max_length + 1) * 'a',
             'user': user,
             'date_start': date(2023, 1, 1),
             'date_end': date(2023, 1, 31),
@@ -90,7 +91,7 @@ class TestBudgetingPeriodModel:
 
         with pytest.raises(DataError) as exc:
             BudgetingPeriod.objects.create(**payload)
-        assert str(exc.value) == 'value too long for type character varying(128)\n'
+        assert str(exc.value) == f'value too long for type character varying({max_length})\n'
         assert not BudgetingPeriod.objects.filter(user=user).exists()
 
     @pytest.mark.django_db(transaction=True)
