@@ -12,7 +12,7 @@ class BudgetingPeriodFactory(factory.django.DjangoModelFactory):
 
     user = factory.SubFactory(UserFactory)
     date_start = datetime.date(2023, 1, 1)
-    date_end = datetime.date(2023, 2, 28)
+    date_end = datetime.date(2023, 1, 31)
     is_active = factory.Faker('boolean')
 
     @factory.lazy_attribute
