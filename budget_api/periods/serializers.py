@@ -29,7 +29,8 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
 
     def validate_date_start(self, date_start: datetime.date) -> Union[datetime.date, None]:
         """Validates date_start and date_end by checking they are in proper order or if any colliding periods exist."""
-        date_end = self.initial_data['date_end']
+        date_start = self._get_date(date_start)
+        date_end = self._get_date(self.initial_data['date_end'])
         if date_start is None or date_end is None:
             return date_start
         user = get_user_model().objects.get(id=self.initial_data['user'])
@@ -46,3 +47,10 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
         ):
             raise ValidationError("Budgeting period date range collides with other user's budgeting periods.")
         return date_start
+
+    def _get_date(self, input_date: Union[str, datetime.date]) -> datetime.date:
+        """Used to make sure, that date validation operates on date objects."""
+        if isinstance(input_date, datetime.date):
+            return input_date
+        else:
+            return datetime.datetime.strptime(input_date, '%Y-%m-%d').date()
