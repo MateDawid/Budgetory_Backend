@@ -20,9 +20,6 @@ class BudgetingPeriodViewSet(viewsets.ModelViewSet):
         """Retrieve BudgetingPeriods for authenticated user."""
         return self.queryset.filter(user=self.request.user).order_by('-date_start').distinct()
 
-    # def perform_create(self, serializer):
-    #     """Create BudgetingPeriod in database or return model error."""
-    #     try:
-    #         serializer.save(user=self.request.user)
-    #     except DjangoValidationError as exc:
-    #         raise DRFValidationError(exc.message)
+    def perform_create(self, serializer):
+        """Additionally save user in BudgetingPeriod model."""
+        serializer.save(user=self.request.user)
