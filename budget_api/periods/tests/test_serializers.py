@@ -22,23 +22,6 @@ class TestBudgetingPeriodSerializer:
 
     # TODO - translate further tests into test_api.py
 
-    def test_error_name_too_long(self, user):
-        """Test error on saving BudgetingPeriodSerializer with name too long."""
-        max_length = BudgetingPeriodSerializer.Meta.model._meta.get_field('name').max_length
-        payload = {
-            'name': (max_length + 1) * 'a',
-            'user': user.id,
-            'date_start': date(2023, 1, 1),
-            'date_end': date(2023, 1, 31),
-        }
-
-        serializer = BudgetingPeriodSerializer(data=payload)
-
-        with pytest.raises(ValidationError) as exc:
-            serializer.is_valid(raise_exception=True)
-        assert 'name' in exc.value.detail
-        assert exc.value.detail['name'][0] == f'Ensure this field has no more than {max_length} characters.'
-
     def test_error_name_already_used(self, user):
         """Test error on saving BudgetingPeriodSerializer with already used name by the same user."""
         payload = {

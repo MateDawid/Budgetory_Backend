@@ -102,7 +102,7 @@ class TestBudgetingPeriodApi:
             for key in payload:
                 assert getattr(period, key) == payload[key]
 
-    def test_create_same_period_by_two_users(self, api_client: APIClient, user_factory):
+    def test_create_same_period_by_two_users(self, api_client: APIClient, user_factory: Any):
         """Test creating period with the same params by two users."""
         payload = {
             'name': '2023_01',
@@ -121,9 +121,22 @@ class TestBudgetingPeriodApi:
         assert BudgetingPeriod.objects.filter(user=user_1).count() == 1
         assert BudgetingPeriod.objects.filter(user=user_2).count() == 1
 
-    def test_error_name_too_long(self, user):
+    def test_error_name_too_long(self, api_client: APIClient, base_user: Any):
         """Test error on creating BudgetingPeriod with name too long."""
-        pass
+        api_client.force_authenticate(base_user)
+        max_length = BudgetingPeriod._meta.get_field('name').max_length
+        payload = {
+            'name': (max_length + 1) * 'a',
+            'date_start': date(2023, 1, 1),
+            'date_end': date(2023, 1, 31),
+        }
+
+        response = api_client.post(PERIODS_URL, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'name' in response.data
+        assert response.data['name'][0] == f'Ensure this field has no more than {max_length} characters.'
+        assert not BudgetingPeriod.objects.filter(user=base_user).exists()
 
     def test_error_name_already_used(self, user):
         """Test error on creating BudgetingPeriod with already used name by the same user."""
