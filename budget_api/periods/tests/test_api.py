@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Any
+from typing import Any, Union
 
 import pytest
 from django.urls import reverse
@@ -122,4 +122,77 @@ class TestBudgetingPeriodApi:
         assert BudgetingPeriod.objects.filter(user=user_2).count() == 1
 
     def test_error_name_too_long(self, user):
+        """Test error on creating BudgetingPeriod with name too long."""
+        pass
+
+    def test_error_name_already_used(self, user):
+        """Test error on creating BudgetingPeriod with already used name by the same user."""
+        pass
+
+    def test_create_active_period_successfully(self, user):
+        """Test creating BudgetingPeriod with is_active=True successfully."""
+        pass
+
+    def test_error_create_period_when_is_active_set_already(self, user):
+        """Test error on creating new BudgetingPeriod with is_active=True, when another user's period active already."""
+        pass
+
+    def test_error_update_period_when_is_active_set_already(self, user):
+        """Test error on updating BudgetingPeriod with is_active=True, when another user's period active already."""
+        pass
+
+    def test_error_is_active_none(self, user):
+        """Test error on creating BudgetingPeriod with is_active set to None."""
+        pass
+
+    @pytest.mark.parametrize('date_start, date_end', ((None, date.today()), (date.today(), None), (None, None)))
+    def test_error_date_not_set(self, user, date_start: Union[date, None], date_end: Union[date, None]):
+        """Test error on creating BudgetingPeriod with date_start or date_end set to None."""
+        pass
+
+    def test_error_date_end_before_date_start(self, user):
+        """Test error on creating BudgetingPeriod with date_end earlier than date_start."""
+        pass
+
+    @pytest.mark.parametrize(
+        'date_start, date_end',
+        (
+            # Date start before first existing period
+            (date(2023, 5, 1), date(2023, 6, 1)),
+            (date(2023, 5, 1), date(2023, 6, 15)),
+            (date(2023, 5, 1), date(2023, 6, 30)),
+            (date(2023, 5, 1), date(2023, 7, 1)),
+            (date(2023, 5, 1), date(2023, 7, 15)),
+            (date(2023, 5, 1), date(2023, 7, 31)),
+            (date(2023, 5, 1), date(2023, 8, 1)),
+            # Date start same as in first existing period
+            (date(2023, 6, 1), date(2023, 6, 15)),
+            (date(2023, 6, 1), date(2023, 6, 30)),
+            (date(2023, 6, 1), date(2023, 7, 1)),
+            (date(2023, 6, 1), date(2023, 7, 15)),
+            (date(2023, 6, 1), date(2023, 7, 31)),
+            (date(2023, 6, 1), date(2023, 8, 1)),
+            # Date start between first existing period daterange
+            (date(2023, 6, 15), date(2023, 6, 30)),
+            (date(2023, 6, 15), date(2023, 7, 1)),
+            (date(2023, 6, 15), date(2023, 7, 15)),
+            (date(2023, 6, 15), date(2023, 7, 31)),
+            (date(2023, 6, 15), date(2023, 8, 1)),
+            # Date start same as first existing period's end date
+            (date(2023, 6, 30), date(2023, 7, 1)),
+            (date(2023, 6, 30), date(2023, 7, 15)),
+            (date(2023, 6, 30), date(2023, 7, 31)),
+            (date(2023, 6, 30), date(2023, 8, 1)),
+            # Date start same as in second existing period
+            (date(2023, 7, 1), date(2023, 7, 15)),
+            (date(2023, 7, 1), date(2023, 7, 31)),
+            (date(2023, 7, 1), date(2023, 8, 1)),
+            # Date start between second existing period daterange
+            (date(2023, 7, 15), date(2023, 7, 31)),
+            # Date start same as second existing period's end date
+            (date(2023, 7, 31), date(2023, 8, 1)),
+        ),
+    )
+    def test_error_date_invalid(self, user, date_start: date, date_end: date):
+        """Test error on creating BudgetingPeriod with invalid dates."""
         pass
