@@ -138,9 +138,24 @@ class TestBudgetingPeriodApi:
         assert response.data['name'][0] == f'Ensure this field has no more than {max_length} characters.'
         assert not BudgetingPeriod.objects.filter(user=base_user).exists()
 
-    def test_error_name_already_used(self, user):
+    def test_error_name_already_used(self, api_client: APIClient, base_user: Any):
         """Test error on creating BudgetingPeriod with already used name by the same user."""
-        pass
+        api_client.force_authenticate(base_user)
+        payload = {
+            'name': '2023_01',
+            'date_start': date(2023, 1, 1),
+            'date_end': date(2023, 1, 2),
+        }
+        BudgetingPeriod.objects.create(user=base_user, **payload)
+        payload['date_start'] = date(2023, 1, 3)
+        payload['date_end'] = date(2023, 1, 4)
+
+        response = api_client.post(PERIODS_URL, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'name' in response.data
+        assert response.data['name'][0] == f"Users period with name {payload['name']} already exists."
+        assert BudgetingPeriod.objects.filter(user=base_user).count() == 1
 
     def test_create_active_period_successfully(self, user):
         """Test creating BudgetingPeriod with is_active=True successfully."""
