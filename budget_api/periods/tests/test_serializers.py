@@ -22,27 +22,6 @@ class TestBudgetingPeriodSerializer:
 
     # TODO - translate further tests into test_api.py
 
-    def test_error_name_already_used(self, user):
-        """Test error on saving BudgetingPeriodSerializer with already used name by the same user."""
-        payload = {
-            'name': '2023_01',
-            'user': user,
-            'date_start': date(2023, 1, 1),
-            'date_end': date(2023, 1, 31),
-        }
-        BudgetingPeriod.objects.create(**payload)
-        payload['user'] = payload['user'].id
-        payload['date_start'] = date(2023, 2, 1)
-        payload['date_end'] = date(2023, 2, 28)
-
-        serializer = BudgetingPeriodSerializer(data=payload)
-
-        with pytest.raises(ValidationError) as exc:
-            serializer.is_valid(raise_exception=True)
-        assert 'non_field_errors' in exc.value.detail
-        assert exc.value.detail['non_field_errors'][0] == 'The fields name, user must make a unique set.'
-        assert BudgetingPeriod.objects.filter(user=user).count() == 1
-
     def test_create_active_period_successfully(self, user):
         """Test saving BudgetingPeriodSerializer with is_active=True successfully."""
         payload_inactive = {
