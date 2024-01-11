@@ -17,18 +17,8 @@ def period_detail_url(period_id):
     return reverse('recipe:budgetingperiod-detail', args=[period_id])
 
 
-def check_period_validated_data(response, payload):
-    """Helper function for checking BudgetingPeriod validated data."""
-    instance = BudgetingPeriod.objects.get(id=response.data['id'])
-    for key in payload:
-        if key == 'user':
-            assert getattr(getattr(instance, key), 'id') == payload[key]
-        else:
-            assert getattr(instance, key) == payload[key]
-
-
 @pytest.mark.django_db
-class TestBudgetingPeriodViewSet:
+class TestBudgetingPeriodApi:
     """Tests for BudgetingPeriodViewSet."""
 
     def test_auth_required(self, api_client: APIClient):
@@ -81,8 +71,9 @@ class TestBudgetingPeriodViewSet:
 
         assert response.status_code == status.HTTP_201_CREATED
         assert BudgetingPeriod.objects.filter(user=base_user).count() == 1
-        check_period_validated_data(response, payload)
         period = BudgetingPeriod.objects.get(id=response.data['id'])
+        for key in payload:
+            assert getattr(period, key) == payload[key]
         serializer = BudgetingPeriodSerializer(period)
         assert response.data == serializer.data
 
@@ -107,7 +98,9 @@ class TestBudgetingPeriodViewSet:
         assert response_2.status_code == status.HTTP_201_CREATED
         assert BudgetingPeriod.objects.filter(user=base_user).count() == 2
         for response, payload in [(response_1, payload_1), (response_2, payload_2)]:
-            check_period_validated_data(response, payload)
+            period = BudgetingPeriod.objects.get(id=response.data['id'])
+            for key in payload:
+                assert getattr(period, key) == payload[key]
 
     def test_create_same_period_by_two_users(self, api_client: APIClient, user_factory):
         """Test creating period with the same params by two users."""
@@ -127,3 +120,6 @@ class TestBudgetingPeriodViewSet:
         assert BudgetingPeriod.objects.all().count() == 2
         assert BudgetingPeriod.objects.filter(user=user_1).count() == 1
         assert BudgetingPeriod.objects.filter(user=user_2).count() == 1
+
+    def test_error_name_too_long(self, user):
+        pass
