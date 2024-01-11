@@ -15,6 +15,16 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'date_start', 'date_end', 'is_active']
         read_only_fields = ['id']
 
+    def validate_name(self, value: str) -> str:
+        """Checks if user has not used passed name for period already."""
+        try:
+            self.Meta.model.objects.get(user=self.context['request'].user, name=value)
+        except self.Meta.model.DoesNotExist:
+            pass
+        else:
+            raise serializers.ValidationError(f'Users period with name {value} already exists.')
+        return value
+
     def validate_is_active(self, value: bool) -> bool:
         """Validates is_active param by checking if any other period is not marked as active already."""
         if value is True:
