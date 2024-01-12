@@ -157,21 +157,73 @@ class TestBudgetingPeriodApi:
         assert response.data['name'][0] == f"Users period with name {payload['name']} already exists."
         assert BudgetingPeriod.objects.filter(user=base_user).count() == 1
 
-    def test_create_active_period_successfully(self, user):
+    def test_create_active_period_successfully(self, api_client: APIClient, base_user: Any):
         """Test creating BudgetingPeriod with is_active=True successfully."""
-        pass
+        api_client.force_authenticate(base_user)
+        payload_inactive = {
+            'name': '2023_01',
+            'date_start': date(2023, 1, 1),
+            'date_end': date(2023, 1, 31),
+            'is_active': False,
+        }
+        payload_active = {
+            'name': '2023_02',
+            'date_start': date(2023, 2, 1),
+            'date_end': date(2023, 2, 28),
+            'is_active': True,
+        }
 
-    def test_error_create_period_when_is_active_set_already(self, user):
+        response_inactive = api_client.post(PERIODS_URL, payload_inactive)
+        response_active = api_client.post(PERIODS_URL, payload_active)
+
+        assert BudgetingPeriod.objects.all().count() == 2
+        assert BudgetingPeriod.objects.filter(user=base_user).count() == 2
+        for response, payload in [(response_inactive, payload_inactive), (response_active, payload_active)]:
+            assert response.status_code == status.HTTP_201_CREATED
+            period = BudgetingPeriod.objects.get(id=response.data['id'])
+            assert period.is_active == payload['is_active']
+
+    def test_error_create_period_when_is_active_set_already(self, api_client: APIClient, base_user: Any):
         """Test error on creating new BudgetingPeriod with is_active=True, when another user's period active already."""
-        pass
+        api_client.force_authenticate(base_user)
+        payload_1 = {
+            'name': '2023_01',
+            'date_start': date(2023, 1, 1),
+            'date_end': date(2023, 1, 31),
+            'is_active': True,
+        }
+        active_period = BudgetingPeriod.objects.create(user=base_user, **payload_1)
+        payload_2 = {
+            'name': '2023_02',
+            'date_start': date(2023, 1, 1),
+            'date_end': date(2023, 1, 31),
+            'is_active': True,
+        }
 
-    def test_error_update_period_when_is_active_set_already(self, user):
-        """Test error on updating BudgetingPeriod with is_active=True, when another user's period active already."""
-        pass
+        response = api_client.post(PERIODS_URL, payload_2)
 
-    def test_error_is_active_none(self, user):
-        """Test error on creating BudgetingPeriod with is_active set to None."""
-        pass
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'is_active' in response.data
+        assert response.data['is_active'][0] == 'User already has active budgeting period.'
+        assert BudgetingPeriod.objects.filter(user=base_user).count() == 1
+        assert BudgetingPeriod.objects.filter(user=base_user).first() == active_period
+
+    def test_is_active_default_value(self, api_client: APIClient, base_user: Any):
+        """Test creating BudgetingPeriod without passing is_active ends with default False value."""
+        api_client.force_authenticate(base_user)
+        payload = {
+            'name': '2023_02',
+            'date_start': date(2023, 1, 1),
+            'date_end': date(2023, 1, 31),
+            'is_active': '',
+        }
+
+        response = api_client.post(PERIODS_URL, payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert BudgetingPeriod.objects.all().count() == 1
+        assert BudgetingPeriod.objects.filter(user=base_user).count() == 1
+        assert response.data['is_active'] is False
 
     @pytest.mark.parametrize('date_start, date_end', ((None, date.today()), (date.today(), None), (None, None)))
     def test_error_date_not_set(self, user, date_start: Union[date, None], date_end: Union[date, None]):
