@@ -14,7 +14,7 @@ PERIODS_URL = reverse('periods:budgetingperiod-list')
 
 def period_detail_url(period_id):
     """Create and return a budgeting period detail URL."""
-    return reverse('recipe:budgetingperiod-detail', args=[period_id])
+    return reverse('periods:budgetingperiod-detail', args=[period_id])
 
 
 @pytest.mark.django_db
@@ -325,3 +325,136 @@ class TestBudgetingPeriodApi:
             == "Budgeting period date range collides with other user's budgeting periods."
         )
         assert BudgetingPeriod.objects.filter(user=base_user).count() == 2
+
+    def test_get_period_details(
+        self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass
+    ):
+        """Test get BudgetingPeriod details."""
+        api_client.force_authenticate(base_user)
+        period = budgeting_period_factory(user=base_user)
+        url = period_detail_url(period.id)
+
+        response = api_client.get(url)
+        serializer = BudgetingPeriodSerializer(period)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == serializer.data
+
+    def test_error_get_period_details_unauthenticated(
+        self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass
+    ):
+        """Test error on getting BudgetingPeriod details being unauthenticated."""
+        period = budgeting_period_factory(user=base_user)
+        url = period_detail_url(period.id)
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_error_get_other_user_period_details(
+        self, api_client: APIClient, user_factory: FactoryMetaClass, budgeting_period_factory: FactoryMetaClass
+    ):
+        """Test error on getting other user's BudgetingPeriod details."""
+        user_1 = user_factory()
+        user_2 = user_factory()
+        period = budgeting_period_factory(user=user_1)
+        api_client.force_authenticate(user_2)
+
+        url = period_detail_url(period.id)
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    # @pytest.mark.parametrize('param, value', [('version', '1.1.2'), ('is_latest', True)])
+    # def test_tutorial_version_partial_update(
+    #     self,
+    #     api_client: APIClient,
+    #     tutorial: Tutorial,
+    #     tutorial_version_factory: FactoryMetaClass,
+    #     param: str,
+    #     value: Any,
+    # ):
+    #     """Test partial update of a TutorialVersion"""
+    #     version = tutorial_version_factory(version='1.1.1', tutorial=tutorial, is_latest=False)
+    #     payload = {param: value}
+    #
+    #     url = tutorial_version_detail_url(tutorial.id, version.id)
+    #     response = api_client.patch(url, payload)
+    #
+    #     assert response.status_code == status.HTTP_200_OK
+    #     version.refresh_from_db()
+    #     assert getattr(version, param) == payload[param]
+    #
+    # @pytest.mark.parametrize('param, value', [('version', '1.1.1'), ('is_latest', True)])
+    # def test_error_on_tutorial_version_partial_update(
+    #     self,
+    #     api_client: APIClient,
+    #     tutorial: Tutorial,
+    #     tutorial_version_factory: FactoryMetaClass,
+    #     param: str,
+    #     value: Any,
+    # ):
+    #     """Test error on partial update of a TutorialVersion."""
+    #     tutorial_version_factory(version='1.1.1', tutorial=tutorial, is_latest=True)
+    #     version = tutorial_version_factory(version='1.1.2', tutorial=tutorial, is_latest=False)
+    #     old_value = getattr(version, param)
+    #     payload = {param: value}
+    #     url = tutorial_version_detail_url(tutorial.id, version.id)
+    #
+    #     response = api_client.patch(url, payload)
+    #
+    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
+    #     version.refresh_from_db()
+    #     assert getattr(version, param) == old_value
+    #
+    # def test_tutorial_version_full_update(
+    #     self, api_client: APIClient, tutorial: Tutorial, tutorial_version_factory: FactoryMetaClass
+    # ):
+    #     """Test successful full update of a TutorialVersion"""
+    #     payload_old = {'version': '1.1.1', 'is_latest': False}
+    #     payload_new = {'version': '1.1.2', 'is_latest': True}
+    #     version = tutorial_version_factory(**payload_old)
+    #     url = tutorial_version_detail_url(tutorial.id, version.id)
+    #
+    #     response = api_client.put(url, payload_new)
+    #
+    #     assert response.status_code == status.HTTP_200_OK
+    #     version.refresh_from_db()
+    #     for k, v in payload_new.items():
+    #         assert getattr(version, k) == v
+    #
+    # @pytest.mark.parametrize(
+    #     'payload_new',
+    #     [
+    #         {'version': '1.1.1', 'is_latest': False},
+    #         {'version': '1.1.2', 'is_latest': True},
+    #         {'version': '1.1.1', 'is_latest': True},
+    #     ],
+    # )
+    # def test_error_on_tutorial_version_full_update(
+    #     self, api_client: APIClient, tutorial: Tutorial, tutorial_version_factory: FactoryMetaClass, payload_new: dict
+    # ):
+    #     """Test error on partial update of a TutorialVersion."""
+    #     tutorial_version_factory(version='1.1.1', tutorial=tutorial, is_latest=True)
+    #     payload_old = {'version': '1.1.2', 'is_latest': False}
+    #     version = tutorial_version_factory(tutorial=tutorial, **payload_old)
+    #     url = tutorial_version_detail_url(tutorial.id, version.id)
+    #
+    #     response = api_client.patch(url, payload_new)
+    #
+    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
+    #     version.refresh_from_db()
+    #     for k, v in payload_old.items():
+    #         assert getattr(version, k) == v
+    #
+    # def test_delete_tutorial_version(self, api_client: APIClient, tutorial_version_factory: FactoryMetaClass):
+    #     """Test deleting TutorialVersion."""
+    #     version = tutorial_version_factory()
+    #     url = tutorial_version_detail_url(version.tutorial.id, version.id)
+    #
+    #     assert TutorialVersion.objects.all().count() == 1
+    #
+    #     response = api_client.delete(url)
+    #
+    #     assert response.status_code == status.HTTP_204_NO_CONTENT
+    #     assert not TutorialVersion.objects.all().exists()
