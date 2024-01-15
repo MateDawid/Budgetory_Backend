@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Any, Union
+from typing import Any, Optional
 
 import pytest
 from django.urls import reverse
@@ -225,14 +225,36 @@ class TestBudgetingPeriodApi:
         assert BudgetingPeriod.objects.filter(user=base_user).count() == 1
         assert response.data['is_active'] is False
 
-    @pytest.mark.parametrize('date_start, date_end', ((None, date.today()), (date.today(), None), (None, None)))
-    def test_error_date_not_set(self, user, date_start: Union[date, None], date_end: Union[date, None]):
-        """Test error on creating BudgetingPeriod with date_start or date_end set to None."""
-        pass
+    @pytest.mark.parametrize('date_start, date_end', (('', date.today()), (date.today(), ''), ('', '')))
+    def test_error_date_blank(
+        self, api_client: APIClient, base_user: Any, date_start: Optional[date], date_end: Optional[date]
+    ):
+        """Test error on creating BudgetingPeriod with date_start or date_end blank."""
+        api_client.force_authenticate(base_user)
+        payload = {'name': '2023_01', 'date_start': date_start, 'date_end': date_end, 'is_active': False}
+        error_message = 'Date has wrong format. Use one of these formats instead: YYYY-MM-DD.'
 
-    def test_error_date_end_before_date_start(self, user):
+        response = api_client.post(PERIODS_URL, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'date_start' in response.data or 'date_end' in response.data
+        assert (
+            response.data.get('date_start', [''])[0] == error_message
+            or response.data.get('date_end', [''])[0] == error_message
+        )
+        assert not BudgetingPeriod.objects.filter(user=base_user).exists()
+
+    def test_error_date_end_before_date_start(self, api_client: APIClient, base_user: Any):
         """Test error on creating BudgetingPeriod with date_end earlier than date_start."""
-        pass
+        api_client.force_authenticate(base_user)
+        payload = {'name': '2023_01', 'date_start': date(2023, 5, 1), 'date_end': date(2023, 4, 30), 'is_active': False}
+
+        response = api_client.post(PERIODS_URL, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'date_start' in response.data
+        assert response.data['date_start'][0] == 'Start date should be earlier than end date.'
+        assert not BudgetingPeriod.objects.filter(user=base_user).exists()
 
     @pytest.mark.parametrize(
         'date_start, date_end',
@@ -273,6 +295,33 @@ class TestBudgetingPeriodApi:
             (date(2023, 7, 31), date(2023, 8, 1)),
         ),
     )
-    def test_error_date_invalid(self, user, date_start: date, date_end: date):
+    def test_error_date_invalid(self, api_client: APIClient, base_user: Any, date_start: date, date_end: date):
         """Test error on creating BudgetingPeriod with invalid dates."""
-        pass
+        api_client.force_authenticate(base_user)
+        payload_1 = {
+            'name': '2023_06',
+            'date_start': date(2023, 6, 1),
+            'date_end': date(2023, 6, 30),
+        }
+        payload_2 = {
+            'name': '2023_07',
+            'date_start': date(2023, 7, 1),
+            'date_end': date(2023, 7, 31),
+        }
+        payload_invalid = {
+            'name': 'invalid',
+            'date_start': date_start,
+            'date_end': date_end,
+        }
+        BudgetingPeriod.objects.create(user=base_user, **payload_1)
+        BudgetingPeriod.objects.create(user=base_user, **payload_2)
+
+        response = api_client.post(PERIODS_URL, payload_invalid)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'date_start' in response.data
+        assert (
+            response.data['date_start'][0]
+            == "Budgeting period date range collides with other user's budgeting periods."
+        )
+        assert BudgetingPeriod.objects.filter(user=base_user).count() == 2
