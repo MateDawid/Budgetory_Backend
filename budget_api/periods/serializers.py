@@ -1,6 +1,3 @@
-import datetime
-from typing import Union
-
 from django.db.models import Q
 from periods.models import BudgetingPeriod
 from rest_framework import serializers
@@ -37,12 +34,10 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
                 raise ValidationError('User already has active budgeting period.')
         return value
 
-    def validate_date_start(self, input_date: datetime.date) -> Union[datetime.date, None]:
+    def validate(self, attrs):
         """Validates date_start and date_end by checking they are in proper order or if any colliding periods exist."""
-        date_start = self._get_date(input_date)
-        date_end = self._get_date(self.initial_data['date_end'])
-        if date_start is None or date_end is None:
-            return date_start
+        date_start = attrs.get('date_start', getattr(self.instance, 'date_start', None))
+        date_end = attrs.get('date_end', getattr(self.instance, 'date_end', None))
         if date_start >= date_end:
             raise ValidationError('Start date should be earlier than end date.')
         if (
@@ -56,14 +51,4 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
             .exists()
         ):
             raise ValidationError("Budgeting period date range collides with other user's budgeting periods.")
-        return date_start
-
-    def _get_date(self, input_date: Union[str, datetime.date]) -> Union[datetime.date, None]:
-        """Used to make sure, that date validation operates on date objects."""
-        if isinstance(input_date, datetime.date):
-            return input_date
-        else:
-            try:
-                return datetime.datetime.strptime(input_date, '%Y-%m-%d').date()
-            except ValueError:
-                return None
+        return super().validate(attrs)

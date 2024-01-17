@@ -252,8 +252,8 @@ class TestBudgetingPeriodApi:
         response = api_client.post(PERIODS_URL, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'date_start' in response.data
-        assert response.data['date_start'][0] == 'Start date should be earlier than end date.'
+        assert 'non_field_errors' in response.data
+        assert response.data['non_field_errors'][0] == 'Start date should be earlier than end date.'
         assert not BudgetingPeriod.objects.filter(user=base_user).exists()
 
     @pytest.mark.parametrize(
@@ -319,9 +319,9 @@ class TestBudgetingPeriodApi:
         response = api_client.post(PERIODS_URL, payload_invalid)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'date_start' in response.data
+        assert 'non_field_errors' in response.data
         assert (
-            response.data['date_start'][0]
+            response.data['non_field_errors'][0]
             == "Budgeting period date range collides with other user's budgeting periods."
         )
         assert BudgetingPeriod.objects.filter(user=base_user).count() == 2
@@ -365,96 +365,119 @@ class TestBudgetingPeriodApi:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    # @pytest.mark.parametrize('param, value', [('version', '1.1.2'), ('is_latest', True)])
-    # def test_tutorial_version_partial_update(
-    #     self,
-    #     api_client: APIClient,
-    #     tutorial: Tutorial,
-    #     tutorial_version_factory: FactoryMetaClass,
-    #     param: str,
-    #     value: Any,
-    # ):
-    #     """Test partial update of a TutorialVersion"""
-    #     version = tutorial_version_factory(version='1.1.1', tutorial=tutorial, is_latest=False)
-    #     payload = {param: value}
-    #
-    #     url = tutorial_version_detail_url(tutorial.id, version.id)
-    #     response = api_client.patch(url, payload)
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     version.refresh_from_db()
-    #     assert getattr(version, param) == payload[param]
-    #
-    # @pytest.mark.parametrize('param, value', [('version', '1.1.1'), ('is_latest', True)])
-    # def test_error_on_tutorial_version_partial_update(
-    #     self,
-    #     api_client: APIClient,
-    #     tutorial: Tutorial,
-    #     tutorial_version_factory: FactoryMetaClass,
-    #     param: str,
-    #     value: Any,
-    # ):
-    #     """Test error on partial update of a TutorialVersion."""
-    #     tutorial_version_factory(version='1.1.1', tutorial=tutorial, is_latest=True)
-    #     version = tutorial_version_factory(version='1.1.2', tutorial=tutorial, is_latest=False)
-    #     old_value = getattr(version, param)
-    #     payload = {param: value}
-    #     url = tutorial_version_detail_url(tutorial.id, version.id)
-    #
-    #     response = api_client.patch(url, payload)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     version.refresh_from_db()
-    #     assert getattr(version, param) == old_value
-    #
-    # def test_tutorial_version_full_update(
-    #     self, api_client: APIClient, tutorial: Tutorial, tutorial_version_factory: FactoryMetaClass
-    # ):
-    #     """Test successful full update of a TutorialVersion"""
-    #     payload_old = {'version': '1.1.1', 'is_latest': False}
-    #     payload_new = {'version': '1.1.2', 'is_latest': True}
-    #     version = tutorial_version_factory(**payload_old)
-    #     url = tutorial_version_detail_url(tutorial.id, version.id)
-    #
-    #     response = api_client.put(url, payload_new)
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     version.refresh_from_db()
-    #     for k, v in payload_new.items():
-    #         assert getattr(version, k) == v
-    #
-    # @pytest.mark.parametrize(
-    #     'payload_new',
-    #     [
-    #         {'version': '1.1.1', 'is_latest': False},
-    #         {'version': '1.1.2', 'is_latest': True},
-    #         {'version': '1.1.1', 'is_latest': True},
-    #     ],
-    # )
-    # def test_error_on_tutorial_version_full_update(
-    #     self, api_client: APIClient, tutorial: Tutorial, tutorial_version_factory: FactoryMetaClass, payload_new: dict
-    # ):
-    #     """Test error on partial update of a TutorialVersion."""
-    #     tutorial_version_factory(version='1.1.1', tutorial=tutorial, is_latest=True)
-    #     payload_old = {'version': '1.1.2', 'is_latest': False}
-    #     version = tutorial_version_factory(tutorial=tutorial, **payload_old)
-    #     url = tutorial_version_detail_url(tutorial.id, version.id)
-    #
-    #     response = api_client.patch(url, payload_new)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     version.refresh_from_db()
-    #     for k, v in payload_old.items():
-    #         assert getattr(version, k) == v
-    #
-    # def test_delete_tutorial_version(self, api_client: APIClient, tutorial_version_factory: FactoryMetaClass):
-    #     """Test deleting TutorialVersion."""
-    #     version = tutorial_version_factory()
-    #     url = tutorial_version_detail_url(version.tutorial.id, version.id)
-    #
-    #     assert TutorialVersion.objects.all().count() == 1
-    #
-    #     response = api_client.delete(url)
-    #
-    #     assert response.status_code == status.HTTP_204_NO_CONTENT
-    #     assert not TutorialVersion.objects.all().exists()
+    @pytest.mark.parametrize(
+        'param, value', [('date_start', date(2024, 1, 2)), ('date_end', date(2024, 1, 30)), ('is_active', True)]
+    )
+    def test_period_partial_update(
+        self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass, param: str, value: Any
+    ):
+        """Test partial update of a BudgetingPeriod"""
+        api_client.force_authenticate(base_user)
+        period = budgeting_period_factory(
+            user=base_user, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=False
+        )
+        payload = {param: value}
+        url = period_detail_url(period.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        period.refresh_from_db()
+        assert getattr(period, param) == payload[param]
+
+    @pytest.mark.parametrize(
+        'param, value', [('date_start', date(2023, 12, 31)), ('date_end', date(2024, 2, 1)), ('is_active', True)]
+    )
+    def test_error_on_period_partial_update(
+        self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass, param: str, value: Any
+    ):
+        """Test error on partial update of a BudgetingPeriod."""
+        api_client.force_authenticate(base_user)
+        budgeting_period_factory(
+            user=base_user, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=True
+        )
+        period = budgeting_period_factory(
+            user=base_user, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), is_active=False
+        )
+        old_value = getattr(period, param)
+        payload = {param: value}
+        url = period_detail_url(period.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        period.refresh_from_db()
+        assert getattr(period, param) == old_value
+
+    def test_period_full_update(
+        self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass
+    ):
+        """Test successful full update of a BudgetingPeriod"""
+        api_client.force_authenticate(base_user)
+        payload_old = {
+            'name': '2023_06',
+            'date_start': date(2023, 6, 1),
+            'date_end': date(2023, 6, 30),
+            'is_active': False,
+        }
+        payload_new = {
+            'name': '2023_07',
+            'date_start': date(2023, 7, 1),
+            'date_end': date(2023, 7, 31),
+            'is_active': True,
+        }
+        period = budgeting_period_factory(user=base_user, **payload_old)
+        url = period_detail_url(period.id)
+
+        response = api_client.put(url, payload_new)
+
+        assert response.status_code == status.HTTP_200_OK
+        period.refresh_from_db()
+        for k, v in payload_new.items():
+            assert getattr(period, k) == v
+
+    @pytest.mark.parametrize(
+        'payload_new',
+        [
+            {'name': '2024_01', 'date_start': date(2024, 2, 1), 'date_end': date(2024, 2, 29), 'is_active': False},
+            {'name': '2024_02', 'date_start': date(2024, 1, 31), 'date_end': date(2024, 2, 29), 'is_active': False},
+            {'name': '2024_02', 'date_start': date(2024, 2, 1), 'date_end': date(2024, 2, 29), 'is_active': True},
+        ],
+    )
+    def test_error_on_period_full_update(
+        self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass, payload_new: dict
+    ):
+        """Test error on full update of a BudgetingPeriod."""
+        api_client.force_authenticate(base_user)
+        budgeting_period_factory(
+            user=base_user, name='2024_01', date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=True
+        )
+        payload_old = {
+            'name': '2024_02',
+            'date_start': date(2024, 2, 1),
+            'date_end': date(2024, 2, 29),
+            'is_active': False,
+        }
+
+        period = budgeting_period_factory(user=base_user, **payload_old)
+        url = period_detail_url(period.id)
+
+        response = api_client.patch(url, payload_new)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        period.refresh_from_db()
+        for k, v in payload_old.items():
+            assert getattr(period, k) == v
+
+    def test_delete_period(self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass):
+        """Test deleting BudgetingPeriod."""
+        api_client.force_authenticate(base_user)
+        period = budgeting_period_factory(user=base_user)
+        url = period_detail_url(period.id)
+
+        assert BudgetingPeriod.objects.all().count() == 1
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not BudgetingPeriod.objects.all().exists()
