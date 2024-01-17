@@ -23,4 +23,4 @@ class BudgetingPeriodFactory(factory.django.DjangoModelFactory):
         if year_start == year_end and month_start == month_end:
             return f'{year_start}_{month_start:02d}'
         else:
-            return f'{year_start}_{month_start:02d} - {year_end}_{month_end:02d}'
+            return f'{year_start}_{month_start:02d} - {year_end}_{month_end:02d}'  # pragma: no cover
