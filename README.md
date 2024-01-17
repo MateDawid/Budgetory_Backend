@@ -48,13 +48,13 @@
    - [x] ~~User view~~
    - [x] ~~User tests~~
 
-3. 🔨 **BudgetingPeriod**
+3. ✔️ ~~**BudgetingPeriod**~~
    - [x] ~~BudgetingPeriod model~~
    - [x] ~~BudgetingPeriod serializer~~
    - [x] ~~BudgetingPeriod views~~
-   - [ ] Tests
+   - [x] ~~Tests~~
 
-4. 🔜 **Bank**
+4. 🔨 **Bank**
    - [ ] Bank model, serializer, view
    - [ ] Tests
 
