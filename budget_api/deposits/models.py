@@ -15,3 +15,12 @@ class Deposit(models.Model):
             'name',
             'user',
         )
+
+    def __str__(self) -> str:
+        """
+        Returns string representation of Deposit model instance.
+
+        Returns:
+        str: Custom string representation of instance.
+        """
+        return f'{self.name} ({self.user.email})'
