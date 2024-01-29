@@ -58,25 +58,25 @@
    - [ ] Deposit model, serializer, view
    - [ ] Tests
 
-5. 🔜 **Incomes**
-   - [ ] Income model, serializer, view
+5. 🔜 **Entity**
+   - [ ] Entity model, serializer, view
    - [ ] Tests
 
-6. 🔜 **Sellers**
-   - [ ] Seller model, serializer, view
+6. 🔜 **IncomeCategory**
+   - [ ] IncomeCategory model, serializer, view
    - [ ] Tests
 
 7. 🔜 **ExpenseCategory**
    - [ ] ExpenseCategory model, serializer, view
    - [ ] Tests
 
-8. 🔜 **Expenses**
-   - [ ] Expense model, serializer, view
-   - [ ] Create expenses on data import
+8. 🔜 **ExpensePrediction**
+   - [ ] ExpensePrediction model, serializer, view
    - [ ] Tests
 
-9. 🔜 **ExpensePrediction**
-   - [ ] ExpensePrediction model, serializer, view
+9. 🔜 **Transfer**
+   - [ ] Transfer model, serializer, view
+   - [ ] Create expenses on data import
    - [ ] Tests
 
 10. 🔜 **ImportFile**
