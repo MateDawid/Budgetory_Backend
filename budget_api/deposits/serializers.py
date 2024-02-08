@@ -5,6 +5,8 @@ from rest_framework import serializers
 class DepositSerializer(serializers.ModelSerializer):
     """Serializer for Deposit."""
 
+    is_active = serializers.BooleanField(default=True)
+
     class Meta:
         model = Deposit
         fields = ['id', 'name', 'description', 'is_active']
