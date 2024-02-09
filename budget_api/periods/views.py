@@ -1,10 +1,7 @@
-# from django.core.exceptions import ValidationError as DjangoValidationError
 from periods.models import BudgetingPeriod
 from periods.serializers import BudgetingPeriodSerializer
 from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
-
-# from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.permissions import IsAuthenticated
 
 
