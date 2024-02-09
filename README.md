@@ -17,7 +17,7 @@
 ## Predicted data flow
 
 1. **User** creates **User** model instance (creates his/her own account).
-2. **User** creates at least single **Deposit** model instance with Bank Account type, that will be connected with one of Bank model instances predefined by admin.
+2. **User** creates at least single **Deposit** model instance.
 3. **User** creates **BudgetingPeriod** model instance.
 4. **User** creates **Income** model instances in context of **Deposit** labeled with particular **BudgetingPeriod**.
 5. **User** creates **ExpenseCategory** model instances.
@@ -54,40 +54,36 @@
    - [x] ~~BudgetingPeriod views~~
    - [x] ~~Tests~~
 
-4. 🔨 **Bank**
-   - [ ] Bank model, serializer, view
+4. ✔️ ~~**Deposits**~~
+   - [X] ~~Deposit model, serializer, view~~
+   - [X] ~~Tests~~
+
+5. 🔨 **Entity**
+   - [ ] Entity model, serializer, view
    - [ ] Tests
 
-5. 🔜 **Deposits**
-   - [ ] Deposit model, serializer, view
+6. 🔜 **IncomeCategory**
+   - [ ] IncomeCategory model, serializer, view
    - [ ] Tests
 
-6. 🔜 **Incomes**
-   - [ ] Income model, serializer, view
-   - [ ] Tests
-
-7. 🔜 **Sellers**
-   - [ ] Seller model, serializer, view
-   - [ ] Tests
-
-8. 🔜 **ExpenseCategory**
+7. 🔜 **ExpenseCategory**
    - [ ] ExpenseCategory model, serializer, view
    - [ ] Tests
 
-9. 🔜 **Expenses**
-   - [ ] Expense model, serializer, view
+8. 🔜 **ExpensePrediction**
+   - [ ] ExpensePrediction model, serializer, view
+   - [ ] Tests
+
+9. 🔜 **Transfer**
+   - [ ] Transfer model, serializer, view
    - [ ] Create expenses on data import
    - [ ] Tests
 
-10. 🔜 **ExpensePrediction**
-    - [ ] ExpensePrediction model, serializer, view
-    - [ ] Tests
-
-11. 🔜 **ImportFile**
+10. 🔜 **ImportFile**
     - [ ] ImportFile model, serializer, view
     - [ ] Possibility to send file (csv firstly), but not storing it in DB, only extract data
     - [ ] Create sellers on data import
     - [ ] Tests
 
-12. 🔜 **Frontend**
+11. 🔜 **Frontend**
     - [ ] Implement some frontend
