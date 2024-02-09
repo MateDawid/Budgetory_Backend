@@ -50,8 +50,8 @@ class TestDepositApi:
 
         response = api_client.get(DEPOSITS_URL)
 
-        periods = Deposit.objects.filter(user=user)
-        serializer = DepositSerializer(periods, many=True)
+        deposits = Deposit.objects.filter(user=user)
+        serializer = DepositSerializer(deposits, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert response.data['results'] == serializer.data
 
@@ -83,9 +83,9 @@ class TestDepositApi:
         assert response_2.status_code == status.HTTP_201_CREATED
         assert Deposit.objects.filter(user=base_user).count() == 2
         for response, payload in [(response_1, payload_1), (response_2, payload_2)]:
-            period = Deposit.objects.get(id=response.data['id'])
+            deposit = Deposit.objects.get(id=response.data['id'])
             for key in payload:
-                assert getattr(period, key) == payload[key]
+                assert getattr(deposit, key) == payload[key]
 
     def test_create_same_deposit_by_two_users(self, api_client: APIClient, user_factory: Any):
         """Test creating deposit with the same params by two users."""
@@ -137,8 +137,8 @@ class TestDepositApi:
         response = api_client.post(DEPOSITS_URL, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'name' in response.data
-        assert response.data['name'][0] == f'Ensure this field has no more than {max_length} characters.'
+        assert 'description' in response.data
+        assert response.data['description'][0] == f'Ensure this field has no more than {max_length} characters.'
         assert not Deposit.objects.filter(user=base_user).exists()
 
     def test_is_active_default_value(self, api_client: APIClient, base_user: Any):
@@ -154,160 +154,139 @@ class TestDepositApi:
         assert Deposit.objects.filter(user=base_user).count() == 1
         assert response.data['is_active'] == default
 
-    # def test_get_period_details(
-    #     self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass
-    # ):
-    #     """Test get BudgetingPeriod details."""
-    #     api_client.force_authenticate(base_user)
-    #     period = budgeting_period_factory(user=base_user)
-    #     url = period_detail_url(period.id)
-    #
-    #     response = api_client.get(url)
-    #     serializer = BudgetingPeriodSerializer(period)
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     assert response.data == serializer.data
-    #
-    # def test_error_get_period_details_unauthenticated(
-    #     self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass
-    # ):
-    #     """Test error on getting BudgetingPeriod details being unauthenticated."""
-    #     period = budgeting_period_factory(user=base_user)
-    #     url = period_detail_url(period.id)
-    #
-    #     response = api_client.get(url)
-    #
-    #     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    #
-    # def test_error_get_other_user_period_details(
-    #     self, api_client: APIClient, user_factory: FactoryMetaClass, budgeting_period_factory: FactoryMetaClass
-    # ):
-    #     """Test error on getting other user's BudgetingPeriod details."""
-    #     user_1 = user_factory()
-    #     user_2 = user_factory()
-    #     period = budgeting_period_factory(user=user_1)
-    #     api_client.force_authenticate(user_2)
-    #
-    #     url = period_detail_url(period.id)
-    #     response = api_client.get(url)
-    #
-    #     assert response.status_code == status.HTTP_404_NOT_FOUND
-    #
-    # @pytest.mark.parametrize(
-    #     'param, value', [('date_start', date(2024, 1, 2)), ('date_end', date(2024, 1, 30)), ('is_active', True)]
-    # )
-    # def test_period_partial_update(
-    #     self, api_client: APIClient, base_user: Any,
-    #     budgeting_period_factory: FactoryMetaClass, param: str, value: Any
-    # ):
-    #     """Test partial update of a BudgetingPeriod"""
-    #     api_client.force_authenticate(base_user)
-    #     period = budgeting_period_factory(
-    #         user=base_user, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=False
-    #     )
-    #     payload = {param: value}
-    #     url = period_detail_url(period.id)
-    #
-    #     response = api_client.patch(url, payload)
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     period.refresh_from_db()
-    #     assert getattr(period, param) == payload[param]
-    #
-    # @pytest.mark.parametrize(
-    #     'param, value', [('date_start', date(2023, 12, 31)), ('date_end', date(2024, 2, 1)), ('is_active', True)]
-    # )
-    # def test_error_on_period_partial_update(
-    #     self, api_client: APIClient, base_user: Any,
-    #     budgeting_period_factory: FactoryMetaClass, param: str, value: Any
-    # ):
-    #     """Test error on partial update of a BudgetingPeriod."""
-    #     api_client.force_authenticate(base_user)
-    #     budgeting_period_factory(
-    #         user=base_user, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=True
-    #     )
-    #     period = budgeting_period_factory(
-    #         user=base_user, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), is_active=False
-    #     )
-    #     old_value = getattr(period, param)
-    #     payload = {param: value}
-    #     url = period_detail_url(period.id)
-    #
-    #     response = api_client.patch(url, payload)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     period.refresh_from_db()
-    #     assert getattr(period, param) == old_value
-    #
-    # def test_period_full_update(
-    #     self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass
-    # ):
-    #     """Test successful full update of a BudgetingPeriod"""
-    #     api_client.force_authenticate(base_user)
-    #     payload_old = {
-    #         'name': '2023_06',
-    #         'date_start': date(2023, 6, 1),
-    #         'date_end': date(2023, 6, 30),
-    #         'is_active': False,
-    #     }
-    #     payload_new = {
-    #         'name': '2023_07',
-    #         'date_start': date(2023, 7, 1),
-    #         'date_end': date(2023, 7, 31),
-    #         'is_active': True,
-    #     }
-    #     period = budgeting_period_factory(user=base_user, **payload_old)
-    #     url = period_detail_url(period.id)
-    #
-    #     response = api_client.put(url, payload_new)
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     period.refresh_from_db()
-    #     for k, v in payload_new.items():
-    #         assert getattr(period, k) == v
-    #
-    # @pytest.mark.parametrize(
-    #     'payload_new',
-    #     [
-    #         {'name': '2024_01', 'date_start': date(2024, 2, 1), 'date_end': date(2024, 2, 29), 'is_active': False},
-    #         {'name': '2024_02', 'date_start': date(2024, 1, 31), 'date_end': date(2024, 2, 29), 'is_active': False},
-    #         {'name': '2024_02', 'date_start': date(2024, 2, 1), 'date_end': date(2024, 2, 29), 'is_active': True},
-    #     ],
-    # )
-    # def test_error_on_period_full_update(
-    #     self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass, payload_new: dict
-    # ):
-    #     """Test error on full update of a BudgetingPeriod."""
-    #     api_client.force_authenticate(base_user)
-    #     budgeting_period_factory(
-    #         user=base_user, name='2024_01', date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=True
-    #     )
-    #     payload_old = {
-    #         'name': '2024_02',
-    #         'date_start': date(2024, 2, 1),
-    #         'date_end': date(2024, 2, 29),
-    #         'is_active': False,
-    #     }
-    #
-    #     period = budgeting_period_factory(user=base_user, **payload_old)
-    #     url = period_detail_url(period.id)
-    #
-    #     response = api_client.patch(url, payload_new)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     period.refresh_from_db()
-    #     for k, v in payload_old.items():
-    #         assert getattr(period, k) == v
-    #
-    # def test_delete_period(self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass):
-    #     """Test deleting BudgetingPeriod."""
-    #     api_client.force_authenticate(base_user)
-    #     period = budgeting_period_factory(user=base_user)
-    #     url = period_detail_url(period.id)
-    #
-    #     assert BudgetingPeriod.objects.all().count() == 1
-    #
-    #     response = api_client.delete(url)
-    #
-    #     assert response.status_code == status.HTTP_204_NO_CONTENT
-    #     assert not BudgetingPeriod.objects.all().exists()
+    def test_get_deposit_details(self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass):
+        """Test get Deposit details."""
+        api_client.force_authenticate(base_user)
+        deposit = deposit_factory(user=base_user)
+        url = deposit_detail_url(deposit.id)
+
+        response = api_client.get(url)
+        serializer = DepositSerializer(deposit)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == serializer.data
+
+    def test_error_get_deposit_details_unauthenticated(
+        self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass
+    ):
+        """Test error on getting Deposit details being unauthenticated."""
+        deposit = deposit_factory(user=base_user)
+        url = deposit_detail_url(deposit.id)
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_error_get_other_user_deposit_details(
+        self, api_client: APIClient, user_factory: FactoryMetaClass, deposit_factory: FactoryMetaClass
+    ):
+        """Test error on getting other user's Deposit details."""
+        user_1 = user_factory()
+        user_2 = user_factory()
+        deposit = deposit_factory(user=user_1)
+        api_client.force_authenticate(user_2)
+
+        url = deposit_detail_url(deposit.id)
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    @pytest.mark.parametrize(
+        'param, value', [('name', 'New name'), ('description', 'New description'), ('is_active', True)]
+    )
+    def test_deposit_partial_update(
+        self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass, param: str, value: Any
+    ):
+        """Test partial update of a Deposit"""
+        api_client.force_authenticate(base_user)
+        deposit = deposit_factory(user=base_user, name='Account', description='My account', is_active=False)
+        payload = {param: value}
+        url = deposit_detail_url(deposit.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        deposit.refresh_from_db()
+        assert getattr(deposit, param) == payload[param]
+
+    @pytest.mark.parametrize('param, value', [('name', 'Old account')])
+    def test_error_on_deposit_partial_update(
+        self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass, param: str, value: Any
+    ):
+        """Test error on partial update of a Deposit."""
+        api_client.force_authenticate(base_user)
+        deposit_factory(user=base_user, name='Old account', description='My old account', is_active=True)
+        deposit = deposit_factory(user=base_user, name='New account', description='My new account', is_active=True)
+        old_value = getattr(deposit, param)
+        payload = {param: value}
+        url = deposit_detail_url(deposit.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        deposit.refresh_from_db()
+        assert getattr(deposit, param) == old_value
+
+    def test_deposit_full_update(self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass):
+        """Test successful full update of a Deposit"""
+        api_client.force_authenticate(base_user)
+        payload_old = {
+            'name': 'Old account',
+            'description': 'My old account',
+            'is_active': False,
+        }
+        payload_new = {
+            'name': 'New account',
+            'description': 'My new account',
+            'is_active': True,
+        }
+        deposit = deposit_factory(user=base_user, **payload_old)
+        url = deposit_detail_url(deposit.id)
+
+        response = api_client.put(url, payload_new)
+
+        assert response.status_code == status.HTTP_200_OK
+        deposit.refresh_from_db()
+        for k, v in payload_new.items():
+            assert getattr(deposit, k) == v
+
+    @pytest.mark.parametrize(
+        'payload_new',
+        [
+            {'name': 'Old account', 'description': 'My new account', 'is_active': True},
+        ],
+    )
+    def test_error_on_deposit_full_update(
+        self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass, payload_new: dict
+    ):
+        """Test error on full update of a Deposit."""
+        api_client.force_authenticate(base_user)
+        deposit_factory(user=base_user, name='Old account', description='My old account', is_active=True)
+        payload_old = {
+            'name': 'New account',
+            'description': 'My new account',
+            'is_active': True,
+        }
+
+        deposit = deposit_factory(user=base_user, **payload_old)
+        url = deposit_detail_url(deposit.id)
+
+        response = api_client.patch(url, payload_new)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        deposit.refresh_from_db()
+        for k, v in payload_old.items():
+            assert getattr(deposit, k) == v
+
+    def test_delete_deposit(self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass):
+        """Test deleting Deposit."""
+        api_client.force_authenticate(base_user)
+        deposit = deposit_factory(user=base_user)
+        url = deposit_detail_url(deposit.id)
+
+        assert Deposit.objects.all().count() == 1
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not Deposit.objects.all().exists()

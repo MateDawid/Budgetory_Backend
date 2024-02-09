@@ -54,11 +54,11 @@
    - [x] ~~BudgetingPeriod views~~
    - [x] ~~Tests~~
 
-4. 🔨 **Deposits**
-   - [ ] Deposit model, serializer, view
-   - [ ] Tests
+4. ✔️ ~~**Deposits**~~
+   - [X] ~~Deposit model, serializer, view~~
+   - [X] ~~Tests~~
 
-5. 🔜 **Entity**
+5. 🔨 **Entity**
    - [ ] Entity model, serializer, view
    - [ ] Tests
 
