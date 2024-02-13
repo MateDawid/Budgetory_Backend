@@ -12,6 +12,9 @@ class Entity(models.Model):
     )
     is_personal = models.BooleanField(default=False)
 
+    class Meta:
+        verbose_name_plural = 'entities'
+
     def __str__(self) -> str:
         """
         Returns string representation of Entity model instance.
