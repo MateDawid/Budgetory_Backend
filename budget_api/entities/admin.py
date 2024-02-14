@@ -7,4 +7,4 @@ class EntityAdmin(admin.ModelAdmin):
     """Custom admin view for Deposit model."""
 
     list_display = ('name', 'description', 'is_personal', 'user')
-    list_filter = ('is_personal',)
+    list_filter = ('is_personal', 'user__email')
