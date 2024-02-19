@@ -7,11 +7,14 @@ class GlobalEntityManager(models.Manager):
     """Manager for global Entities."""
 
     def get_queryset(self):
-        return super().get_queryset().filter(type='GLOBAL')
+        return super().get_queryset().filter(type=Entity.GLOBAL)
 
 
 class Entity(models.Model):
     """Entity model for seller (or source of income) representation."""
+
+    GLOBAL = 'GLOBAL'
+    PERSONAL = 'PERSONAL'
 
     TYPE_CHOICES = (
         ('GLOBAL', 'Global'),
@@ -54,14 +57,14 @@ class Entity(models.Model):
         """
         Check if Entity name is unique in global scope for not personal Entity or in user scope for personal Entity.
         """
-        if self.type == 'PERSONAL' and self.user.personal_entities.filter(name__iexact=self.name).exists():
+        if self.type == self.PERSONAL and self.user.personal_entities.filter(name__iexact=self.name).exists():
             raise ValidationError('name: Personal entity with given name already exists.', code='personal-name-invalid')
-        elif self.type == 'GLOBAL' and Entity.global_entities.filter(name__iexact=self.name).exists():
+        elif self.type == self.GLOBAL and Entity.global_entities.filter(name__iexact=self.name).exists():
             raise ValidationError('name: Global entity with given name already exists.', code='global-name-invalid')
 
     def clean_user(self):
         """Check if user field is filled only when type is "PERSONAL"."""
-        if self.type == 'PERSONAL' and self.user is None:
+        if self.type == self.PERSONAL and self.user is None:
             raise ValidationError('user: User was not provided for personal Entity.', code='no-user-for-personal')
-        if self.type == 'GLOBAL' and self.user is not None:
+        if self.type == self.GLOBAL and self.user is not None:
             raise ValidationError('user: User can be provided only for personal Entities.', code='user-when-global')
