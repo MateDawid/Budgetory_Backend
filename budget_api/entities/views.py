@@ -2,9 +2,10 @@ from django.db.models import Q
 from entities.models import Entity
 from entities.permissions import IsPersonalEntityOwnerOrAdmin
 from entities.serializers import EntitySerializer
-from rest_framework import viewsets
+from rest_framework import status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 
 class EntityViewSet(viewsets.ModelViewSet):
@@ -26,9 +27,14 @@ class EntityViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """Extend create method with passing user in serializer depending on Entity type."""
+        data = request.data.copy()
         match request.data.get('type'):
-            case 'PERSONAL':
-                request.data['user'] = request.user.id
-            case 'GLOBAL':
-                request.data['user'] = None
-        return super().create(request, *args, **kwargs)
+            case Entity.PERSONAL:
+                data['user'] = request.user.id
+            case _:
+                data['user'] = None
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
