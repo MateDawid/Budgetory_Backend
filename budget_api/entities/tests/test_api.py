@@ -191,7 +191,7 @@ class TestEntityApi:
         assert response.data == serializer.data
 
     def test_error_get_deposit_details_unauthenticated(self, api_client: APIClient, entity_factory: FactoryMetaClass):
-        """Test error on getting Deposit details being unauthenticated."""
+        """Test error on getting Entity details being unauthenticated."""
         entity = entity_factory()
         url = entity_detail_url(entity.id)
 
@@ -213,24 +213,22 @@ class TestEntityApi:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    #
-    # @pytest.mark.parametrize(
-    #     'param, value', [('name', 'New name'), ('description', 'New description'), ('is_active', True)]
-    # )
-    # def test_deposit_partial_update(
-    #     self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass, param: str, value: Any
-    # ):
-    #     """Test partial update of a Deposit"""
-    #     api_client.force_authenticate(base_user)
-    #     deposit = deposit_factory(user=base_user, name='Account', description='My account', is_active=False)
-    #     payload = {param: value}
-    #     url = deposit_detail_url(deposit.id)
-    #
-    #     response = api_client.patch(url, payload)
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     deposit.refresh_from_db()
-    #     assert getattr(deposit, param) == payload[param]
+    @pytest.mark.parametrize('param, value', [('name', 'New name'), ('description', 'New description')])
+    def test_personal_entity_partial_update(
+        self, api_client: APIClient, base_user: Any, entity_factory: FactoryMetaClass, param: str, value: Any
+    ):
+        """Test partial update of personal Entity"""
+        api_client.force_authenticate(base_user)
+        entity = entity_factory(user=base_user, type=Entity.PERSONAL, name='Entity', description='My entity')
+        payload = {param: value}
+        url = entity_detail_url(entity.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        entity.refresh_from_db()
+        assert getattr(entity, param) == payload[param]
+
     #
     # @pytest.mark.parametrize('param, value', [('name', 'Old account')])
     # def test_error_on_deposit_partial_update(

@@ -57,9 +57,15 @@ class Entity(models.Model):
         """
         Check if Entity name is unique in global scope for not personal Entity or in user scope for personal Entity.
         """
-        if self.type == self.PERSONAL and self.user.personal_entities.filter(name__iexact=self.name).exists():
+        if (
+            self.type == self.PERSONAL
+            and self.user.personal_entities.filter(name__iexact=self.name).exclude(id=self.id).exists()
+        ):
             raise ValidationError('name: Personal entity with given name already exists.', code='personal-name-invalid')
-        elif self.type == self.GLOBAL and Entity.global_entities.filter(name__iexact=self.name).exists():
+        elif (
+            self.type == self.GLOBAL
+            and Entity.global_entities.filter(name__iexact=self.name).exclude(id=self.id).exists()
+        ):
             raise ValidationError('name: Global entity with given name already exists.', code='global-name-invalid')
 
     def clean_user(self):
