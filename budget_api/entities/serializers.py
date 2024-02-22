@@ -14,8 +14,12 @@ class EntitySerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         """Validates user and name before saving serializer."""
-        self._validate_user(user=attrs.get('user'), type_=attrs.get('type'))
-        self._validate_name(name=attrs.get('name'), user=attrs.get('user'), type_=attrs.get('type'))
+        name = attrs.get('name') or getattr(self.instance, 'name', None)
+        user = attrs.get('user') or getattr(self.instance, 'user', None)
+        type_ = attrs.get('type') or getattr(self.instance, 'type', None)
+
+        self._validate_user(user=user, type_=type_)
+        self._validate_name(name=name, user=user, type_=type_)
         return attrs
 
     @staticmethod

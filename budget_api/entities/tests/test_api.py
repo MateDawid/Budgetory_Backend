@@ -229,24 +229,39 @@ class TestEntityApi:
         entity.refresh_from_db()
         assert getattr(entity, param) == payload[param]
 
-    #
-    # @pytest.mark.parametrize('param, value', [('name', 'Old account')])
-    # def test_error_on_deposit_partial_update(
-    #     self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass, param: str, value: Any
-    # ):
-    #     """Test error on partial update of a Deposit."""
-    #     api_client.force_authenticate(base_user)
-    #     deposit_factory(user=base_user, name='Old account', description='My old account', is_active=True)
-    #     deposit = deposit_factory(user=base_user, name='New account', description='My new account', is_active=True)
-    #     old_value = getattr(deposit, param)
-    #     payload = {param: value}
-    #     url = deposit_detail_url(deposit.id)
-    #
-    #     response = api_client.patch(url, payload)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     deposit.refresh_from_db()
-    #     assert getattr(deposit, param) == old_value
+    @pytest.mark.parametrize('param, value', [('name', 'New name'), ('description', 'New description')])
+    def test_global_entity_partial_update(
+        self, api_client: APIClient, admin_user: Any, entity_factory: FactoryMetaClass, param: str, value: Any
+    ):
+        """Test partial update of global Entity as admin user."""
+        api_client.force_authenticate(admin_user)
+        entity = entity_factory(user=None, type=Entity.GLOBAL, name='Entity', description='My entity')
+        payload = {param: value}
+        url = entity_detail_url(entity.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        entity.refresh_from_db()
+        assert getattr(entity, param) == payload[param]
+
+    @pytest.mark.parametrize('param, value', [('name', 'Old name')])
+    def test_error_on_entity_partial_update(
+        self, api_client: APIClient, admin_user: Any, entity_factory: FactoryMetaClass, param: str, value: Any
+    ):
+        """Test error on partial update of a Deposit."""
+        api_client.force_authenticate(admin_user)
+        entity_factory(user=None, name='Old name', description='My old entity')
+        entity = entity_factory(user=None, name='New name', description='My new entity')
+        old_value = getattr(entity, param)
+        payload = {param: value}
+        url = entity_detail_url(entity.id)
+
+        response = api_client.patch(url, payload)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        entity.refresh_from_db()
+        assert getattr(entity, param) == old_value
+
     #
     # def test_deposit_full_update(self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass):
     #     """Test successful full update of a Deposit"""
