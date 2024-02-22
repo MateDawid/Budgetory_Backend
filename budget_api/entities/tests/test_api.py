@@ -7,6 +7,7 @@ from entities.models import Entity
 from entities.serializers import EntitySerializer
 from factory.base import FactoryMetaClass
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 
 ENTITIES_URL = reverse('entities:entity-list')
@@ -72,6 +73,7 @@ class TestEntityApi:
             assert getattr(entity, key) == payload[key]
         serializer = EntitySerializer(entity)
         assert response.data == serializer.data
+        assert entity.user == base_user
 
     def test_create_global_entity(self, api_client: APIClient, base_user: Any):
         """Test creating global Entity."""
@@ -88,6 +90,7 @@ class TestEntityApi:
             assert getattr(entity, key) == payload[key]
         serializer = EntitySerializer(entity)
         assert response.data == serializer.data
+        assert entity.user is None
 
     def test_create_same_personal_entity_by_two_users(self, api_client: APIClient, user_factory: Any):
         """Test creating personal entity with the same params by two users."""
@@ -105,95 +108,111 @@ class TestEntityApi:
         assert user_1.personal_entities.all().count() == 1
         assert user_2.personal_entities.all().count() == 1
 
-    #
-    # def test_error_name_too_long(self, api_client: APIClient, base_user: Any):
-    #     """Test error on creating Deposit with name too long."""
-    #     api_client.force_authenticate(base_user)
-    #     max_length = Deposit._meta.get_field('name').max_length
-    #     payload = {'name': (max_length + 1) * 'a', 'description': 'Account that I use.', 'is_active': True}
-    #
-    #     response = api_client.post(DEPOSITS_URL, payload)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     assert 'name' in response.data
-    #     assert response.data['name'][0] == f'Ensure this field has no more than {max_length} characters.'
-    #     assert not Deposit.objects.filter(user=base_user).exists()
-    #
-    # def test_error_name_already_used(self, api_client: APIClient, base_user: Any):
-    #     """Test error on creating Deposit with already used name by the same user."""
-    #     api_client.force_authenticate(base_user)
-    #     payload = {'name': 'My account', 'description': 'Account that I use.', 'is_active': True}
-    #     Deposit.objects.create(user=base_user, **payload)
-    #
-    #     response = api_client.post(DEPOSITS_URL, payload)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     assert 'name' in response.data
-    #     assert response.data['name'][0] == f"Users deposit with name {payload['name']} already exists."
-    #     assert Deposit.objects.filter(user=base_user).count() == 1
-    #
-    # def test_error_description_too_long(self, api_client: APIClient, base_user: Any):
-    #     """Test error on creating Deposit with description too long."""
-    #     api_client.force_authenticate(base_user)
-    #     max_length = Deposit._meta.get_field('description').max_length
-    #     payload = {'name': 'My account', 'description': (max_length + 1) * 'a', 'is_active': True}
-    #
-    #     response = api_client.post(DEPOSITS_URL, payload)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     assert 'description' in response.data
-    #     assert response.data['description'][0] == f'Ensure this field has no more than {max_length} characters.'
-    #     assert not Deposit.objects.filter(user=base_user).exists()
-    #
-    # def test_is_active_default_value(self, api_client: APIClient, base_user: Any):
-    #     """Test creating Deposit without passing is_active ends with default value."""
-    #     api_client.force_authenticate(base_user)
-    #     default = Deposit._meta.get_field('is_active').default
-    #     payload = {'name': 'My account', 'description': 'Account that I use.'}
-    #
-    #     response = api_client.post(DEPOSITS_URL, payload)
-    #
-    #     assert response.status_code == status.HTTP_201_CREATED
-    #     assert Deposit.objects.all().count() == 1
-    #     assert Deposit.objects.filter(user=base_user).count() == 1
-    #     assert response.data['is_active'] == default
-    #
-    # def test_get_deposit_details(self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass):
-    #     """Test get Deposit details."""
-    #     api_client.force_authenticate(base_user)
-    #     deposit = deposit_factory(user=base_user)
-    #     url = deposit_detail_url(deposit.id)
-    #
-    #     response = api_client.get(url)
-    #     serializer = DepositSerializer(deposit)
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     assert response.data == serializer.data
-    #
-    # def test_error_get_deposit_details_unauthenticated(
-    #     self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass
-    # ):
-    #     """Test error on getting Deposit details being unauthenticated."""
-    #     deposit = deposit_factory(user=base_user)
-    #     url = deposit_detail_url(deposit.id)
-    #
-    #     response = api_client.get(url)
-    #
-    #     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    #
-    # def test_error_get_other_user_deposit_details(
-    #     self, api_client: APIClient, user_factory: FactoryMetaClass, deposit_factory: FactoryMetaClass
-    # ):
-    #     """Test error on getting other user's Deposit details."""
-    #     user_1 = user_factory()
-    #     user_2 = user_factory()
-    #     deposit = deposit_factory(user=user_1)
-    #     api_client.force_authenticate(user_2)
-    #
-    #     url = deposit_detail_url(deposit.id)
-    #     response = api_client.get(url)
-    #
-    #     assert response.status_code == status.HTTP_404_NOT_FOUND
+    def test_error_name_too_long(self, api_client: APIClient, base_user: Any):
+        """Test error on creating Entity with name too long."""
+        api_client.force_authenticate(base_user)
+        max_length = Entity._meta.get_field('name').max_length
+        payload = {'name': 'A' * (max_length + 1), 'description': 'Selling stuff.', 'type': Entity.GLOBAL}
+
+        response = api_client.post(ENTITIES_URL, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'name' in response.data
+        assert response.data['name'][0] == f'Ensure this field has no more than {max_length} characters.'
+        assert not Entity.global_entities.all().exists()
+
+    def test_error_global_name_already_used(self, api_client: APIClient, base_user: Any):
+        """Test error on creating global Entity with already used name."""
+        api_client.force_authenticate(base_user)
+        payload = {'name': 'Seller', 'description': 'Selling stuff.', 'type': Entity.GLOBAL}
+        Entity.objects.create(**payload)
+
+        response = api_client.post(ENTITIES_URL, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'non_field_errors' in response.data
+        assert response.data['non_field_errors'][0] == 'Global entity with given name already exists.'
+        assert Entity.global_entities.all().count() == 1
+
+    def test_error_personal_name_already_used(self, api_client: APIClient, base_user: Any):
+        """Test error on creating personal Entity with already used name."""
+        api_client.force_authenticate(base_user)
+        payload = {'name': 'Seller', 'description': 'Selling stuff.', 'type': Entity.PERSONAL}
+        Entity.objects.create(user=base_user, **payload)
+
+        response = api_client.post(ENTITIES_URL, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'non_field_errors' in response.data
+        assert response.data['non_field_errors'][0] == 'Personal entity with given name already exists.'
+        assert base_user.personal_entities.all().count() == 1
+
+    def test_error_description_too_long(self, api_client: APIClient, base_user: Any):
+        """Test error on creating Entity with description too long."""
+        api_client.force_authenticate(base_user)
+        max_length = Entity._meta.get_field('description').max_length
+        payload = {'name': 'Seller', 'description': 'A' * (max_length + 1), 'type': Entity.GLOBAL}
+
+        response = api_client.post(ENTITIES_URL, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'description' in response.data
+        assert response.data['description'][0] == f'Ensure this field has no more than {max_length} characters.'
+        assert not Entity.global_entities.all().exists()
+
+    def test_error_on_user_in_global_entity(self, base_user: Any):
+        """Test error on validating data in EntitySerializer when user was provided for global Entity."""
+        payload = {'name': 'Seller', 'description': 'Selling stuff.', 'type': 'GLOBAL', 'user': base_user.pk}
+
+        serializer = EntitySerializer(data=payload)
+        with pytest.raises(ValidationError) as exc:
+            serializer.is_valid(raise_exception=True)
+        assert str(exc.value.detail['non_field_errors'][0]) == 'User can be provided only for personal Entities.'
+
+    def test_error_on_no_user_in_personal_entity(self):
+        """Test error on validating data in EntitySerializer when user was not provided for personal Entity."""
+        payload = {'name': 'Seller', 'description': 'Selling stuff.', 'type': 'PERSONAL', 'user': None}
+
+        serializer = EntitySerializer(data=payload)
+        with pytest.raises(ValidationError) as exc:
+            serializer.is_valid(raise_exception=True)
+        assert str(exc.value.detail['non_field_errors'][0]) == 'User was not provided for personal Entity.'
+
+    def test_get_entity_details(self, api_client: APIClient, base_user: Any, entity_factory: FactoryMetaClass):
+        """Test get Entity details."""
+        api_client.force_authenticate(base_user)
+        entity = entity_factory()
+        url = entity_detail_url(entity.id)
+
+        response = api_client.get(url)
+        serializer = EntitySerializer(entity)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == serializer.data
+
+    def test_error_get_deposit_details_unauthenticated(self, api_client: APIClient, entity_factory: FactoryMetaClass):
+        """Test error on getting Deposit details being unauthenticated."""
+        entity = entity_factory()
+        url = entity_detail_url(entity.id)
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_error_get_other_user_personal_entity_details(
+        self, api_client: APIClient, user_factory: FactoryMetaClass, entity_factory: FactoryMetaClass
+    ):
+        """Test error on getting other user's personal Entity details."""
+        user_1 = user_factory()
+        user_2 = user_factory()
+        entity = entity_factory(user=user_1)
+        api_client.force_authenticate(user_2)
+
+        url = entity_detail_url(entity.id)
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
     #
     # @pytest.mark.parametrize(
     #     'param, value', [('name', 'New name'), ('description', 'New description'), ('is_active', True)]
