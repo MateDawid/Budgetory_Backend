@@ -26,10 +26,15 @@ class EntitySerializer(serializers.ModelSerializer):
         if type_ == 'GLOBAL' and user is not None:
             raise serializers.ValidationError('User can be provided only for personal Entities.')
 
-    @staticmethod
-    def _validate_name(name: str, user: Any, type_: str) -> None:
+    def _validate_name(self, name: str, user: Any, type_: str) -> None:
         """Checks if user has not used deposit name already."""
-        if type_ == 'PERSONAL' and user.personal_entities.filter(name__iexact=name).exists():
+        if (
+            type_ == 'PERSONAL'
+            and user.personal_entities.filter(name__iexact=name).exclude(id=getattr(self.instance, 'id', None)).exists()
+        ):
             raise serializers.ValidationError('Personal entity with given name already exists.')
-        elif type_ == 'GLOBAL' and Entity.global_entities.filter(name__iexact=name).exists():
+        elif (
+            type_ == 'GLOBAL'
+            and Entity.global_entities.filter(name__iexact=name).exclude(id=getattr(self.instance, 'id', None)).exists()
+        ):
             raise serializers.ValidationError('Global entity with given name already exists.')
