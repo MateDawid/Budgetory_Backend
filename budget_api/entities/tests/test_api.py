@@ -262,67 +262,103 @@ class TestEntityApi:
         entity.refresh_from_db()
         assert getattr(entity, param) == old_value
 
-    #
-    # def test_deposit_full_update(self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass):
-    #     """Test successful full update of a Deposit"""
-    #     api_client.force_authenticate(base_user)
-    #     payload_old = {
-    #         'name': 'Old account',
-    #         'description': 'My old account',
-    #         'is_active': False,
-    #     }
-    #     payload_new = {
-    #         'name': 'New account',
-    #         'description': 'My new account',
-    #         'is_active': True,
-    #     }
-    #     deposit = deposit_factory(user=base_user, **payload_old)
-    #     url = deposit_detail_url(deposit.id)
-    #
-    #     response = api_client.put(url, payload_new)
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     deposit.refresh_from_db()
-    #     for k, v in payload_new.items():
-    #         assert getattr(deposit, k) == v
-    #
-    # @pytest.mark.parametrize(
-    #     'payload_new',
-    #     [
-    #         {'name': 'Old account', 'description': 'My new account', 'is_active': True},
-    #     ],
-    # )
-    # def test_error_on_deposit_full_update(
-    #     self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass, payload_new: dict
-    # ):
-    #     """Test error on full update of a Deposit."""
-    #     api_client.force_authenticate(base_user)
-    #     deposit_factory(user=base_user, name='Old account', description='My old account', is_active=True)
-    #     payload_old = {
-    #         'name': 'New account',
-    #         'description': 'My new account',
-    #         'is_active': True,
-    #     }
-    #
-    #     deposit = deposit_factory(user=base_user, **payload_old)
-    #     url = deposit_detail_url(deposit.id)
-    #
-    #     response = api_client.patch(url, payload_new)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     deposit.refresh_from_db()
-    #     for k, v in payload_old.items():
-    #         assert getattr(deposit, k) == v
-    #
-    # def test_delete_deposit(self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass):
-    #     """Test deleting Deposit."""
-    #     api_client.force_authenticate(base_user)
-    #     deposit = deposit_factory(user=base_user)
-    #     url = deposit_detail_url(deposit.id)
-    #
-    #     assert Deposit.objects.all().count() == 1
-    #
-    #     response = api_client.delete(url)
-    #
-    #     assert response.status_code == status.HTTP_204_NO_CONTENT
-    #     assert not Deposit.objects.all().exists()
+    def test_personal_entity_full_update(self, api_client: APIClient, base_user: Any, entity_factory: FactoryMetaClass):
+        """Test successful full update of personal Entity"""
+        api_client.force_authenticate(base_user)
+        payload_old = {'name': 'Name', 'description': 'Selling stuff.', 'type': Entity.PERSONAL}
+        payload_new = {'name': 'New name', 'description': 'Selling NEW stuff.', 'type': Entity.PERSONAL}
+        entity = entity_factory(user=base_user, **payload_old)
+        url = entity_detail_url(entity.id)
+
+        response = api_client.put(url, payload_new)
+
+        assert response.status_code == status.HTTP_200_OK
+        entity.refresh_from_db()
+        assert entity.user == base_user
+        for k, v in payload_new.items():
+            assert getattr(entity, k) == v
+
+    def test_global_entity_full_update(self, api_client: APIClient, admin_user: Any, entity_factory: FactoryMetaClass):
+        """Test successful full update of global Entity"""
+        api_client.force_authenticate(admin_user)
+        payload_old = {'name': 'Name', 'description': 'Selling stuff.', 'type': Entity.GLOBAL}
+        payload_new = {'name': 'New name', 'description': 'Selling NEW stuff.', 'type': Entity.GLOBAL}
+        entity = entity_factory(user=None, **payload_old)
+        url = entity_detail_url(entity.id)
+
+        response = api_client.put(url, payload_new)
+
+        assert response.status_code == status.HTTP_200_OK
+        entity.refresh_from_db()
+        assert entity.user is None
+        for k, v in payload_new.items():
+            assert getattr(entity, k) == v
+
+    @pytest.mark.parametrize(
+        'payload_new',
+        [
+            {'name': 'Old personal seller', 'description': 'Selling stuff.', 'type': Entity.PERSONAL},
+            {'name': 'New personal seller', 'description': 'Selling stuff.', 'type': Entity.GLOBAL},
+        ],
+    )
+    def test_error_on_entity_full_update(
+        self, api_client: APIClient, base_user: Any, entity_factory: FactoryMetaClass, payload_new: dict
+    ):
+        """Test error on full update of a Entity."""
+        api_client.force_authenticate(base_user)
+        entity_factory(
+            user=base_user, name='Old personal seller', description='Selling old stuff.', type=Entity.PERSONAL
+        )
+        entity_factory(user=None, name='Old global seller', description='Selling global stuff.', type=Entity.GLOBAL)
+        payload_old = {'name': 'New personal seller', 'description': 'Selling stuff.', 'type': Entity.PERSONAL}
+
+        entity = entity_factory(user=base_user, **payload_old)
+        url = entity_detail_url(entity.id)
+
+        response = api_client.put(url, payload_new)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        entity.refresh_from_db()
+        for k, v in payload_old.items():
+            assert getattr(entity, k) == v
+
+    def test_delete_personal_entity(self, api_client: APIClient, base_user: Any, entity_factory: FactoryMetaClass):
+        """Test deleting personal Entity."""
+        api_client.force_authenticate(base_user)
+        entity = entity_factory(user=base_user)
+        url = entity_detail_url(entity.id)
+
+        assert base_user.personal_entities.all().count() == 1
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not base_user.personal_entities.all().exists()
+
+    def test_delete_global_entity(self, api_client: APIClient, admin_user: Any, entity_factory: FactoryMetaClass):
+        """Test deleting global Entity."""
+        api_client.force_authenticate(admin_user)
+        entity = entity_factory(user=None)
+        url = entity_detail_url(entity.id)
+
+        assert Entity.global_entities.all().count() == 1
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not Entity.global_entities.all().exists()
+
+    def test_error_on_delete_global_entity_by_not_admin(
+        self, api_client: APIClient, base_user: Any, entity_factory: FactoryMetaClass
+    ):
+        """Test error on attempt to delete global Entity by user, that's not an admin."""
+        api_client.force_authenticate(base_user)
+        entity = entity_factory(user=None)
+        url = entity_detail_url(entity.id)
+
+        assert Entity.global_entities.all().count() == 1
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert Entity.global_entities.all().count() == 1
