@@ -53,7 +53,7 @@ class TestEntityApi:
 
         response = api_client.get(ENTITIES_URL)
 
-        entities = Entity.objects.filter(Q(type='GLOBAL') | Q(type='PERSONAL', user=user)).distinct()
+        entities = Entity.objects.filter(Q(type=Entity.GLOBAL) | Q(type=Entity.PERSONAL, user=user)).distinct()
         serializer = EntitySerializer(entities, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert response.data['results'] == serializer.data
@@ -61,7 +61,7 @@ class TestEntityApi:
     def test_create_personal_entity(self, api_client: APIClient, base_user: Any):
         """Test creating personal Entity."""
         api_client.force_authenticate(base_user)
-        payload = {'name': 'Seller', 'description': 'Selling stuff.', 'type': 'PERSONAL'}
+        payload = {'name': 'Seller', 'description': 'Selling stuff.', 'type': Entity.PERSONAL}
 
         response = api_client.post(ENTITIES_URL, payload)
 
@@ -78,7 +78,7 @@ class TestEntityApi:
     def test_create_global_entity(self, api_client: APIClient, base_user: Any):
         """Test creating global Entity."""
         api_client.force_authenticate(base_user)
-        payload = {'name': 'Seller', 'description': 'Selling stuff.', 'type': 'GLOBAL'}
+        payload = {'name': 'Seller', 'description': 'Selling stuff.', 'type': Entity.GLOBAL}
 
         response = api_client.post(ENTITIES_URL, payload)
 
@@ -94,7 +94,7 @@ class TestEntityApi:
 
     def test_create_same_personal_entity_by_two_users(self, api_client: APIClient, user_factory: Any):
         """Test creating personal entity with the same params by two users."""
-        payload = {'name': 'Seller', 'description': 'Selling stuff.', 'type': 'PERSONAL'}
+        payload = {'name': 'Seller', 'description': 'Selling stuff.', 'type': Entity.PERSONAL}
         user_1 = user_factory()
         api_client.force_authenticate(user_1)
         api_client.post(ENTITIES_URL, payload)
@@ -162,7 +162,7 @@ class TestEntityApi:
 
     def test_error_on_user_in_global_entity(self, base_user: Any):
         """Test error on validating data in EntitySerializer when user was provided for global Entity."""
-        payload = {'name': 'Seller', 'description': 'Selling stuff.', 'type': 'GLOBAL', 'user': base_user.pk}
+        payload = {'name': 'Seller', 'description': 'Selling stuff.', 'type': Entity.GLOBAL, 'user': base_user.pk}
 
         serializer = EntitySerializer(data=payload)
         with pytest.raises(ValidationError) as exc:
@@ -171,7 +171,7 @@ class TestEntityApi:
 
     def test_error_on_no_user_in_personal_entity(self):
         """Test error on validating data in EntitySerializer when user was not provided for personal Entity."""
-        payload = {'name': 'Seller', 'description': 'Selling stuff.', 'type': 'PERSONAL', 'user': None}
+        payload = {'name': 'Seller', 'description': 'Selling stuff.', 'type': Entity.PERSONAL, 'user': None}
 
         serializer = EntitySerializer(data=payload)
         with pytest.raises(ValidationError) as exc:
@@ -181,14 +181,16 @@ class TestEntityApi:
     def test_get_entity_details(self, api_client: APIClient, base_user: Any, entity_factory: FactoryMetaClass):
         """Test get Entity details."""
         api_client.force_authenticate(base_user)
-        entity = entity_factory()
-        url = entity_detail_url(entity.id)
+        personal_entity = entity_factory(user=base_user, type=Entity.PERSONAL)
+        global_entity = entity_factory(user=None, type=Entity.GLOBAL)
+        for entity in [personal_entity, global_entity]:
+            url = entity_detail_url(entity.id)
 
-        response = api_client.get(url)
-        serializer = EntitySerializer(entity)
+            response = api_client.get(url)
+            serializer = EntitySerializer(entity)
 
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data == serializer.data
+            assert response.status_code == status.HTTP_200_OK
+            assert response.data == serializer.data
 
     def test_error_get_deposit_details_unauthenticated(self, api_client: APIClient, entity_factory: FactoryMetaClass):
         """Test error on getting Entity details being unauthenticated."""
