@@ -31,6 +31,7 @@ urlpatterns = [
     path('api/users/', include('app_users.urls')),
     path('api/periods/', include('periods.urls')),
     path('api/deposits/', include('deposits.urls')),
+    path('api/entities/', include('entities.urls')),
     path('api/data_import/', include('data_import.urls')),
 ]
 

@@ -58,32 +58,28 @@
    - [X] ~~Deposit model, serializer, view~~
    - [X] ~~Tests~~
 
-5. 🔨 **Entity**
-   - [ ] Entity model, serializer, view
+5. ✔️ ~~**Entity**~~
+   - [X] Entity model, serializer, view
+   - [X] Tests
+
+6. 🔨 **TransferCategory**
+   - [ ] TransferCategory model, serializer, view
    - [ ] Tests
 
-6. 🔜 **IncomeCategory**
-   - [ ] IncomeCategory model, serializer, view
-   - [ ] Tests
-
-7. 🔜 **ExpenseCategory**
-   - [ ] ExpenseCategory model, serializer, view
-   - [ ] Tests
-
-8. 🔜 **ExpensePrediction**
+7🔜 **ExpensePrediction**
    - [ ] ExpensePrediction model, serializer, view
    - [ ] Tests
 
-9. 🔜 **Transfer**
+1. 🔜 **Transfer**
    - [ ] Transfer model, serializer, view
    - [ ] Create expenses on data import
    - [ ] Tests
 
-10. 🔜 **ImportFile**
-    - [ ] ImportFile model, serializer, view
-    - [ ] Possibility to send file (csv firstly), but not storing it in DB, only extract data
-    - [ ] Create sellers on data import
-    - [ ] Tests
+2. 🔜 **ImportFile**
+   - [ ] ImportFile model, serializer, view
+   - [ ] Possibility to send file (csv firstly), but not storing it in DB, only extract data
+   - [ ] Create sellers on data import
+   - [ ] Tests
 
-11. 🔜 **Frontend**
-    - [ ] Implement some frontend
+3. 🔜 **Frontend**
+   - [ ] Implement some frontend

@@ -19,7 +19,7 @@ class TestDepositModel:
         assert str(deposit) == f'{deposit.name} ({deposit.user.email})'
 
     def test_create_two_deposits_successfully(self, user):
-        """Test creating two consecutive BudgetingPeriod successfully."""
+        """Test creating two Deposits successfully."""
         payload_1 = {'name': 'Bank account', 'user': user, 'description': 'User\'s bank account', 'is_active': True}
         payload_2 = {'name': 'Cash', 'user': user, 'description': 'User\'s cash', 'is_active': True}
 
@@ -32,7 +32,7 @@ class TestDepositModel:
         assert Deposit.objects.filter(user=user).count() == 2
 
     def test_creating_same_deposit_by_two_users(self, user_factory):
-        """Test creating period with the same params by two different users."""
+        """Test creating deposit with the same params by two different users."""
         user_1 = user_factory()
         user_2 = user_factory()
         payload = {'name': 'Bank account', 'description': 'User\'s bank account', 'is_active': True}
