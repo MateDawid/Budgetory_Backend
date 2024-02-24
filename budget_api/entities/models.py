@@ -17,8 +17,8 @@ class Entity(models.Model):
     PERSONAL = 'PERSONAL'
 
     TYPE_CHOICES = (
-        ('GLOBAL', 'Global'),
-        ('PERSONAL', 'Personal'),
+        (GLOBAL, 'Global'),
+        (PERSONAL, 'Personal'),
     )
 
     name = models.CharField(max_length=128)
