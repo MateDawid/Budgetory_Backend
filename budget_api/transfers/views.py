@@ -1,7 +1,7 @@
 from django.db.models import Q
 from rest_framework import status, viewsets
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from transfers.models import TransferCategory
 from transfers.permissions import IsPersonalTransferCategoryOwnerOrAdmin
@@ -17,6 +17,8 @@ class TransferCategoryViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """Checks permissions depending on view to execute."""
+        if self.request.method == 'POST' and self.request.data.get('scope') == 'GLOBAL':
+            return (IsAdminUser(),)
         if self.request.method in ['DELETE', 'PUT', 'PATCH']:
             return (IsPersonalTransferCategoryOwnerOrAdmin(),)
         return (IsAuthenticated(),)
