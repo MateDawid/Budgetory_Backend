@@ -5,8 +5,7 @@ from django.db.models import Q
 from django.urls import reverse
 from factory.base import FactoryMetaClass
 from rest_framework import status
-
-# from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 from transfers.models import TransferCategory
 from transfers.serializers import TransferCategorySerializer
@@ -40,8 +39,8 @@ class TestTransferCategoryApi:
 
         response = api_client.get(TRANSFER_CATEGORIES_URL)
 
-        entities = TransferCategory.objects.all()
-        serializer = TransferCategorySerializer(entities, many=True)
+        categories = TransferCategory.objects.all()
+        serializer = TransferCategorySerializer(categories, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert response.data['results'] == serializer.data
 
@@ -57,10 +56,10 @@ class TestTransferCategoryApi:
 
         response = api_client.get(TRANSFER_CATEGORIES_URL)
 
-        entities = TransferCategory.objects.filter(
+        categories = TransferCategory.objects.filter(
             Q(scope=TransferCategory.GLOBAL) | Q(scope=TransferCategory.PERSONAL, user=user)
         ).distinct()
-        serializer = TransferCategorySerializer(entities, many=True)
+        serializer = TransferCategorySerializer(categories, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert response.data['results'] == serializer.data
 
@@ -102,7 +101,7 @@ class TestTransferCategoryApi:
         response = api_client.post(TRANSFER_CATEGORIES_URL, payload)
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert not admin_user.personal_entities.all().exists()
+        assert not admin_user.personal_transfer_categories.all().exists()
         assert TransferCategory.global_transfer_categories.all().count() == 1
         category = TransferCategory.objects.get(id=response.data['id'])
         for key in payload:
@@ -125,132 +124,180 @@ class TestTransferCategoryApi:
         response = api_client.post(TRANSFER_CATEGORIES_URL, payload)
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert not base_user.personal_entities.all().exists()
+        assert not base_user.personal_transfer_categories.all().exists()
         assert not TransferCategory.global_transfer_categories.all().exists()
 
-    # def test_create_same_personal_entity_by_two_users(self, api_client: APIClient, user_factory: Any):
-    #     """Test creating personal entity with the same params by two users."""
-    #     payload = {'name': 'Seller', 'description': 'Selling stuff.', 'type': Entity.PERSONAL}
-    #     user_1 = user_factory()
-    #     api_client.force_authenticate(user_1)
-    #     api_client.post(ENTITIES_URL, payload)
-    #
-    #     user_2 = user_factory()
-    #     api_client.force_authenticate(user_2)
-    #     api_client.post(ENTITIES_URL, payload)
-    #
-    #     assert Entity.objects.all().count() == 2
-    #     assert not Entity.global_entities.all().exists()
-    #     assert user_1.personal_entities.all().count() == 1
-    #     assert user_2.personal_entities.all().count() == 1
-    #
-    # def test_error_name_too_long(self, api_client: APIClient, base_user: Any):
-    #     """Test error on creating Entity with name too long."""
-    #     api_client.force_authenticate(base_user)
-    #     max_length = Entity._meta.get_field('name').max_length
-    #     payload = {'name': 'A' * (max_length + 1), 'description': 'Selling stuff.', 'type': Entity.GLOBAL}
-    #
-    #     response = api_client.post(ENTITIES_URL, payload)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     assert 'name' in response.data
-    #     assert response.data['name'][0] == f'Ensure this field has no more than {max_length} characters.'
-    #     assert not Entity.global_entities.all().exists()
-    #
-    # def test_error_global_name_already_used(self, api_client: APIClient, base_user: Any):
-    #     """Test error on creating global Entity with already used name."""
-    #     api_client.force_authenticate(base_user)
-    #     payload = {'name': 'Seller', 'description': 'Selling stuff.', 'type': Entity.GLOBAL}
-    #     Entity.objects.create(**payload)
-    #
-    #     response = api_client.post(ENTITIES_URL, payload)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     assert 'non_field_errors' in response.data
-    #     assert response.data['non_field_errors'][0] == 'Global entity with given name already exists.'
-    #     assert Entity.global_entities.all().count() == 1
-    #
-    # def test_error_personal_name_already_used(self, api_client: APIClient, base_user: Any):
-    #     """Test error on creating personal Entity with already used name."""
-    #     api_client.force_authenticate(base_user)
-    #     payload = {'name': 'Seller', 'description': 'Selling stuff.', 'type': Entity.PERSONAL}
-    #     Entity.objects.create(user=base_user, **payload)
-    #
-    #     response = api_client.post(ENTITIES_URL, payload)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     assert 'non_field_errors' in response.data
-    #     assert response.data['non_field_errors'][0] == 'Personal entity with given name already exists.'
-    #     assert base_user.personal_entities.all().count() == 1
-    #
-    # def test_error_description_too_long(self, api_client: APIClient, base_user: Any):
-    #     """Test error on creating Entity with description too long."""
-    #     api_client.force_authenticate(base_user)
-    #     max_length = Entity._meta.get_field('description').max_length
-    #     payload = {'name': 'Seller', 'description': 'A' * (max_length + 1), 'type': Entity.GLOBAL}
-    #
-    #     response = api_client.post(ENTITIES_URL, payload)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     assert 'description' in response.data
-    #     assert response.data['description'][0] == f'Ensure this field has no more than {max_length} characters.'
-    #     assert not Entity.global_entities.all().exists()
-    #
-    # def test_error_on_user_in_global_entity(self, base_user: Any):
-    #     """Test error on validating data in EntitySerializer when user was provided for global Entity."""
-    #     payload = {'name': 'Seller', 'description': 'Selling stuff.', 'type': Entity.GLOBAL, 'user': base_user.pk}
-    #
-    #     serializer = EntitySerializer(data=payload)
-    #     with pytest.raises(ValidationError) as exc:
-    #         serializer.is_valid(raise_exception=True)
-    #     assert str(exc.value.detail['non_field_errors'][0]) == 'User can be provided only for personal Entities.'
-    #
-    # def test_error_on_no_user_in_personal_entity(self):
-    #     """Test error on validating data in EntitySerializer when user was not provided for personal Entity."""
-    #     payload = {'name': 'Seller', 'description': 'Selling stuff.', 'type': Entity.PERSONAL, 'user': None}
-    #
-    #     serializer = EntitySerializer(data=payload)
-    #     with pytest.raises(ValidationError) as exc:
-    #         serializer.is_valid(raise_exception=True)
-    #     assert str(exc.value.detail['non_field_errors'][0]) == 'User was not provided for personal Entity.'
-    #
-    # def test_get_entity_details(self, api_client: APIClient, base_user: Any, entity_factory: FactoryMetaClass):
-    #     """Test get Entity details."""
-    #     api_client.force_authenticate(base_user)
-    #     personal_entity = entity_factory(user=base_user, type=Entity.PERSONAL)
-    #     global_entity = entity_factory(user=None, type=Entity.GLOBAL)
-    #     for entity in [personal_entity, global_entity]:
-    #         url = entity_detail_url(entity.id)
-    #
-    #         response = api_client.get(url)
-    #         serializer = EntitySerializer(entity)
-    #
-    #         assert response.status_code == status.HTTP_200_OK
-    #         assert response.data == serializer.data
-    #
-    # def test_error_get_deposit_details_unauthenticated(self, api_client: APIClient, entity_factory: FactoryMetaClass):
-    #     """Test error on getting Entity details being unauthenticated."""
-    #     entity = entity_factory()
-    #     url = entity_detail_url(entity.id)
-    #
-    #     response = api_client.get(url)
-    #
-    #     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    #
-    # def test_error_get_other_user_personal_entity_details(
-    #     self, api_client: APIClient, user_factory: FactoryMetaClass, entity_factory: FactoryMetaClass
-    # ):
-    #     """Test error on getting other user's personal Entity details."""
-    #     user_1 = user_factory()
-    #     user_2 = user_factory()
-    #     entity = entity_factory(user=user_1)
-    #     api_client.force_authenticate(user_2)
-    #
-    #     url = entity_detail_url(entity.id)
-    #     response = api_client.get(url)
-    #
-    #     assert response.status_code == status.HTTP_404_NOT_FOUND
-    #
+    def test_create_same_personal_transfer_category_by_two_users(self, api_client: APIClient, user_factory: Any):
+        """Test creating personal TransferCategory with the same params by two users."""
+        payload = {
+            'name': 'Salary',
+            'description': 'My salary',
+            'scope': TransferCategory.PERSONAL,
+            'category_type': TransferCategory.INCOME,
+            'is_active': True,
+        }
+        user_1 = user_factory()
+        api_client.force_authenticate(user_1)
+        api_client.post(TRANSFER_CATEGORIES_URL, payload)
+
+        user_2 = user_factory()
+        api_client.force_authenticate(user_2)
+        api_client.post(TRANSFER_CATEGORIES_URL, payload)
+
+        assert TransferCategory.objects.all().count() == 2
+        assert not TransferCategory.global_transfer_categories.all().exists()
+        assert user_1.personal_transfer_categories.all().count() == 1
+        assert user_2.personal_transfer_categories.all().count() == 1
+
+    def test_error_name_too_long(self, api_client: APIClient, base_user: Any):
+        """Test error on creating TransferCategory with name too long."""
+        api_client.force_authenticate(base_user)
+        max_length = TransferCategory._meta.get_field('name').max_length
+        payload = {
+            'name': 'A' * (max_length + 1),
+            'description': 'My salary',
+            'scope': TransferCategory.PERSONAL,
+            'category_type': TransferCategory.INCOME,
+            'is_active': True,
+        }
+        response = api_client.post(TRANSFER_CATEGORIES_URL, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'name' in response.data
+        assert response.data['name'][0] == f'Ensure this field has no more than {max_length} characters.'
+        assert not base_user.personal_transfer_categories.all().exists()
+
+    def test_error_global_name_already_used(self, api_client: APIClient, admin_user: Any):
+        """Test error on creating global TransferCategory with already used name."""
+        api_client.force_authenticate(admin_user)
+        payload = {
+            'name': 'Taxes',
+            'description': 'Taxes payments.',
+            'scope': TransferCategory.GLOBAL,
+            'category_type': TransferCategory.EXPENSE,
+            'is_active': True,
+        }
+        TransferCategory.objects.create(**payload)
+
+        response = api_client.post(TRANSFER_CATEGORIES_URL, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'non_field_errors' in response.data
+        assert response.data['non_field_errors'][0] == 'Global transfer category with given name already exists.'
+        assert TransferCategory.global_transfer_categories.all().count() == 1
+
+    def test_error_personal_name_already_used(self, api_client: APIClient, base_user: Any):
+        """Test error on creating personal TransferCategory with already used name."""
+        api_client.force_authenticate(base_user)
+        payload = {
+            'name': 'Salary',
+            'description': 'My salary',
+            'scope': TransferCategory.PERSONAL,
+            'category_type': TransferCategory.INCOME,
+            'is_active': True,
+        }
+        TransferCategory.objects.create(user=base_user, **payload)
+
+        response = api_client.post(TRANSFER_CATEGORIES_URL, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'non_field_errors' in response.data
+        assert response.data['non_field_errors'][0] == 'Personal transfer category with given name already exists.'
+        assert base_user.personal_transfer_categories.all().count() == 1
+
+    def test_error_description_too_long(self, api_client: APIClient, base_user: Any):
+        """Test error on creating TransferCategory with description too long."""
+        api_client.force_authenticate(base_user)
+        max_length = TransferCategory._meta.get_field('description').max_length
+        payload = {
+            'name': 'Salary',
+            'description': 'A' * (max_length + 1),
+            'scope': TransferCategory.PERSONAL,
+            'category_type': TransferCategory.INCOME,
+            'is_active': True,
+        }
+
+        response = api_client.post(TRANSFER_CATEGORIES_URL, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'description' in response.data
+        assert response.data['description'][0] == f'Ensure this field has no more than {max_length} characters.'
+        assert not TransferCategory.global_transfer_categories.all().exists()
+
+    def test_error_on_user_in_global_transfer_category(self, base_user: Any):
+        """Test error on validating data in TransferCategorySerializer when user was provided for global
+        TransferCategory."""
+        payload = {
+            'name': 'Taxes',
+            'description': 'Taxes payments.',
+            'scope': TransferCategory.GLOBAL,
+            'category_type': TransferCategory.EXPENSE,
+            'is_active': True,
+            'user': base_user.pk,
+        }
+        serializer = TransferCategorySerializer(data=payload)
+        with pytest.raises(ValidationError) as exc:
+            serializer.is_valid(raise_exception=True)
+        assert (
+            str(exc.value.detail['non_field_errors'][0]) == 'User can be provided only for personal transfer category.'
+        )
+
+    def test_error_on_no_user_in_personal_transfer_category(self):
+        """Test error on validating data in TransferCategorySerializer when user was not provided for personal
+        TransferCategory."""
+        payload = {
+            'name': 'Salary',
+            'description': 'My salary',
+            'scope': TransferCategory.PERSONAL,
+            'category_type': TransferCategory.INCOME,
+            'is_active': True,
+        }
+        serializer = TransferCategorySerializer(data=payload)
+        with pytest.raises(ValidationError) as exc:
+            serializer.is_valid(raise_exception=True)
+        assert str(exc.value.detail['non_field_errors'][0]) == 'User was not provided for personal transfer category.'
+
+    def test_get_transfer_category_details(
+        self, api_client: APIClient, base_user: Any, transfer_category_factory: FactoryMetaClass
+    ):
+        """Test get TransferCategory details."""
+        api_client.force_authenticate(base_user)
+        personal_category = transfer_category_factory(user=base_user, scope=TransferCategory.PERSONAL)
+        global_category = transfer_category_factory(user=None, scope=TransferCategory.GLOBAL)
+        for category in [personal_category, global_category]:
+            url = transfer_category_detail_url(category.id)
+
+            response = api_client.get(url)
+            serializer = TransferCategorySerializer(category)
+
+            assert response.status_code == status.HTTP_200_OK
+            assert response.data == serializer.data
+
+    def test_error_get_transfer_category_details_unauthenticated(
+        self, api_client: APIClient, transfer_category_factory: FactoryMetaClass
+    ):
+        """Test error on getting TransferCategory details being unauthenticated."""
+        category = transfer_category_factory()
+        url = transfer_category_detail_url(category.id)
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_error_get_other_user_personal_transfer_category_details(
+        self, api_client: APIClient, user_factory: FactoryMetaClass, transfer_category_factory: FactoryMetaClass
+    ):
+        """Test error on getting other user's personal TransferCategory details."""
+        user_1 = user_factory()
+        user_2 = user_factory()
+        category = transfer_category_factory(user=user_1)
+        api_client.force_authenticate(user_2)
+
+        url = transfer_category_detail_url(category.id)
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
     # @pytest.mark.parametrize('param, value', [('name', 'New name'), ('description', 'New description')])
     # def test_personal_entity_partial_update(
     #     self, api_client: APIClient, base_user: Any, entity_factory: FactoryMetaClass, param: str, value: Any
