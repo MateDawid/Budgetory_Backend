@@ -94,7 +94,6 @@ class TestTransferCategoryApi:
         payload = {
             'name': 'Taxes',
             'description': 'Taxes payments.',
-            'user': None,
             'scope': TransferCategory.GLOBAL,
             'category_type': TransferCategory.EXPENSE,
             'is_active': True,
@@ -112,11 +111,22 @@ class TestTransferCategoryApi:
         assert response.data == serializer.data
         assert category.user is None
 
-    # def test_create_global_transfer_category(self, api_client: APIClient, base_user: Any):
-    #     """Test error on creating global TransferCategory by non admin user."""
-    #
-    #     # TODO - apply such logic
-    #     pass
+    def test_error_create_global_transfer_category_by_non_admin_user(self, api_client: APIClient, base_user: Any):
+        """Test error on creating global TransferCategory by non admin user."""
+        api_client.force_authenticate(base_user)
+        payload = {
+            'name': 'Taxes',
+            'description': 'Taxes payments.',
+            'scope': TransferCategory.GLOBAL,
+            'category_type': TransferCategory.EXPENSE,
+            'is_active': True,
+        }
+
+        response = api_client.post(TRANSFER_CATEGORIES_URL, payload)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert not base_user.personal_entities.all().exists()
+        assert not TransferCategory.global_transfer_categories.all().exists()
 
     # def test_create_same_personal_entity_by_two_users(self, api_client: APIClient, user_factory: Any):
     #     """Test creating personal entity with the same params by two users."""
