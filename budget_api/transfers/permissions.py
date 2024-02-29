@@ -16,7 +16,7 @@ class IsPersonalTransferCategoryOwnerOrAdmin(BasePermission):
         is_owner = bool(
             request.user
             and category.exists()
-            and category.first().type == TransferCategory.PERSONAL
+            and category.first().scope == TransferCategory.PERSONAL
             and category.first().user == request.user
         )
         return is_owner

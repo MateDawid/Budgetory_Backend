@@ -9,7 +9,7 @@ class TransferCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TransferCategory
-        fields = ['id', 'name', 'description', 'category_type', 'scope', 'user']
+        fields = ['id', 'name', 'description', 'category_type', 'scope', 'user', 'is_active']
         read_only_fields = ['id']
 
     def validate(self, attrs):

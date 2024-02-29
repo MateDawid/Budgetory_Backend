@@ -298,154 +298,255 @@ class TestTransferCategoryApi:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    # @pytest.mark.parametrize('param, value', [('name', 'New name'), ('description', 'New description')])
-    # def test_personal_entity_partial_update(
-    #     self, api_client: APIClient, base_user: Any, entity_factory: FactoryMetaClass, param: str, value: Any
-    # ):
-    #     """Test partial update of personal Entity"""
-    #     api_client.force_authenticate(base_user)
-    #     entity = entity_factory(user=base_user, type=Entity.PERSONAL, name='Entity', description='My entity')
-    #     payload = {param: value}
-    #     url = entity_detail_url(entity.id)
-    #
-    #     response = api_client.patch(url, payload)
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     entity.refresh_from_db()
-    #     assert getattr(entity, param) == payload[param]
-    #
-    # @pytest.mark.parametrize('param, value', [('name', 'New name'), ('description', 'New description')])
-    # def test_global_entity_partial_update(
-    #     self, api_client: APIClient, admin_user: Any, entity_factory: FactoryMetaClass, param: str, value: Any
-    # ):
-    #     """Test partial update of global Entity as admin user."""
-    #     api_client.force_authenticate(admin_user)
-    #     entity = entity_factory(user=None, type=Entity.GLOBAL, name='Entity', description='My entity')
-    #     payload = {param: value}
-    #     url = entity_detail_url(entity.id)
-    #
-    #     response = api_client.patch(url, payload)
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     entity.refresh_from_db()
-    #     assert getattr(entity, param) == payload[param]
-    #
-    # @pytest.mark.parametrize('param, value', [('name', 'Old name')])
-    # def test_error_on_entity_partial_update(
-    #     self, api_client: APIClient, admin_user: Any, entity_factory: FactoryMetaClass, param: str, value: Any
-    # ):
-    #     """Test error on partial update of a Deposit."""
-    #     api_client.force_authenticate(admin_user)
-    #     entity_factory(user=None, name='Old name', description='My old entity')
-    #     entity = entity_factory(user=None, name='New name', description='My new entity')
-    #     old_value = getattr(entity, param)
-    #     payload = {param: value}
-    #     url = entity_detail_url(entity.id)
-    #
-    #     response = api_client.patch(url, payload)
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     entity.refresh_from_db()
-    #     assert getattr(entity, param) == old_value
-    #
-    # def test_personal_entity_full_update(self, api_client: APIClient, base_user: Any,
-    # entity_factory: FactoryMetaClass):
-    #     """Test successful full update of personal Entity"""
-    #     api_client.force_authenticate(base_user)
-    #     payload_old = {'name': 'Name', 'description': 'Selling stuff.', 'type': Entity.PERSONAL}
-    #     payload_new = {'name': 'New name', 'description': 'Selling NEW stuff.', 'type': Entity.PERSONAL}
-    #     entity = entity_factory(user=base_user, **payload_old)
-    #     url = entity_detail_url(entity.id)
-    #
-    #     response = api_client.put(url, payload_new)
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     entity.refresh_from_db()
-    #     assert entity.user == base_user
-    #     for k, v in payload_new.items():
-    #         assert getattr(entity, k) == v
-    #
-    # def test_global_entity_full_update(self, api_client: APIClient, admin_user: Any,
-    # entity_factory: FactoryMetaClass):
-    #     """Test successful full update of global Entity"""
-    #     api_client.force_authenticate(admin_user)
-    #     payload_old = {'name': 'Name', 'description': 'Selling stuff.', 'type': Entity.GLOBAL}
-    #     payload_new = {'name': 'New name', 'description': 'Selling NEW stuff.', 'type': Entity.GLOBAL}
-    #     entity = entity_factory(user=None, **payload_old)
-    #     url = entity_detail_url(entity.id)
-    #
-    #     response = api_client.put(url, payload_new)
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     entity.refresh_from_db()
-    #     assert entity.user is None
-    #     for k, v in payload_new.items():
-    #         assert getattr(entity, k) == v
-    #
-    # @pytest.mark.parametrize(
-    #     'payload_new',
-    #     [
-    #         {'name': 'Old personal seller', 'description': 'Selling stuff.', 'type': Entity.PERSONAL},
-    #         {'name': 'New personal seller', 'description': 'Selling stuff.', 'type': Entity.GLOBAL},
-    #     ],
-    # )
-    # def test_error_on_entity_full_update(
-    #     self, api_client: APIClient, base_user: Any, entity_factory: FactoryMetaClass, payload_new: dict
-    # ):
-    #     """Test error on full update of a Entity."""
-    #     api_client.force_authenticate(base_user)
-    #     entity_factory(
-    #         user=base_user, name='Old personal seller', description='Selling old stuff.', type=Entity.PERSONAL
-    #     )
-    #     entity_factory(user=None, name='Old global seller', description='Selling global stuff.', type=Entity.GLOBAL)
-    #     payload_old = {'name': 'New personal seller', 'description': 'Selling stuff.', 'type': Entity.PERSONAL}
-    #
-    #     entity = entity_factory(user=base_user, **payload_old)
-    #     url = entity_detail_url(entity.id)
-    #
-    #     response = api_client.put(url, payload_new)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     entity.refresh_from_db()
-    #     for k, v in payload_old.items():
-    #         assert getattr(entity, k) == v
-    #
-    # def test_delete_personal_entity(self, api_client: APIClient, base_user: Any, entity_factory: FactoryMetaClass):
-    #     """Test deleting personal Entity."""
-    #     api_client.force_authenticate(base_user)
-    #     entity = entity_factory(user=base_user)
-    #     url = entity_detail_url(entity.id)
-    #
-    #     assert base_user.personal_entities.all().count() == 1
-    #
-    #     response = api_client.delete(url)
-    #
-    #     assert response.status_code == status.HTTP_204_NO_CONTENT
-    #     assert not base_user.personal_entities.all().exists()
-    #
-    # def test_delete_global_entity(self, api_client: APIClient, admin_user: Any, entity_factory: FactoryMetaClass):
-    #     """Test deleting global Entity."""
-    #     api_client.force_authenticate(admin_user)
-    #     entity = entity_factory(user=None)
-    #     url = entity_detail_url(entity.id)
-    #
-    #     assert Entity.global_entities.all().count() == 1
-    #
-    #     response = api_client.delete(url)
-    #
-    #     assert response.status_code == status.HTTP_204_NO_CONTENT
-    #     assert not Entity.global_entities.all().exists()
-    #
-    # def test_error_on_delete_global_entity_by_not_admin(
-    #     self, api_client: APIClient, base_user: Any, entity_factory: FactoryMetaClass
-    # ):
-    #     """Test error on attempt to delete global Entity by user, that's not an admin."""
-    #     api_client.force_authenticate(base_user)
-    #     entity = entity_factory(user=None)
-    #     url = entity_detail_url(entity.id)
-    #
-    #     assert Entity.global_entities.all().count() == 1
-    #
-    #     response = api_client.delete(url)
-    #
-    #     assert response.status_code == status.HTTP_403_FORBIDDEN
-    #     assert Entity.global_entities.all().count() == 1
+    @pytest.mark.parametrize(
+        'param, value',
+        [
+            ('name', 'New name'),
+            ('description', 'New description'),
+            ('category_type', TransferCategory.EXPENSE),
+            ('is_active', False),
+        ],
+    )
+    def test_personal_transfer_category_partial_update(
+        self, api_client: APIClient, base_user: Any, transfer_category_factory: FactoryMetaClass, param: str, value: Any
+    ):
+        """Test partial update of personal TransferCategory."""
+        api_client.force_authenticate(base_user)
+        category = transfer_category_factory(
+            user=base_user,
+            category_type=TransferCategory.INCOME,
+            scope=TransferCategory.PERSONAL,
+            name='Name',
+            description='Description',
+            is_active=True,
+        )
+        payload = {param: value}
+        url = transfer_category_detail_url(category.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        category.refresh_from_db()
+        assert getattr(category, param) == payload[param]
+
+    @pytest.mark.parametrize(
+        'param, value',
+        [
+            ('name', 'New name'),
+            ('description', 'New description'),
+            ('category_type', TransferCategory.EXPENSE),
+            ('is_active', False),
+        ],
+    )
+    def test_global_transfer_category_partial_update(
+        self,
+        api_client: APIClient,
+        admin_user: Any,
+        transfer_category_factory: FactoryMetaClass,
+        param: str,
+        value: Any,
+    ):
+        """Test partial update of global TransferCategory as admin user."""
+        api_client.force_authenticate(admin_user)
+        category = transfer_category_factory(
+            user=None,
+            category_type=TransferCategory.INCOME,
+            scope=TransferCategory.GLOBAL,
+            name='Name',
+            description='Description',
+            is_active=True,
+        )
+        payload = {param: value}
+        url = transfer_category_detail_url(category.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        category.refresh_from_db()
+        assert getattr(category, param) == payload[param]
+
+    @pytest.mark.parametrize(
+        'param, value',
+        [
+            ('name', 'Old name'),
+        ],
+    )
+    def test_error_on_transfer_category_partial_update(
+        self,
+        api_client: APIClient,
+        admin_user: Any,
+        transfer_category_factory: FactoryMetaClass,
+        param: str,
+        value: Any,
+    ):
+        """Test error on partial update of a Deposit."""
+        api_client.force_authenticate(admin_user)
+        transfer_category_factory(
+            user=None,
+            category_type=TransferCategory.EXPENSE,
+            scope=TransferCategory.GLOBAL,
+            name='Old name',
+            description='Old description',
+            is_active=False,
+        )
+        category = transfer_category_factory(
+            user=None,
+            category_type=TransferCategory.INCOME,
+            scope=TransferCategory.GLOBAL,
+            name='New name',
+            description='New description',
+            is_active=True,
+        )
+        old_value = getattr(category, param)
+        payload = {param: value}
+        url = transfer_category_detail_url(category.id)
+
+        response = api_client.patch(url, payload)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        category.refresh_from_db()
+        assert getattr(category, param) == old_value
+
+    def test_personal_transfer_category_full_update(
+        self, api_client: APIClient, base_user: Any, transfer_category_factory: FactoryMetaClass
+    ):
+        """Test successful full update of personal TransferCategory"""
+        api_client.force_authenticate(base_user)
+        payload_old = {
+            'category_type': TransferCategory.EXPENSE,
+            'scope': TransferCategory.PERSONAL,
+            'name': 'Name',
+            'description': 'Description',
+        }
+        payload_new = {
+            'category_type': TransferCategory.INCOME,
+            'scope': TransferCategory.PERSONAL,
+            'name': 'New name',
+            'description': 'New description',
+        }
+        category = transfer_category_factory(user=base_user, **payload_old)
+        url = transfer_category_detail_url(category.id)
+
+        response = api_client.put(url, payload_new)
+
+        assert response.status_code == status.HTTP_200_OK
+        category.refresh_from_db()
+        assert category.user == base_user
+        for k, v in payload_new.items():
+            assert getattr(category, k) == v
+
+    def test_global_transfer_category_full_update(
+        self, api_client: APIClient, admin_user: Any, transfer_category_factory: FactoryMetaClass
+    ):
+        """Test successful full update of global TransferCategory"""
+        api_client.force_authenticate(admin_user)
+        payload_old = {
+            'category_type': TransferCategory.EXPENSE,
+            'scope': TransferCategory.GLOBAL,
+            'name': 'Name',
+            'description': 'Description',
+        }
+        payload_new = {
+            'category_type': TransferCategory.INCOME,
+            'scope': TransferCategory.GLOBAL,
+            'name': 'New name',
+            'description': 'New description',
+        }
+        category = transfer_category_factory(user=None, **payload_old)
+        url = transfer_category_detail_url(category.id)
+
+        response = api_client.put(url, payload_new)
+
+        assert response.status_code == status.HTTP_200_OK
+        category.refresh_from_db()
+        assert category.user is None
+        for k, v in payload_new.items():
+            assert getattr(category, k) == v
+
+    @pytest.mark.parametrize(
+        'payload_new',
+        [
+            {'name': 'Old personal name', 'scope': TransferCategory.PERSONAL},
+            {'name': 'New personal seller', 'scope': TransferCategory.GLOBAL},
+        ],
+    )
+    def test_error_on_transfer_category_full_update(
+        self, api_client: APIClient, base_user: Any, transfer_category_factory: FactoryMetaClass, payload_new: dict
+    ):
+        """Test error on full update of TransferCategory."""
+        api_client.force_authenticate(base_user)
+        transfer_category_factory(
+            user=None,
+            category_type=TransferCategory.EXPENSE,
+            scope=TransferCategory.GLOBAL,
+            name='Old personal name',
+            description='Old personal description',
+        )
+        transfer_category_factory(
+            user=None,
+            category_type=TransferCategory.INCOME,
+            scope=TransferCategory.GLOBAL,
+            name='Old global name',
+            description='Old global description',
+        )
+
+        payload_old = {
+            'category_type': TransferCategory.EXPENSE,
+            'scope': TransferCategory.PERSONAL,
+            'name': 'New personal name',
+            'description': 'New personal description',
+        }
+
+        category = transfer_category_factory(user=base_user, **payload_old)
+        url = transfer_category_detail_url(category.id)
+
+        response = api_client.put(url, payload_new)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        category.refresh_from_db()
+        for k, v in payload_old.items():
+            assert getattr(category, k) == v
+
+    def test_delete_personal_transfer_category(
+        self, api_client: APIClient, base_user: Any, transfer_category_factory: FactoryMetaClass
+    ):
+        """Test deleting personal TransferCategory."""
+        api_client.force_authenticate(base_user)
+        category = transfer_category_factory(user=base_user)
+        url = transfer_category_detail_url(category.id)
+
+        assert base_user.personal_transfer_categories.all().count() == 1
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not base_user.personal_transfer_categories.all().exists()
+
+    def test_delete_global_transfer_categories(
+        self, api_client: APIClient, admin_user: Any, transfer_category_factory: FactoryMetaClass
+    ):
+        """Test deleting global TransferCategory."""
+        api_client.force_authenticate(admin_user)
+        category = transfer_category_factory(user=None)
+        url = transfer_category_detail_url(category.id)
+
+        assert TransferCategory.global_transfer_categories.all().count() == 1
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not TransferCategory.global_transfer_categories.all().exists()
+
+    def test_error_on_delete_global_transfer_category_by_not_admin(
+        self, api_client: APIClient, base_user: Any, transfer_category_factory: FactoryMetaClass
+    ):
+        """Test error on attempt to delete global TransferCategory by user, that's not an admin."""
+        api_client.force_authenticate(base_user)
+        category = transfer_category_factory(user=None)
+        url = transfer_category_detail_url(category.id)
+
+        assert TransferCategory.global_transfer_categories.all().count() == 1
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert TransferCategory.global_transfer_categories.all().count() == 1
