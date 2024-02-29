@@ -62,7 +62,7 @@
    - [X] Tests
 
 6. 🔨 **TransferCategory**
-   - [ ] TransferCategory model, serializer, view
+   - [X] TransferCategory model, serializer, view
    - [ ] Tests
 
 7. 🔜 **ExpensePrediction**
