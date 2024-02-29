@@ -9,11 +9,13 @@ from periods.tests.factories import BudgetingPeriodFactory
 from pytest_django.lazy_django import skip_if_no_django
 from pytest_factoryboy import register
 from rest_framework.test import APIClient, APIRequestFactory
+from transfers.tests.factories import TransferCategoryFactory
 
 register(UserFactory)
 register(BudgetingPeriodFactory)
 register(DepositFactory)
 register(EntityFactory)
+register(TransferCategoryFactory)
 
 
 @pytest.fixture(scope='session')

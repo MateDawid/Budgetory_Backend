@@ -17,8 +17,8 @@ class Entity(models.Model):
     PERSONAL = 'PERSONAL'
 
     TYPE_CHOICES = (
-        ('GLOBAL', 'Global'),
-        ('PERSONAL', 'Personal'),
+        (GLOBAL, 'Global'),
+        (PERSONAL, 'Personal'),
     )
 
     name = models.CharField(max_length=128)
@@ -55,7 +55,7 @@ class Entity(models.Model):
 
     def clean_name(self):
         """
-        Check if Entity name is unique in global scope for not personal Entity or in user scope for personal Entity.
+        Check if Entity name is unique in global scope for global Entity or in user scope for personal Entity.
         """
         if (
             self.type == self.PERSONAL
