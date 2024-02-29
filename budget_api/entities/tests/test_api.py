@@ -192,7 +192,7 @@ class TestEntityApi:
             assert response.status_code == status.HTTP_200_OK
             assert response.data == serializer.data
 
-    def test_error_get_deposit_details_unauthenticated(self, api_client: APIClient, entity_factory: FactoryMetaClass):
+    def test_error_get_entity_details_unauthenticated(self, api_client: APIClient, entity_factory: FactoryMetaClass):
         """Test error on getting Entity details being unauthenticated."""
         entity = entity_factory()
         url = entity_detail_url(entity.id)
@@ -251,7 +251,7 @@ class TestEntityApi:
     def test_error_on_entity_partial_update(
         self, api_client: APIClient, admin_user: Any, entity_factory: FactoryMetaClass, param: str, value: Any
     ):
-        """Test error on partial update of a Deposit."""
+        """Test error on partial update of a Entity."""
         api_client.force_authenticate(admin_user)
         entity_factory(user=None, name='Old name', description='My old entity')
         entity = entity_factory(user=None, name='New name', description='My new entity')

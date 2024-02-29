@@ -31,7 +31,7 @@ class EntitySerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('User can be provided only for personal Entities.')
 
     def _validate_name(self, name: str, user: Any, type_: str) -> None:
-        """Checks if user has not used deposit name already."""
+        """Checks if user has not used entity name already."""
         if (
             type_ == 'PERSONAL'
             and user.personal_entities.filter(name__iexact=name).exclude(id=getattr(self.instance, 'id', None)).exists()
