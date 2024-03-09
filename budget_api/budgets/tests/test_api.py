@@ -2,19 +2,19 @@ from datetime import date
 from typing import Any, Optional
 
 import pytest
+from budgets.models import BudgetingPeriod
+from budgets.serializers import BudgetingPeriodSerializer
 from django.urls import reverse
 from factory.base import FactoryMetaClass
-from periods.models import BudgetingPeriod
-from periods.serializers import BudgetingPeriodSerializer
 from rest_framework import status
 from rest_framework.test import APIClient
 
-PERIODS_URL = reverse('periods:budgetingperiod-list')
+PERIODS_URL = reverse('budgets:budgetingperiod-list')
 
 
 def period_detail_url(period_id):
     """Create and return a budgeting period detail URL."""
-    return reverse('periods:budgetingperiod-detail', args=[period_id])
+    return reverse('budgets:budgetingperiod-detail', args=[period_id])
 
 
 @pytest.mark.django_db

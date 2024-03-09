@@ -1,5 +1,5 @@
+from budgets.models import BudgetingPeriod
 from django.db.models import Q
-from periods.models import BudgetingPeriod
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 

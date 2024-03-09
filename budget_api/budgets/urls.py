@@ -1,7 +1,7 @@
-from periods.views import BudgetingPeriodViewSet
+from budgets.views import BudgetingPeriodViewSet
 from rest_framework import routers
 
-app_name = 'periods'
+app_name = 'budgets'
 
 router = routers.DefaultRouter()
 router.register(r'', BudgetingPeriodViewSet)

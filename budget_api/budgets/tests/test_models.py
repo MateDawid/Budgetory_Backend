@@ -2,9 +2,9 @@ from datetime import date
 from typing import Union
 
 import pytest
+from budgets.models import BudgetingPeriod
 from django.core.exceptions import ValidationError
 from django.db import DataError, IntegrityError
-from periods.models import BudgetingPeriod
 
 
 @pytest.mark.django_db

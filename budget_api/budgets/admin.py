@@ -1,5 +1,5 @@
+from budgets.models import BudgetingPeriod
 from django.contrib import admin
-from periods.models import BudgetingPeriod
 
 
 @admin.register(BudgetingPeriod)

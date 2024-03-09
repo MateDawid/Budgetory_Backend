@@ -1,5 +1,5 @@
-from periods.models import BudgetingPeriod
-from periods.serializers import BudgetingPeriodSerializer
+from budgets.models import BudgetingPeriod
+from budgets.serializers import BudgetingPeriodSerializer
 from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
