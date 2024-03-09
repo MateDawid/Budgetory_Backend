@@ -8,7 +8,7 @@ class BudgetingPeriodFactory(factory.django.DjangoModelFactory):
     """Factory for BudgetingPeriod model."""
 
     class Meta:
-        model = 'periods.BudgetingPeriod'
+        model = 'budgets.BudgetingPeriod'
 
     user = factory.SubFactory(UserFactory)
     date_start = datetime.date(2023, 1, 1)
