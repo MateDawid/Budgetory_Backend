@@ -23,6 +23,11 @@ class Budget(models.Model):
         """String representation of BudgetingPeriod model instance."""
         return f'{self.name} ({self.owner.email})'
 
+    def save(self, *args, **kwargs):
+        """Override save method to remove Budget owner from Budget members."""
+        super().save(*args, **kwargs)
+        self.members.remove(self.owner)
+
 
 class BudgetingPeriod(models.Model):
     """Model for period in which budget will be calculated and reported."""
@@ -48,6 +53,11 @@ class BudgetingPeriod(models.Model):
         """Override save method to execute clean() method before saving model in database."""
         self.clean()
         super().save(*args, **kwargs)
+
+    def clean(self):
+        """Clean BudgetingPeriod input data before saving in database."""
+        self.clean_is_active()
+        self.clean_dates()
 
     def clean_is_active(self):
         """Check if is_active field is valid. If is_active not given, pass it to default model validation."""
@@ -76,8 +86,3 @@ class BudgetingPeriod(models.Model):
                 "date_start: Budgeting period date range collides with other user's budgeting periods.",
                 code='period-range-invalid',
             )
-
-    def clean(self):
-        """Clean BudgetingPeriod input data before saving in database."""
-        self.clean_is_active()
-        self.clean_dates()
