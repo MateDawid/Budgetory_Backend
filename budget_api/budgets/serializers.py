@@ -1,7 +1,16 @@
-from budgets.models import BudgetingPeriod
+from budgets.models import Budget, BudgetingPeriod
 from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+
+
+class BudgetSerializer(serializers.ModelSerializer):
+    """Serializer for Budget model."""
+
+    class Meta:
+        model = Budget
+        fields = ['id', 'name', 'description', 'currency', 'members']
+        read_only_fields = ['id']
 
 
 class BudgetingPeriodSerializer(serializers.ModelSerializer):
