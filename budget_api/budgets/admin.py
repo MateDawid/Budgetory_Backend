@@ -9,7 +9,7 @@ class BudgetAdmin(admin.ModelAdmin):
     list_display = ('name', 'owner')
     list_filter = ('owner__email',)
 
-    def save_related(self, request, form, formsets, change):
+    def save_related(self, request, form, formsets, change):  # pragma: no cover
         """Override save_related method to remove Budget owner from Budget members on saving model in admin panel."""
         super().save_related(request, form, formsets, change)
         form.instance.members.remove(form.instance.owner)

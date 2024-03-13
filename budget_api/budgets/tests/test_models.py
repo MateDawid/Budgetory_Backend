@@ -2,9 +2,112 @@ from datetime import date
 from typing import Union
 
 import pytest
-from budgets.models import BudgetingPeriod
+from budgets.models import Budget, BudgetingPeriod
+from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import DataError, IntegrityError
+from factory.base import FactoryMetaClass
+
+
+@pytest.mark.django_db
+class TestBudgetModel:
+    """Tests for Budget model"""
+
+    def test_create_object(self, user_factory: FactoryMetaClass):
+        """Test for successful creation of an object."""
+        owner = user_factory()
+        members = [user_factory() for _ in range(3)]
+        payload = {
+            'name': 'Home budget',
+            'description': 'Budget with home expenses and incomes',
+            'owner': owner,
+            'currency': 'PLN',
+        }
+        budget = Budget.objects.create(**payload)
+        budget.members.add(*members)
+        for param, value in payload.items():
+            assert getattr(budget, param) == value
+        assert len(members) == budget.members.all().count()
+        assert len(members) == budget.members.filter(id__in=[member.id for member in members]).distinct().count()
+        assert str(budget) == f'{budget.name} ({budget.owner.email})'
+
+    def test_owner_not_in_members(self, user_factory: FactoryMetaClass):
+        """Test for removing owner from members on Budget model save."""
+        owner = user_factory()
+        members = [user_factory() for _ in range(3)]
+        payload = {
+            'name': 'Home budget',
+            'description': 'Budget with home expenses and incomes',
+            'owner': owner,
+            'currency': 'PLN',
+        }
+        budget = Budget.objects.create(**payload)
+        budget.members.add(*members)
+        budget.members.add(owner)
+        budget.save()
+
+        assert owner not in budget.members.all()
+        assert len(members) == budget.members.all().count()
+
+    def test_creating_same_object_by_two_users(self, user_factory: FactoryMetaClass):
+        """Test creating Budget with the same params by two different users."""
+        users = [user_factory(), user_factory()]
+        payload = {'name': 'Home budget', 'description': 'Budget with home expenses and incomes', 'currency': 'PLN'}
+        for user in users:
+            payload['owner'] = user
+            Budget.objects.create(**payload)
+
+        assert Budget.objects.all().count() == 2
+        for user in users:
+            assert Budget.objects.filter(owner=user).count() == 1
+
+    @pytest.mark.django_db(transaction=True)
+    def test_error_name_too_long(self, user: AbstractUser):
+        """Test error on creating Budget with name too long."""
+        max_length = Budget._meta.get_field('name').max_length
+        payload = {
+            'name': (max_length + 1) * 'a',
+            'description': 'Budget with home expenses and incomes',
+            'owner': user,
+            'currency': 'PLN',
+        }
+
+        with pytest.raises(DataError) as exc:
+            Budget.objects.create(**payload)
+        assert str(exc.value) == f'value too long for type character varying({max_length})\n'
+        assert not Budget.objects.filter(owner=user).exists()
+
+    @pytest.mark.django_db(transaction=True)
+    def test_error_name_already_used(self, user: AbstractUser):
+        """Test error on creating Budget with already used name by the same user."""
+        payload = {
+            'name': 'Home budget',
+            'description': 'Budget with home expenses and incomes',
+            'owner': user,
+            'currency': 'PLN',
+        }
+        Budget.objects.create(**payload)
+
+        with pytest.raises(IntegrityError) as exc:
+            Budget.objects.create(**payload)
+
+        assert f'DETAIL:  Key (name, owner_id)=({payload["name"]}, {user.id}) already exists.' in str(exc.value)
+        assert Budget.objects.filter(owner=user).count() == 1
+
+    @pytest.mark.django_db(transaction=True)
+    def test_error_currency_too_long(self, user: AbstractUser):
+        """Test error on creating Budget with description too long."""
+        max_length = Budget._meta.get_field('currency').max_length
+        payload = {
+            'name': 'Home budget',
+            'description': 'Budget with home expenses and incomes',
+            'owner': user,
+            'currency': (max_length + 100) * 'a',
+        }
+        with pytest.raises(DataError) as exc:
+            Budget.objects.create(**payload)
+        assert str(exc.value) == f'value too long for type character varying({max_length})\n'
+        assert not Budget.objects.filter(owner=user).exists()
 
 
 @pytest.mark.django_db
