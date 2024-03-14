@@ -3,7 +3,9 @@ from budgets.serializers import BudgetingPeriodSerializer, BudgetSerializer
 from django.db.models import Q
 from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 
 class BudgetViewSet(viewsets.ModelViewSet):
@@ -15,8 +17,22 @@ class BudgetViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Retrieve Budgets for authenticated user."""
+        """Retrieve Budgets for authenticated User."""
         return self.queryset.filter(Q(owner=self.request.user) | Q(members=self.request.user)).order_by('id').distinct()
+
+    @action(detail=False)
+    def owned(self, request, **kwargs):
+        """Retrieves Budgets owned by authenticated User."""
+        owned_budgets = self.queryset.filter(owner=self.request.user).order_by('id').distinct()
+        serializer = self.get_serializer(owned_budgets, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False)
+    def membered(self, request, **kwargs):
+        """Retrieves Budgets in which authenticated User is a member."""
+        membered_budgets = self.queryset.filter(members=self.request.user).order_by('id').distinct()
+        serializer = self.get_serializer(membered_budgets, many=True)
+        return Response(serializer.data)
 
     def perform_create(self, serializer):
         """Save request User as owner of Budget model."""
