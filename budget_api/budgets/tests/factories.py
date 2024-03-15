@@ -1,4 +1,6 @@
 import datetime
+import random
+import string
 
 import factory
 from app_users.tests.factories import UserFactory
@@ -13,8 +15,12 @@ class BudgetFactory(factory.django.DjangoModelFactory):
 
     name = factory.Faker('text', max_nb_chars=128)
     description = factory.Faker('text', max_nb_chars=255)
-    currency = factory.Faker('text', max_nb_chars=3)
     owner = factory.SubFactory(UserFactory)
+
+    @factory.lazy_attribute
+    def currency(self) -> str:
+        """Generates currency."""
+        return ''.join(random.choice(string.ascii_letters) for _ in range(3))
 
     @factory.post_generation
     def members(self, create: bool, users: list[AbstractUser], **kwargs) -> None:
