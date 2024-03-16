@@ -11,6 +11,8 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 BUDGETS_URL = reverse('budgets:budget-list')
+OWNED_BUDGETS_URL = reverse('budgets:budget-owned')
+MEMBERED_BUDGETS_URL = reverse('budgets:budget-membered')
 PERIODS_URL = reverse('budgets:budgetingperiod-list')
 
 
@@ -70,6 +72,40 @@ class TestBudgetApi:
         assert response.status_code == status.HTTP_200_OK
         assert response.data['results'] == serializer.data
         assert len(response.data['results']) == budgets.count() == 2
+
+    def test_retrieve_owned_list(
+        self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
+    ):
+        """Test retrieving list of Budgets owned by User."""
+        auth_user = user_factory()
+        api_client.force_authenticate(auth_user)
+        budget_factory(owner=auth_user)
+        budget_factory(owner=auth_user)
+        budget_factory(owner=user_factory(), members=[auth_user])
+
+        response = api_client.get(OWNED_BUDGETS_URL)
+
+        owned_budgets = Budget.objects.filter(owner=auth_user).order_by('id').distinct()
+        serializer = BudgetSerializer(owned_budgets, many=True)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['results'] == serializer.data
+
+    def test_retrieve_membered_list(
+        self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
+    ):
+        """Test retrieving list of Budgets in which User is a member."""
+        auth_user = user_factory()
+        api_client.force_authenticate(auth_user)
+        budget_factory(owner=auth_user)
+        budget_factory(owner=user_factory(), members=[auth_user])
+        budget_factory(owner=user_factory(), members=[auth_user, user_factory()])
+
+        response = api_client.get(MEMBERED_BUDGETS_URL)
+
+        membered_budgets = Budget.objects.filter(members=auth_user).order_by('id').distinct()
+        serializer = BudgetSerializer(membered_budgets, many=True)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['results'] == serializer.data
 
 
 #     def test_create_single_period(self, api_client: APIClient, base_user: Any):

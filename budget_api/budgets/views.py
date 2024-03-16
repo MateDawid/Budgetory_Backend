@@ -25,14 +25,14 @@ class BudgetViewSet(viewsets.ModelViewSet):
         """Retrieves Budgets owned by authenticated User."""
         owned_budgets = self.queryset.filter(owner=self.request.user).order_by('id').distinct()
         serializer = self.get_serializer(owned_budgets, many=True)
-        return Response(serializer.data)
+        return Response({'results': serializer.data})
 
     @action(detail=False)
     def membered(self, request, **kwargs):
         """Retrieves Budgets in which authenticated User is a member."""
         membered_budgets = self.queryset.filter(members=self.request.user).order_by('id').distinct()
         serializer = self.get_serializer(membered_budgets, many=True)
-        return Response(serializer.data)
+        return Response({'results': serializer.data})
 
     def perform_create(self, serializer):
         """Save request User as owner of Budget model."""
