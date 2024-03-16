@@ -1,9 +1,10 @@
 from datetime import date
-from typing import Any, Optional
+from typing import Optional
 
 import pytest
 from budgets.models import Budget, BudgetingPeriod
 from budgets.serializers import BudgetingPeriodSerializer, BudgetSerializer
+from django.contrib.auth.models import AbstractUser
 from django.db.models import Q
 from django.urls import reverse
 from factory.base import FactoryMetaClass
@@ -107,15 +108,14 @@ class TestBudgetApi:
         assert response.status_code == status.HTTP_200_OK
         assert response.data['results'] == serializer.data
 
-
-    def test_create_single_object(self, api_client: APIClient, base_user: Any, user_factory: FactoryMetaClass):
+    def test_create_single_object(self, api_client: APIClient, base_user: AbstractUser, user_factory: FactoryMetaClass):
         """Test creating single Budget."""
         api_client.force_authenticate(base_user)
         payload = {
             'name': 'Budget 1',
             'description': 'Some budget',
             'currency': 'PLN',
-            'members': [user_factory().id, user_factory().id]
+            'members': [user_factory().id, user_factory().id],
         }
 
         response = api_client.post(BUDGETS_URL, payload)
@@ -134,21 +134,18 @@ class TestBudgetApi:
         serializer = BudgetSerializer(budget)
         assert response.data == serializer.data
 
-    def test_create_two_objects_by_one_user(self, api_client: APIClient, base_user: Any, user_factory: FactoryMetaClass):
+    def test_create_two_objects_by_one_user(
+        self, api_client: APIClient, base_user: AbstractUser, user_factory: FactoryMetaClass
+    ):
         """Test creating two valid Budgets by single User."""
         api_client.force_authenticate(base_user)
         payload_1 = {
             'name': 'Budget 1',
             'description': 'Some budget',
             'currency': 'PLN',
-            'members': [user_factory().id, user_factory().id]
+            'members': [user_factory().id, user_factory().id],
         }
-        payload_2 = {
-            'name': 'Budget 2',
-            'description': 'Another budget',
-            'currency': 'eur',
-            'members': []
-        }
+        payload_2 = {'name': 'Budget 2', 'description': 'Another budget', 'currency': 'eur', 'members': []}
 
         response_1 = api_client.post(BUDGETS_URL, payload_1)
         response_2 = api_client.post(BUDGETS_URL, payload_2)
@@ -167,14 +164,9 @@ class TestBudgetApi:
                 else:
                     assert getattr(budget, key) == payload[key]
 
-    def test_create_same_object_by_two_users(self, api_client: APIClient, user_factory: Any):
+    def test_create_same_object_by_two_users(self, api_client: APIClient, user_factory: AbstractUser):
         """Test creating Budget with the same params by two users."""
-        payload = {
-            'name': 'Budget',
-            'description': 'Some budget',
-            'currency': 'eur',
-            'members': []
-        }
+        payload = {'name': 'Budget', 'description': 'Some budget', 'currency': 'eur', 'members': []}
         user_1 = user_factory()
         api_client.force_authenticate(user_1)
         api_client.post(BUDGETS_URL, payload)
@@ -187,24 +179,26 @@ class TestBudgetApi:
         assert Budget.objects.filter(owner=user_1).count() == 1
         assert Budget.objects.filter(owner=user_2).count() == 1
 
-#     def test_error_name_too_long(self, api_client: APIClient, base_user: Any):
-#         """Test error on creating BudgetingPeriod with name too long."""
-#         api_client.force_authenticate(base_user)
-#         max_length = BudgetingPeriod._meta.get_field('name').max_length
-#         payload = {
-#             'name': (max_length + 1) * 'a',
-#             'date_start': date(2023, 1, 1),
-#             'date_end': date(2023, 1, 31),
-#         }
-#
-#         response = api_client.post(PERIODS_URL, payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert 'name' in response.data
-#         assert response.data['name'][0] == f'Ensure this field has no more than {max_length} characters.'
-#         assert not BudgetingPeriod.objects.filter(user=base_user).exists()
-#
-#     def test_error_name_already_used(self, api_client: APIClient, base_user: Any):
+    def test_error_name_too_long(self, api_client: APIClient, base_user: AbstractUser, user_factory: AbstractUser):
+        """Test error on creating Budget with name too long."""
+        api_client.force_authenticate(base_user)
+        max_length = Budget._meta.get_field('name').max_length
+        payload = {
+            'name': (max_length + 1) * 'a',
+            'description': 'Some budget',
+            'currency': 'PLN',
+            'members': [user_factory().id, user_factory().id],
+        }
+
+        response = api_client.post(BUDGETS_URL, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'name' in response.data
+        assert response.data['name'][0] == f'Ensure this field has no more than {max_length} characters.'
+        assert not BudgetingPeriod.objects.filter(user=base_user).exists()
+
+
+#     def test_error_name_already_used(self, api_client: APIClient, base_user: AbstractUser):
 #         """Test error on creating BudgetingPeriod with already used name by the same user."""
 #         api_client.force_authenticate(base_user)
 #         payload = {
@@ -223,7 +217,7 @@ class TestBudgetApi:
 #         assert response.data['name'][0] == f"Users period with name {payload['name']} already exists."
 #         assert BudgetingPeriod.objects.filter(user=base_user).count() == 1
 #
-#     def test_create_active_period_successfully(self, api_client: APIClient, base_user: Any):
+#     def test_create_active_period_successfully(self, api_client: APIClient, base_user: AbstractUser):
 #         """Test creating BudgetingPeriod with is_active=True successfully."""
 #         api_client.force_authenticate(base_user)
 #         payload_inactive = {
@@ -249,7 +243,7 @@ class TestBudgetApi:
 #             period = BudgetingPeriod.objects.get(id=response.data['id'])
 #             assert period.is_active == payload['is_active']
 #
-#     def test_error_create_period_when_is_active_set_already(self, api_client: APIClient, base_user: Any):
+#     def test_error_create_period_when_is_active_set_already(self, api_client: APIClient, base_user: AbstractUser):
 #         """Test error on creating new BudgetingPeriod with is_active=True,
 #         when another user's period active already."""
 #         api_client.force_authenticate(base_user)
@@ -275,7 +269,7 @@ class TestBudgetApi:
 #         assert BudgetingPeriod.objects.filter(user=base_user).count() == 1
 #         assert BudgetingPeriod.objects.filter(user=base_user).first() == active_period
 #
-#     def test_is_active_default_value(self, api_client: APIClient, base_user: Any):
+#     def test_is_active_default_value(self, api_client: APIClient, base_user: AbstractUser):
 #         """Test creating BudgetingPeriod without passing is_active ends with default False value."""
 #         api_client.force_authenticate(base_user)
 #         payload = {
@@ -294,7 +288,7 @@ class TestBudgetApi:
 #
 #     @pytest.mark.parametrize('date_start, date_end', (('', date.today()), (date.today(), ''), ('', '')))
 #     def test_error_date_blank(
-#         self, api_client: APIClient, base_user: Any, date_start: Optional[date], date_end: Optional[date]
+#         self, api_client: APIClient, base_user: AbstractUser, date_start: Optional[date], date_end: Optional[date]
 #     ):
 #         """Test error on creating BudgetingPeriod with date_start or date_end blank."""
 #         api_client.force_authenticate(base_user)
@@ -311,7 +305,7 @@ class TestBudgetApi:
 #         )
 #         assert not BudgetingPeriod.objects.filter(user=base_user).exists()
 #
-#     def test_error_date_end_before_date_start(self, api_client: APIClient, base_user: Any):
+#     def test_error_date_end_before_date_start(self, api_client: APIClient, base_user: AbstractUser):
 #         """Test error on creating BudgetingPeriod with date_end earlier than date_start."""
 #         api_client.force_authenticate(base_user)
 #         payload = {'name': '2023_01', 'date_start': date(2023, 5, 1), 'date_end': date(2023, 4, 30),
@@ -363,7 +357,8 @@ class TestBudgetApi:
 #             (date(2023, 7, 31), date(2023, 8, 1)),
 #         ),
 #     )
-#     def test_error_date_invalid(self, api_client: APIClient, base_user: Any, date_start: date, date_end: date):
+#     def test_error_date_invalid(self, api_client: APIClient, base_user: AbstractUser,
+#     date_start: date, date_end: date):
 #         """Test error on creating BudgetingPeriod with invalid dates."""
 #         api_client.force_authenticate(base_user)
 #         payload_1 = {
@@ -395,7 +390,7 @@ class TestBudgetApi:
 #         assert BudgetingPeriod.objects.filter(user=base_user).count() == 2
 #
 #     def test_get_period_details(
-#         self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass
+#         self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass
 #     ):
 #         """Test get BudgetingPeriod details."""
 #         api_client.force_authenticate(base_user)
@@ -409,7 +404,7 @@ class TestBudgetApi:
 #         assert response.data == serializer.data
 #
 #     def test_error_get_period_details_unauthenticated(
-#         self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass
+#         self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass
 #     ):
 #         """Test error on getting BudgetingPeriod details being unauthenticated."""
 #         period = budgeting_period_factory(user=base_user)
@@ -437,8 +432,8 @@ class TestBudgetApi:
 #         'param, value', [('date_start', date(2024, 1, 2)), ('date_end', date(2024, 1, 30)), ('is_active', True)]
 #     )
 #     def test_period_partial_update(
-#         self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass, param: str,
-#         value: Any
+#         self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass, param: str,
+#         value: AbstractUser
 #     ):
 #         """Test partial update of a BudgetingPeriod"""
 #         api_client.force_authenticate(base_user)
@@ -458,8 +453,8 @@ class TestBudgetApi:
 #         'param, value', [('date_start', date(2023, 12, 31)), ('date_end', date(2024, 2, 1)), ('is_active', True)]
 #     )
 #     def test_error_on_period_partial_update(
-#         self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass, param: str,
-#         value: Any
+#         self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass, param: str,
+#         value: AbstractUser
 #     ):
 #         """Test error on partial update of a BudgetingPeriod."""
 #         api_client.force_authenticate(base_user)
@@ -480,7 +475,7 @@ class TestBudgetApi:
 #         assert getattr(period, param) == old_value
 #
 #     def test_period_full_update(
-#         self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass
+#         self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass
 #     ):
 #         """Test successful full update of a BudgetingPeriod"""
 #         api_client.force_authenticate(base_user)
@@ -515,7 +510,8 @@ class TestBudgetApi:
 #         ],
 #     )
 #     def test_error_on_period_full_update(
-#         self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass, payload_new: dict
+#         self, api_client: APIClient, base_user: AbstractUser,
+#         budgeting_period_factory: FactoryMetaClass, payload_new: dict
 #     ):
 #         """Test error on full update of a BudgetingPeriod."""
 #         api_client.force_authenticate(base_user)
@@ -539,7 +535,8 @@ class TestBudgetApi:
 #         for k, v in payload_old.items():
 #             assert getattr(period, k) == v
 #
-#     def test_delete_period(self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass):
+#     def test_delete_period(self, api_client: APIClient, base_user: AbstractUser,
+#     budgeting_period_factory: FactoryMetaClass):
 #         """Test deleting BudgetingPeriod."""
 #         api_client.force_authenticate(base_user)
 #         period = budgeting_period_factory(user=base_user)
@@ -564,7 +561,7 @@ class TestBudgetingPeriodApi:
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_retrieve_periods_list(
-        self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass
+        self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass
     ):
         """Test retrieving list of periods."""
         api_client.force_authenticate(base_user)
@@ -598,7 +595,7 @@ class TestBudgetingPeriodApi:
         assert response.status_code == status.HTTP_200_OK
         assert response.data['results'] == serializer.data
 
-    def test_create_single_period(self, api_client: APIClient, base_user: Any):
+    def test_create_single_period(self, api_client: APIClient, base_user: AbstractUser):
         """Test creating single BudgetingPeriod."""
         api_client.force_authenticate(base_user)
         payload = {'name': '2023_01', 'date_start': date(2023, 1, 1), 'date_end': date(2023, 1, 31)}
@@ -613,7 +610,7 @@ class TestBudgetingPeriodApi:
         serializer = BudgetingPeriodSerializer(period)
         assert response.data == serializer.data
 
-    def test_create_two_periods_by_one_user(self, api_client: APIClient, base_user: Any):
+    def test_create_two_periods_by_one_user(self, api_client: APIClient, base_user: AbstractUser):
         """Test creating two valid BudgetingPeriods by single user."""
         api_client.force_authenticate(base_user)
         payload_1 = {
@@ -638,7 +635,7 @@ class TestBudgetingPeriodApi:
             for key in payload:
                 assert getattr(period, key) == payload[key]
 
-    def test_create_same_period_by_two_users(self, api_client: APIClient, user_factory: Any):
+    def test_create_same_period_by_two_users(self, api_client: APIClient, user_factory: AbstractUser):
         """Test creating period with the same params by two users."""
         payload = {
             'name': '2023_01',
@@ -657,7 +654,7 @@ class TestBudgetingPeriodApi:
         assert BudgetingPeriod.objects.filter(user=user_1).count() == 1
         assert BudgetingPeriod.objects.filter(user=user_2).count() == 1
 
-    def test_error_name_too_long(self, api_client: APIClient, base_user: Any):
+    def test_error_name_too_long(self, api_client: APIClient, base_user: AbstractUser):
         """Test error on creating BudgetingPeriod with name too long."""
         api_client.force_authenticate(base_user)
         max_length = BudgetingPeriod._meta.get_field('name').max_length
@@ -674,7 +671,7 @@ class TestBudgetingPeriodApi:
         assert response.data['name'][0] == f'Ensure this field has no more than {max_length} characters.'
         assert not BudgetingPeriod.objects.filter(user=base_user).exists()
 
-    def test_error_name_already_used(self, api_client: APIClient, base_user: Any):
+    def test_error_name_already_used(self, api_client: APIClient, base_user: AbstractUser):
         """Test error on creating BudgetingPeriod with already used name by the same user."""
         api_client.force_authenticate(base_user)
         payload = {
@@ -693,7 +690,7 @@ class TestBudgetingPeriodApi:
         assert response.data['name'][0] == f"Users period with name {payload['name']} already exists."
         assert BudgetingPeriod.objects.filter(user=base_user).count() == 1
 
-    def test_create_active_period_successfully(self, api_client: APIClient, base_user: Any):
+    def test_create_active_period_successfully(self, api_client: APIClient, base_user: AbstractUser):
         """Test creating BudgetingPeriod with is_active=True successfully."""
         api_client.force_authenticate(base_user)
         payload_inactive = {
@@ -719,7 +716,7 @@ class TestBudgetingPeriodApi:
             period = BudgetingPeriod.objects.get(id=response.data['id'])
             assert period.is_active == payload['is_active']
 
-    def test_error_create_period_when_is_active_set_already(self, api_client: APIClient, base_user: Any):
+    def test_error_create_period_when_is_active_set_already(self, api_client: APIClient, base_user: AbstractUser):
         """Test error on creating new BudgetingPeriod with is_active=True, when another user's period active already."""
         api_client.force_authenticate(base_user)
         payload_1 = {
@@ -744,7 +741,7 @@ class TestBudgetingPeriodApi:
         assert BudgetingPeriod.objects.filter(user=base_user).count() == 1
         assert BudgetingPeriod.objects.filter(user=base_user).first() == active_period
 
-    def test_is_active_default_value(self, api_client: APIClient, base_user: Any):
+    def test_is_active_default_value(self, api_client: APIClient, base_user: AbstractUser):
         """Test creating BudgetingPeriod without passing is_active ends with default False value."""
         api_client.force_authenticate(base_user)
         payload = {
@@ -763,7 +760,7 @@ class TestBudgetingPeriodApi:
 
     @pytest.mark.parametrize('date_start, date_end', (('', date.today()), (date.today(), ''), ('', '')))
     def test_error_date_blank(
-        self, api_client: APIClient, base_user: Any, date_start: Optional[date], date_end: Optional[date]
+        self, api_client: APIClient, base_user: AbstractUser, date_start: Optional[date], date_end: Optional[date]
     ):
         """Test error on creating BudgetingPeriod with date_start or date_end blank."""
         api_client.force_authenticate(base_user)
@@ -780,7 +777,7 @@ class TestBudgetingPeriodApi:
         )
         assert not BudgetingPeriod.objects.filter(user=base_user).exists()
 
-    def test_error_date_end_before_date_start(self, api_client: APIClient, base_user: Any):
+    def test_error_date_end_before_date_start(self, api_client: APIClient, base_user: AbstractUser):
         """Test error on creating BudgetingPeriod with date_end earlier than date_start."""
         api_client.force_authenticate(base_user)
         payload = {'name': '2023_01', 'date_start': date(2023, 5, 1), 'date_end': date(2023, 4, 30), 'is_active': False}
@@ -831,7 +828,7 @@ class TestBudgetingPeriodApi:
             (date(2023, 7, 31), date(2023, 8, 1)),
         ),
     )
-    def test_error_date_invalid(self, api_client: APIClient, base_user: Any, date_start: date, date_end: date):
+    def test_error_date_invalid(self, api_client: APIClient, base_user: AbstractUser, date_start: date, date_end: date):
         """Test error on creating BudgetingPeriod with invalid dates."""
         api_client.force_authenticate(base_user)
         payload_1 = {
@@ -863,7 +860,7 @@ class TestBudgetingPeriodApi:
         assert BudgetingPeriod.objects.filter(user=base_user).count() == 2
 
     def test_get_period_details(
-        self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass
+        self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass
     ):
         """Test get BudgetingPeriod details."""
         api_client.force_authenticate(base_user)
@@ -877,7 +874,7 @@ class TestBudgetingPeriodApi:
         assert response.data == serializer.data
 
     def test_error_get_period_details_unauthenticated(
-        self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass
+        self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass
     ):
         """Test error on getting BudgetingPeriod details being unauthenticated."""
         period = budgeting_period_factory(user=base_user)
@@ -905,7 +902,12 @@ class TestBudgetingPeriodApi:
         'param, value', [('date_start', date(2024, 1, 2)), ('date_end', date(2024, 1, 30)), ('is_active', True)]
     )
     def test_period_partial_update(
-        self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass, param: str, value: Any
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budgeting_period_factory: FactoryMetaClass,
+        param: str,
+        value: AbstractUser,
     ):
         """Test partial update of a BudgetingPeriod"""
         api_client.force_authenticate(base_user)
@@ -925,7 +927,12 @@ class TestBudgetingPeriodApi:
         'param, value', [('date_start', date(2023, 12, 31)), ('date_end', date(2024, 2, 1)), ('is_active', True)]
     )
     def test_error_on_period_partial_update(
-        self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass, param: str, value: Any
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budgeting_period_factory: FactoryMetaClass,
+        param: str,
+        value: AbstractUser,
     ):
         """Test error on partial update of a BudgetingPeriod."""
         api_client.force_authenticate(base_user)
@@ -946,7 +953,7 @@ class TestBudgetingPeriodApi:
         assert getattr(period, param) == old_value
 
     def test_period_full_update(
-        self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass
+        self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass
     ):
         """Test successful full update of a BudgetingPeriod"""
         api_client.force_authenticate(base_user)
@@ -981,7 +988,11 @@ class TestBudgetingPeriodApi:
         ],
     )
     def test_error_on_period_full_update(
-        self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass, payload_new: dict
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budgeting_period_factory: FactoryMetaClass,
+        payload_new: dict,
     ):
         """Test error on full update of a BudgetingPeriod."""
         api_client.force_authenticate(base_user)
@@ -1005,7 +1016,9 @@ class TestBudgetingPeriodApi:
         for k, v in payload_old.items():
             assert getattr(period, k) == v
 
-    def test_delete_period(self, api_client: APIClient, base_user: Any, budgeting_period_factory: FactoryMetaClass):
+    def test_delete_period(
+        self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass
+    ):
         """Test deleting BudgetingPeriod."""
         api_client.force_authenticate(base_user)
         period = budgeting_period_factory(user=base_user)
