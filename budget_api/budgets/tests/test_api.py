@@ -108,65 +108,85 @@ class TestBudgetApi:
         assert response.data['results'] == serializer.data
 
 
-#     def test_create_single_period(self, api_client: APIClient, base_user: Any):
-#         """Test creating single BudgetingPeriod."""
-#         api_client.force_authenticate(base_user)
-#         payload = {'name': '2023_01', 'date_start': date(2023, 1, 1), 'date_end': date(2023, 1, 31)}
-#
-#         response = api_client.post(PERIODS_URL, payload)
-#
-#         assert response.status_code == status.HTTP_201_CREATED
-#         assert BudgetingPeriod.objects.filter(user=base_user).count() == 1
-#         period = BudgetingPeriod.objects.get(id=response.data['id'])
-#         for key in payload:
-#             assert getattr(period, key) == payload[key]
-#         serializer = BudgetingPeriodSerializer(period)
-#         assert response.data == serializer.data
-#
-#     def test_create_two_periods_by_one_user(self, api_client: APIClient, base_user: Any):
-#         """Test creating two valid BudgetingPeriods by single user."""
-#         api_client.force_authenticate(base_user)
-#         payload_1 = {
-#             'name': '2023_01',
-#             'date_start': date(2023, 1, 1),
-#             'date_end': date(2023, 1, 31),
-#         }
-#         payload_2 = {
-#             'name': '2023_02',
-#             'date_start': date(2023, 2, 1),
-#             'date_end': date(2023, 2, 28),
-#         }
-#
-#         response_1 = api_client.post(PERIODS_URL, payload_1)
-#         response_2 = api_client.post(PERIODS_URL, payload_2)
-#
-#         assert response_1.status_code == status.HTTP_201_CREATED
-#         assert response_2.status_code == status.HTTP_201_CREATED
-#         assert BudgetingPeriod.objects.filter(user=base_user).count() == 2
-#         for response, payload in [(response_1, payload_1), (response_2, payload_2)]:
-#             period = BudgetingPeriod.objects.get(id=response.data['id'])
-#             for key in payload:
-#                 assert getattr(period, key) == payload[key]
-#
-#     def test_create_same_period_by_two_users(self, api_client: APIClient, user_factory: Any):
-#         """Test creating period with the same params by two users."""
-#         payload = {
-#             'name': '2023_01',
-#             'date_start': date(2023, 1, 1),
-#             'date_end': date(2023, 1, 31),
-#         }
-#         user_1 = user_factory()
-#         api_client.force_authenticate(user_1)
-#         api_client.post(PERIODS_URL, payload)
-#
-#         user_2 = user_factory()
-#         api_client.force_authenticate(user_2)
-#         api_client.post(PERIODS_URL, payload)
-#
-#         assert BudgetingPeriod.objects.all().count() == 2
-#         assert BudgetingPeriod.objects.filter(user=user_1).count() == 1
-#         assert BudgetingPeriod.objects.filter(user=user_2).count() == 1
-#
+    def test_create_single_object(self, api_client: APIClient, base_user: Any, user_factory: FactoryMetaClass):
+        """Test creating single Budget."""
+        api_client.force_authenticate(base_user)
+        payload = {
+            'name': 'Budget 1',
+            'description': 'Some budget',
+            'currency': 'PLN',
+            'members': [user_factory().id, user_factory().id]
+        }
+
+        response = api_client.post(BUDGETS_URL, payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert Budget.objects.filter(owner=base_user).count() == 1
+        budget = Budget.objects.get(id=response.data['id'])
+        for key in payload:
+            if key == 'members':
+                members = getattr(budget, key)
+                assert members.count() == len(payload[key])
+                for member_id in payload[key]:
+                    assert members.filter(id=member_id).exists()
+            else:
+                assert getattr(budget, key) == payload[key]
+        serializer = BudgetSerializer(budget)
+        assert response.data == serializer.data
+
+    def test_create_two_objects_by_one_user(self, api_client: APIClient, base_user: Any, user_factory: FactoryMetaClass):
+        """Test creating two valid Budgets by single User."""
+        api_client.force_authenticate(base_user)
+        payload_1 = {
+            'name': 'Budget 1',
+            'description': 'Some budget',
+            'currency': 'PLN',
+            'members': [user_factory().id, user_factory().id]
+        }
+        payload_2 = {
+            'name': 'Budget 2',
+            'description': 'Another budget',
+            'currency': 'eur',
+            'members': []
+        }
+
+        response_1 = api_client.post(BUDGETS_URL, payload_1)
+        response_2 = api_client.post(BUDGETS_URL, payload_2)
+
+        assert response_1.status_code == status.HTTP_201_CREATED
+        assert response_2.status_code == status.HTTP_201_CREATED
+        assert Budget.objects.filter(owner=base_user).count() == 2
+        for response, payload in [(response_1, payload_1), (response_2, payload_2)]:
+            budget = Budget.objects.get(id=response.data['id'])
+            for key in payload:
+                if key == 'members':
+                    members = getattr(budget, key)
+                    assert members.count() == len(payload[key])
+                    for member_id in payload[key]:
+                        assert members.filter(id=member_id).exists()
+                else:
+                    assert getattr(budget, key) == payload[key]
+
+    def test_create_same_object_by_two_users(self, api_client: APIClient, user_factory: Any):
+        """Test creating Budget with the same params by two users."""
+        payload = {
+            'name': 'Budget',
+            'description': 'Some budget',
+            'currency': 'eur',
+            'members': []
+        }
+        user_1 = user_factory()
+        api_client.force_authenticate(user_1)
+        api_client.post(BUDGETS_URL, payload)
+
+        user_2 = user_factory()
+        api_client.force_authenticate(user_2)
+        api_client.post(BUDGETS_URL, payload)
+
+        assert Budget.objects.all().count() == 2
+        assert Budget.objects.filter(owner=user_1).count() == 1
+        assert Budget.objects.filter(owner=user_2).count() == 1
+
 #     def test_error_name_too_long(self, api_client: APIClient, base_user: Any):
 #         """Test error on creating BudgetingPeriod with name too long."""
 #         api_client.force_authenticate(base_user)
