@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Optional
+from typing import Any, Optional
 
 import pytest
 from budgets.models import Budget, BudgetingPeriod
@@ -210,7 +210,7 @@ class TestBudgetApi:
         assert response.data['name'][0] == f'User already owns Budget with name "{payload["name"]}".'
         assert Budget.objects.filter(owner=base_user).count() == 1
 
-    def test_get_budget_details(self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass):
+    def test_get_object_details(self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass):
         """Test get Budget details."""
         api_client.force_authenticate(base_user)
         budget = budget_factory(owner=base_user)
@@ -222,7 +222,7 @@ class TestBudgetApi:
         assert response.status_code == status.HTTP_200_OK
         assert response.data == serializer.data
 
-    def test_error_get_budget_details_unauthenticated(
+    def test_error_get_object_details_unauthenticated(
         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
     ):
         """Test error on getting Budget details being unauthenticated."""
@@ -233,7 +233,7 @@ class TestBudgetApi:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_error_get_other_user_budget_details(
+    def test_error_get_other_user_object_details(
         self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
     ):
         """Test error on getting other user's Budget details."""
@@ -247,53 +247,94 @@ class TestBudgetApi:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
+    @pytest.mark.parametrize(
+        'param, value',
+        [('name', 'New name'), ('description', 'New description'), ('members', [2, 3]), ('currency', 'PLN')],
+    )
+    def test_object_partial_update(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        param: str,
+        value: Any,
+    ):
+        """Test partial update of a Budget"""
+        user_factory()
+        user_factory()
+        api_client.force_authenticate(base_user)
+        payload = {'name': 'Budget', 'description': 'Some budget', 'currency': 'eur'}
+        budget = budget_factory(owner=base_user, **payload)
+        update_payload = {param: value}
+        url = budget_detail_url(budget.id)
 
-#     @pytest.mark.parametrize(
-#         'param, value', [('date_start', date(2024, 1, 2)), ('date_end', date(2024, 1, 30)), ('is_active', True)]
-#     )
-#     def test_period_partial_update(
-#         self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass, param: str,
-#         value: AbstractUser
-#     ):
-#         """Test partial update of a BudgetingPeriod"""
-#         api_client.force_authenticate(base_user)
-#         period = budgeting_period_factory(
-#             user=base_user, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=False
-#         )
-#         payload = {param: value}
-#         url = period_detail_url(period.id)
-#
-#         response = api_client.patch(url, payload)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         period.refresh_from_db()
-#         assert getattr(period, param) == payload[param]
-#
-#     @pytest.mark.parametrize(
-#         'param, value', [('date_start', date(2023, 12, 31)), ('date_end', date(2024, 2, 1)), ('is_active', True)]
-#     )
-#     def test_error_on_period_partial_update(
-#         self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass, param: str,
-#         value: AbstractUser
-#     ):
-#         """Test error on partial update of a BudgetingPeriod."""
-#         api_client.force_authenticate(base_user)
-#         budgeting_period_factory(
-#             user=base_user, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=True
-#         )
-#         period = budgeting_period_factory(
-#             user=base_user, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), is_active=False
-#         )
-#         old_value = getattr(period, param)
-#         payload = {param: value}
-#         url = period_detail_url(period.id)
-#
-#         response = api_client.patch(url, payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         period.refresh_from_db()
-#         assert getattr(period, param) == old_value
-#
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        budget.refresh_from_db()
+        if param == 'members':
+            assert list(budget.members.all().values_list('id', flat=True)) == update_payload[param]
+        else:
+            assert getattr(budget, param) == update_payload[param]
+
+    @pytest.mark.parametrize(
+        'param, value',
+        [
+            ('name', (Budget._meta.get_field('name').max_length + 1) * 'A'),
+            ('name', 'Old budget'),
+            ('members', [3]),
+            ('currency', (Budget._meta.get_field('currency').max_length + 1) * 'A'),
+        ],
+    )
+    def test_error_on_object_partial_update(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        param: str,
+        value: Any,
+    ):
+        """Test error on partial update of a Budget."""
+        user_factory()
+        api_client.force_authenticate(base_user)
+        old_payload = {'name': 'Old budget', 'description': 'Some budget', 'currency': 'eur'}
+        budget_factory(owner=base_user, **old_payload)
+        new_payload = {'name': 'New budget', 'description': 'Some budget', 'currency': 'eur'}
+        budget = budget_factory(owner=base_user, **new_payload)
+        old_value = getattr(budget, param)
+        payload = {param: value}
+        url = budget_detail_url(budget.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        budget.refresh_from_db()
+        assert getattr(budget, param) == old_value
+
+    def test_owner_unchangeable(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+    ):
+        """Test owner is not changed after partial updating a Budget."""
+        other_user = user_factory()
+        api_client.force_authenticate(base_user)
+        budget = budget_factory(owner=base_user)
+
+        payload = {'owner': other_user.id}
+        url = budget_detail_url(budget.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        budget.refresh_from_db()
+        assert budget.owner == base_user
+
+
 #     def test_period_full_update(
 #         self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass
 #     ):
@@ -727,7 +768,7 @@ class TestBudgetingPeriodApi:
         base_user: AbstractUser,
         budgeting_period_factory: FactoryMetaClass,
         param: str,
-        value: AbstractUser,
+        value: Any,
     ):
         """Test partial update of a BudgetingPeriod"""
         api_client.force_authenticate(base_user)
@@ -752,7 +793,7 @@ class TestBudgetingPeriodApi:
         base_user: AbstractUser,
         budgeting_period_factory: FactoryMetaClass,
         param: str,
-        value: AbstractUser,
+        value: Any,
     ):
         """Test error on partial update of a BudgetingPeriod."""
         api_client.force_authenticate(base_user)
