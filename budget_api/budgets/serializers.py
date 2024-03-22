@@ -1,7 +1,26 @@
+from budgets.models import Budget, BudgetingPeriod
 from django.db.models import Q
-from periods.models import BudgetingPeriod
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+
+
+class BudgetSerializer(serializers.ModelSerializer):
+    """Serializer for Budget model."""
+
+    class Meta:
+        model = Budget
+        fields = ['id', 'name', 'description', 'currency', 'members']
+        read_only_fields = ['id']
+
+    def validate_name(self, value: str) -> str:
+        """Checks if user has not used passed name for period already."""
+        try:
+            self.Meta.model.objects.get(owner=self.context['request'].user, name=value)
+        except self.Meta.model.DoesNotExist:
+            pass
+        else:
+            raise serializers.ValidationError(f'User already owns Budget with name "{value}".')
+        return value
 
 
 class BudgetingPeriodSerializer(serializers.ModelSerializer):

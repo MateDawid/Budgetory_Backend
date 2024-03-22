@@ -2,16 +2,17 @@ from typing import Any
 
 import pytest
 from app_users.tests.factories import UserFactory
+from budgets.tests.factories import BudgetFactory, BudgetingPeriodFactory
 from deposits.tests.factories import DepositFactory
 from django.contrib.auth import get_user_model
 from entities.tests.factories import EntityFactory
-from periods.tests.factories import BudgetingPeriodFactory
 from pytest_django.lazy_django import skip_if_no_django
 from pytest_factoryboy import register
 from rest_framework.test import APIClient, APIRequestFactory
 from transfers.tests.factories import TransferCategoryFactory
 
 register(UserFactory)
+register(BudgetFactory)
 register(BudgetingPeriodFactory)
 register(DepositFactory)
 register(EntityFactory)
