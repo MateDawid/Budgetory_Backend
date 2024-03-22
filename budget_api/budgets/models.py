@@ -4,10 +4,36 @@ from django.db import models
 from django.db.models import Q
 
 
+class Budget(models.Model):
+    """Model for object gathering all data like incomes, expenses and predictions for particular budget."""
+
+    name = models.CharField(max_length=128)
+    description = models.TextField(null=True, blank=True, max_length=300)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='owned_budgets')
+    members = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='joined_budgets', blank=True)
+    currency = models.CharField(max_length=3)
+
+    class Meta:
+        unique_together = (
+            'name',
+            'owner',
+        )
+
+    def __str__(self):
+        """String representation of BudgetingPeriod model instance."""
+        return f'{self.name} ({self.owner.email})'
+
+    def save(self, *args, **kwargs):
+        """Override save method to remove Budget owner from Budget members."""
+        super().save(*args, **kwargs)
+        self.members.remove(self.owner)
+
+
 class BudgetingPeriod(models.Model):
     """Model for period in which budget will be calculated and reported."""
 
     name = models.CharField(max_length=128)
+    # TODO - replace user with budget
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='budgeting_periods')
     date_start = models.DateField(null=False, blank=False)
     date_end = models.DateField(null=False, blank=False)
@@ -27,6 +53,11 @@ class BudgetingPeriod(models.Model):
         """Override save method to execute clean() method before saving model in database."""
         self.clean()
         super().save(*args, **kwargs)
+
+    def clean(self):
+        """Clean BudgetingPeriod input data before saving in database."""
+        self.clean_is_active()
+        self.clean_dates()
 
     def clean_is_active(self):
         """Check if is_active field is valid. If is_active not given, pass it to default model validation."""
@@ -55,8 +86,3 @@ class BudgetingPeriod(models.Model):
                 "date_start: Budgeting period date range collides with other user's budgeting periods.",
                 code='period-range-invalid',
             )
-
-    def clean(self):
-        """Clean BudgetingPeriod input data before saving in database."""
-        self.clean_is_active()
-        self.clean_dates()

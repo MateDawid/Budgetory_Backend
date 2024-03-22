@@ -17,18 +17,18 @@ API user representation.
 - ✔️ Authenticate with token
 - ⛔ Google login
 
-## ⛔ Budget
+## ✔️ Budget
 Groups financial data about particular area (family or company budget).
 ### Fields:
-- ⛔ name [str] - Budget name
-- ⛔ description [str] - Budget description [optional]
-- ⛔ owner [User] - Owner of Budget
-- ⛔ members [User] - Other members of Budget
-- ⛔ currency [str] - currency in which all financial values will be presented
+- ✔️ name [str] - Budget name
+- ✔️ description [str] - Budget description [optional]
+- ✔️ owner [User] - Owner of Budget
+- ✔️ members [User] - Other members of Budget
+- ✔️ currency [str] - currency in which all financial values will be presented
 
 ### Features:
-- ⛔ Creating new Budget by authenticated User
-- ⛔ Adding other Users as Budget members
+- ✔️ Creating new Budget by authenticated User
+- ⛔ Inviting other Users to Budget instead just adding them
 
 ## ⛔ BudgetingPeriod
 Period in which financial values are aggregated.
