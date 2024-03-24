@@ -13,7 +13,11 @@ class TestBudgetModel:
     """Tests for Budget model"""
 
     def test_create_object(self, user_factory: FactoryMetaClass):
-        """Test for successful creation of an object."""
+        """
+        GIVEN: User model instance in database.
+        WHEN: Budget instance create attempt with valid data.
+        THEN: Budget model instance exists in database with given data.
+        """
         owner = user_factory()
         members = [user_factory() for _ in range(3)]
         payload = {
@@ -31,7 +35,11 @@ class TestBudgetModel:
         assert str(budget) == f'{budget.name} ({budget.owner.email})'
 
     def test_owner_not_in_members(self, user_factory: FactoryMetaClass):
-        """Test for removing owner from members on Budget model save."""
+        """
+        GIVEN: User model instance in database.
+        WHEN: Budget instance create attempt with owner in members list.
+        THEN: Budget model instance exists in database without owner in members list.
+        """
         owner = user_factory()
         members = [user_factory() for _ in range(3)]
         payload = {
@@ -49,7 +57,11 @@ class TestBudgetModel:
         assert len(members) == budget.members.all().count()
 
     def test_creating_same_object_by_two_users(self, user_factory: FactoryMetaClass):
-        """Test creating Budget with the same params by two different users."""
+        """
+        GIVEN: Two User model instances in database.
+        WHEN: Two Budget instances create attempt with valid data - both for different Users as owners.
+        THEN: Two Budget model instances exists in database with given data.
+        """
         users = [user_factory(), user_factory()]
         payload = {'name': 'Home budget', 'description': 'Budget with home expenses and incomes', 'currency': 'PLN'}
         for user in users:
@@ -62,7 +74,11 @@ class TestBudgetModel:
 
     @pytest.mark.django_db(transaction=True)
     def test_error_name_too_long(self, user: AbstractUser):
-        """Test error on creating Budget with name too long."""
+        """
+        GIVEN: User model instance in database.
+        WHEN: Budget instance create attempt with name too long.
+        THEN: DataError raised. Object not created in database.
+        """
         max_length = Budget._meta.get_field('name').max_length
         payload = {
             'name': (max_length + 1) * 'a',
@@ -78,7 +94,11 @@ class TestBudgetModel:
 
     @pytest.mark.django_db(transaction=True)
     def test_error_name_already_used(self, user: AbstractUser):
-        """Test error on creating Budget with already used name by the same user."""
+        """
+        GIVEN: Budget object instance with User as owner in database.
+        WHEN: Budget instance create attempt with name already used for User's Budget..
+        THEN: IntegrityError raised. Object not created in database.
+        """
         payload = {
             'name': 'Home budget',
             'description': 'Budget with home expenses and incomes',
@@ -95,7 +115,11 @@ class TestBudgetModel:
 
     @pytest.mark.django_db(transaction=True)
     def test_error_currency_too_long(self, user: AbstractUser):
-        """Test error on creating Budget with description too long."""
+        """
+        GIVEN: User model instance in database.
+        WHEN: Budget instance create attempt with currency too long.
+        THEN: DataError raised. Object not created in database.
+        """
         max_length = Budget._meta.get_field('currency').max_length
         payload = {
             'name': 'Home budget',
