@@ -43,7 +43,7 @@ class BudgetingPeriodFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = 'budgets.BudgetingPeriod'
 
-    user = factory.SubFactory(UserFactory)
+    budget = factory.SubFactory(BudgetFactory)
     date_start = datetime.date(2023, 1, 1)
     date_end = datetime.date(2023, 1, 31)
     is_active = factory.Faker('boolean')
