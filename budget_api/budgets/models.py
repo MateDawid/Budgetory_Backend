@@ -82,6 +82,6 @@ class BudgetingPeriod(models.Model):
             .exists()
         ):
             raise ValidationError(
-                "date_start: Period date range collides with other Budget's periods.",
+                'date_start: Period date range collides with other period in Budget.',
                 code='period-range-invalid',
             )

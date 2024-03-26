@@ -398,5 +398,5 @@ class TestBudgetingPeriodModel:
         with pytest.raises(ValidationError) as exc:
             BudgetingPeriod.objects.create(**payload_invalid)
         assert exc.value.code == 'period-range-invalid'
-        assert exc.value.message == "date_start: Period date range collides with other Budget's periods."
+        assert exc.value.message == 'date_start: Period date range collides with other period in Budget.'
         assert BudgetingPeriod.objects.filter(budget=budget).count() == 2
