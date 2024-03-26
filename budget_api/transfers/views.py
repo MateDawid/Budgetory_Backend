@@ -25,9 +25,12 @@ class TransferCategoryViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Retrieve global TransferCategories and personal TransferCategories for authenticated user."""
-        return self.queryset.filter(
-            Q(scope=TransferCategory.GLOBAL) | Q(scope=TransferCategory.PERSONAL, user=self.request.user)
-        ).distinct()
+        user = getattr(self.request, 'user', None)
+        if user and user.is_authenticated:
+            return self.queryset.filter(
+                Q(scope=TransferCategory.GLOBAL) | Q(scope=TransferCategory.PERSONAL, user=user)
+            ).distinct()
+        return self.queryset.none()
 
     def create(self, request, *args, **kwargs):
         """Extend create method with passing user in serializer depending on TransferCategory type."""
