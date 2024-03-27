@@ -59,4 +59,4 @@ class BudgetingPeriodViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Additionally save user in BudgetingPeriod model."""
-        serializer.save(user=self.request.user)
+        serializer.save(budget=serializer.budget)
