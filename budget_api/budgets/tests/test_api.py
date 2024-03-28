@@ -527,66 +527,97 @@ class TestBudgetingPeriodApi:
         assert periods.first() == period
         assert response.data['results'] == serializer.data
 
+    def test_create_single_period(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget in database created.
+        WHEN: BudgetingPeriodViewSet list view for Budget id called by authenticated User by POST with valid data.
+        THEN: BudgetingPeriod for Budget created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = {'name': '2023_01', 'date_start': date(2023, 1, 1), 'date_end': date(2023, 1, 31)}
+        url = periods_url(budget.id)
 
-#     def test_create_single_period(self, api_client: APIClient, base_user: AbstractUser):
-#         """Test creating single BudgetingPeriod."""
-#         api_client.force_authenticate(base_user)
-#         payload = {'name': '2023_01', 'date_start': date(2023, 1, 1), 'date_end': date(2023, 1, 31)}
-#
-#         response = api_client.post(PERIODS_URL, payload)
-#
-#         assert response.status_code == status.HTTP_201_CREATED
-#         assert BudgetingPeriod.objects.filter(user=base_user).count() == 1
-#         period = BudgetingPeriod.objects.get(id=response.data['id'])
-#         for key in payload:
-#             assert getattr(period, key) == payload[key]
-#         serializer = BudgetingPeriodSerializer(period)
-#         assert response.data == serializer.data
-#
-#     def test_create_two_periods_by_one_user(self, api_client: APIClient, base_user: AbstractUser):
-#         """Test creating two valid BudgetingPeriods by single user."""
-#         api_client.force_authenticate(base_user)
-#         payload_1 = {
-#             'name': '2023_01',
-#             'date_start': date(2023, 1, 1),
-#             'date_end': date(2023, 1, 31),
-#         }
-#         payload_2 = {
-#             'name': '2023_02',
-#             'date_start': date(2023, 2, 1),
-#             'date_end': date(2023, 2, 28),
-#         }
-#
-#         response_1 = api_client.post(PERIODS_URL, payload_1)
-#         response_2 = api_client.post(PERIODS_URL, payload_2)
-#
-#         assert response_1.status_code == status.HTTP_201_CREATED
-#         assert response_2.status_code == status.HTTP_201_CREATED
-#         assert BudgetingPeriod.objects.filter(user=base_user).count() == 2
-#         for response, payload in [(response_1, payload_1), (response_2, payload_2)]:
-#             period = BudgetingPeriod.objects.get(id=response.data['id'])
-#             for key in payload:
-#                 assert getattr(period, key) == payload[key]
-#
-#     def test_create_same_period_by_two_users(self, api_client: APIClient, user_factory: AbstractUser):
-#         """Test creating period with the same params by two users."""
-#         payload = {
-#             'name': '2023_01',
-#             'date_start': date(2023, 1, 1),
-#             'date_end': date(2023, 1, 31),
-#         }
-#         user_1 = user_factory()
-#         api_client.force_authenticate(user_1)
-#         api_client.post(PERIODS_URL, payload)
-#
-#         user_2 = user_factory()
-#         api_client.force_authenticate(user_2)
-#         api_client.post(PERIODS_URL, payload)
-#
-#         assert BudgetingPeriod.objects.all().count() == 2
-#         assert BudgetingPeriod.objects.filter(user=user_1).count() == 1
-#         assert BudgetingPeriod.objects.filter(user=user_2).count() == 1
-#
+        response = api_client.post(url, payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
+        period = BudgetingPeriod.objects.get(id=response.data['id'])
+        for key in payload:
+            assert getattr(period, key) == payload[key]
+        serializer = BudgetingPeriodSerializer(period)
+        assert response.data == serializer.data
+
+    def test_create_two_periods_for_one_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget in database created.
+        WHEN: BudgetingPeriodViewSet list view for Budget id called by authenticated User by POST
+        with valid data two times.
+        THEN: Two BudgetingPeriod for Budget created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload_1 = {
+            'name': '2023_01',
+            'date_start': date(2023, 1, 1),
+            'date_end': date(2023, 1, 31),
+        }
+        payload_2 = {
+            'name': '2023_02',
+            'date_start': date(2023, 2, 1),
+            'date_end': date(2023, 2, 28),
+        }
+        url = periods_url(budget.id)
+
+        response_1 = api_client.post(url, payload_1)
+        response_2 = api_client.post(url, payload_2)
+
+        assert response_1.status_code == status.HTTP_201_CREATED
+        assert response_2.status_code == status.HTTP_201_CREATED
+        assert BudgetingPeriod.objects.filter(budget=budget).count() == 2
+        for response, payload in [(response_1, payload_1), (response_2, payload_2)]:
+            period = BudgetingPeriod.objects.get(id=response.data['id'])
+            for key in payload:
+                assert getattr(period, key) == payload[key]
+
+    def test_create_same_period_for_two_budgets(
+        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Two Budgets in database created.
+        WHEN: BudgetingPeriodViewSet list view called for two Budgets by authenticated User by POST with valid data.
+        THEN: Two BudgetingPeriod, every for different Budget created in database.
+        """
+        payload = {
+            'name': '2023_01',
+            'date_start': date(2023, 1, 1),
+            'date_end': date(2023, 1, 31),
+        }
+        api_client.force_authenticate(base_user)
+        budget_1 = budget_factory(owner=base_user)
+        url = periods_url(budget_1.id)
+        api_client.post(url, payload)
+        budget_2 = budget_factory(owner=base_user)
+        url = periods_url(budget_2.id)
+        api_client.post(url, payload)
+
+        all_periods_queryset = BudgetingPeriod.objects.all()
+        assert all_periods_queryset.count() == 2
+        for budget in (budget_1, budget_2):
+            budget_periods_queryset = all_periods_queryset.filter(budget=budget)
+            assert budget_periods_queryset.count() == 1
+
+
 #     def test_error_name_too_long(self, api_client: APIClient, base_user: AbstractUser):
 #         """Test error on creating BudgetingPeriod with name too long."""
 #         api_client.force_authenticate(base_user)
