@@ -1,8 +1,9 @@
+from datetime import date
 from typing import Any
 
 import pytest
 from budgets.models import Budget, BudgetingPeriod
-from budgets.serializers import BudgetSerializer
+from budgets.serializers import BudgetingPeriodSerializer, BudgetSerializer
 from django.contrib.auth.models import AbstractUser
 from django.db.models import Q
 from django.urls import reverse
@@ -13,7 +14,6 @@ from rest_framework.test import APIClient
 BUDGETS_URL = reverse('budgets:budget-list')
 OWNED_BUDGETS_URL = reverse('budgets:budget-owned')
 MEMBERED_BUDGETS_URL = reverse('budgets:budget-membered')
-# PERIODS_URL = reverse('budgets:budgetingperiod-list')
 
 
 def budget_detail_url(budget_id):
@@ -21,9 +21,14 @@ def budget_detail_url(budget_id):
     return reverse('budgets:budget-detail', args=[budget_id])
 
 
-def period_detail_url(period_id):
+def periods_url(budget_id):
+    """Creates and returns Budget BudgetingPeriods URL."""
+    return reverse('budgets:period-list', args=[budget_id])
+
+
+def period_detail_url(budget_id, period_id):
     """Creates and returns BudgetingPeriod detail URL."""
-    return reverse('budgets:budgetingperiod-detail', args=[period_id])
+    return reverse('budgets:period-detail', args=[budget_id, period_id])
 
 
 @pytest.mark.django_db
@@ -448,51 +453,81 @@ class TestBudgetApi:
         assert not Budget.objects.all().exists()
 
 
-# @pytest.mark.django_db
-# class TestBudgetingPeriodApi:
-#     """Tests for BudgetingPeriodViewSet."""
-#
-#     def test_auth_required(self, api_client: APIClient):
-#         """Test auth is required to call endpoint."""
-#         res = api_client.get(PERIODS_URL)
-#
-#         assert res.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_retrieve_periods_list(
-#         self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass
-#     ):
-#         """Test retrieving list of periods."""
-#         api_client.force_authenticate(base_user)
-#         budgeting_period_factory(
-#             user=base_user, date_start=date(2023, 1, 1), date_end=date(2023, 1, 31), is_active=False
-#         )
-#         budgeting_period_factory(
-#             user=base_user, date_start=date(2023, 2, 1), date_end=date(2023, 2, 28), is_active=True
-#         )
-#
-#         response = api_client.get(PERIODS_URL)
-#
-#         periods = BudgetingPeriod.objects.all().order_by('-date_start')
-#         serializer = BudgetingPeriodSerializer(periods, many=True)
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data['results'] == serializer.data
-#
-#     def test_periods_list_limited_to_user(
-#         self, api_client: APIClient, user_factory: FactoryMetaClass, budgeting_period_factory: FactoryMetaClass
-#     ):
-#         """Test retrieved list of periods is limited to authenticated user."""
-#         user = user_factory()
-#         budgeting_period_factory(user=user)
-#         budgeting_period_factory()
-#         api_client.force_authenticate(user)
-#
-#         response = api_client.get(PERIODS_URL)
-#
-#         periods = BudgetingPeriod.objects.filter(user=user)
-#         serializer = BudgetingPeriodSerializer(periods, many=True)
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data['results'] == serializer.data
-#
+@pytest.mark.django_db
+class TestBudgetingPeriodApi:
+    """Tests for BudgetingPeriodViewSet."""
+
+    def test_auth_required(self, budget: Budget, api_client: APIClient):
+        """
+        GIVEN: Budget model instance in database created.
+        WHEN: BudgetingPeriodViewSet list view called without authentication.
+        THEN: Unauthorized HTTP status returned.
+        """
+        url = periods_url(budget.id)
+
+        res = api_client.get(url)
+
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_retrieve_periods_list(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two BudgetingPeriods for Budget in database created.
+        WHEN: BudgetingPeriodViewSet list view for Budget id called by authenticated User.
+        THEN: List of BudgetingPeriods for given Budget id sorted from newest to oldest returned.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        budgeting_period_factory(
+            budget=budget, date_start=date(2023, 1, 1), date_end=date(2023, 1, 31), is_active=False
+        )
+        budgeting_period_factory(budget=budget, date_start=date(2023, 2, 1), date_end=date(2023, 2, 28), is_active=True)
+        url = periods_url(budget.id)
+
+        response = api_client.get(url)
+
+        periods = BudgetingPeriod.objects.filter(budget=budget).order_by('-date_start')
+        serializer = BudgetingPeriodSerializer(periods, many=True)
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data['results']) == len(serializer.data) == periods.count() == 2
+        assert response.data['results'] == serializer.data
+
+    def test_periods_list_limited_to_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two BudgetingPeriods for two different Budgets in database created.
+        WHEN: BudgetingPeriodViewSet list view for Budget id called by authenticated User.
+        THEN: List of BudgetingPeriods containing only declared Budget periods returned.
+        """
+        # Other period
+        budgeting_period_factory()
+        # Auth User period
+        budget = budget_factory(owner=base_user)
+        period = budgeting_period_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        url = periods_url(budget.id)
+
+        response = api_client.get(url)
+
+        periods = BudgetingPeriod.objects.filter(budget=budget)
+        serializer = BudgetingPeriodSerializer(periods, many=True)
+        assert response.status_code == status.HTTP_200_OK
+        assert BudgetingPeriod.objects.all().count() == 2
+        assert len(response.data['results']) == len(serializer.data) == periods.count() == 1
+        assert periods.first() == period
+        assert response.data['results'] == serializer.data
+
+
 #     def test_create_single_period(self, api_client: APIClient, base_user: AbstractUser):
 #         """Test creating single BudgetingPeriod."""
 #         api_client.force_authenticate(base_user)
