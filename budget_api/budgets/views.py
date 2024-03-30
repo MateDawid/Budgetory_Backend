@@ -52,9 +52,15 @@ class BudgetingPeriodViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Retrieve BudgetingPeriods for authenticated user."""
-        budget_pk = self.kwargs.get('budget_pk')
-        if budget_pk:
-            return self.queryset.filter(budget__pk=budget_pk).order_by('-date_start').distinct()
+        user = getattr(self.request, 'user', None)
+        if user and user.is_authenticated:
+            budget_pk = self.kwargs.get('budget_pk')
+            if budget_pk:
+                return (
+                    self.queryset.filter(Q(budget__owner=user) | Q(budget__members=user), budget__pk=budget_pk)
+                    .order_by('-date_start')
+                    .distinct()
+                )
         return self.queryset.none()
 
     def perform_create(self, serializer):

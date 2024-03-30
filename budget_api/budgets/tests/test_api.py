@@ -903,48 +903,72 @@ class TestBudgetingPeriodApiList:
         assert BudgetingPeriod.objects.filter(budget=budget).count() == 2
 
 
-# @pytest.mark.django_db
-# class TestBudgetingPeriodApiDetail:
-#     """Tests for BudgetingPeriodViewSet."""
-#     def test_get_period_details(
-#         self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass
-#     ):
-#         """Test get BudgetingPeriod details."""
-#         api_client.force_authenticate(base_user)
-#         period = budgeting_period_factory(user=base_user)
-#         url = period_detail_url(period.id)
-#
-#         response = api_client.get(url)
-#         serializer = BudgetingPeriodSerializer(period)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data == serializer.data
-#
-#     def test_error_get_period_details_unauthenticated(
-#         self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass
-#     ):
-#         """Test error on getting BudgetingPeriod details being unauthenticated."""
-#         period = budgeting_period_factory(user=base_user)
-#         url = period_detail_url(period.id)
-#
-#         response = api_client.get(url)
-#
-#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_error_get_other_user_period_details(
-#         self, api_client: APIClient, user_factory: FactoryMetaClass, budgeting_period_factory: FactoryMetaClass
-#     ):
-#         """Test error on getting other user's BudgetingPeriod details."""
-#         user_1 = user_factory()
-#         user_2 = user_factory()
-#         period = budgeting_period_factory(user=user_1)
-#         api_client.force_authenticate(user_2)
-#
-#         url = period_detail_url(period.id)
-#         response = api_client.get(url)
-#
-#         assert response.status_code == status.HTTP_404_NOT_FOUND
-#
+@pytest.mark.django_db
+class TestBudgetingPeriodApiDetail:
+    """Tests for detail view in BudgetingPeriodViewSet."""
+
+    def test_get_period_details(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: BudgetingPeriod created in database.
+        WHEN: BudgetingPeriodViewSet detail view called for BudgetingPeriod by authenticated User (owner of Budget).
+        THEN: BudgetingPeriod details returned.
+        """
+        budget = budget_factory(owner=base_user)
+        period = budgeting_period_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        url = period_detail_url(budget.id, period.id)
+
+        response = api_client.get(url)
+        serializer = BudgetingPeriodSerializer(period)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == serializer.data
+
+    def test_error_get_period_details_unauthenticated(
+        self, api_client: APIClient, budgeting_period_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: BudgetingPeriod created in database.
+        WHEN: BudgetingPeriodViewSet detail view called for BudgetingPeriod without authentication.
+        THEN: Unauthorized HTTP 401 returned.
+        """
+        period = budgeting_period_factory()
+        url = period_detail_url(period.budget.id, period.id)
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_error_get_other_user_period_details(
+        self,
+        api_client: APIClient,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: BudgetingPeriod created in database.
+        WHEN: BudgetingPeriodViewSet detail view called for BudgetingPeriod by authenticated User (not Budget owner
+        nor member).
+        THEN: Not found HTTP 404 returned.
+        """
+        user_1 = user_factory()
+        user_2 = user_factory()
+        period = budgeting_period_factory(budget=budget_factory(owner=user_1))
+        api_client.force_authenticate(user_2)
+
+        url = period_detail_url(period.budget.id, period.id)
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
 #     @pytest.mark.parametrize(
 #         'param, value', [('date_start', date(2024, 1, 2)), ('date_end', date(2024, 1, 30)), ('is_active', True)]
 #     )
