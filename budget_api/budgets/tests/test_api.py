@@ -455,7 +455,7 @@ class TestBudgetApi:
 
 @pytest.mark.django_db
 class TestBudgetingPeriodApiList:
-    """Tests for BudgetingPeriodViewSet."""
+    """Tests for BudgetingPeriodViewSet list view."""
 
     def test_auth_required(self, budget: Budget, api_client: APIClient):
         """
@@ -526,6 +526,11 @@ class TestBudgetingPeriodApiList:
         assert len(response.data['results']) == len(serializer.data) == periods.count() == 1
         assert periods.first() == period
         assert response.data['results'] == serializer.data
+
+
+@pytest.mark.django_db
+class TestBudgetingPeriodApiCreate:
+    """Tests for creating BudgetingPeriod via BudgetingPeriodViewSet."""
 
     def test_create_single_period(
         self,
@@ -969,59 +974,82 @@ class TestBudgetingPeriodApiDetail:
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-#     @pytest.mark.parametrize(
-#         'param, value', [('date_start', date(2024, 1, 2)), ('date_end', date(2024, 1, 30)), ('is_active', True)]
-#     )
-#     def test_period_partial_update(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budgeting_period_factory: FactoryMetaClass,
-#         param: str,
-#         value: Any,
-#     ):
-#         """Test partial update of a BudgetingPeriod"""
-#         api_client.force_authenticate(base_user)
-#         period = budgeting_period_factory(
-#             user=base_user, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=False
-#         )
-#         payload = {param: value}
-#         url = period_detail_url(period.id)
-#
-#         response = api_client.patch(url, payload)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         period.refresh_from_db()
-#         assert getattr(period, param) == payload[param]
-#
-#     @pytest.mark.parametrize(
-#         'param, value', [('date_start', date(2023, 12, 31)), ('date_end', date(2024, 2, 1)), ('is_active', True)]
-#     )
-#     def test_error_on_period_partial_update(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budgeting_period_factory: FactoryMetaClass,
-#         param: str,
-#         value: Any,
-#     ):
-#         """Test error on partial update of a BudgetingPeriod."""
-#         api_client.force_authenticate(base_user)
-#         budgeting_period_factory(
-#             user=base_user, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=True
-#         )
-#         period = budgeting_period_factory(
-#             user=base_user, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), is_active=False
-#         )
-#         old_value = getattr(period, param)
-#         payload = {param: value}
-#         url = period_detail_url(period.id)
-#
-#         response = api_client.patch(url, payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         period.refresh_from_db()
-#         assert getattr(period, param) == old_value
+@pytest.mark.django_db
+class TestBudgetingPeriodApiPatch:
+    """Tests for partial update BudgetingPeriod via BudgetingPeriodViewSet."""
+
+    @pytest.mark.parametrize(
+        'param, value', [('date_start', date(2024, 1, 2)), ('date_end', date(2024, 1, 30)), ('is_active', True)]
+    )
+    def test_period_partial_update(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        param: str,
+        value: Any,
+    ):
+        """
+        GIVEN: BudgetingPeriod created in database.
+        WHEN: BudgetingPeriodViewSet list view called for BudgetingPeriod by authenticated User (Budget owner) by
+        PATCH with valid data.
+        THEN: BudgetingPeriod updated in database.
+        """
+        api_client.force_authenticate(base_user)
+        period = budgeting_period_factory(
+            budget=budget_factory(owner=base_user),
+            date_start=date(2024, 1, 1),
+            date_end=date(2024, 1, 31),
+            is_active=False,
+        )
+        payload = {param: value}
+        url = period_detail_url(period.budget.id, period.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        period.refresh_from_db()
+        assert getattr(period, param) == payload[param]
+
+    @pytest.mark.parametrize(
+        'param, value', [('date_start', date(2023, 12, 31)), ('date_end', date(2024, 2, 1)), ('is_active', True)]
+    )
+    def test_error_on_period_partial_update(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        param: str,
+        value: Any,
+    ):
+        """
+        GIVEN: BudgetingPeriod created in database.
+        WHEN: BudgetingPeriodViewSet list view called for BudgetingPeriod by authenticated User (Budget owner) by
+        PATCH with invalid data.
+        THEN: Bad request HTTP 400 returned.
+        """
+        api_client.force_authenticate(base_user)
+        budget = budget_factory(owner=base_user)
+        budgeting_period_factory(budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=True)
+        period = budgeting_period_factory(
+            budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), is_active=False
+        )
+        old_value = getattr(period, param)
+        payload = {param: value}
+        url = period_detail_url(budget.id, period.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        period.refresh_from_db()
+        assert getattr(period, param) == old_value
+
+
+# @pytest.mark.django_db
+# class TestBudgetingPeriodApiPut:
+#     """Tests for full update BudgetingPeriod via BudgetingPeriodViewSet."""
 #
 #     def test_period_full_update(
 #         self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass
@@ -1087,6 +1115,10 @@ class TestBudgetingPeriodApiDetail:
 #         for k, v in payload_old.items():
 #             assert getattr(period, k) == v
 #
+# @pytest.mark.django_db
+# class TestBudgetingPeriodApiDelete:
+#     """Tests for delete BudgetingPeriod via BudgetingPeriodViewSet."""
+#
 #     def test_delete_period(
 #         self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass
 #     ):
@@ -1101,3 +1133,5 @@ class TestBudgetingPeriodApiDetail:
 #
 #         assert response.status_code == status.HTTP_204_NO_CONTENT
 #         assert not BudgetingPeriod.objects.all().exists()
+#     def test_error_delete_not_accessible_period(self):
+#         pass
