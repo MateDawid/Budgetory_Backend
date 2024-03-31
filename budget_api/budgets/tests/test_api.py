@@ -469,7 +469,7 @@ class TestBudgetingPeriodApiList:
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_retrieve_periods_list(
+    def test_retrieve_periods_list_by_owner(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -478,10 +478,38 @@ class TestBudgetingPeriodApiList:
     ):
         """
         GIVEN: Two BudgetingPeriods for Budget in database created.
-        WHEN: BudgetingPeriodViewSet list view for Budget id called by authenticated User.
+        WHEN: BudgetingPeriodViewSet list view for Budget id called by authenticated Budget owner.
         THEN: List of BudgetingPeriods for given Budget id sorted from newest to oldest returned.
         """
         budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        budgeting_period_factory(
+            budget=budget, date_start=date(2023, 1, 1), date_end=date(2023, 1, 31), is_active=False
+        )
+        budgeting_period_factory(budget=budget, date_start=date(2023, 2, 1), date_end=date(2023, 2, 28), is_active=True)
+        url = periods_url(budget.id)
+
+        response = api_client.get(url)
+
+        periods = BudgetingPeriod.objects.filter(budget=budget).order_by('-date_start')
+        serializer = BudgetingPeriodSerializer(periods, many=True)
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data['results']) == len(serializer.data) == periods.count() == 2
+        assert response.data['results'] == serializer.data
+
+    def test_retrieve_periods_list_by_member(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two BudgetingPeriods for Budget in database created.
+        WHEN: BudgetingPeriodViewSet list view for Budget id called by authenticated Budget member.
+        THEN: List of BudgetingPeriods for given Budget id sorted from newest to oldest returned.
+        """
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         budgeting_period_factory(
             budget=budget, date_start=date(2023, 1, 1), date_end=date(2023, 1, 31), is_active=False
@@ -532,7 +560,7 @@ class TestBudgetingPeriodApiList:
 class TestBudgetingPeriodApiCreate:
     """Tests for creating BudgetingPeriod via BudgetingPeriodViewSet."""
 
-    def test_create_single_period(
+    def test_create_single_period_by_owner(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -540,10 +568,37 @@ class TestBudgetingPeriodApiCreate:
     ):
         """
         GIVEN: Budget in database created.
-        WHEN: BudgetingPeriodViewSet list view for Budget id called by authenticated User by POST with valid data.
+        WHEN: BudgetingPeriodViewSet list view for Budget id called by authenticated Budget owner by POST with
+        valid data.
         THEN: BudgetingPeriod for Budget created in database.
         """
         budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = {'name': '2023_01', 'date_start': date(2023, 1, 1), 'date_end': date(2023, 1, 31)}
+        url = periods_url(budget.id)
+
+        response = api_client.post(url, payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
+        period = BudgetingPeriod.objects.get(id=response.data['id'])
+        for key in payload:
+            assert getattr(period, key) == payload[key]
+        serializer = BudgetingPeriodSerializer(period)
+        assert response.data == serializer.data
+
+    def test_create_single_period_by_member(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget in database created.
+        WHEN: BudgetingPeriodViewSet list view for Budget id called by Budget member by POST with valid data.
+        THEN: BudgetingPeriod for Budget created in database.
+        """
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = {'name': '2023_01', 'date_start': date(2023, 1, 1), 'date_end': date(2023, 1, 31)}
         url = periods_url(budget.id)
@@ -912,7 +967,7 @@ class TestBudgetingPeriodApiCreate:
 class TestBudgetingPeriodApiDetail:
     """Tests for detail view in BudgetingPeriodViewSet."""
 
-    def test_get_period_details(
+    def test_get_period_details_by_owner(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -925,6 +980,29 @@ class TestBudgetingPeriodApiDetail:
         THEN: BudgetingPeriod details returned.
         """
         budget = budget_factory(owner=base_user)
+        period = budgeting_period_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        url = period_detail_url(budget.id, period.id)
+
+        response = api_client.get(url)
+        serializer = BudgetingPeriodSerializer(period)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == serializer.data
+
+    def test_get_period_details_by_member(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: BudgetingPeriod created in database.
+        WHEN: BudgetingPeriodViewSet detail view called for BudgetingPeriod by authenticated User (member of Budget).
+        THEN: BudgetingPeriod details returned.
+        """
+        budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
         api_client.force_authenticate(base_user)
         url = period_detail_url(budget.id, period.id)
@@ -981,7 +1059,7 @@ class TestBudgetingPeriodApiPatch:
     @pytest.mark.parametrize(
         'param, value', [('date_start', date(2024, 1, 2)), ('date_end', date(2024, 1, 30)), ('is_active', True)]
     )
-    def test_period_partial_update(
+    def test_period_partial_update_by_owner(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -999,6 +1077,40 @@ class TestBudgetingPeriodApiPatch:
         api_client.force_authenticate(base_user)
         period = budgeting_period_factory(
             budget=budget_factory(owner=base_user),
+            date_start=date(2024, 1, 1),
+            date_end=date(2024, 1, 31),
+            is_active=False,
+        )
+        payload = {param: value}
+        url = period_detail_url(period.budget.id, period.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        period.refresh_from_db()
+        assert getattr(period, param) == payload[param]
+
+    @pytest.mark.parametrize(
+        'param, value', [('date_start', date(2024, 1, 2)), ('date_end', date(2024, 1, 30)), ('is_active', True)]
+    )
+    def test_period_partial_update_by_member(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        param: str,
+        value: Any,
+    ):
+        """
+        GIVEN: BudgetingPeriod created in database.
+        WHEN: BudgetingPeriodViewSet list view called for BudgetingPeriod by authenticated User (Budget member) by
+        PATCH with valid data.
+        THEN: BudgetingPeriod updated in database.
+        """
+        api_client.force_authenticate(base_user)
+        period = budgeting_period_factory(
+            budget=budget_factory(members=[base_user]),
             date_start=date(2024, 1, 1),
             date_end=date(2024, 1, 31),
             is_active=False,
@@ -1051,7 +1163,7 @@ class TestBudgetingPeriodApiPatch:
 class TestBudgetingPeriodApiPut:
     """Tests for full update BudgetingPeriod via BudgetingPeriodViewSet."""
 
-    def test_period_full_update(
+    def test_period_full_update_by_owner(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -1078,6 +1190,42 @@ class TestBudgetingPeriodApiPut:
             'is_active': True,
         }
         period = budgeting_period_factory(budget=budget_factory(owner=base_user), **payload_old)
+        url = period_detail_url(period.budget.id, period.id)
+
+        response = api_client.put(url, payload_new)
+
+        assert response.status_code == status.HTTP_200_OK
+        period.refresh_from_db()
+        for k, v in payload_new.items():
+            assert getattr(period, k) == v
+
+    def test_period_full_update_by_member(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: BudgetingPeriod created in database.
+        WHEN: BudgetingPeriodViewSet list view called for BudgetingPeriod by authenticated User (Budget member) by
+        PUT with valid data.
+        THEN: BudgetingPeriod updated in database.
+        """
+        api_client.force_authenticate(base_user)
+        payload_old = {
+            'name': '2023_06',
+            'date_start': date(2023, 6, 1),
+            'date_end': date(2023, 6, 30),
+            'is_active': False,
+        }
+        payload_new = {
+            'name': '2023_07',
+            'date_start': date(2023, 7, 1),
+            'date_end': date(2023, 7, 31),
+            'is_active': True,
+        }
+        period = budgeting_period_factory(budget=budget_factory(members=[base_user]), **payload_old)
         url = period_detail_url(period.budget.id, period.id)
 
         response = api_client.put(url, payload_new)
@@ -1135,7 +1283,7 @@ class TestBudgetingPeriodApiPut:
 class TestBudgetingPeriodApiDelete:
     """Tests for delete BudgetingPeriod via BudgetingPeriodViewSet."""
 
-    def test_delete_period(
+    def test_delete_period_by_owner(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -1150,6 +1298,30 @@ class TestBudgetingPeriodApiDelete:
         """
         api_client.force_authenticate(base_user)
         period = budgeting_period_factory(budget=budget_factory(owner=base_user))
+        url = period_detail_url(period.budget.id, period.id)
+
+        assert BudgetingPeriod.objects.all().count() == 1
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not BudgetingPeriod.objects.all().exists()
+
+    def test_delete_period_by_member(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: BudgetingPeriod created in database.
+        WHEN: BudgetingPeriodViewSet list view called for BudgetingPeriod by authenticated User (Budget member)
+        by DELETE.
+        THEN: BudgetingPeriod deleted from database.
+        """
+        api_client.force_authenticate(base_user)
+        period = budgeting_period_factory(budget=budget_factory(members=[base_user]))
         url = period_detail_url(period.budget.id, period.id)
 
         assert BudgetingPeriod.objects.all().count() == 1
