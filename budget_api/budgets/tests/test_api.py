@@ -199,7 +199,7 @@ class TestBudgetApi:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert 'name' in response.data
         assert response.data['name'][0] == f'Ensure this field has no more than {max_length} characters.'
-        assert not BudgetingPeriod.objects.filter(user=base_user).exists()
+        assert not Budget.objects.filter(owner=base_user).exists()
 
     def test_error_name_already_used(self, api_client: APIClient, base_user: AbstractUser):
         """Test error on creating BudgetingPeriod with already used name by the same user."""
@@ -1047,91 +1047,138 @@ class TestBudgetingPeriodApiPatch:
         assert getattr(period, param) == old_value
 
 
-# @pytest.mark.django_db
-# class TestBudgetingPeriodApiPut:
-#     """Tests for full update BudgetingPeriod via BudgetingPeriodViewSet."""
-#
-#     def test_period_full_update(
-#         self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass
-#     ):
-#         """Test successful full update of a BudgetingPeriod"""
-#         api_client.force_authenticate(base_user)
-#         payload_old = {
-#             'name': '2023_06',
-#             'date_start': date(2023, 6, 1),
-#             'date_end': date(2023, 6, 30),
-#             'is_active': False,
-#         }
-#         payload_new = {
-#             'name': '2023_07',
-#             'date_start': date(2023, 7, 1),
-#             'date_end': date(2023, 7, 31),
-#             'is_active': True,
-#         }
-#         period = budgeting_period_factory(user=base_user, **payload_old)
-#         url = period_detail_url(period.id)
-#
-#         response = api_client.put(url, payload_new)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         period.refresh_from_db()
-#         for k, v in payload_new.items():
-#             assert getattr(period, k) == v
-#
-#     @pytest.mark.parametrize(
-#         'payload_new',
-#         [
-#             {'name': '2024_01', 'date_start': date(2024, 2, 1), 'date_end': date(2024, 2, 29), 'is_active': False},
-#             {'name': '2024_02', 'date_start': date(2024, 1, 31), 'date_end': date(2024, 2, 29), 'is_active': False},
-#             {'name': '2024_02', 'date_start': date(2024, 2, 1), 'date_end': date(2024, 2, 29), 'is_active': True},
-#         ],
-#     )
-#     def test_error_on_period_full_update(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budgeting_period_factory: FactoryMetaClass,
-#         payload_new: dict,
-#     ):
-#         """Test error on full update of a BudgetingPeriod."""
-#         api_client.force_authenticate(base_user)
-#         budgeting_period_factory(
-#             user=base_user, name='2024_01', date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=True
-#         )
-#         payload_old = {
-#             'name': '2024_02',
-#             'date_start': date(2024, 2, 1),
-#             'date_end': date(2024, 2, 29),
-#             'is_active': False,
-#         }
-#
-#         period = budgeting_period_factory(user=base_user, **payload_old)
-#         url = period_detail_url(period.id)
-#
-#         response = api_client.patch(url, payload_new)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         period.refresh_from_db()
-#         for k, v in payload_old.items():
-#             assert getattr(period, k) == v
-#
-# @pytest.mark.django_db
-# class TestBudgetingPeriodApiDelete:
-#     """Tests for delete BudgetingPeriod via BudgetingPeriodViewSet."""
-#
-#     def test_delete_period(
-#         self, api_client: APIClient, base_user: AbstractUser, budgeting_period_factory: FactoryMetaClass
-#     ):
-#         """Test deleting BudgetingPeriod."""
-#         api_client.force_authenticate(base_user)
-#         period = budgeting_period_factory(user=base_user)
-#         url = period_detail_url(period.id)
-#
-#         assert BudgetingPeriod.objects.all().count() == 1
-#
-#         response = api_client.delete(url)
-#
-#         assert response.status_code == status.HTTP_204_NO_CONTENT
-#         assert not BudgetingPeriod.objects.all().exists()
-#     def test_error_delete_not_accessible_period(self):
-#         pass
+@pytest.mark.django_db
+class TestBudgetingPeriodApiPut:
+    """Tests for full update BudgetingPeriod via BudgetingPeriodViewSet."""
+
+    def test_period_full_update(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: BudgetingPeriod created in database.
+        WHEN: BudgetingPeriodViewSet list view called for BudgetingPeriod by authenticated User (Budget owner) by
+        PUT with valid data.
+        THEN: BudgetingPeriod updated in database.
+        """
+        api_client.force_authenticate(base_user)
+        payload_old = {
+            'name': '2023_06',
+            'date_start': date(2023, 6, 1),
+            'date_end': date(2023, 6, 30),
+            'is_active': False,
+        }
+        payload_new = {
+            'name': '2023_07',
+            'date_start': date(2023, 7, 1),
+            'date_end': date(2023, 7, 31),
+            'is_active': True,
+        }
+        period = budgeting_period_factory(budget=budget_factory(owner=base_user), **payload_old)
+        url = period_detail_url(period.budget.id, period.id)
+
+        response = api_client.put(url, payload_new)
+
+        assert response.status_code == status.HTTP_200_OK
+        period.refresh_from_db()
+        for k, v in payload_new.items():
+            assert getattr(period, k) == v
+
+    @pytest.mark.parametrize(
+        'payload_new',
+        [
+            {'name': '2024_01', 'date_start': date(2024, 2, 1), 'date_end': date(2024, 2, 29), 'is_active': False},
+            {'name': '2024_02', 'date_start': date(2024, 1, 31), 'date_end': date(2024, 2, 29), 'is_active': False},
+            {'name': '2024_02', 'date_start': date(2024, 2, 1), 'date_end': date(2024, 2, 29), 'is_active': True},
+        ],
+    )
+    def test_error_on_period_full_update(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        payload_new: dict,
+    ):
+        """
+        GIVEN: BudgetingPeriod created in database.
+        WHEN: BudgetingPeriodViewSet list view called for BudgetingPeriod by authenticated User (Budget owner) by
+        PUT with invalid data.
+        THEN: Bad request HTTP 400 returned.
+        """
+        api_client.force_authenticate(base_user)
+        budget = budget_factory(owner=base_user)
+        budgeting_period_factory(
+            budget=budget, name='2024_01', date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=True
+        )
+        payload_old = {
+            'name': '2024_02',
+            'date_start': date(2024, 2, 1),
+            'date_end': date(2024, 2, 29),
+            'is_active': False,
+        }
+        period = budgeting_period_factory(budget=budget, **payload_old)
+        url = period_detail_url(budget.id, period.id)
+
+        response = api_client.patch(url, payload_new)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        period.refresh_from_db()
+        for k, v in payload_old.items():
+            assert getattr(period, k) == v
+
+
+@pytest.mark.django_db
+class TestBudgetingPeriodApiDelete:
+    """Tests for delete BudgetingPeriod via BudgetingPeriodViewSet."""
+
+    def test_delete_period(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: BudgetingPeriod created in database.
+        WHEN: BudgetingPeriodViewSet list view called for BudgetingPeriod by authenticated User (Budget owner)
+        by DELETE.
+        THEN: BudgetingPeriod deleted from database.
+        """
+        api_client.force_authenticate(base_user)
+        period = budgeting_period_factory(budget=budget_factory(owner=base_user))
+        url = period_detail_url(period.budget.id, period.id)
+
+        assert BudgetingPeriod.objects.all().count() == 1
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not BudgetingPeriod.objects.all().exists()
+
+    def test_error_delete_not_accessible_period(
+        self,
+        api_client: APIClient,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: BudgetingPeriod created in database.
+        WHEN: BudgetingPeriodViewSet list view called for BudgetingPeriod by authenticated User (not Budget owner
+        nor member) by DELETE.
+        THEN: Not found HTTP 404 returned, BudgetingPeriod not deleted.
+        """
+        period = budgeting_period_factory(budget=budget_factory(owner=user_factory()))
+        url = period_detail_url(period.budget.id, period.id)
+        api_client.force_authenticate(user_factory())
+
+        assert BudgetingPeriod.objects.all().count() == 1
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert BudgetingPeriod.objects.filter(id=period.id).exists()
