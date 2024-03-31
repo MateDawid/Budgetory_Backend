@@ -1,12 +1,19 @@
-from budgets.views import BudgetViewSet
+from budgets.views import BudgetingPeriodViewSet, BudgetViewSet
+from django.urls import include, path
 from rest_framework import routers
+from rest_framework_nested.routers import NestedSimpleRouter
 
 app_name = 'budgets'
 
 
 router = routers.DefaultRouter()
 router.register(r'', BudgetViewSet)
-# router.register(r'', BudgetingPeriodViewSet)
+
+budget_router = NestedSimpleRouter(router, r'', lookup='budget')
+budget_router.register(r'periods', BudgetingPeriodViewSet, basename='period')
 
 
-urlpatterns = router.urls
+urlpatterns = [
+    path('', include(router.urls)),
+    path('', include(budget_router.urls)),
+]
