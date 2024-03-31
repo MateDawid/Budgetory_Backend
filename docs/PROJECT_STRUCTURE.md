@@ -30,10 +30,10 @@ Groups financial data about particular area (family or company budget).
 - ✔️ Creating new Budget by authenticated User
 - ⛔ Inviting other Users to Budget instead just adding them
 
-## ⛔ BudgetingPeriod
+## ✔️ BudgetingPeriod
 Period in which financial values are aggregated.
 ### Fields:
-- ⛔ budget [Budget] - Budget for period
+- ✔️ budget [Budget] - Budget for period
 - ✔️ name [str] - BudgetingPeriod name
 - ✔️ description [str] - BudgetingPeriod description [optional]
 - ✔️ date_start [User] - Start date of BudgetingPeriod
@@ -41,8 +41,8 @@ Period in which financial values are aggregated.
 - ✔️ is_active [bool] - Indicates if BudgetingPeriod is active
 
 ### Features:
-- ⛔ Creating new valid BudgetingPeriod by Budget member
-- ⛔ Closing BudgetingPeriod by Budget member
+- ✔️ Creating new valid BudgetingPeriod by Budget member
+- ✔️ Closing BudgetingPeriod by Budget member
 
 ## ⛔ Deposit
 Represents "container" in which incomes are stored and source for expenses - bank accounts, cash, gold, etc.
