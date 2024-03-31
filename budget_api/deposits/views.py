@@ -15,7 +15,10 @@ class DepositViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Retrieve Deposits for authenticated user."""
-        return self.queryset.filter(user=self.request.user).distinct()
+        user = getattr(self.request, 'user', None)
+        if user and user.is_authenticated:
+            return self.queryset.filter(user=user).distinct()
+        return self.queryset.none()
 
     def perform_create(self, serializer):
         """Additionally save user in Deposit model."""
