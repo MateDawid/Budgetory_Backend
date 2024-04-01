@@ -6,5 +6,5 @@ from django.contrib import admin
 class DepositAdmin(admin.ModelAdmin):
     """Custom admin view for Deposit model."""
 
-    list_display = ('name', 'user', 'description', 'is_active')
-    list_filter = ('is_active', 'user__email')
+    list_display = ('name', 'budget', 'description', 'is_active')
+    list_filter = ('is_active', 'budget__owner__email')
