@@ -137,6 +137,7 @@ REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'app_config.paginations.DefaultPag
 
 SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': False,
+    'DEFAULT_AUTO_SCHEMA_CLASS': 'app_config.swagger_schemas.CustomAutoSchema',
     'SECURITY_DEFINITIONS': {
         'token': {'type': 'apiKey', 'description': 'User token', 'name': 'Authorization', 'in': 'header'}
     },
