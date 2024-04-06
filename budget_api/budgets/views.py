@@ -1,3 +1,4 @@
+from app_config.permissions import UserBelongToBudgetPermission
 from budgets.models import Budget, BudgetingPeriod
 from budgets.serializers import BudgetingPeriodSerializer, BudgetSerializer
 from django.db.models import Q
@@ -48,7 +49,7 @@ class BudgetingPeriodViewSet(viewsets.ModelViewSet):
     serializer_class = BudgetingPeriodSerializer
     queryset = BudgetingPeriod.objects.all()
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, UserBelongToBudgetPermission]
 
     def get_queryset(self):
         """Retrieve BudgetingPeriods for authenticated user."""
