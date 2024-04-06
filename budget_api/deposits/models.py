@@ -5,7 +5,7 @@ from django.db import models
 class Deposit(models.Model):
     """Deposit model where revenues are collected and from which payments are made."""
 
-    class DepositTypes(models.TextChoices):
+    class DepositTypes(models.IntegerChoices):
         """Choices for deposit_type value."""
 
         PERSONAL = 0, 'Personal'
