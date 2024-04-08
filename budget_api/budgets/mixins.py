@@ -1,9 +1,8 @@
 from budgets.models import Budget
-from rest_framework import viewsets
 from rest_framework.request import Request
 
 
-class BudgetMixin(viewsets.ModelViewSet):
+class BudgetMixin:
     """Mixin retrieving Budget instance in ViewSet with /budgets root"""
 
     def initialize_request(self, request: Request, *args, **kwargs) -> Request:
