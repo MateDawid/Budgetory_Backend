@@ -1342,7 +1342,7 @@ class TestBudgetingPeriodApiDelete:
         GIVEN: BudgetingPeriod created in database.
         WHEN: BudgetingPeriodViewSet list view called for BudgetingPeriod by authenticated User (not Budget owner
         nor member) by DELETE.
-        THEN: Not found HTTP 404 returned, BudgetingPeriod not deleted.
+        THEN: Forbidden HTTP 403 returned, BudgetingPeriod not deleted.
         """
         period = budgeting_period_factory(budget=budget_factory(owner=user_factory()))
         url = period_detail_url(period.budget.id, period.id)
