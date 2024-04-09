@@ -727,8 +727,8 @@ class TestBudgetingPeriodApiCreate:
         response = api_client.post(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data
-        assert response.data['non_field_errors'][0] == f'Period with name "{payload["name"]}" already exists in Budget.'
+        assert 'name' in response.data
+        assert response.data['name'][0] == f'Period with name "{payload["name"]}" already exists in Budget.'
         assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
 
     def test_create_active_period_successfully(
@@ -796,8 +796,8 @@ class TestBudgetingPeriodApiCreate:
         response = api_client.post(url, payload_2)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data
-        assert response.data['non_field_errors'][0] == 'Active period already exists in Budget.'
+        assert 'is_active' in response.data
+        assert response.data['is_active'][0] == 'Active period already exists in Budget.'
         assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
         assert BudgetingPeriod.objects.filter(budget=budget).first() == active_period
 
@@ -1039,7 +1039,7 @@ class TestBudgetingPeriodApiDetail:
         GIVEN: BudgetingPeriod created in database.
         WHEN: BudgetingPeriodViewSet detail view called for BudgetingPeriod by authenticated User (not Budget owner
         nor member).
-        THEN: Not found HTTP 404 returned.
+        THEN: Forbidden HTTP 403 returned.
         """
         user_1 = user_factory()
         user_2 = user_factory()
@@ -1049,7 +1049,7 @@ class TestBudgetingPeriodApiDetail:
         url = period_detail_url(period.budget.id, period.id)
         response = api_client.get(url)
 
-        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 @pytest.mark.django_db
@@ -1352,5 +1352,5 @@ class TestBudgetingPeriodApiDelete:
 
         response = api_client.delete(url)
 
-        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.status_code == status.HTTP_403_FORBIDDEN
         assert BudgetingPeriod.objects.filter(id=period.id).exists()
