@@ -1,6 +1,7 @@
 from typing import Any
 
 import pytest
+from budgets.models import Budget
 from deposits.models import Deposit
 from deposits.serializers import DepositSerializer
 from django.urls import reverse
@@ -8,23 +9,48 @@ from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
 
-DEPOSITS_URL = reverse('deposits:deposit-list')
 
-
-def deposit_detail_url(deposit_id):
+def deposit_url(budget_id):
     """Create and return a deposit detail URL."""
-    return reverse('deposits:deposit-detail', args=[deposit_id])
+    return reverse('budgets:deposit-list', args=[budget_id])
+
+
+def deposit_detail_url(budget_id, deposit_id):
+    """Create and return a deposit detail URL."""
+    return reverse('budgets:deposit-detail', args=[budget_id, deposit_id])
 
 
 @pytest.mark.django_db
 class TestDepositApi:
     """Tests for DepositViewSet."""
 
-    def test_auth_required(self, api_client: APIClient):
-        """Test auth is required to call endpoint."""
-        res = api_client.get(DEPOSITS_URL)
+    def test_auth_required(self, api_client: APIClient, budget: Budget):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: DepositViewSet called without authentication.
+        THEN: Unauthorized HTTP 401 returned.
+        """
+        res = api_client.get(deposit_url(budget.id))
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_user_not_budget_member(
+        self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: DepositViewSet called by User not belonging to given Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        budget_owner = user_factory()
+        other_user = user_factory()
+        budget = budget_factory(owner=budget_owner)
+        api_client.force_authenticate(other_user)
+
+        res = api_client.get(deposit_url(budget.id))
+
+        assert res.status_code == status.HTTP_403_FORBIDDEN
+        assert res.data['detail'] == 'User does not have access to Budget.'
 
     def test_retrieve_deposits_list(self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass):
         """Test retrieving list of deposits."""
@@ -32,7 +58,7 @@ class TestDepositApi:
         deposit_factory(user=base_user)
         deposit_factory(user=base_user)
 
-        response = api_client.get(DEPOSITS_URL)
+        response = api_client.get(deposit_url(0))
 
         deposits = Deposit.objects.all()
         serializer = DepositSerializer(deposits, many=True)
@@ -48,7 +74,7 @@ class TestDepositApi:
         deposit_factory()
         api_client.force_authenticate(user)
 
-        response = api_client.get(DEPOSITS_URL)
+        response = api_client.get(deposit_url(0))
 
         deposits = Deposit.objects.filter(user=user)
         serializer = DepositSerializer(deposits, many=True)
@@ -60,7 +86,7 @@ class TestDepositApi:
         api_client.force_authenticate(base_user)
         payload = {'name': 'My account', 'description': 'Account that I use.', 'is_active': True}
 
-        response = api_client.post(DEPOSITS_URL, payload)
+        response = api_client.post(deposit_url(0), payload)
 
         assert response.status_code == status.HTTP_201_CREATED
         assert Deposit.objects.filter(user=base_user).count() == 1
@@ -76,8 +102,8 @@ class TestDepositApi:
         payload_1 = {'name': 'My account', 'description': 'Account that I use.', 'is_active': True}
         payload_2 = {'name': 'Old account', 'description': 'Not used account.', 'is_active': False}
 
-        response_1 = api_client.post(DEPOSITS_URL, payload_1)
-        response_2 = api_client.post(DEPOSITS_URL, payload_2)
+        response_1 = api_client.post(deposit_url(0), payload_1)
+        response_2 = api_client.post(deposit_url(0), payload_2)
 
         assert response_1.status_code == status.HTTP_201_CREATED
         assert response_2.status_code == status.HTTP_201_CREATED
@@ -92,11 +118,11 @@ class TestDepositApi:
         payload = {'name': 'My account', 'description': 'Account that I use.', 'is_active': True}
         user_1 = user_factory()
         api_client.force_authenticate(user_1)
-        api_client.post(DEPOSITS_URL, payload)
+        api_client.post(deposit_url(0), payload)
 
         user_2 = user_factory()
         api_client.force_authenticate(user_2)
-        api_client.post(DEPOSITS_URL, payload)
+        api_client.post(deposit_url(0), payload)
 
         assert Deposit.objects.all().count() == 2
         assert Deposit.objects.filter(user=user_1).count() == 1
@@ -108,7 +134,7 @@ class TestDepositApi:
         max_length = Deposit._meta.get_field('name').max_length
         payload = {'name': (max_length + 1) * 'a', 'description': 'Account that I use.', 'is_active': True}
 
-        response = api_client.post(DEPOSITS_URL, payload)
+        response = api_client.post(deposit_url(0), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert 'name' in response.data
@@ -121,7 +147,7 @@ class TestDepositApi:
         payload = {'name': 'My account', 'description': 'Account that I use.', 'is_active': True}
         Deposit.objects.create(user=base_user, **payload)
 
-        response = api_client.post(DEPOSITS_URL, payload)
+        response = api_client.post(deposit_url(0), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert 'name' in response.data
@@ -134,7 +160,7 @@ class TestDepositApi:
         max_length = Deposit._meta.get_field('description').max_length
         payload = {'name': 'My account', 'description': (max_length + 1) * 'a', 'is_active': True}
 
-        response = api_client.post(DEPOSITS_URL, payload)
+        response = api_client.post(deposit_url(0), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert 'description' in response.data
@@ -147,7 +173,7 @@ class TestDepositApi:
         default = Deposit._meta.get_field('is_active').default
         payload = {'name': 'My account', 'description': 'Account that I use.'}
 
-        response = api_client.post(DEPOSITS_URL, payload)
+        response = api_client.post(deposit_url(0), payload)
 
         assert response.status_code == status.HTTP_201_CREATED
         assert Deposit.objects.all().count() == 1
@@ -158,7 +184,7 @@ class TestDepositApi:
         """Test get Deposit details."""
         api_client.force_authenticate(base_user)
         deposit = deposit_factory(user=base_user)
-        url = deposit_detail_url(deposit.id)
+        url = deposit_detail_url(0, deposit.id)
 
         response = api_client.get(url)
         serializer = DepositSerializer(deposit)
@@ -171,7 +197,7 @@ class TestDepositApi:
     ):
         """Test error on getting Deposit details being unauthenticated."""
         deposit = deposit_factory(user=base_user)
-        url = deposit_detail_url(deposit.id)
+        url = deposit_detail_url(0, deposit.id)
 
         response = api_client.get(url)
 
@@ -186,7 +212,7 @@ class TestDepositApi:
         deposit = deposit_factory(user=user_1)
         api_client.force_authenticate(user_2)
 
-        url = deposit_detail_url(deposit.id)
+        url = deposit_detail_url(0, deposit.id)
         response = api_client.get(url)
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -201,7 +227,7 @@ class TestDepositApi:
         api_client.force_authenticate(base_user)
         deposit = deposit_factory(user=base_user, name='Account', description='My account', is_active=False)
         payload = {param: value}
-        url = deposit_detail_url(deposit.id)
+        url = deposit_detail_url(0, deposit.id)
 
         response = api_client.patch(url, payload)
 
@@ -219,7 +245,7 @@ class TestDepositApi:
         deposit = deposit_factory(user=base_user, name='New account', description='My new account', is_active=True)
         old_value = getattr(deposit, param)
         payload = {param: value}
-        url = deposit_detail_url(deposit.id)
+        url = deposit_detail_url(0, deposit.id)
 
         response = api_client.patch(url, payload)
 
@@ -241,7 +267,7 @@ class TestDepositApi:
             'is_active': True,
         }
         deposit = deposit_factory(user=base_user, **payload_old)
-        url = deposit_detail_url(deposit.id)
+        url = deposit_detail_url(0, deposit.id)
 
         response = api_client.put(url, payload_new)
 
@@ -269,7 +295,7 @@ class TestDepositApi:
         }
 
         deposit = deposit_factory(user=base_user, **payload_old)
-        url = deposit_detail_url(deposit.id)
+        url = deposit_detail_url(0, deposit.id)
 
         response = api_client.patch(url, payload_new)
 
@@ -282,7 +308,7 @@ class TestDepositApi:
         """Test deleting Deposit."""
         api_client.force_authenticate(base_user)
         deposit = deposit_factory(user=base_user)
-        url = deposit_detail_url(deposit.id)
+        url = deposit_detail_url(0, deposit.id)
 
         assert Deposit.objects.all().count() == 1
 
