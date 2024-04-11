@@ -131,24 +131,61 @@ class TestDepositApiList:
         assert response.data['results'][0]['id'] == deposit.id
 
 
-# @pytest.mark.django_db
-# class TestDepositApiCreate:
-#     """Tests for create Deposit on DepositViewSet."""
-#
-#     def test_create_single_deposit(self, api_client: APIClient, base_user: Any):
-#         """Test creating single Deposit."""
-#         api_client.force_authenticate(base_user)
-#         payload = {'name': 'My account', 'description': 'Account that I use.', 'is_active': True}
-#
-#         response = api_client.post(deposit_url(0), payload)
-#
-#         assert response.status_code == status.HTTP_201_CREATED
-#         assert Deposit.objects.filter(user=base_user).count() == 1
-#         deposit = Deposit.objects.get(id=response.data['id'])
-#         for key in payload:
-#             assert getattr(deposit, key) == payload[key]
-#         serializer = DepositSerializer(deposit)
-#         assert response.data == serializer.data
+@pytest.mark.django_db
+class TestDepositApiCreate:
+    """Tests for create Deposit on DepositViewSet."""
+
+    PAYLOAD = {
+        'name': 'Deposit name',
+        'description': 'Deposit description',
+        'deposit_type': Deposit.DepositTypes.PERSONAL,
+        'is_active': True,
+    }
+
+    @pytest.mark.parametrize('user_type', ['owner', 'member'])
+    @pytest.mark.parametrize('with_owner', [True, False])
+    def test_create_single_deposit(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        user_type: str,
+        with_owner: bool,
+    ):
+        """
+        GIVEN: Budget instance created in database. Valid payload prepared for Deposit.
+        WHEN: DepositViewSet called with POST by User belonging to Budget with valid payload.
+        THEN: Deposit object created in database with given payload
+        """
+        other_user = user_factory()
+        if user_type == 'owner':
+            budget = budget_factory(owner=base_user, members=[other_user])
+        else:
+            budget = budget_factory(members=[base_user, other_user])
+        payload = self.PAYLOAD.copy()
+        if with_owner:
+            payload['owner'] = other_user.id
+        api_client.force_authenticate(base_user)
+
+        response = api_client.post(deposit_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert Deposit.objects.filter(budget=budget).count() == 1
+        deposit = Deposit.objects.get(id=response.data['id'])
+        assert deposit.budget == budget
+        if with_owner:
+            assert deposit.owner.id == payload['owner']
+        else:
+            assert deposit.owner is None
+        for key in payload:
+            if key == 'owner':
+                continue
+            assert getattr(deposit, key) == payload[key]
+        serializer = DepositSerializer(deposit)
+        assert response.data == serializer.data
+
+
 #
 #     def test_create_two_deposits_by_one_user(self, api_client: APIClient, base_user: Any):
 #         """Test creating two valid Deposits by single user."""
@@ -233,6 +270,9 @@ class TestDepositApiList:
 #         assert Deposit.objects.all().count() == 1
 #         assert Deposit.objects.filter(user=base_user).count() == 1
 #         assert response.data['is_active'] == default
+#
+#     def test_error_create_period_for_not_accessible_budget(self):
+#         assert False
 #
 # @pytest.mark.django_db
 # class TestDepositApiDetail:
