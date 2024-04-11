@@ -80,37 +80,57 @@ class TestDepositApiList:
         assert response.status_code == status.HTTP_200_OK
         assert response.data['results'] == serializer.data
 
+    def test_retrieve_deposits_list_by_member(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two Deposit model instances for single Budget created in database.
+        WHEN: DepositViewSet called by Budget member.
+        THEN: Response with serialized Budget Deposit list returned.
+        """
+        budget = budget_factory(members=[base_user])
+        api_client.force_authenticate(base_user)
+        for _ in range(2):
+            deposit_factory(budget=budget)
 
-#     def test_retrieve_deposits_list_by_member(self, api_client: APIClient, base_user: Any,
-#     deposit_factory: FactoryMetaClass):
-#         """Test retrieving list of deposits."""
-#         api_client.force_authenticate(base_user)
-#         deposit_factory(user=base_user)
-#         deposit_factory(user=base_user)
-#
-#         response = api_client.get(deposit_url(0))
-#
-#         deposits = Deposit.objects.all()
-#         serializer = DepositSerializer(deposits, many=True)
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data['results'] == serializer.data
-#
-#     def test_deposits_list_limited_to_budget(
-#         self, api_client: APIClient, user_factory: FactoryMetaClass, deposit_factory: FactoryMetaClass
-#     ):
-#         """Test retrieved list of deposits is limited to authenticated user."""
-#         user = user_factory()
-#         deposit_factory(user=user)
-#         deposit_factory()
-#         api_client.force_authenticate(user)
-#
-#         response = api_client.get(deposit_url(0))
-#
-#         deposits = Deposit.objects.filter(user=user)
-#         serializer = DepositSerializer(deposits, many=True)
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data['results'] == serializer.data
-#
+        response = api_client.get(deposit_url(budget.id))
+
+        deposits = Deposit.objects.filter(budget=budget)
+        serializer = DepositSerializer(deposits, many=True)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['results'] == serializer.data
+
+    def test_deposits_list_limited_to_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two Deposit model instances for different Budgets created in database.
+        WHEN: DepositViewSet called by one of Budgets owner.
+        THEN: Response with serialized Deposit list (only from given Budget) returned.
+        """
+        budget = budget_factory(owner=base_user)
+        deposit = deposit_factory(budget=budget)
+        deposit_factory()
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(deposit_url(budget.id))
+
+        deposits = Deposit.objects.filter(budget=budget)
+        serializer = DepositSerializer(deposits, many=True)
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data['results']) == len(serializer.data) == deposits.count() == 1
+        assert response.data['results'] == serializer.data
+        assert response.data['results'][0]['id'] == deposit.id
+
+
 # @pytest.mark.django_db
 # class TestDepositApiCreate:
 #     """Tests for create Deposit on DepositViewSet."""
