@@ -7,6 +7,8 @@ from rest_framework.exceptions import ValidationError
 class DepositSerializer(serializers.ModelSerializer):
     """Serializer for Deposit."""
 
+    is_active = serializers.BooleanField(default=True)
+
     class Meta:
         model = Deposit
         fields = ['id', 'name', 'description', 'deposit_type', 'is_active', 'owner']
