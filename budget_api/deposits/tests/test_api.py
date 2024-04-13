@@ -46,10 +46,10 @@ class TestDepositApiAccess:
         budget = budget_factory(owner=budget_owner)
         api_client.force_authenticate(other_user)
 
-        res = api_client.get(deposit_url(budget.id))
+        response = api_client.get(deposit_url(budget.id))
 
-        assert res.status_code == status.HTTP_403_FORBIDDEN
-        assert res.data['detail'] == 'User does not have access to Budget.'
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data['detail'] == 'User does not have access to Budget.'
 
 
 @pytest.mark.django_db
@@ -294,69 +294,93 @@ class TestDepositApiCreate:
         assert Deposit.objects.filter(budget=budget).count() == 1
         assert response.data['is_active'] == default_value
 
-    # def test_error_create_depositfor_not_accessible_budget(self, api_client: APIClient,
-    # user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass):
-    #     """
-    #     GIVEN: Budget instance created in database. Valid payload for Deposit.
-    #     WHEN: DepositViewSet called with POST by User not belonging to Budget with valid payload.
-    #     THEN: Bad request HTTP 400 returned. Only one Deposit created in database.
-    #     """
-    #     owner =
-    #     budget = budget_factory(owner=base_user)
-    #     api_client.force_authenticate(base_user)
-    #     payload = self.PAYLOAD.copy()
-    #
-    #     api_client.post(deposit_url(budget.id), payload)
-    #     response = api_client.post(deposit_url(budget.id), payload)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     assert 'name' in response.data
-    #     assert response.data['name'][0] == "Deposit with given name already exists in Budget."
-    #     assert Deposit.objects.filter(budget=budget).count() == 1
+    def test_error_create_deposit_for_not_accessible_budget(
+        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Budget instance created in database. Valid payload for Deposit.
+        WHEN: DepositViewSet called with POST by User not belonging to Budget with valid payload.
+        THEN: Forbidden HTTP 403 returned. Object not created.
+        """
+        budget = budget_factory()
+        api_client.force_authenticate(base_user)
+
+        response = api_client.post(deposit_url(budget.id), self.PAYLOAD)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data['detail'] == 'User does not have access to Budget.'
+        assert not Deposit.objects.filter(budget=budget).exists()
 
 
-#
-# @pytest.mark.django_db
-# class TestDepositApiDetail:
-#     """Tests for detail view on DepositViewSet."""
-#
-#     def test_get_deposit_details(self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass):
-#         """Test get Deposit details."""
-#         api_client.force_authenticate(base_user)
-#         deposit = deposit_factory(user=base_user)
-#         url = deposit_detail_url(0, deposit.id)
-#
-#         response = api_client.get(url)
-#         serializer = DepositSerializer(deposit)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data == serializer.data
-#
-#     def test_error_get_deposit_details_unauthenticated(
-#         self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass
-#     ):
-#         """Test error on getting Deposit details being unauthenticated."""
-#         deposit = deposit_factory(user=base_user)
-#         url = deposit_detail_url(0, deposit.id)
-#
-#         response = api_client.get(url)
-#
-#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_error_get_other_user_deposit_details(
-#         self, api_client: APIClient, user_factory: FactoryMetaClass, deposit_factory: FactoryMetaClass
-#     ):
-#         """Test error on getting other user's Deposit details."""
-#         user_1 = user_factory()
-#         user_2 = user_factory()
-#         deposit = deposit_factory(user=user_1)
-#         api_client.force_authenticate(user_2)
-#
-#         url = deposit_detail_url(0, deposit.id)
-#         response = api_client.get(url)
-#
-#         assert response.status_code == status.HTTP_404_NOT_FOUND
-#
+@pytest.mark.django_db
+class TestDepositApiDetail:
+    """Tests for detail view on DepositViewSet."""
+
+    @pytest.mark.parametrize('user_type', ['owner', 'member'])
+    def test_get_deposit_details(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        user_type: str,
+    ):
+        """
+        GIVEN: Deposit instance for Budget created in database.
+        WHEN: DepositViewSet detail view called by User belonging to Budget.
+        THEN: HTTP 200, Deposit details returned.
+        """
+        if user_type == 'owner':
+            budget = budget_factory(owner=base_user)
+        else:
+            budget = budget_factory(members=[base_user])
+        deposit = deposit_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        url = deposit_detail_url(budget.id, deposit.id)
+
+        response = api_client.get(url)
+        serializer = DepositSerializer(deposit)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == serializer.data
+
+    def test_error_get_deposit_details_unauthenticated(
+        self, api_client: APIClient, base_user: AbstractUser, deposit_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Deposit instance for Budget created in database.
+        WHEN: DepositViewSet detail view called without authentication.
+        THEN: Unauthorized HTTP 401.
+        """
+        deposit = deposit_factory()
+        url = deposit_detail_url(deposit.budget.id, deposit.id)
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_error_get_details_from_not_accessible_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Deposit instance for Budget created in database.
+        WHEN: DepositViewSet detail view called by User not belonging to Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        deposit = deposit_factory(budget=budget_factory())
+        api_client.force_authenticate(base_user)
+
+        url = deposit_detail_url(deposit.budget.id, deposit.id)
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data['detail'] == 'User does not have access to Budget.'
+
+
 # @pytest.mark.django_db
 # class TestDepositApiUpdate:
 #     """Tests for update views on DepositViewSet."""
