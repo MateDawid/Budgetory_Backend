@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from budgets.models import Budget
 from deposits.models import Deposit
@@ -381,96 +383,184 @@ class TestDepositApiDetail:
         assert response.data['detail'] == 'User does not have access to Budget.'
 
 
+@pytest.mark.django_db
+class TestDepositApiPartialUpdate:
+    """Tests for partial update view on DepositViewSet."""
+
+    PAYLOAD = {
+        'name': 'Deposit name',
+        'description': 'Deposit description',
+        'deposit_type': Deposit.DepositTypes.PERSONAL,
+        'is_active': True,
+        'owner': None,
+    }
+
+    @pytest.mark.parametrize(
+        'param, value', [('name', 'New name'), ('description', 'New description'), ('is_active', False)]
+    )
+    @pytest.mark.django_db
+    def test_deposit_partial_update(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        param: str,
+        value: Any,
+    ):
+        """
+        GIVEN: Deposit instance for Budget created in database.
+        WHEN: DepositViewSet detail view called with PATCH by User belonging to Budget.
+        THEN: HTTP 200, Deposit updated.
+        """
+        budget = budget_factory(owner=base_user)
+        deposit = deposit_factory(budget=budget, **self.PAYLOAD)
+        update_payload = {param: value}
+        api_client.force_authenticate(base_user)
+        url = deposit_detail_url(budget.id, deposit.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        deposit.refresh_from_db()
+        assert getattr(deposit, param) == update_payload[param]
+
+    def test_error_partial_update_unauthenticated(
+        self, api_client: APIClient, base_user: AbstractUser, deposit_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Deposit instance for Budget created in database.
+        WHEN: DepositViewSet partial update view called without authentication.
+        THEN: Unauthorized HTTP 401.
+        """
+        deposit = deposit_factory()
+        url = deposit_detail_url(deposit.budget.id, deposit.id)
+
+        response = api_client.patch(url, {})
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_error_partial_update_deposit_from_not_accessible_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Deposit instance for Budget created in database.
+        WHEN: DepositViewSet partial update view called by User not belonging to Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        deposit = deposit_factory(budget=budget_factory())
+        api_client.force_authenticate(base_user)
+        url = deposit_detail_url(deposit.budget.id, deposit.id)
+
+        response = api_client.patch(url, {})
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data['detail'] == 'User does not have access to Budget.'
+
+    def test_deposit_partial_update_owner(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Deposit instance for Budget created in database. Update payload with "owner" value prepared.
+        WHEN: DepositViewSet detail view called with PATCH by User belonging to Budget with valid payload.
+        THEN: HTTP 200, Deposit updated with "owner" value.
+        """
+        member = user_factory()
+        budget = budget_factory(owner=base_user, members=[member])
+        deposit = deposit_factory(budget=budget, **self.PAYLOAD)
+        update_payload = {'owner': member.id}
+        api_client.force_authenticate(base_user)
+        url = deposit_detail_url(budget.id, deposit.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        deposit.refresh_from_db()
+        assert deposit.owner == member
+
+    @pytest.mark.parametrize('param, value', [('name', PAYLOAD['name']), ('deposit_type', 5)])
+    def test_error_on_deposit_partial_update(
+        self,
+        api_client: APIClient,
+        base_user: Any,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        param: str,
+        value: Any,
+    ):
+        """
+        GIVEN: Deposit instance for Budget created in database. Update payload with invalid value.
+        WHEN: DepositViewSet detail view called with PATCH by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400, Deposit not updated.
+        """
+        budget = budget_factory(owner=base_user)
+        deposit_factory(budget=budget, **self.PAYLOAD)
+        deposit = deposit_factory(budget=budget)
+        old_value = getattr(deposit, param)
+        update_payload = {param: value}
+        api_client.force_authenticate(base_user)
+        url = deposit_detail_url(budget.id, deposit.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        deposit.refresh_from_db()
+        assert getattr(deposit, param) == old_value
+
+    def test_error_on_deposit_partial_update_with_owner_not_belonging_to_budget(
+        self,
+        api_client: APIClient,
+        base_user: Any,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Deposit instance for Budget created in database. Update payload with User not
+        belonging to budget as "owner".
+        WHEN: DepositViewSet detail view called with PATCH by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400, Deposit not updated.
+        """
+        budget = budget_factory(owner=base_user)
+        deposit = deposit_factory(budget=budget, owner=None)
+        update_payload = {'owner': user_factory()}
+        api_client.force_authenticate(base_user)
+        url = deposit_detail_url(budget.id, deposit.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        deposit.refresh_from_db()
+        assert deposit.owner is None
+
+
 # @pytest.mark.django_db
-# class TestDepositApiUpdate:
-#     """Tests for update views on DepositViewSet."""
+# class TestDepositApiFullUpdate:
+#     """Tests for full update view on DepositViewSet."""
 #
-#     @pytest.mark.parametrize(
-#         'param, value', [('name', 'New name'), ('description', 'New description'), ('is_active', True)]
-#     )
-#     def test_deposit_partial_update(
-#         self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass, param: str, value: Any
-#     ):
-#         """Test partial update of a Deposit"""
-#         api_client.force_authenticate(base_user)
-#         deposit = deposit_factory(user=base_user, name='Account', description='My account', is_active=False)
-#         payload = {param: value}
-#         url = deposit_detail_url(0, deposit.id)
-#
-#         response = api_client.patch(url, payload)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         deposit.refresh_from_db()
-#         assert getattr(deposit, param) == payload[param]
-#
-#     @pytest.mark.parametrize('param, value', [('name', 'Old account')])
-#     def test_error_on_deposit_partial_update(
-#         self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass, param: str, value: Any
-#     ):
-#         """Test error on partial update of a Deposit."""
-#         api_client.force_authenticate(base_user)
-#         deposit_factory(user=base_user, name='Old account', description='My old account', is_active=True)
-#         deposit = deposit_factory(user=base_user, name='New account', description='My new account', is_active=True)
-#         old_value = getattr(deposit, param)
-#         payload = {param: value}
-#         url = deposit_detail_url(0, deposit.id)
-#
-#         response = api_client.patch(url, payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         deposit.refresh_from_db()
-#         assert getattr(deposit, param) == old_value
-#
+#     PAYLOAD = {
+#         'name': 'Deposit name',
+#         'description': 'Deposit description',
+#         'deposit_type': Deposit.DepositTypes.PERSONAL,
+#         'is_active': True,
+#         'owner': None
+#     }
 #     def test_deposit_full_update(self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass):
-#         """Test successful full update of a Deposit"""
-#         api_client.force_authenticate(base_user)
-#         payload_old = {
-#             'name': 'Old account',
-#             'description': 'My old account',
-#             'is_active': False,
-#         }
-#         payload_new = {
-#             'name': 'New account',
-#             'description': 'My new account',
-#             'is_active': True,
-#         }
-#         deposit = deposit_factory(user=base_user, **payload_old)
-#         url = deposit_detail_url(0, deposit.id)
+#        assert False
 #
-#         response = api_client.put(url, payload_new)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         deposit.refresh_from_db()
-#         for k, v in payload_new.items():
-#             assert getattr(deposit, k) == v
-#
-#     @pytest.mark.parametrize(
-#         'payload_new',
-#         [
-#             {'name': 'Old account', 'description': 'My new account', 'is_active': True},
-#         ],
-#     )
 #     def test_error_on_deposit_full_update(
 #         self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass, payload_new: dict
 #     ):
-#         """Test error on full update of a Deposit."""
-#         api_client.force_authenticate(base_user)
-#         deposit_factory(user=base_user, name='Old account', description='My old account', is_active=True)
-#         payload_old = {
-#             'name': 'New account',
-#             'description': 'My new account',
-#             'is_active': True,
-#         }
-#
-#         deposit = deposit_factory(user=base_user, **payload_old)
-#         url = deposit_detail_url(0, deposit.id)
-#
-#         response = api_client.patch(url, payload_new)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         deposit.refresh_from_db()
-#         for k, v in payload_old.items():
-#             assert getattr(deposit, k) == v
+#        assert False
 #
 # @pytest.mark.django_db
 # class TestDepositApiDelete:
