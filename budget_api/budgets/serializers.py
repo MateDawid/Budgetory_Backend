@@ -35,79 +35,59 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'date_start', 'date_end', 'is_active']
         read_only_fields = ['id']
 
-    def validate(self, attrs: OrderedDict) -> OrderedDict:
-        """
-        Validates name, is_active, date_start and date_end in separate methods.
-
-        Args:
-            attrs [OrderedDict]: Dictionary containing given BudgetingPeriod params.
-
-        Returns:
-            OrderedDict: Dictionary containing validated BudgetingPeriod params.
-        """
-        self.budget = self._get_budget()
-        self._validate_name(attrs)
-        self._validate_is_active(attrs)
-        self._validate_dates(attrs)
-        return attrs
-
-    def _get_budget(self) -> Budget:
-        """
-        Returns Budget object indicated by its id in request URL.
-
-        Returns:
-            Budget: Budget model instance.
-
-        Raises:
-            ValidationError: Raised when Budget with given id not exists in database.
-        """
-        budget_pk = self.context['request'].parser_context.get('kwargs', {}).get('budget_pk')
-        try:
-            budget = Budget.objects.get(id=budget_pk)
-        except Budget.DoesNotExist:
-            raise ValidationError(f'Budget with pk "{budget_pk}" does not exist.')
-        return budget
-
-    def _validate_name(self, attrs: OrderedDict) -> None:
+    def validate_name(self, name: str) -> str:
         """
         Checks if Budget contains BudgetingPeriod with given name already.
 
         Args:
-            attrs [OrderedDict]: Dictionary containing given BudgetingPeriod params
+            name [str]: Given name for BudgetingPeriod
+
+        Returns:
+            str: Validated name value.
 
         Raises:
             ValidationError: Raised when BudgetingPeriod for Budget with given name already exists in database.
         """
-        name = attrs.get('name')
         try:
-            self.Meta.model.objects.get(budget=self.budget, name=name)
+            self.Meta.model.objects.get(budget=self.context['request'].budget, name=name)
         except self.Meta.model.DoesNotExist:
             pass
         else:
             raise ValidationError(f'Period with name "{name}" already exists in Budget.')
+        return name
 
-    def _validate_is_active(self, attrs: OrderedDict) -> None:
+    def validate_is_active(self, is_active: bool) -> bool:
         """
         Checks if Budget contains active BudgetingPeriod.
 
         Args:
-            attrs [OrderedDict]: Dictionary containing given BudgetingPeriod params
+            is_active [bool]: Given is_active value to determine if BudgetingPeriod is active or not.
+
+        Returns:
+            bool: Validated is_active value.
 
         Raises:
             ValidationError: Raised when active BudgetingPeriod for Budget already exists in database.
         """
-        is_active = attrs.get('is_active')
         if is_active is True:
-            active_periods = self.budget.periods.filter(is_active=True).exclude(pk=getattr(self.instance, 'pk', None))
+            active_periods = (
+                self.context['request']
+                .budget.periods.filter(is_active=True)
+                .exclude(pk=getattr(self.instance, 'pk', None))
+            )
             if active_periods.exists():
                 raise ValidationError('Active period already exists in Budget.')
+        return is_active
 
-    def _validate_dates(self, attrs: OrderedDict) -> None:
+    def validate(self, attrs: OrderedDict) -> OrderedDict:
         """
         Checks if given BudgetingPeriod start and end dates do not collide with other Budget periods dates.
 
         Args:
             attrs [OrderedDict]: Dictionary containing given BudgetingPeriod params
+
+        Returns:
+            OrderedDict: Dictionary with validated attrs values.
 
         Raises:
             ValidationError: Raised when date_end earlier than date start or some Budget periods
@@ -118,7 +98,8 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
         if date_start >= date_end:
             raise ValidationError('Start date should be earlier than end date.')
         if (
-            self.budget.periods.filter(
+            self.context['request']
+            .budget.periods.filter(
                 Q(date_start__lte=date_start, date_end__gte=date_start)
                 | Q(date_start__lte=date_end, date_end__gte=date_end)
                 | Q(date_start__gte=date_start, date_end__lte=date_end)
