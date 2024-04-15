@@ -711,19 +711,62 @@ class TestDepositApiFullUpdate:
         assert deposit.owner is None
 
 
-#
-# @pytest.mark.django_db
-# class TestDepositApiDelete:
-#     """Tests for delete Deposit on DepositViewSet."""
-#     def test_delete_deposit(self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass):
-#         """Test deleting Deposit."""
-#         api_client.force_authenticate(base_user)
-#         deposit = deposit_factory(user=base_user)
-#         url = deposit_detail_url(0, deposit.id)
-#
-#         assert Deposit.objects.all().count() == 1
-#
-#         response = api_client.delete(url)
-#
-#         assert response.status_code == status.HTTP_204_NO_CONTENT
-#         assert not Deposit.objects.all().exists()
+@pytest.mark.django_db
+class TestDepositApiDelete:
+    """Tests for delete Deposit on DepositViewSet."""
+
+    def test_delete_deposit(
+        self, api_client: APIClient, base_user: Any, budget_factory: FactoryMetaClass, deposit_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Deposit instance for Budget created in database.
+        WHEN: DepositViewSet detail view called with DELETE by User belonging to Budget.
+        THEN: No content HTTP 204, Deposit deleted.
+        """
+        budget = budget_factory(owner=base_user)
+        deposit = deposit_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        url = deposit_detail_url(budget.id, deposit.id)
+
+        assert budget.deposits.all().exists() == 1
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not budget.deposits.all().exists()
+
+    def test_error_delete_unauthenticated(
+        self, api_client: APIClient, base_user: AbstractUser, deposit_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Deposit instance for Budget created in database.
+        WHEN: DepositViewSet detail view called with PUT without authentication.
+        THEN: Unauthorized HTTP 401.
+        """
+        deposit = deposit_factory()
+        url = deposit_detail_url(deposit.budget.id, deposit.id)
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_error_delete_deposit_from_not_accessible_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Deposit instance for Budget created in database.
+        WHEN: DepositViewSet detail view called with DELETE by User not belonging to Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        deposit = deposit_factory(budget=budget_factory())
+        api_client.force_authenticate(base_user)
+        url = deposit_detail_url(deposit.budget.id, deposit.id)
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data['detail'] == 'User does not have access to Budget.'
