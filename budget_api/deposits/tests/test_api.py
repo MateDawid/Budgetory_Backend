@@ -430,7 +430,7 @@ class TestDepositApiPartialUpdate:
     ):
         """
         GIVEN: Deposit instance for Budget created in database.
-        WHEN: DepositViewSet partial update view called without authentication.
+        WHEN: DepositViewSet detail view called with PATCH without authentication.
         THEN: Unauthorized HTTP 401.
         """
         deposit = deposit_factory()
@@ -449,7 +449,7 @@ class TestDepositApiPartialUpdate:
     ):
         """
         GIVEN: Deposit instance for Budget created in database.
-        WHEN: DepositViewSet partial update view called by User not belonging to Budget.
+        WHEN: DepositViewSet detail view called with PATCH by User not belonging to Budget.
         THEN: Forbidden HTTP 403 returned.
         """
         deposit = deposit_factory(budget=budget_factory())
@@ -543,24 +543,174 @@ class TestDepositApiPartialUpdate:
         assert deposit.owner is None
 
 
-# @pytest.mark.django_db
-# class TestDepositApiFullUpdate:
-#     """Tests for full update view on DepositViewSet."""
-#
-#     PAYLOAD = {
-#         'name': 'Deposit name',
-#         'description': 'Deposit description',
-#         'deposit_type': Deposit.DepositTypes.PERSONAL,
-#         'is_active': True,
-#         'owner': None
-#     }
-#     def test_deposit_full_update(self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass):
-#        assert False
-#
-#     def test_error_on_deposit_full_update(
-#         self, api_client: APIClient, base_user: Any, deposit_factory: FactoryMetaClass, payload_new: dict
-#     ):
-#        assert False
+@pytest.mark.django_db
+class TestDepositApiFullUpdate:
+    """Tests for full update view on DepositViewSet."""
+
+    INITIAL_PAYLOAD = {
+        'name': 'Deposit name',
+        'description': 'Deposit description',
+        'deposit_type': Deposit.DepositTypes.PERSONAL,
+        'is_active': True,
+    }
+
+    UPDATE_PAYLOAD = {
+        'name': 'Updated name',
+        'description': 'Updated description',
+        'deposit_type': Deposit.DepositTypes.COMMON,
+        'is_active': False,
+    }
+
+    @pytest.mark.django_db
+    def test_deposit_full_update(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Deposit instance for Budget created in database.
+        WHEN: DepositViewSet detail view called with PUT by User belonging to Budget.
+        THEN: HTTP 200, Deposit updated.
+        """
+        budget = budget_factory(owner=base_user)
+        deposit = deposit_factory(budget=budget, **self.INITIAL_PAYLOAD)
+        api_client.force_authenticate(base_user)
+        url = deposit_detail_url(budget.id, deposit.id)
+
+        response = api_client.put(url, self.UPDATE_PAYLOAD)
+
+        assert response.status_code == status.HTTP_200_OK
+        deposit.refresh_from_db()
+        for param in self.UPDATE_PAYLOAD:
+            assert getattr(deposit, param) == self.UPDATE_PAYLOAD[param]
+
+    def test_error_full_update_unauthenticated(
+        self, api_client: APIClient, base_user: AbstractUser, deposit_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Deposit instance for Budget created in database.
+        WHEN: DepositViewSet detail view called with PUT without authentication.
+        THEN: Unauthorized HTTP 401.
+        """
+        deposit = deposit_factory()
+        url = deposit_detail_url(deposit.budget.id, deposit.id)
+
+        response = api_client.put(url, {})
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_error_full_update_deposit_from_not_accessible_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Deposit instance for Budget created in database.
+        WHEN: DepositViewSet detail view called with PUT by User not belonging to Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        deposit = deposit_factory(budget=budget_factory())
+        api_client.force_authenticate(base_user)
+        url = deposit_detail_url(deposit.budget.id, deposit.id)
+
+        response = api_client.put(url, {})
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data['detail'] == 'User does not have access to Budget.'
+
+    def test_deposit_full_update_owner(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Deposit instance for Budget created in database. Update payload with "owner" value prepared.
+        WHEN: DepositViewSet detail view called with PUT by User belonging to Budget with valid payload.
+        THEN: HTTP 200, Deposit updated with "owner" value.
+        """
+        member = user_factory()
+        budget = budget_factory(owner=base_user, members=[member])
+        deposit = deposit_factory(budget=budget, **self.INITIAL_PAYLOAD)
+        update_payload = self.UPDATE_PAYLOAD.copy()
+        update_payload['owner'] = member.id
+        api_client.force_authenticate(base_user)
+        url = deposit_detail_url(budget.id, deposit.id)
+
+        response = api_client.put(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        deposit.refresh_from_db()
+        assert deposit.owner == member
+        for param in update_payload:
+            if param == 'owner':
+                continue
+            assert getattr(deposit, param) == update_payload[param]
+
+    @pytest.mark.parametrize('param, value', [('name', INITIAL_PAYLOAD['name']), ('deposit_type', 5)])
+    def test_error_on_deposit_full_update(
+        self,
+        api_client: APIClient,
+        base_user: Any,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        param: str,
+        value: Any,
+    ):
+        """
+        GIVEN: Deposit instance for Budget created in database. Update payload with invalid value.
+        WHEN: DepositViewSet detail view called with PUT by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400, Deposit not updated.
+        """
+        budget = budget_factory(owner=base_user)
+        deposit_factory(budget=budget, **self.INITIAL_PAYLOAD)
+        deposit = deposit_factory(budget=budget)
+        old_value = getattr(deposit, param)
+        update_payload = self.UPDATE_PAYLOAD.copy()
+        update_payload[param] = value
+        api_client.force_authenticate(base_user)
+        url = deposit_detail_url(budget.id, deposit.id)
+
+        response = api_client.put(url, update_payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        deposit.refresh_from_db()
+        assert getattr(deposit, param) == old_value
+
+    def test_error_on_deposit_full_update_with_owner_not_belonging_to_budget(
+        self,
+        api_client: APIClient,
+        base_user: Any,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Deposit instance for Budget created in database. Update payload with User not
+        belonging to budget as "owner".
+        WHEN: DepositViewSet detail view called with PUT by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400, Deposit not updated.
+        """
+        budget = budget_factory(owner=base_user)
+        deposit = deposit_factory(budget=budget, owner=None, **self.INITIAL_PAYLOAD)
+        update_payload = self.UPDATE_PAYLOAD.copy()
+        update_payload['owner'] = user_factory()
+        api_client.force_authenticate(base_user)
+        url = deposit_detail_url(budget.id, deposit.id)
+
+        response = api_client.put(url, update_payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        deposit.refresh_from_db()
+        assert deposit.owner is None
+
+
 #
 # @pytest.mark.django_db
 # class TestDepositApiDelete:
