@@ -44,24 +44,23 @@ Period in which financial values are aggregated.
 - ✔️ Creating new valid BudgetingPeriod by Budget member
 - ✔️ Closing BudgetingPeriod by Budget member
 
-## ⛔ Deposit
+## ✔️ Deposit 
 Represents "container" in which incomes are stored and source for expenses - bank accounts, cash, gold, etc.
 ### Fields:
-- ⛔ budget [Budget] - Budget for Deposit
+- ✔️ budget [Budget] - Budget for Deposit
 - ✔️ name [str] - Name of Deposit
 - ✔️ description [str] - Deposit description [optional]
 - ✔️ is_active [bool] - Indicates if Deposit is active
-- ⛔ deposit_type [str] - Chosen Deposit type. Choices:
+- ✔️ deposit_type [str] - Chosen Deposit type. Choices:
    - PERSONAL - personal Deposit
    - COMMON - Deposit for all Budget members
    - RESERVES - Deposit for storing Reserves
    - INVESTMENTS - Deposit for storing investments
    - SAVINGS - Deposit for savings
-- ⛔ owner [User | None] - owner of Deposit
+- ✔️ owner [User | None] - owner of Deposit
 
 ### Features:
-- ⛔ Creating new Deposit by Budget member
-- ⛔ Deactivating Deposit by Deposit owner
+- ✔️ Creating new Deposit by Budget member
 
 ##  ⛔ TransferCategoryGroup
 Group for TransferCategories.

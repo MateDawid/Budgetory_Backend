@@ -1,6 +1,8 @@
+from app_config.permissions import UserBelongToBudgetPermission
+from budgets.mixins import BudgetMixin
 from budgets.models import Budget, BudgetingPeriod
 from budgets.serializers import BudgetingPeriodSerializer, BudgetSerializer
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -42,16 +44,21 @@ class BudgetViewSet(viewsets.ModelViewSet):
         serializer.save(owner=self.request.user)
 
 
-class BudgetingPeriodViewSet(viewsets.ModelViewSet):
+class BudgetingPeriodViewSet(BudgetMixin, viewsets.ModelViewSet):
     """View for manage BudgetingPeriods."""
 
     serializer_class = BudgetingPeriodSerializer
     queryset = BudgetingPeriod.objects.all()
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, UserBelongToBudgetPermission]
 
-    def get_queryset(self):
-        """Retrieve BudgetingPeriods for authenticated user."""
+    def get_queryset(self) -> QuerySet:
+        """
+        Retrieves BudgetingPeriods for Budgets to which authenticated User belongs.
+
+        Returns:
+            QuerySet: Filtered BudgetingPeriod QuerySet.
+        """
         user = getattr(self.request, 'user', None)
         if user and user.is_authenticated:
             budget_pk = self.kwargs.get('budget_pk')
@@ -63,6 +70,11 @@ class BudgetingPeriodViewSet(viewsets.ModelViewSet):
                 )
         return self.queryset.none()
 
-    def perform_create(self, serializer):
-        """Additionally save user in BudgetingPeriod model."""
-        serializer.save(budget=serializer.budget)
+    def perform_create(self, serializer: BudgetingPeriodSerializer) -> None:
+        """
+        Extended with saving Budget in BudgetingPeriod model.
+
+        Args:
+            serializer [BudgetingPeriodSerializer]: Serializer for BudgetingPeriod
+        """
+        serializer.save(budget=self.request.budget)
