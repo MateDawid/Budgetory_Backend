@@ -1,7 +1,7 @@
 import pytest
 from django.core.exceptions import ValidationError
 from django.db import DataError
-from transfers.models import TransferCategory
+from transfers.models.transfer_category import TransferCategory
 
 
 @pytest.mark.django_db

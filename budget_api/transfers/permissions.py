@@ -1,5 +1,5 @@
 from rest_framework.permissions import BasePermission
-from transfers.models import TransferCategory
+from transfers.models.transfer_category import TransferCategory
 
 
 class IsPersonalTransferCategoryOwnerOrAdmin(BasePermission):

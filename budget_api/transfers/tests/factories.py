@@ -2,7 +2,7 @@ import random
 
 import factory
 from app_users.tests.factories import UserFactory
-from transfers.models import TransferCategory
+from transfers.models.transfer_category import TransferCategory
 
 
 class TransferCategoryFactory(factory.django.DjangoModelFactory):

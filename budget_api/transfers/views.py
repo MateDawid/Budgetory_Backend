@@ -3,7 +3,7 @@ from rest_framework import status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
-from transfers.models import TransferCategory
+from transfers.models.transfer_category import TransferCategory
 from transfers.permissions import IsPersonalTransferCategoryOwnerOrAdmin
 from transfers.serializers import TransferCategorySerializer
 
