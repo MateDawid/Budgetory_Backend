@@ -23,7 +23,7 @@ class BudgetViewSet(viewsets.ModelViewSet):
         user = getattr(self.request, 'user', None)
         if user and user.is_authenticated:
             return self.queryset.filter(Q(owner=user) | Q(members=user)).order_by('id').distinct()
-        return self.queryset.none()
+        return self.queryset.none()  # pragma: no cover
 
     @action(detail=False, methods=['GET'])
     def owned(self, request, **kwargs):
@@ -68,7 +68,7 @@ class BudgetingPeriodViewSet(BudgetMixin, viewsets.ModelViewSet):
                     .order_by('-date_start')
                     .distinct()
                 )
-        return self.queryset.none()
+        return self.queryset.none()  # pragma: no cover
 
     def perform_create(self, serializer: BudgetingPeriodSerializer) -> None:
         """

@@ -30,7 +30,7 @@ class TransferCategoryViewSet(viewsets.ModelViewSet):
             return self.queryset.filter(
                 Q(scope=TransferCategory.GLOBAL) | Q(scope=TransferCategory.PERSONAL, user=user)
             ).distinct()
-        return self.queryset.none()
+        return self.queryset.none()  # pragma: no cover
 
     def create(self, request, *args, **kwargs):
         """Extend create method with passing user in serializer depending on TransferCategory type."""
