@@ -3,8 +3,8 @@ from budgets.models import Budget
 from django.core.exceptions import ValidationError
 from django.db import DataError, IntegrityError
 from factory.base import FactoryMetaClass
-from transfers.models.transfer_category import TransferCategory
-from transfers.models.transfer_category_group import TransferCategoryGroup
+from transfers.models.transfer_category_group_model import TransferCategoryGroup
+from transfers.models.transfer_category_model import TransferCategory
 
 
 @pytest.mark.django_db

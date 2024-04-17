@@ -7,7 +7,7 @@ from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
-from transfers.models.transfer_category import TransferCategory
+from transfers.models.transfer_category_model import TransferCategory
 from transfers.serializers import TransferCategorySerializer
 
 TRANSFER_CATEGORIES_URL = reverse('transfers:transfercategory-list')
