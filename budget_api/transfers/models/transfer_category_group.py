@@ -28,4 +28,4 @@ class TransferCategoryGroup(BaseTransferModel):
         Returns:
             str: Custom string representation of instance.
         """
-        return self.name
+        return f'{self.name} ({self.budget.name})'
