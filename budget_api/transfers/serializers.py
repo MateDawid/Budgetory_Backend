@@ -1,7 +1,7 @@
 from typing import Any
 
 from rest_framework import serializers
-from transfers.models.transfer_category import TransferCategory
+from transfers.models.transfer_category_model import TransferCategory
 
 
 class TransferCategorySerializer(serializers.ModelSerializer):
