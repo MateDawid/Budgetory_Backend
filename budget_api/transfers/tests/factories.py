@@ -1,7 +1,9 @@
 import random
 
-import factory
+import factory.fuzzy
 from app_users.tests.factories import UserFactory
+from budgets.tests.factories import BudgetFactory
+from transfers.models.transfer_category_group_model import TransferCategoryGroup
 from transfers.models.transfer_category_model import TransferCategory
 
 
@@ -29,3 +31,15 @@ class TransferCategoryFactory(factory.django.DjangoModelFactory):
             return TransferCategory.GLOBAL
         else:
             return TransferCategory.PERSONAL
+
+
+class TransferCategoryGroupFactory(factory.django.DjangoModelFactory):
+    """Factory for TransferCategoryGroup model."""
+
+    class Meta:
+        model = 'transfers.TransferCategoryGroup'
+
+    budget = factory.SubFactory(BudgetFactory)
+    name = factory.Faker('text', max_nb_chars=128)
+    description = factory.Faker('text', max_nb_chars=255)
+    transfer_type = factory.fuzzy.FuzzyChoice([x[0] for x in TransferCategoryGroup.TransferTypes.choices])
