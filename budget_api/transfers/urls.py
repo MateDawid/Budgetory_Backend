@@ -1,5 +1,5 @@
 from rest_framework import routers
-from transfers.views import TransferCategoryViewSet
+from transfers.views.transfer_category_view import TransferCategoryViewSet
 
 app_name = 'transfers'
 
