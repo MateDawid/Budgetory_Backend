@@ -8,7 +8,9 @@ from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 from transfers.models.transfer_category_model import TransferCategory
-from transfers.serializers import TransferCategorySerializer
+from transfers.serializers.transfer_category_serializer import (
+    TransferCategorySerializer,
+)
 
 TRANSFER_CATEGORIES_URL = reverse('transfers:transfercategory-list')
 

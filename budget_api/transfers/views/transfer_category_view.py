@@ -5,7 +5,9 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from transfers.models.transfer_category_model import TransferCategory
 from transfers.permissions import IsPersonalTransferCategoryOwnerOrAdmin
-from transfers.serializers import TransferCategorySerializer
+from transfers.serializers.transfer_category_serializer import (
+    TransferCategorySerializer,
+)
 
 
 class TransferCategoryViewSet(viewsets.ModelViewSet):
