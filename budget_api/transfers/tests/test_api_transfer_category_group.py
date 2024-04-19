@@ -281,76 +281,75 @@ class TestTransferCategoryGroupApiCreate:
         assert not TransferCategoryGroup.objects.filter(budget=budget).exists()
 
 
-#
-# @pytest.mark.django_db
-# class TestTransferCategoryGroupApiDetail:
-#     """Tests for detail view on TransferCategoryGroupViewSet."""
-#
-#     @pytest.mark.parametrize('user_type', ['owner', 'member'])
-#     def test_get_category_group_details(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         category_group_factory: FactoryMetaClass,
-#         user_type: str,
-#     ):
-#         """
-#         GIVEN: TransferCategoryGroup instance for Budget created in database.
-#         WHEN: TransferCategoryGroupViewSet detail view called by User belonging to Budget.
-#         THEN: HTTP 200, TransferCategoryGroup details returned.
-#         """
-#         if user_type == 'owner':
-#             budget = budget_factory(owner=base_user)
-#         else:
-#             budget = budget_factory(members=[base_user])
-#         category_group = category_group_factory(budget=budget)
-#         api_client.force_authenticate(base_user)
-#         url = category_group_detail_url(budget.id, category_group.id)
-#
-#         response = api_client.get(url)
-#         serializer = TransferCategoryGroupSerializer(category_group)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data == serializer.data
-#
-#     def test_error_get_category_group_details_unauthenticated(
-#         self, api_client: APIClient, base_user: AbstractUser, category_group_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: TransferCategoryGroup instance for Budget created in database.
-#         WHEN: TransferCategoryGroupViewSet detail view called without authentication.
-#         THEN: Unauthorized HTTP 401.
-#         """
-#         category_group = category_group_factory()
-#         url = category_group_detail_url(category_group.budget.id, category_group.id)
-#
-#         response = api_client.get(url)
-#
-#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_error_get_details_from_not_accessible_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         category_group_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: TransferCategoryGroup instance for Budget created in database.
-#         WHEN: TransferCategoryGroupViewSet detail view called by User not belonging to Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         category_group = category_group_factory(budget=budget_factory())
-#         api_client.force_authenticate(base_user)
-#
-#         url = category_group_detail_url(category_group.budget.id, category_group.id)
-#         response = api_client.get(url)
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data['detail'] == 'User does not have access to Budget.'
-#
-#
+@pytest.mark.django_db
+class TestTransferCategoryGroupApiDetail:
+    """Tests for detail view on TransferCategoryGroupViewSet."""
+
+    @pytest.mark.parametrize('user_type', ['owner', 'member'])
+    def test_get_category_group_details(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_group_factory: FactoryMetaClass,
+        user_type: str,
+    ):
+        """
+        GIVEN: TransferCategoryGroup instance for Budget created in database.
+        WHEN: TransferCategoryGroupViewSet detail view called by User belonging to Budget.
+        THEN: HTTP 200, TransferCategoryGroup details returned.
+        """
+        if user_type == 'owner':
+            budget = budget_factory(owner=base_user)
+        else:
+            budget = budget_factory(members=[base_user])
+        category_group = transfer_category_group_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        url = category_group_detail_url(budget.id, category_group.id)
+
+        response = api_client.get(url)
+        serializer = TransferCategoryGroupSerializer(category_group)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == serializer.data
+
+    def test_error_get_category_group_details_unauthenticated(
+        self, api_client: APIClient, base_user: AbstractUser, transfer_category_group_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: TransferCategoryGroup instance for Budget created in database.
+        WHEN: TransferCategoryGroupViewSet detail view called without authentication.
+        THEN: Unauthorized HTTP 401.
+        """
+        category_group = transfer_category_group_factory()
+        url = category_group_detail_url(category_group.budget.id, category_group.id)
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_error_get_details_from_not_accessible_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_group_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: TransferCategoryGroup instance for Budget created in database.
+        WHEN: TransferCategoryGroupViewSet detail view called by User not belonging to Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        category_group = transfer_category_group_factory(budget=budget_factory())
+        api_client.force_authenticate(base_user)
+
+        url = category_group_detail_url(category_group.budget.id, category_group.id)
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data['detail'] == 'User does not have access to Budget.'
+
+
 # @pytest.mark.django_db
 # class TestTransferCategoryGroupApiPartialUpdate:
 #     """Tests for partial update view on TransferCategoryGroupViewSet."""
