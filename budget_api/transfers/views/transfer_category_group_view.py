@@ -1,5 +1,6 @@
 from app_config.permissions import UserBelongToBudgetPermission
 from budgets.mixins import BudgetMixin
+from django.db.models import QuerySet
 from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
@@ -14,6 +15,15 @@ class TransferCategoryGroupViewSet(BudgetMixin, viewsets.ModelViewSet):
     queryset = TransferCategoryGroup.objects.all()
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, UserBelongToBudgetPermission]
+
+    def get_queryset(self) -> QuerySet:
+        """
+        Retrieve TransferCategoryGroups for Budget passed in URL.
+
+        Returns:
+            QuerySet: Filtered TransferCategoryGroup QuerySet.
+        """
+        return self.queryset.filter(budget=self.request.budget).distinct()
 
     def perform_create(self, serializer: TransferCategoryGroupSerializer) -> None:
         """

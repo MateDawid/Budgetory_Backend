@@ -58,7 +58,7 @@ class TestTransferCategoryGroupApiAccess:
 class TestTransferCategoryGroupApiList:
     """Tests for list view on TransferCategoryGroupViewSet."""
 
-    def test_retrieve_deposits_list_by_owner(
+    def test_retrieve_category_group_list_by_owner(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -82,59 +82,57 @@ class TestTransferCategoryGroupApiList:
         assert response.status_code == status.HTTP_200_OK
         assert response.data['results'] == serializer.data
 
+    def test_retrieve_category_groups_list_by_member(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_group_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two TransferCategoryGroup model instances for single Budget created in database.
+        WHEN: TransferCategoryGroupViewSet called by Budget member.
+        THEN: Response with serialized Budget TransferCategoryGroup list returned.
+        """
+        budget = budget_factory(members=[base_user])
+        api_client.force_authenticate(base_user)
+        for _ in range(2):
+            transfer_category_group_factory(budget=budget)
 
-#
-#     def test_retrieve_deposits_list_by_member(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         deposit_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Two TransferCategoryGroup model instances for single Budget created in database.
-#         WHEN: TransferCategoryGroupViewSet called by Budget member.
-#         THEN: Response with serialized Budget TransferCategoryGroup list returned.
-#         """
-#         budget = budget_factory(members=[base_user])
-#         api_client.force_authenticate(base_user)
-#         for _ in range(2):
-#             deposit_factory(budget=budget)
-#
-#         response = api_client.get(deposit_url(budget.id))
-#
-#         deposits = TransferCategoryGroup.objects.filter(budget=budget)
-#         serializer = TransferCategoryGroupSerializer(deposits, many=True)
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data['results'] == serializer.data
-#
-#     def test_deposits_list_limited_to_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         deposit_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Two TransferCategoryGroup model instances for different Budgets created in database.
-#         WHEN: TransferCategoryGroupViewSet called by one of Budgets owner.
-#         THEN: Response with serialized TransferCategoryGroup list (only from given Budget) returned.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         deposit = deposit_factory(budget=budget)
-#         deposit_factory()
-#         api_client.force_authenticate(base_user)
-#
-#         response = api_client.get(deposit_url(budget.id))
-#
-#         deposits = TransferCategoryGroup.objects.filter(budget=budget)
-#         serializer = TransferCategoryGroupSerializer(deposits, many=True)
-#         assert response.status_code == status.HTTP_200_OK
-#         assert len(response.data['results']) == len(serializer.data) == deposits.count() == 1
-#         assert response.data['results'] == serializer.data
-#         assert response.data['results'][0]['id'] == deposit.id
-#
-#
+        response = api_client.get(category_group_url(budget.id))
+
+        category_groups = TransferCategoryGroup.objects.filter(budget=budget)
+        serializer = TransferCategoryGroupSerializer(category_groups, many=True)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['results'] == serializer.data
+
+    def test_category_groups_list_limited_to_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_group_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two TransferCategoryGroup model instances for different Budgets created in database.
+        WHEN: TransferCategoryGroupViewSet called by one of Budgets owner.
+        THEN: Response with serialized TransferCategoryGroup list (only from given Budget) returned.
+        """
+        budget = budget_factory(owner=base_user)
+        category_group = transfer_category_group_factory(budget=budget)
+        transfer_category_group_factory()
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(category_group_url(budget.id))
+
+        category_groups = TransferCategoryGroup.objects.filter(budget=budget)
+        serializer = TransferCategoryGroupSerializer(category_groups, many=True)
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data['results']) == len(serializer.data) == category_groups.count() == 1
+        assert response.data['results'] == serializer.data
+        assert response.data['results'][0]['id'] == category_group.id
+
+
 # @pytest.mark.django_db
 # class TestTransferCategoryGroupApiCreate:
 #     """Tests for create TransferCategoryGroup on TransferCategoryGroupViewSet."""
@@ -142,13 +140,13 @@ class TestTransferCategoryGroupApiList:
 #     PAYLOAD = {
 #         'name': 'TransferCategoryGroup name',
 #         'description': 'TransferCategoryGroup description',
-#         'deposit_type': TransferCategoryGroup.TransferCategoryGroupTypes.PERSONAL,
+#         'category_group_type': TransferCategoryGroup.TransferCategoryGroupTypes.PERSONAL,
 #         'is_active': True,
 #     }
 #
 #     @pytest.mark.parametrize('user_type', ['owner', 'member'])
 #     @pytest.mark.parametrize('with_owner', [True, False])
-#     def test_create_single_deposit(
+#     def test_create_single_category_group(
 #         self,
 #         api_client: APIClient,
 #         base_user: AbstractUser,
@@ -172,24 +170,24 @@ class TestTransferCategoryGroupApiList:
 #             payload['owner'] = other_user.id
 #         api_client.force_authenticate(base_user)
 #
-#         response = api_client.post(deposit_url(budget.id), payload)
+#         response = api_client.post(category_group_url(budget.id), payload)
 #
 #         assert response.status_code == status.HTTP_201_CREATED
 #         assert TransferCategoryGroup.objects.filter(budget=budget).count() == 1
-#         deposit = TransferCategoryGroup.objects.get(id=response.data['id'])
-#         assert deposit.budget == budget
+#         category_group = TransferCategoryGroup.objects.get(id=response.data['id'])
+#         assert category_group.budget == budget
 #         if with_owner:
-#             assert deposit.owner.id == payload['owner']
+#             assert category_group.owner.id == payload['owner']
 #         else:
-#             assert deposit.owner is None
+#             assert category_group.owner is None
 #         for key in payload:
 #             if key == 'owner':
 #                 continue
-#             assert getattr(deposit, key) == payload[key]
-#         serializer = TransferCategoryGroupSerializer(deposit)
+#             assert getattr(category_group, key) == payload[key]
+#         serializer = TransferCategoryGroupSerializer(category_group)
 #         assert response.data == serializer.data
 #
-#     def test_create_two_deposits_for_single_budget(
+#     def test_create_two_category_groups_for_single_budget(
 #         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
 #     ):
 #         """
@@ -204,18 +202,19 @@ class TestTransferCategoryGroupApiList:
 #         payload_2 = self.PAYLOAD.copy()
 #         payload_2['name'] = 'TransferCategoryGroup name 2'
 #
-#         response_1 = api_client.post(deposit_url(budget.id), payload_1)
-#         response_2 = api_client.post(deposit_url(budget.id), payload_2)
+#         response_1 = api_client.post(category_group_url(budget.id), payload_1)
+#         response_2 = api_client.post(category_group_url(budget.id), payload_2)
 #
 #         assert response_1.status_code == status.HTTP_201_CREATED
 #         assert response_2.status_code == status.HTTP_201_CREATED
 #         assert TransferCategoryGroup.objects.filter(budget=budget).count() == 2
 #         for response, payload in [(response_1, payload_1), (response_2, payload_2)]:
-#             deposit = TransferCategoryGroup.objects.get(id=response.data['id'])
+#             category_group = TransferCategoryGroup.objects.get(id=response.data['id'])
 #             for key in payload:
-#                 assert getattr(deposit, key) == payload[key]
+#                 assert getattr(category_group, key) == payload[key]
 #
-#     def test_create_same_deposit_for_two_budgets(self, api_client: APIClient, budget_factory: FactoryMetaClass):
+#     def test_create_same_category_group_for_two_budgets(self, api_client: APIClient,
+#     budget_factory: FactoryMetaClass):
 #         """
 #         GIVEN: Two Budget instances created in database. Valid payload prepared for two TransferCategoryGroups.
 #         WHEN: TransferCategoryGroupViewSet called twice with POST by different Users belonging to two different
@@ -227,9 +226,9 @@ class TestTransferCategoryGroupApiList:
 #         budget_2 = budget_factory()
 #
 #         api_client.force_authenticate(budget_1.owner)
-#         api_client.post(deposit_url(budget_1.id), payload)
+#         api_client.post(category_group_url(budget_1.id), payload)
 #         api_client.force_authenticate(budget_2.owner)
-#         api_client.post(deposit_url(budget_2.id), payload)
+#         api_client.post(category_group_url(budget_2.id), payload)
 #
 #         assert TransferCategoryGroup.objects.all().count() == 2
 #         assert TransferCategoryGroup.objects.filter(budget=budget_1).count() == 1
@@ -250,7 +249,7 @@ class TestTransferCategoryGroupApiList:
 #         payload = self.PAYLOAD.copy()
 #         payload[field_name] = (max_length + 1) * 'a'
 #
-#         response = api_client.post(deposit_url(budget.id), payload)
+#         response = api_client.post(category_group_url(budget.id), payload)
 #
 #         assert response.status_code == status.HTTP_400_BAD_REQUEST
 #         assert field_name in response.data
@@ -269,8 +268,8 @@ class TestTransferCategoryGroupApiList:
 #         api_client.force_authenticate(base_user)
 #         payload = self.PAYLOAD.copy()
 #
-#         api_client.post(deposit_url(budget.id), payload)
-#         response = api_client.post(deposit_url(budget.id), payload)
+#         api_client.post(category_group_url(budget.id), payload)
+#         response = api_client.post(category_group_url(budget.id), payload)
 #
 #         assert response.status_code == status.HTTP_400_BAD_REQUEST
 #         assert 'name' in response.data
@@ -291,14 +290,14 @@ class TestTransferCategoryGroupApiList:
 #         del payload['is_active']
 #         default_value = TransferCategoryGroup._meta.get_field('is_active').default
 #
-#         response = api_client.post(deposit_url(budget.id), payload)
+#         response = api_client.post(category_group_url(budget.id), payload)
 #
 #         assert response.status_code == status.HTTP_201_CREATED
 #         assert TransferCategoryGroup.objects.all().count() == 1
 #         assert TransferCategoryGroup.objects.filter(budget=budget).count() == 1
 #         assert response.data['is_active'] == default_value
 #
-#     def test_error_create_deposit_for_not_accessible_budget(
+#     def test_error_create_category_group_for_not_accessible_budget(
 #         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
 #     ):
 #         """
@@ -309,7 +308,7 @@ class TestTransferCategoryGroupApiList:
 #         budget = budget_factory()
 #         api_client.force_authenticate(base_user)
 #
-#         response = api_client.post(deposit_url(budget.id), self.PAYLOAD)
+#         response = api_client.post(category_group_url(budget.id), self.PAYLOAD)
 #
 #         assert response.status_code == status.HTTP_403_FORBIDDEN
 #         assert response.data['detail'] == 'User does not have access to Budget.'
@@ -321,12 +320,12 @@ class TestTransferCategoryGroupApiList:
 #     """Tests for detail view on TransferCategoryGroupViewSet."""
 #
 #     @pytest.mark.parametrize('user_type', ['owner', 'member'])
-#     def test_get_deposit_details(
+#     def test_get_category_group_details(
 #         self,
 #         api_client: APIClient,
 #         base_user: AbstractUser,
 #         budget_factory: FactoryMetaClass,
-#         deposit_factory: FactoryMetaClass,
+#         category_group_factory: FactoryMetaClass,
 #         user_type: str,
 #     ):
 #         """
@@ -338,26 +337,26 @@ class TestTransferCategoryGroupApiList:
 #             budget = budget_factory(owner=base_user)
 #         else:
 #             budget = budget_factory(members=[base_user])
-#         deposit = deposit_factory(budget=budget)
+#         category_group = category_group_factory(budget=budget)
 #         api_client.force_authenticate(base_user)
-#         url = deposit_detail_url(budget.id, deposit.id)
+#         url = category_group_detail_url(budget.id, category_group.id)
 #
 #         response = api_client.get(url)
-#         serializer = TransferCategoryGroupSerializer(deposit)
+#         serializer = TransferCategoryGroupSerializer(category_group)
 #
 #         assert response.status_code == status.HTTP_200_OK
 #         assert response.data == serializer.data
 #
-#     def test_error_get_deposit_details_unauthenticated(
-#         self, api_client: APIClient, base_user: AbstractUser, deposit_factory: FactoryMetaClass
+#     def test_error_get_category_group_details_unauthenticated(
+#         self, api_client: APIClient, base_user: AbstractUser, category_group_factory: FactoryMetaClass
 #     ):
 #         """
 #         GIVEN: TransferCategoryGroup instance for Budget created in database.
 #         WHEN: TransferCategoryGroupViewSet detail view called without authentication.
 #         THEN: Unauthorized HTTP 401.
 #         """
-#         deposit = deposit_factory()
-#         url = deposit_detail_url(deposit.budget.id, deposit.id)
+#         category_group = category_group_factory()
+#         url = category_group_detail_url(category_group.budget.id, category_group.id)
 #
 #         response = api_client.get(url)
 #
@@ -368,17 +367,17 @@ class TestTransferCategoryGroupApiList:
 #         api_client: APIClient,
 #         base_user: AbstractUser,
 #         budget_factory: FactoryMetaClass,
-#         deposit_factory: FactoryMetaClass,
+#         category_group_factory: FactoryMetaClass,
 #     ):
 #         """
 #         GIVEN: TransferCategoryGroup instance for Budget created in database.
 #         WHEN: TransferCategoryGroupViewSet detail view called by User not belonging to Budget.
 #         THEN: Forbidden HTTP 403 returned.
 #         """
-#         deposit = deposit_factory(budget=budget_factory())
+#         category_group = category_group_factory(budget=budget_factory())
 #         api_client.force_authenticate(base_user)
 #
-#         url = deposit_detail_url(deposit.budget.id, deposit.id)
+#         url = category_group_detail_url(category_group.budget.id, category_group.id)
 #         response = api_client.get(url)
 #
 #         assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -392,7 +391,7 @@ class TestTransferCategoryGroupApiList:
 #     PAYLOAD = {
 #         'name': 'TransferCategoryGroup name',
 #         'description': 'TransferCategoryGroup description',
-#         'deposit_type': TransferCategoryGroup.TransferCategoryGroupTypes.PERSONAL,
+#         'category_group_type': TransferCategoryGroup.TransferCategoryGroupTypes.PERSONAL,
 #         'is_active': True,
 #         'owner': None,
 #     }
@@ -401,12 +400,12 @@ class TestTransferCategoryGroupApiList:
 #         'param, value', [('name', 'New name'), ('description', 'New description'), ('is_active', False)]
 #     )
 #     @pytest.mark.django_db
-#     def test_deposit_partial_update(
+#     def test_category_group_partial_update(
 #         self,
 #         api_client: APIClient,
 #         base_user: AbstractUser,
 #         budget_factory: FactoryMetaClass,
-#         deposit_factory: FactoryMetaClass,
+#         category_group_factory: FactoryMetaClass,
 #         param: str,
 #         value: Any,
 #     ):
@@ -416,60 +415,60 @@ class TestTransferCategoryGroupApiList:
 #         THEN: HTTP 200, TransferCategoryGroup updated.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         deposit = deposit_factory(budget=budget, **self.PAYLOAD)
+#         category_group = category_group_factory(budget=budget, **self.PAYLOAD)
 #         update_payload = {param: value}
 #         api_client.force_authenticate(base_user)
-#         url = deposit_detail_url(budget.id, deposit.id)
+#         url = category_group_detail_url(budget.id, category_group.id)
 #
 #         response = api_client.patch(url, update_payload)
 #
 #         assert response.status_code == status.HTTP_200_OK
-#         deposit.refresh_from_db()
-#         assert getattr(deposit, param) == update_payload[param]
+#         category_group.refresh_from_db()
+#         assert getattr(category_group, param) == update_payload[param]
 #
 #     def test_error_partial_update_unauthenticated(
-#         self, api_client: APIClient, base_user: AbstractUser, deposit_factory: FactoryMetaClass
+#         self, api_client: APIClient, base_user: AbstractUser, category_group_factory: FactoryMetaClass
 #     ):
 #         """
 #         GIVEN: TransferCategoryGroup instance for Budget created in database.
 #         WHEN: TransferCategoryGroupViewSet detail view called with PATCH without authentication.
 #         THEN: Unauthorized HTTP 401.
 #         """
-#         deposit = deposit_factory()
-#         url = deposit_detail_url(deposit.budget.id, deposit.id)
+#         category_group = category_group_factory()
+#         url = category_group_detail_url(category_group.budget.id, category_group.id)
 #
 #         response = api_client.patch(url, {})
 #
 #         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 #
-#     def test_error_partial_update_deposit_from_not_accessible_budget(
+#     def test_error_partial_update_category_group_from_not_accessible_budget(
 #         self,
 #         api_client: APIClient,
 #         base_user: AbstractUser,
 #         budget_factory: FactoryMetaClass,
-#         deposit_factory: FactoryMetaClass,
+#         category_group_factory: FactoryMetaClass,
 #     ):
 #         """
 #         GIVEN: TransferCategoryGroup instance for Budget created in database.
 #         WHEN: TransferCategoryGroupViewSet detail view called with PATCH by User not belonging to Budget.
 #         THEN: Forbidden HTTP 403 returned.
 #         """
-#         deposit = deposit_factory(budget=budget_factory())
+#         category_group = category_group_factory(budget=budget_factory())
 #         api_client.force_authenticate(base_user)
-#         url = deposit_detail_url(deposit.budget.id, deposit.id)
+#         url = category_group_detail_url(category_group.budget.id, category_group.id)
 #
 #         response = api_client.patch(url, {})
 #
 #         assert response.status_code == status.HTTP_403_FORBIDDEN
 #         assert response.data['detail'] == 'User does not have access to Budget.'
 #
-#     def test_deposit_partial_update_owner(
+#     def test_category_group_partial_update_owner(
 #         self,
 #         api_client: APIClient,
 #         base_user: AbstractUser,
 #         user_factory: FactoryMetaClass,
 #         budget_factory: FactoryMetaClass,
-#         deposit_factory: FactoryMetaClass,
+#         category_group_factory: FactoryMetaClass,
 #     ):
 #         """
 #         GIVEN: TransferCategoryGroup instance for Budget created in database.
@@ -480,24 +479,24 @@ class TestTransferCategoryGroupApiList:
 #         """
 #         member = user_factory()
 #         budget = budget_factory(owner=base_user, members=[member])
-#         deposit = deposit_factory(budget=budget, **self.PAYLOAD)
+#         category_group = category_group_factory(budget=budget, **self.PAYLOAD)
 #         update_payload = {'owner': member.id}
 #         api_client.force_authenticate(base_user)
-#         url = deposit_detail_url(budget.id, deposit.id)
+#         url = category_group_detail_url(budget.id, category_group.id)
 #
 #         response = api_client.patch(url, update_payload)
 #
 #         assert response.status_code == status.HTTP_200_OK
-#         deposit.refresh_from_db()
-#         assert deposit.owner == member
+#         category_group.refresh_from_db()
+#         assert category_group.owner == member
 #
-#     @pytest.mark.parametrize('param, value', [('name', PAYLOAD['name']), ('deposit_type', 5)])
-#     def test_error_on_deposit_partial_update(
+#     @pytest.mark.parametrize('param, value', [('name', PAYLOAD['name']), ('category_group_type', 5)])
+#     def test_error_on_category_group_partial_update(
 #         self,
 #         api_client: APIClient,
 #         base_user: Any,
 #         budget_factory: FactoryMetaClass,
-#         deposit_factory: FactoryMetaClass,
+#         category_group_factory: FactoryMetaClass,
 #         param: str,
 #         value: Any,
 #     ):
@@ -508,26 +507,26 @@ class TestTransferCategoryGroupApiList:
 #         THEN: Bad request HTTP 400, TransferCategoryGroup not updated.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         deposit_factory(budget=budget, **self.PAYLOAD)
-#         deposit = deposit_factory(budget=budget)
-#         old_value = getattr(deposit, param)
+#         category_group_factory(budget=budget, **self.PAYLOAD)
+#         category_group = category_group_factory(budget=budget)
+#         old_value = getattr(category_group, param)
 #         update_payload = {param: value}
 #         api_client.force_authenticate(base_user)
-#         url = deposit_detail_url(budget.id, deposit.id)
+#         url = category_group_detail_url(budget.id, category_group.id)
 #
 #         response = api_client.patch(url, update_payload)
 #
 #         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         deposit.refresh_from_db()
-#         assert getattr(deposit, param) == old_value
+#         category_group.refresh_from_db()
+#         assert getattr(category_group, param) == old_value
 #
-#     def test_error_on_deposit_partial_update_with_owner_not_belonging_to_budget(
+#     def test_error_on_category_group_partial_update_with_owner_not_belonging_to_budget(
 #         self,
 #         api_client: APIClient,
 #         base_user: Any,
 #         user_factory: FactoryMetaClass,
 #         budget_factory: FactoryMetaClass,
-#         deposit_factory: FactoryMetaClass,
+#         category_group_factory: FactoryMetaClass,
 #     ):
 #         """
 #         GIVEN: TransferCategoryGroup instance for Budget created in database. Update payload with User not
@@ -537,16 +536,16 @@ class TestTransferCategoryGroupApiList:
 #         THEN: Bad request HTTP 400, TransferCategoryGroup not updated.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         deposit = deposit_factory(budget=budget, owner=None)
+#         category_group = category_group_factory(budget=budget, owner=None)
 #         update_payload = {'owner': user_factory()}
 #         api_client.force_authenticate(base_user)
-#         url = deposit_detail_url(budget.id, deposit.id)
+#         url = category_group_detail_url(budget.id, category_group.id)
 #
 #         response = api_client.patch(url, update_payload)
 #
 #         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         deposit.refresh_from_db()
-#         assert deposit.owner is None
+#         category_group.refresh_from_db()
+#         assert category_group.owner is None
 #
 #
 # @pytest.mark.django_db
@@ -556,24 +555,24 @@ class TestTransferCategoryGroupApiList:
 #     INITIAL_PAYLOAD = {
 #         'name': 'TransferCategoryGroup name',
 #         'description': 'TransferCategoryGroup description',
-#         'deposit_type': TransferCategoryGroup.TransferCategoryGroupTypes.PERSONAL,
+#         'category_group_type': TransferCategoryGroup.TransferCategoryGroupTypes.PERSONAL,
 #         'is_active': True,
 #     }
 #
 #     UPDATE_PAYLOAD = {
 #         'name': 'Updated name',
 #         'description': 'Updated description',
-#         'deposit_type': TransferCategoryGroup.TransferCategoryGroupTypes.COMMON,
+#         'category_group_type': TransferCategoryGroup.TransferCategoryGroupTypes.COMMON,
 #         'is_active': False,
 #     }
 #
 #     @pytest.mark.django_db
-#     def test_deposit_full_update(
+#     def test_category_group_full_update(
 #         self,
 #         api_client: APIClient,
 #         base_user: AbstractUser,
 #         budget_factory: FactoryMetaClass,
-#         deposit_factory: FactoryMetaClass,
+#         category_group_factory: FactoryMetaClass,
 #     ):
 #         """
 #         GIVEN: TransferCategoryGroup instance for Budget created in database.
@@ -581,60 +580,60 @@ class TestTransferCategoryGroupApiList:
 #         THEN: HTTP 200, TransferCategoryGroup updated.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         deposit = deposit_factory(budget=budget, **self.INITIAL_PAYLOAD)
+#         category_group = category_group_factory(budget=budget, **self.INITIAL_PAYLOAD)
 #         api_client.force_authenticate(base_user)
-#         url = deposit_detail_url(budget.id, deposit.id)
+#         url = category_group_detail_url(budget.id, category_group.id)
 #
 #         response = api_client.put(url, self.UPDATE_PAYLOAD)
 #
 #         assert response.status_code == status.HTTP_200_OK
-#         deposit.refresh_from_db()
+#         category_group.refresh_from_db()
 #         for param in self.UPDATE_PAYLOAD:
-#             assert getattr(deposit, param) == self.UPDATE_PAYLOAD[param]
+#             assert getattr(category_group, param) == self.UPDATE_PAYLOAD[param]
 #
 #     def test_error_full_update_unauthenticated(
-#         self, api_client: APIClient, base_user: AbstractUser, deposit_factory: FactoryMetaClass
+#         self, api_client: APIClient, base_user: AbstractUser, category_group_factory: FactoryMetaClass
 #     ):
 #         """
 #         GIVEN: TransferCategoryGroup instance for Budget created in database.
 #         WHEN: TransferCategoryGroupViewSet detail view called with PUT without authentication.
 #         THEN: Unauthorized HTTP 401.
 #         """
-#         deposit = deposit_factory()
-#         url = deposit_detail_url(deposit.budget.id, deposit.id)
+#         category_group = category_group_factory()
+#         url = category_group_detail_url(category_group.budget.id, category_group.id)
 #
 #         response = api_client.put(url, {})
 #
 #         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 #
-#     def test_error_full_update_deposit_from_not_accessible_budget(
+#     def test_error_full_update_category_group_from_not_accessible_budget(
 #         self,
 #         api_client: APIClient,
 #         base_user: AbstractUser,
 #         budget_factory: FactoryMetaClass,
-#         deposit_factory: FactoryMetaClass,
+#         category_group_factory: FactoryMetaClass,
 #     ):
 #         """
 #         GIVEN: TransferCategoryGroup instance for Budget created in database.
 #         WHEN: TransferCategoryGroupViewSet detail view called with PUT by User not belonging to Budget.
 #         THEN: Forbidden HTTP 403 returned.
 #         """
-#         deposit = deposit_factory(budget=budget_factory())
+#         category_group = category_group_factory(budget=budget_factory())
 #         api_client.force_authenticate(base_user)
-#         url = deposit_detail_url(deposit.budget.id, deposit.id)
+#         url = category_group_detail_url(category_group.budget.id, category_group.id)
 #
 #         response = api_client.put(url, {})
 #
 #         assert response.status_code == status.HTTP_403_FORBIDDEN
 #         assert response.data['detail'] == 'User does not have access to Budget.'
 #
-#     def test_deposit_full_update_owner(
+#     def test_category_group_full_update_owner(
 #         self,
 #         api_client: APIClient,
 #         base_user: AbstractUser,
 #         user_factory: FactoryMetaClass,
 #         budget_factory: FactoryMetaClass,
-#         deposit_factory: FactoryMetaClass,
+#         category_group_factory: FactoryMetaClass,
 #     ):
 #         """
 #         GIVEN: TransferCategoryGroup instance for Budget created in database.
@@ -644,29 +643,29 @@ class TestTransferCategoryGroupApiList:
 #         """
 #         member = user_factory()
 #         budget = budget_factory(owner=base_user, members=[member])
-#         deposit = deposit_factory(budget=budget, **self.INITIAL_PAYLOAD)
+#         category_group = category_group_factory(budget=budget, **self.INITIAL_PAYLOAD)
 #         update_payload = self.UPDATE_PAYLOAD.copy()
 #         update_payload['owner'] = member.id
 #         api_client.force_authenticate(base_user)
-#         url = deposit_detail_url(budget.id, deposit.id)
+#         url = category_group_detail_url(budget.id, category_group.id)
 #
 #         response = api_client.put(url, update_payload)
 #
 #         assert response.status_code == status.HTTP_200_OK
-#         deposit.refresh_from_db()
-#         assert deposit.owner == member
+#         category_group.refresh_from_db()
+#         assert category_group.owner == member
 #         for param in update_payload:
 #             if param == 'owner':
 #                 continue
-#             assert getattr(deposit, param) == update_payload[param]
+#             assert getattr(category_group, param) == update_payload[param]
 #
-#     @pytest.mark.parametrize('param, value', [('name', INITIAL_PAYLOAD['name']), ('deposit_type', 5)])
-#     def test_error_on_deposit_full_update(
+#     @pytest.mark.parametrize('param, value', [('name', INITIAL_PAYLOAD['name']), ('category_group_type', 5)])
+#     def test_error_on_category_group_full_update(
 #         self,
 #         api_client: APIClient,
 #         base_user: Any,
 #         budget_factory: FactoryMetaClass,
-#         deposit_factory: FactoryMetaClass,
+#         category_group_factory: FactoryMetaClass,
 #         param: str,
 #         value: Any,
 #     ):
@@ -677,27 +676,27 @@ class TestTransferCategoryGroupApiList:
 #         THEN: Bad request HTTP 400, TransferCategoryGroup not updated.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         deposit_factory(budget=budget, **self.INITIAL_PAYLOAD)
-#         deposit = deposit_factory(budget=budget)
-#         old_value = getattr(deposit, param)
+#         category_group_factory(budget=budget, **self.INITIAL_PAYLOAD)
+#         category_group = category_group_factory(budget=budget)
+#         old_value = getattr(category_group, param)
 #         update_payload = self.UPDATE_PAYLOAD.copy()
 #         update_payload[param] = value
 #         api_client.force_authenticate(base_user)
-#         url = deposit_detail_url(budget.id, deposit.id)
+#         url = category_group_detail_url(budget.id, category_group.id)
 #
 #         response = api_client.put(url, update_payload)
 #
 #         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         deposit.refresh_from_db()
-#         assert getattr(deposit, param) == old_value
+#         category_group.refresh_from_db()
+#         assert getattr(category_group, param) == old_value
 #
-#     def test_error_on_deposit_full_update_with_owner_not_belonging_to_budget(
+#     def test_error_on_category_group_full_update_with_owner_not_belonging_to_budget(
 #         self,
 #         api_client: APIClient,
 #         base_user: Any,
 #         user_factory: FactoryMetaClass,
 #         budget_factory: FactoryMetaClass,
-#         deposit_factory: FactoryMetaClass,
+#         category_group_factory: FactoryMetaClass,
 #     ):
 #         """
 #         GIVEN: TransferCategoryGroup instance for Budget created in database. Update payload with User not
@@ -707,26 +706,26 @@ class TestTransferCategoryGroupApiList:
 #         THEN: Bad request HTTP 400, TransferCategoryGroup not updated.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         deposit = deposit_factory(budget=budget, owner=None, **self.INITIAL_PAYLOAD)
+#         category_group = category_group_factory(budget=budget, owner=None, **self.INITIAL_PAYLOAD)
 #         update_payload = self.UPDATE_PAYLOAD.copy()
 #         update_payload['owner'] = user_factory()
 #         api_client.force_authenticate(base_user)
-#         url = deposit_detail_url(budget.id, deposit.id)
+#         url = category_group_detail_url(budget.id, category_group.id)
 #
 #         response = api_client.put(url, update_payload)
 #
 #         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         deposit.refresh_from_db()
-#         assert deposit.owner is None
+#         category_group.refresh_from_db()
+#         assert category_group.owner is None
 #
 #
 # @pytest.mark.django_db
 # class TestTransferCategoryGroupApiDelete:
 #     """Tests for delete TransferCategoryGroup on TransferCategoryGroupViewSet."""
 #
-#     def test_delete_deposit(
+#     def test_delete_category_group(
 #         self, api_client: APIClient, base_user: Any, budget_factory: FactoryMetaClass,
-#         deposit_factory: FactoryMetaClass
+#         category_group_factory: FactoryMetaClass
 #     ):
 #         """
 #         GIVEN: TransferCategoryGroup instance for Budget created in database.
@@ -734,47 +733,47 @@ class TestTransferCategoryGroupApiList:
 #         THEN: No content HTTP 204, TransferCategoryGroup deleted.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         deposit = deposit_factory(budget=budget)
+#         category_group = category_group_factory(budget=budget)
 #         api_client.force_authenticate(base_user)
-#         url = deposit_detail_url(budget.id, deposit.id)
+#         url = category_group_detail_url(budget.id, category_group.id)
 #
-#         assert budget.deposits.all().exists() == 1
+#         assert budget.category_groups.all().exists() == 1
 #
 #         response = api_client.delete(url)
 #
 #         assert response.status_code == status.HTTP_204_NO_CONTENT
-#         assert not budget.deposits.all().exists()
+#         assert not budget.category_groups.all().exists()
 #
 #     def test_error_delete_unauthenticated(
-#         self, api_client: APIClient, base_user: AbstractUser, deposit_factory: FactoryMetaClass
+#         self, api_client: APIClient, base_user: AbstractUser, category_group_factory: FactoryMetaClass
 #     ):
 #         """
 #         GIVEN: TransferCategoryGroup instance for Budget created in database.
 #         WHEN: TransferCategoryGroupViewSet detail view called with PUT without authentication.
 #         THEN: Unauthorized HTTP 401.
 #         """
-#         deposit = deposit_factory()
-#         url = deposit_detail_url(deposit.budget.id, deposit.id)
+#         category_group = category_group_factory()
+#         url = category_group_detail_url(category_group.budget.id, category_group.id)
 #
 #         response = api_client.delete(url)
 #
 #         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 #
-#     def test_error_delete_deposit_from_not_accessible_budget(
+#     def test_error_delete_category_group_from_not_accessible_budget(
 #         self,
 #         api_client: APIClient,
 #         base_user: AbstractUser,
 #         budget_factory: FactoryMetaClass,
-#         deposit_factory: FactoryMetaClass,
+#         category_group_factory: FactoryMetaClass,
 #     ):
 #         """
 #         GIVEN: TransferCategoryGroup instance for Budget created in database.
 #         WHEN: TransferCategoryGroupViewSet detail view called with DELETE by User not belonging to Budget.
 #         THEN: Forbidden HTTP 403 returned.
 #         """
-#         deposit = deposit_factory(budget=budget_factory())
+#         category_group = category_group_factory(budget=budget_factory())
 #         api_client.force_authenticate(base_user)
-#         url = deposit_detail_url(deposit.budget.id, deposit.id)
+#         url = category_group_detail_url(category_group.budget.id, category_group.id)
 #
 #         response = api_client.delete(url)
 #
