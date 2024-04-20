@@ -572,63 +572,66 @@ class TestTransferCategoryGroupApiFullUpdate:
         assert getattr(category_group, param) == old_value
 
 
-# @pytest.mark.django_db
-# class TestTransferCategoryGroupApiDelete:
-#     """Tests for delete TransferCategoryGroup on TransferCategoryGroupViewSet."""
-#
-#     def test_delete_category_group(
-#         self, api_client: APIClient, base_user: Any, budget_factory: FactoryMetaClass,
-#         transfer_category_group_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: TransferCategoryGroup instance for Budget created in database.
-#         WHEN: TransferCategoryGroupViewSet detail view called with DELETE by User belonging to Budget.
-#         THEN: No content HTTP 204, TransferCategoryGroup deleted.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         category_group = transfer_category_group_factory(budget=budget)
-#         api_client.force_authenticate(base_user)
-#         url = category_group_detail_url(budget.id, category_group.id)
-#
-#         assert budget.category_groups.all().exists() == 1
-#
-#         response = api_client.delete(url)
-#
-#         assert response.status_code == status.HTTP_204_NO_CONTENT
-#         assert not budget.category_groups.all().exists()
-#
-#     def test_error_delete_unauthenticated(
-#         self, api_client: APIClient, base_user: AbstractUser, transfer_category_group_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: TransferCategoryGroup instance for Budget created in database.
-#         WHEN: TransferCategoryGroupViewSet detail view called with PUT without authentication.
-#         THEN: Unauthorized HTTP 401.
-#         """
-#         category_group = transfer_category_group_factory()
-#         url = category_group_detail_url(category_group.budget.id, category_group.id)
-#
-#         response = api_client.delete(url)
-#
-#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_error_delete_category_group_from_not_accessible_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         transfer_category_group_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: TransferCategoryGroup instance for Budget created in database.
-#         WHEN: TransferCategoryGroupViewSet detail view called with DELETE by User not belonging to Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         category_group = transfer_category_group_factory(budget=budget_factory())
-#         api_client.force_authenticate(base_user)
-#         url = category_group_detail_url(category_group.budget.id, category_group.id)
-#
-#         response = api_client.delete(url)
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data['detail'] == 'User does not have access to Budget.'
+@pytest.mark.django_db
+class TestTransferCategoryGroupApiDelete:
+    """Tests for delete TransferCategoryGroup on TransferCategoryGroupViewSet."""
+
+    def test_delete_category_group(
+        self,
+        api_client: APIClient,
+        base_user: Any,
+        budget_factory: FactoryMetaClass,
+        transfer_category_group_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: TransferCategoryGroup instance for Budget created in database.
+        WHEN: TransferCategoryGroupViewSet detail view called with DELETE by User belonging to Budget.
+        THEN: No content HTTP 204, TransferCategoryGroup deleted.
+        """
+        budget = budget_factory(owner=base_user)
+        category_group = transfer_category_group_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        url = category_group_detail_url(budget.id, category_group.id)
+
+        assert budget.category_groups.all().exists() == 1
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not budget.category_groups.all().exists()
+
+    def test_error_delete_unauthenticated(
+        self, api_client: APIClient, base_user: AbstractUser, transfer_category_group_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: TransferCategoryGroup instance for Budget created in database.
+        WHEN: TransferCategoryGroupViewSet detail view called with PUT without authentication.
+        THEN: Unauthorized HTTP 401.
+        """
+        category_group = transfer_category_group_factory()
+        url = category_group_detail_url(category_group.budget.id, category_group.id)
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_error_delete_category_group_from_not_accessible_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_group_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: TransferCategoryGroup instance for Budget created in database.
+        WHEN: TransferCategoryGroupViewSet detail view called with DELETE by User not belonging to Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        category_group = transfer_category_group_factory(budget=budget_factory())
+        api_client.force_authenticate(base_user)
+        url = category_group_detail_url(category_group.budget.id, category_group.id)
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data['detail'] == 'User does not have access to Budget.'
