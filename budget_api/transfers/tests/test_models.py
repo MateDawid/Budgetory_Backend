@@ -1,6 +1,5 @@
 import pytest
 from budgets.models import Budget
-from django.core.exceptions import ValidationError
 from django.db import DataError, IntegrityError
 from factory.base import FactoryMetaClass
 from transfers.models.transfer_category_group_model import TransferCategoryGroup
@@ -90,217 +89,77 @@ class TestTransferCategoryGroupModel:
 class TestTransferCategoryModel:
     """Tests for TransferCategory model"""
 
-    def test_create_personal_transfer_category_successfully(self, user):
-        """Test creating personal TransferCategory successfully."""
-        payload = {
-            'name': 'Salary',
-            'description': 'My salary',
-            'user': user,
-            'scope': TransferCategory.PERSONAL,
-            'category_type': TransferCategory.INCOME,
-            'is_active': True,
-        }
+    PAYLOAD = {'name': 'Food', 'description': 'Category for food expenses.', 'is_active': True}
 
-        category = TransferCategory.objects.create(**payload)
+    def test_create_category_without_owner(self, transfer_category_group: TransferCategoryGroup):
+        """
+        GIVEN: TransferCategoryGroup model instance for Budget in database. Valid payload for TransferCategory
+        without owner provided.
+        WHEN: TransferCategory instance create attempt with valid data.
+        THEN: TransferCategory model instance exists in database with given data.
+        """
+        category = TransferCategory.objects.create(group=transfer_category_group, **self.PAYLOAD)
 
-        for key in payload:
-            assert getattr(category, key) == payload[key]
-        assert user.personal_transfer_categories.count() == 1
-        assert TransferCategory.objects.all().count() == 1
-        assert not TransferCategory.global_transfer_categories.all().exists()
-        assert str(category) == category.name
+        for key in self.PAYLOAD:
+            assert getattr(category, key) == self.PAYLOAD[key]
+        assert category.owner is None
+        assert TransferCategory.objects.filter(group=transfer_category_group).count() == 1
+        assert str(category) == f'{category.name} ({category.group.name})'
 
-    def test_create_global_transfer_category_successfully(self):
-        """Test creating global TransferCategory successfully."""
-        payload = {
-            'name': 'Taxes',
-            'description': 'Taxes payments.',
-            'user': None,
-            'scope': TransferCategory.GLOBAL,
-            'category_type': TransferCategory.EXPENSE,
-            'is_active': True,
-        }
+    def test_create_category_with_owner(
+        self, user_factory: FactoryMetaClass, transfer_category_group: TransferCategoryGroup
+    ):
+        """
+        GIVEN: TransferCategoryGroup model instance for Budget in database. Valid payload for TransferCategory
+        with owner provided.
+        WHEN: TransferCategory instance create attempt with valid data.
+        THEN: TransferCategory model instance exists in database with given data.
+        """
+        payload = self.PAYLOAD.copy()
+        category_owner = user_factory()
+        transfer_category_group.budget.members.add(category_owner)
+        payload['owner'] = category_owner
 
-        category = TransferCategory.objects.create(**payload)
+        category = TransferCategory.objects.create(group=transfer_category_group, **payload)
 
-        for key in payload:
-            assert getattr(category, key) == payload[key]
-        assert TransferCategory.objects.all().count() == 1
-        assert TransferCategory.global_transfer_categories.all().count() == 1
-        assert str(category) == category.name
+        for key in self.PAYLOAD:
+            if key == 'owner':
+                continue
+            assert getattr(category, key) == self.PAYLOAD[key]
+        assert category.owner == category_owner
+        assert TransferCategory.objects.filter(group=transfer_category_group).count() == 1
+        assert str(category) == f'{category.name} ({category.group.name})'
 
-    def test_creating_same_transfer_categories_by_two_users(self, user_factory):
-        """Test creating personal transfer categories with the same params by two different users."""
-        user_1 = user_factory()
-        user_2 = user_factory()
-        payload = {
-            'name': 'Salary',
-            'description': 'My salary',
-            'scope': TransferCategory.PERSONAL,
-            'category_type': TransferCategory.INCOME,
-            'is_active': True,
-        }
-
-        TransferCategory.objects.create(user=user_1, **payload)
-        TransferCategory.objects.create(user=user_2, **payload)
+    def test_creating_same_category_for_two_groups(self, transfer_category_group_factory: FactoryMetaClass):
+        """
+        GIVEN: Two TransferCategoryGroup model instances for Budget in database.
+        WHEN: Same TransferCategory instance for different TransferCategoryGroups create attempt with valid data.
+        THEN: Two TransferCategory model instances existing in database with given data.
+        """
+        group_1 = transfer_category_group_factory()
+        group_2 = transfer_category_group_factory()
+        payload = self.PAYLOAD.copy()
+        for group in (group_1, group_2):
+            payload['group'] = group
+            TransferCategory.objects.create(**payload)
 
         assert TransferCategory.objects.all().count() == 2
-        assert user_1.personal_transfer_categories.count() == 1
-        assert user_2.personal_transfer_categories.count() == 1
+        assert TransferCategory.objects.filter(group=group).count() == 1
+        assert TransferCategory.objects.filter(group=group).count() == 1
 
     @pytest.mark.django_db(transaction=True)
-    def test_error_name_too_long(self):
-        """Test error on creating transfer category with name too long."""
-        max_length = TransferCategory._meta.get_field('name').max_length
-
-        payload = {
-            'name': (max_length + 1) * 'a',
-            'description': 'Taxes payments.',
-            'user': None,
-            'scope': TransferCategory.GLOBAL,
-            'category_type': TransferCategory.EXPENSE,
-            'is_active': True,
-        }
+    @pytest.mark.parametrize('field_name', ['name', 'description'])
+    def test_error_value_too_long(self, transfer_category_group: TransferCategoryGroup, field_name: str):
+        """
+        GIVEN: TransferCategoryGroup model instance in database.
+        WHEN: TransferCategory instance create attempt with field value too long.
+        THEN: DataError raised.
+        """
+        max_length = TransferCategory._meta.get_field(field_name).max_length
+        payload = self.PAYLOAD.copy()
+        payload[field_name] = (max_length + 1) * 'a'
 
         with pytest.raises(DataError) as exc:
             TransferCategory.objects.create(**payload)
         assert str(exc.value) == f'value too long for type character varying({max_length})\n'
-        assert not TransferCategory.objects.all().exists()
-
-    def test_error_name_already_user_in_personal_transfer_category(self, user):
-        """Test error on creating personal TransferCategory, that user has already created."""
-        payload = {
-            'name': 'Salary',
-            'description': 'My salary',
-            'user': user,
-            'scope': TransferCategory.PERSONAL,
-            'category_type': TransferCategory.INCOME,
-            'is_active': True,
-        }
-
-        TransferCategory.objects.create(**payload)
-
-        with pytest.raises(ValidationError) as exc:
-            TransferCategory.objects.create(**payload)
-        assert exc.value.code == 'personal-name-invalid'
-        assert exc.value.message == 'name: Personal transfer category with given name already exists.'
-
-    def test_error_name_already_user_in_global_transfer_category(self):
-        """Test error on creating global TransferCategory that was already created."""
-        payload = {
-            'name': 'Taxes',
-            'description': 'Taxes payments.',
-            'user': None,
-            'scope': TransferCategory.GLOBAL,
-            'category_type': TransferCategory.EXPENSE,
-            'is_active': True,
-        }
-
-        TransferCategory.objects.create(**payload)
-
-        with pytest.raises(ValidationError) as exc:
-            TransferCategory.objects.create(**payload)
-        assert exc.value.code == 'global-name-invalid'
-        assert exc.value.message == 'name: Global transfer category with given name already exists.'
-        assert TransferCategory.objects.all().count() == 1
-
-    @pytest.mark.django_db(transaction=True)
-    def test_error_description_too_long(self, user):
-        """Test error on creating TransferCategory with description too long."""
-        max_length = TransferCategory._meta.get_field('description').max_length
-
-        payload = {
-            'name': 'Taxes',
-            'description': (max_length + 1) * 'a',
-            'user': None,
-            'scope': TransferCategory.GLOBAL,
-            'category_type': TransferCategory.EXPENSE,
-            'is_active': True,
-        }
-
-        with pytest.raises(DataError) as exc:
-            TransferCategory.objects.create(**payload)
-        assert str(exc.value) == f'value too long for type character varying({max_length})\n'
-        assert not TransferCategory.objects.all().exists()
-
-    def test_description_blank(self, user):
-        """Test successfully create TransferCategory with description blank."""
-        payload = {
-            'name': 'Taxes',
-            'description': '',
-            'user': None,
-            'scope': TransferCategory.GLOBAL,
-            'category_type': TransferCategory.EXPENSE,
-            'is_active': True,
-        }
-
-        TransferCategory.objects.create(**payload)
-
-        assert TransferCategory.objects.all().count() == 1
-        assert TransferCategory.objects.all().first().description == ''
-
-    def test_error_no_user_for_personal_transfer_category(self):
-        """Test error on creating personal TransferCategory with no user provided."""
-        payload = {
-            'name': 'Salary',
-            'description': 'My salary',
-            'user': None,
-            'scope': TransferCategory.PERSONAL,
-            'category_type': TransferCategory.INCOME,
-            'is_active': True,
-        }
-
-        with pytest.raises(ValidationError) as exc:
-            TransferCategory.objects.create(**payload)
-
-        assert exc.value.code == 'no-user-for-personal'
-        assert exc.value.message == 'user: User was not provided for personal transfer category.'
-        assert not TransferCategory.objects.all().exists()
-
-    def test_error_user_given_for_global_transfer_category(self, user):
-        """Test error on creating global TransferCategory with user provided."""
-        payload = {
-            'name': 'Taxes',
-            'description': 'Taxes payments.',
-            'user': user,
-            'scope': TransferCategory.GLOBAL,
-            'category_type': TransferCategory.EXPENSE,
-            'is_active': True,
-        }
-
-        with pytest.raises(ValidationError) as exc:
-            TransferCategory.objects.create(**payload)
-
-        assert exc.value.code == 'user-when-global'
-        assert exc.value.message == 'user: User can be provided only for personal transfer category.'
-        assert not TransferCategory.objects.all().exists()
-
-    def test_deleting_transfer_categories_on_user_deletion(self, user):
-        """Test removing user personal TransferCategory on user deletion."""
-        payload_global = {
-            'name': 'Taxes',
-            'description': 'Taxes payments.',
-            'user': None,
-            'scope': TransferCategory.GLOBAL,
-            'category_type': TransferCategory.EXPENSE,
-            'is_active': True,
-        }
-        TransferCategory.objects.create(**payload_global)
-        payload_personal = {
-            'name': 'Salary',
-            'description': 'My salary',
-            'user': user,
-            'scope': TransferCategory.PERSONAL,
-            'category_type': TransferCategory.INCOME,
-            'is_active': True,
-        }
-        TransferCategory.objects.create(**payload_personal)
-
-        assert user.personal_transfer_categories.all().count() == 1
-        assert TransferCategory.objects.all().count() == 2
-        assert TransferCategory.global_transfer_categories.all().count() == 1
-
-        user.delete()
-
-        assert TransferCategory.objects.all().count() == 1
-        assert TransferCategory.global_transfer_categories.all().count() == 1
+        assert not TransferCategory.objects.filter(group=transfer_category_group).exists()
