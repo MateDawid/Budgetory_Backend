@@ -1,4 +1,4 @@
-from typing import Any
+from collections import OrderedDict
 
 from rest_framework import serializers
 from transfers.models.transfer_category_model import TransferCategory
@@ -9,40 +9,38 @@ class TransferCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TransferCategory
-        fields = ['id', 'name', 'description', 'category_type', 'scope', 'user', 'is_active']
+        fields = ['id', 'group', 'name', 'description', 'owner', 'is_active']
         read_only_fields = ['id']
 
-    def validate(self, attrs):
-        """Validates user and name before saving serializer."""
+    def validate(self, attrs: OrderedDict) -> OrderedDict:
+        """
+        Checks if common or personal TransferCategory already exists in Budget.
+
+        Args:
+            attrs [OrderedDict]: Dictionary containing given TransferCategory params
+
+        Returns:
+            OrderedDict: Dictionary with validated attrs values.
+        """
         name = attrs.get('name') or getattr(self.instance, 'name', None)
         user = attrs.get('user') or getattr(self.instance, 'user', None)
-        scope = attrs.get('scope') or getattr(self.instance, 'scope', None)
 
-        self._validate_user(user=user, scope=scope)
-        self._validate_name(name=name, user=user, scope=scope)
+        if (
+            user
+            and user.personal_categories.filter(name__iexact=name)
+            .exclude(id=getattr(self.instance, 'id', None))
+            .exists()
+        ):
+            raise serializers.ValidationError('Personal TransferCategory with given name already exists in Budget.')
+        elif (
+            user is None
+            and TransferCategory.objects.filter(owner__isnull=True, name__iexact=name)
+            .exclude(id=getattr(self.instance, 'id', None))
+            .exists()
+        ):
+            raise serializers.ValidationError('Common TransferCategory with given name already exists in Budget.')
+
         return attrs
 
-    @staticmethod
-    def _validate_user(user: Any, scope: str) -> None:
-        """Check if user field is filled only when scope is "PERSONAL"."""
-        if scope == TransferCategory.PERSONAL and user is None:
-            raise serializers.ValidationError('User was not provided for personal transfer category.')
-        if scope == TransferCategory.GLOBAL and user is not None:
-            raise serializers.ValidationError('User can be provided only for personal transfer category.')
-
-    def _validate_name(self, name: str, user: Any, scope: str) -> None:
-        """Checks if user has not used transfer category name already."""
-        if (
-            scope == TransferCategory.PERSONAL
-            and user.personal_transfer_categories.filter(name__iexact=name)
-            .exclude(id=getattr(self.instance, 'id', None))
-            .exists()
-        ):
-            raise serializers.ValidationError('Personal transfer category with given name already exists.')
-        elif (
-            scope == TransferCategory.GLOBAL
-            and TransferCategory.global_transfer_categories.filter(name__iexact=name)
-            .exclude(id=getattr(self.instance, 'id', None))
-            .exists()
-        ):
-            raise serializers.ValidationError('Global transfer category with given name already exists.')
+    # TODO - validate if group from accessible budget
+    # TODO - validate if user from accessible budget
