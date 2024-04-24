@@ -1,4 +1,4 @@
-from app_config.permissions import UserBelongToBudgetPermission
+from app_config.permissions import UserBelongsToBudgetPermission
 from budgets.mixins import BudgetMixin
 from budgets.models import Budget, BudgetingPeriod
 from budgets.serializers import BudgetingPeriodSerializer, BudgetSerializer
@@ -57,7 +57,7 @@ class BudgetingPeriodViewSet(BudgetMixin, viewsets.ModelViewSet):
     serializer_class = BudgetingPeriodSerializer
     queryset = BudgetingPeriod.objects.all()
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, UserBelongToBudgetPermission]
+    permission_classes = [IsAuthenticated, UserBelongsToBudgetPermission]
 
     def get_queryset(self) -> QuerySet:
         """

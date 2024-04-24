@@ -1,4 +1,4 @@
-from app_config.permissions import UserBelongToBudgetPermission
+from app_config.permissions import UserBelongsToBudgetPermission
 from budgets.mixins import BudgetMixin
 from deposits.models import Deposit
 from deposits.serializers import DepositSerializer
@@ -14,7 +14,7 @@ class DepositViewSet(BudgetMixin, viewsets.ModelViewSet):
     serializer_class = DepositSerializer
     queryset = Deposit.objects.all()
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, UserBelongToBudgetPermission]
+    permission_classes = [IsAuthenticated, UserBelongsToBudgetPermission]
 
     def get_queryset(self) -> QuerySet:
         """
