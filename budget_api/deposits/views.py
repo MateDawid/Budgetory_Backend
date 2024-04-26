@@ -23,7 +23,8 @@ class DepositViewSet(BudgetMixin, viewsets.ModelViewSet):
         Returns:
             QuerySet: Filtered Deposit QuerySet.
         """
-        return self.queryset.filter(budget=self.request.budget).distinct()
+        budget = getattr(self.request, 'budget', None)
+        return self.queryset.filter(budget=budget).distinct()
 
     def perform_create(self, serializer: DepositSerializer) -> None:
         """
