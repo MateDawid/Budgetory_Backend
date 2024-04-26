@@ -23,7 +23,8 @@ class TransferCategoryGroupViewSet(BudgetMixin, viewsets.ModelViewSet):
         Returns:
             QuerySet: Filtered TransferCategoryGroup QuerySet.
         """
-        return self.queryset.filter(budget=self.request.budget).distinct()
+        budget = getattr(self.request, 'budget', None)
+        return self.queryset.filter(budget=budget).distinct()
 
     def perform_create(self, serializer: TransferCategoryGroupSerializer) -> None:
         """

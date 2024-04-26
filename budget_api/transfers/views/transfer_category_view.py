@@ -31,4 +31,5 @@ class TransferCategoryViewSet(BudgetMixin, viewsets.ModelViewSet):
         Returns:
             QuerySet: Filtered TransferCategory QuerySet.
         """
-        return self.queryset.prefetch_related('owner', 'group').filter(group__budget=self.request.budget).distinct()
+        budget = getattr(self.request, 'budget', None)
+        return self.queryset.prefetch_related('owner', 'group').filter(group__budget=budget).distinct()
