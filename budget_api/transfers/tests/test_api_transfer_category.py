@@ -1,554 +1,632 @@
-from typing import Any
-
 import pytest
-from django.db.models import Q
+from budgets.models import Budget
 from django.urls import reverse
 from factory.base import FactoryMetaClass
 from rest_framework import status
-from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
-from transfers.models.transfer_category_model import TransferCategory
-from transfers.serializers.transfer_category_serializer import (
-    TransferCategorySerializer,
-)
-
-TRANSFER_CATEGORIES_URL = reverse('transfers:transfercategory-list')
 
 
-def transfer_category_detail_url(transfer_category_id):
-    """Create and return transfer category detail URL."""
-    return reverse('transfers:transfercategory-detail', args=[transfer_category_id])
+def category_url(budget_id):
+    """Create and return a TransferCategory detail URL."""
+    return reverse('budgets:category-list', args=[budget_id])
+
+
+def category_detail_url(budget_id, category_id):
+    """Create and return a TransferCategory detail URL."""
+    return reverse('budgets:category-detail', args=[budget_id, category_id])
 
 
 @pytest.mark.django_db
-class TestTransferCategoryApi:
-    """Tests for TransferCategoryViewSet."""
+class TestTransferCategoryApiAccess:
+    """Tests for access to TransferCategoryViewSet."""
 
-    def test_auth_required(self, api_client: APIClient):
-        """Test auth is required to call endpoint."""
-
-        res = api_client.get(TRANSFER_CATEGORIES_URL)
+    def test_auth_required(self, api_client: APIClient, budget: Budget):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: TransferCategoryViewSet called without authentication.
+        THEN: Unauthorized HTTP 401 returned.
+        """
+        res = api_client.get(category_url(budget.id))
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_retrieve_transfer_categories_list(
-        self, api_client: APIClient, base_user: Any, transfer_category_factory: FactoryMetaClass
+    def test_user_not_budget_member(
+        self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
     ):
-        """Test retrieving list of transfer categories."""
-        api_client.force_authenticate(base_user)
-        transfer_category_factory(user=None)
-        transfer_category_factory(user=base_user)
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: TransferCategoryViewSet called by User not belonging to given Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        budget_owner = user_factory()
+        other_user = user_factory()
+        budget = budget_factory(owner=budget_owner)
+        api_client.force_authenticate(other_user)
 
-        response = api_client.get(TRANSFER_CATEGORIES_URL)
-
-        categories = TransferCategory.objects.all()
-        serializer = TransferCategorySerializer(categories, many=True)
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data['results'] == serializer.data
-
-    def test_transfer_category_list_limited_to_user(
-        self, api_client: APIClient, user_factory: FactoryMetaClass, transfer_category_factory: FactoryMetaClass
-    ):
-        """Test retrieved list of transfer categories is limited to personal for authenticated user and global ones."""
-        user = user_factory()
-        transfer_category_factory(user=user, scope=TransferCategory.PERSONAL)
-        transfer_category_factory(user=None, scope=TransferCategory.GLOBAL)
-        transfer_category_factory(user=user_factory(), scope=TransferCategory.PERSONAL)
-        api_client.force_authenticate(user)
-
-        response = api_client.get(TRANSFER_CATEGORIES_URL)
-
-        categories = TransferCategory.objects.filter(
-            Q(scope=TransferCategory.GLOBAL) | Q(scope=TransferCategory.PERSONAL, user=user)
-        ).distinct()
-        serializer = TransferCategorySerializer(categories, many=True)
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data['results'] == serializer.data
-
-    def test_create_personal_transfer_category(self, api_client: APIClient, base_user: Any):
-        """Test creating personal TransferCategory."""
-        api_client.force_authenticate(base_user)
-        payload = {
-            'name': 'Salary',
-            'description': 'My salary',
-            'user': base_user,
-            'scope': TransferCategory.PERSONAL,
-            'category_type': TransferCategory.INCOME,
-            'is_active': True,
-        }
-
-        response = api_client.post(TRANSFER_CATEGORIES_URL, payload)
-
-        assert response.status_code == status.HTTP_201_CREATED
-        assert base_user.personal_transfer_categories.all().count() == 1
-        assert not TransferCategory.global_transfer_categories.all().exists()
-        category = TransferCategory.objects.get(id=response.data['id'])
-        for key in payload:
-            assert getattr(category, key) == payload[key]
-        serializer = TransferCategorySerializer(category)
-        assert response.data == serializer.data
-        assert category.user == base_user
-
-    def test_create_global_transfer_category(self, api_client: APIClient, admin_user: Any):
-        """Test creating global TransferCategory."""
-        api_client.force_authenticate(admin_user)
-        payload = {
-            'name': 'Taxes',
-            'description': 'Taxes payments.',
-            'scope': TransferCategory.GLOBAL,
-            'category_type': TransferCategory.EXPENSE,
-            'is_active': True,
-        }
-
-        response = api_client.post(TRANSFER_CATEGORIES_URL, payload)
-
-        assert response.status_code == status.HTTP_201_CREATED
-        assert not admin_user.personal_transfer_categories.all().exists()
-        assert TransferCategory.global_transfer_categories.all().count() == 1
-        category = TransferCategory.objects.get(id=response.data['id'])
-        for key in payload:
-            assert getattr(category, key) == payload[key]
-        serializer = TransferCategorySerializer(category)
-        assert response.data == serializer.data
-        assert category.user is None
-
-    def test_error_create_global_transfer_category_by_non_admin_user(self, api_client: APIClient, base_user: Any):
-        """Test error on creating global TransferCategory by non admin user."""
-        api_client.force_authenticate(base_user)
-        payload = {
-            'name': 'Taxes',
-            'description': 'Taxes payments.',
-            'scope': TransferCategory.GLOBAL,
-            'category_type': TransferCategory.EXPENSE,
-            'is_active': True,
-        }
-
-        response = api_client.post(TRANSFER_CATEGORIES_URL, payload)
+        response = api_client.get(category_url(budget.id))
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert not base_user.personal_transfer_categories.all().exists()
-        assert not TransferCategory.global_transfer_categories.all().exists()
+        assert response.data['detail'] == 'User does not have access to Budget.'
 
-    def test_create_same_personal_transfer_category_by_two_users(self, api_client: APIClient, user_factory: Any):
-        """Test creating personal TransferCategory with the same params by two users."""
-        payload = {
-            'name': 'Salary',
-            'description': 'My salary',
-            'scope': TransferCategory.PERSONAL,
-            'category_type': TransferCategory.INCOME,
-            'is_active': True,
-        }
-        user_1 = user_factory()
-        api_client.force_authenticate(user_1)
-        api_client.post(TRANSFER_CATEGORIES_URL, payload)
 
-        user_2 = user_factory()
-        api_client.force_authenticate(user_2)
-        api_client.post(TRANSFER_CATEGORIES_URL, payload)
+# @pytest.mark.django_db
+# class TestTransferCategoryApiList:
+#     """Tests for list view on TransferCategoryViewSet."""
+#
+#     def test_retrieve_category_list_by_owner(
+#         self,
+#         api_client: APIClient,
+#         base_user: AbstractUser,
+#         budget_factory: FactoryMetaClass,
+#         transfer_category_factory: FactoryMetaClass,
+#     ):
+#         """
+#         GIVEN: Two TransferCategory model instances for single Budget created in database.
+#         WHEN: TransferCategoryViewSet called by Budget owner.
+#         THEN: Response with serialized Budget TransferCategory list returned.
+#         """
+#         budget = budget_factory(owner=base_user)
+#         for _ in range(2):
+#             transfer_category_factory(group__budget=budget)
+#         api_client.force_authenticate(base_user)
+#         for _ in range(2):
+#             transfer_category_factory(budget=budget)
+#
+#         response = api_client.get(category_url(budget.id))
+#
+#         categorys = TransferCategory.objects.filter(budget=budget)
+#         serializer = TransferCategorySerializer(categorys, many=True)
+#         assert response.status_code == status.HTTP_200_OK
+#         assert response.data['results'] == serializer.data
 
-        assert TransferCategory.objects.all().count() == 2
-        assert not TransferCategory.global_transfer_categories.all().exists()
-        assert user_1.personal_transfer_categories.all().count() == 1
-        assert user_2.personal_transfer_categories.all().count() == 1
-
-    def test_error_name_too_long(self, api_client: APIClient, base_user: Any):
-        """Test error on creating TransferCategory with name too long."""
-        api_client.force_authenticate(base_user)
-        max_length = TransferCategory._meta.get_field('name').max_length
-        payload = {
-            'name': 'A' * (max_length + 1),
-            'description': 'My salary',
-            'scope': TransferCategory.PERSONAL,
-            'category_type': TransferCategory.INCOME,
-            'is_active': True,
-        }
-        response = api_client.post(TRANSFER_CATEGORIES_URL, payload)
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'name' in response.data
-        assert response.data['name'][0] == f'Ensure this field has no more than {max_length} characters.'
-        assert not base_user.personal_transfer_categories.all().exists()
-
-    def test_error_global_name_already_used(self, api_client: APIClient, admin_user: Any):
-        """Test error on creating global TransferCategory with already used name."""
-        api_client.force_authenticate(admin_user)
-        payload = {
-            'name': 'Taxes',
-            'description': 'Taxes payments.',
-            'scope': TransferCategory.GLOBAL,
-            'category_type': TransferCategory.EXPENSE,
-            'is_active': True,
-        }
-        TransferCategory.objects.create(**payload)
-
-        response = api_client.post(TRANSFER_CATEGORIES_URL, payload)
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data
-        assert response.data['non_field_errors'][0] == 'Global transfer category with given name already exists.'
-        assert TransferCategory.global_transfer_categories.all().count() == 1
-
-    def test_error_personal_name_already_used(self, api_client: APIClient, base_user: Any):
-        """Test error on creating personal TransferCategory with already used name."""
-        api_client.force_authenticate(base_user)
-        payload = {
-            'name': 'Salary',
-            'description': 'My salary',
-            'scope': TransferCategory.PERSONAL,
-            'category_type': TransferCategory.INCOME,
-            'is_active': True,
-        }
-        TransferCategory.objects.create(user=base_user, **payload)
-
-        response = api_client.post(TRANSFER_CATEGORIES_URL, payload)
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data
-        assert response.data['non_field_errors'][0] == 'Personal transfer category with given name already exists.'
-        assert base_user.personal_transfer_categories.all().count() == 1
-
-    def test_error_description_too_long(self, api_client: APIClient, base_user: Any):
-        """Test error on creating TransferCategory with description too long."""
-        api_client.force_authenticate(base_user)
-        max_length = TransferCategory._meta.get_field('description').max_length
-        payload = {
-            'name': 'Salary',
-            'description': 'A' * (max_length + 1),
-            'scope': TransferCategory.PERSONAL,
-            'category_type': TransferCategory.INCOME,
-            'is_active': True,
-        }
-
-        response = api_client.post(TRANSFER_CATEGORIES_URL, payload)
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'description' in response.data
-        assert response.data['description'][0] == f'Ensure this field has no more than {max_length} characters.'
-        assert not TransferCategory.global_transfer_categories.all().exists()
-
-    def test_error_on_user_in_global_transfer_category(self, base_user: Any):
-        """Test error on validating data in TransferCategorySerializer when user was provided for global
-        TransferCategory."""
-        payload = {
-            'name': 'Taxes',
-            'description': 'Taxes payments.',
-            'scope': TransferCategory.GLOBAL,
-            'category_type': TransferCategory.EXPENSE,
-            'is_active': True,
-            'user': base_user.pk,
-        }
-        serializer = TransferCategorySerializer(data=payload)
-        with pytest.raises(ValidationError) as exc:
-            serializer.is_valid(raise_exception=True)
-        assert (
-            str(exc.value.detail['non_field_errors'][0]) == 'User can be provided only for personal transfer category.'
-        )
-
-    def test_error_on_no_user_in_personal_transfer_category(self):
-        """Test error on validating data in TransferCategorySerializer when user was not provided for personal
-        TransferCategory."""
-        payload = {
-            'name': 'Salary',
-            'description': 'My salary',
-            'scope': TransferCategory.PERSONAL,
-            'category_type': TransferCategory.INCOME,
-            'is_active': True,
-        }
-        serializer = TransferCategorySerializer(data=payload)
-        with pytest.raises(ValidationError) as exc:
-            serializer.is_valid(raise_exception=True)
-        assert str(exc.value.detail['non_field_errors'][0]) == 'User was not provided for personal transfer category.'
-
-    def test_get_transfer_category_details(
-        self, api_client: APIClient, base_user: Any, transfer_category_factory: FactoryMetaClass
-    ):
-        """Test get TransferCategory details."""
-        api_client.force_authenticate(base_user)
-        personal_category = transfer_category_factory(user=base_user, scope=TransferCategory.PERSONAL)
-        global_category = transfer_category_factory(user=None, scope=TransferCategory.GLOBAL)
-        for category in [personal_category, global_category]:
-            url = transfer_category_detail_url(category.id)
-
-            response = api_client.get(url)
-            serializer = TransferCategorySerializer(category)
-
-            assert response.status_code == status.HTTP_200_OK
-            assert response.data == serializer.data
-
-    def test_error_get_transfer_category_details_unauthenticated(
-        self, api_client: APIClient, transfer_category_factory: FactoryMetaClass
-    ):
-        """Test error on getting TransferCategory details being unauthenticated."""
-        category = transfer_category_factory()
-        url = transfer_category_detail_url(category.id)
-
-        response = api_client.get(url)
-
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
-
-    def test_error_get_other_user_personal_transfer_category_details(
-        self, api_client: APIClient, user_factory: FactoryMetaClass, transfer_category_factory: FactoryMetaClass
-    ):
-        """Test error on getting other user's personal TransferCategory details."""
-        user_1 = user_factory()
-        user_2 = user_factory()
-        category = transfer_category_factory(user=user_1)
-        api_client.force_authenticate(user_2)
-
-        url = transfer_category_detail_url(category.id)
-        response = api_client.get(url)
-
-        assert response.status_code == status.HTTP_404_NOT_FOUND
-
-    @pytest.mark.parametrize(
-        'param, value',
-        [
-            ('name', 'New name'),
-            ('description', 'New description'),
-            ('category_type', TransferCategory.EXPENSE),
-            ('is_active', False),
-        ],
-    )
-    def test_personal_transfer_category_partial_update(
-        self, api_client: APIClient, base_user: Any, transfer_category_factory: FactoryMetaClass, param: str, value: Any
-    ):
-        """Test partial update of personal TransferCategory."""
-        api_client.force_authenticate(base_user)
-        category = transfer_category_factory(
-            user=base_user,
-            category_type=TransferCategory.INCOME,
-            scope=TransferCategory.PERSONAL,
-            name='Name',
-            description='Description',
-            is_active=True,
-        )
-        payload = {param: value}
-        url = transfer_category_detail_url(category.id)
-
-        response = api_client.patch(url, payload)
-
-        assert response.status_code == status.HTTP_200_OK
-        category.refresh_from_db()
-        assert getattr(category, param) == payload[param]
-
-    @pytest.mark.parametrize(
-        'param, value',
-        [
-            ('name', 'New name'),
-            ('description', 'New description'),
-            ('category_type', TransferCategory.EXPENSE),
-            ('is_active', False),
-        ],
-    )
-    def test_global_transfer_category_partial_update(
-        self,
-        api_client: APIClient,
-        admin_user: Any,
-        transfer_category_factory: FactoryMetaClass,
-        param: str,
-        value: Any,
-    ):
-        """Test partial update of global TransferCategory as admin user."""
-        api_client.force_authenticate(admin_user)
-        category = transfer_category_factory(
-            user=None,
-            category_type=TransferCategory.INCOME,
-            scope=TransferCategory.GLOBAL,
-            name='Name',
-            description='Description',
-            is_active=True,
-        )
-        payload = {param: value}
-        url = transfer_category_detail_url(category.id)
-
-        response = api_client.patch(url, payload)
-
-        assert response.status_code == status.HTTP_200_OK
-        category.refresh_from_db()
-        assert getattr(category, param) == payload[param]
-
-    @pytest.mark.parametrize(
-        'param, value',
-        [
-            ('name', 'Old name'),
-        ],
-    )
-    def test_error_on_transfer_category_partial_update(
-        self,
-        api_client: APIClient,
-        admin_user: Any,
-        transfer_category_factory: FactoryMetaClass,
-        param: str,
-        value: Any,
-    ):
-        """Test error on partial update of a Deposit."""
-        api_client.force_authenticate(admin_user)
-        transfer_category_factory(
-            user=None,
-            category_type=TransferCategory.EXPENSE,
-            scope=TransferCategory.GLOBAL,
-            name='Old name',
-            description='Old description',
-            is_active=False,
-        )
-        category = transfer_category_factory(
-            user=None,
-            category_type=TransferCategory.INCOME,
-            scope=TransferCategory.GLOBAL,
-            name='New name',
-            description='New description',
-            is_active=True,
-        )
-        old_value = getattr(category, param)
-        payload = {param: value}
-        url = transfer_category_detail_url(category.id)
-
-        response = api_client.patch(url, payload)
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        category.refresh_from_db()
-        assert getattr(category, param) == old_value
-
-    def test_personal_transfer_category_full_update(
-        self, api_client: APIClient, base_user: Any, transfer_category_factory: FactoryMetaClass
-    ):
-        """Test successful full update of personal TransferCategory"""
-        api_client.force_authenticate(base_user)
-        payload_old = {
-            'category_type': TransferCategory.EXPENSE,
-            'scope': TransferCategory.PERSONAL,
-            'name': 'Name',
-            'description': 'Description',
-        }
-        payload_new = {
-            'category_type': TransferCategory.INCOME,
-            'scope': TransferCategory.PERSONAL,
-            'name': 'New name',
-            'description': 'New description',
-        }
-        category = transfer_category_factory(user=base_user, **payload_old)
-        url = transfer_category_detail_url(category.id)
-
-        response = api_client.put(url, payload_new)
-
-        assert response.status_code == status.HTTP_200_OK
-        category.refresh_from_db()
-        assert category.user == base_user
-        for k, v in payload_new.items():
-            assert getattr(category, k) == v
-
-    def test_global_transfer_category_full_update(
-        self, api_client: APIClient, admin_user: Any, transfer_category_factory: FactoryMetaClass
-    ):
-        """Test successful full update of global TransferCategory"""
-        api_client.force_authenticate(admin_user)
-        payload_old = {
-            'category_type': TransferCategory.EXPENSE,
-            'scope': TransferCategory.GLOBAL,
-            'name': 'Name',
-            'description': 'Description',
-        }
-        payload_new = {
-            'category_type': TransferCategory.INCOME,
-            'scope': TransferCategory.GLOBAL,
-            'name': 'New name',
-            'description': 'New description',
-        }
-        category = transfer_category_factory(user=None, **payload_old)
-        url = transfer_category_detail_url(category.id)
-
-        response = api_client.put(url, payload_new)
-
-        assert response.status_code == status.HTTP_200_OK
-        category.refresh_from_db()
-        assert category.user is None
-        for k, v in payload_new.items():
-            assert getattr(category, k) == v
-
-    @pytest.mark.parametrize(
-        'payload_new',
-        [
-            {'name': 'Old personal name', 'scope': TransferCategory.PERSONAL},
-            {'name': 'New personal seller', 'scope': TransferCategory.GLOBAL},
-        ],
-    )
-    def test_error_on_transfer_category_full_update(
-        self, api_client: APIClient, base_user: Any, transfer_category_factory: FactoryMetaClass, payload_new: dict
-    ):
-        """Test error on full update of TransferCategory."""
-        api_client.force_authenticate(base_user)
-        transfer_category_factory(
-            user=None,
-            category_type=TransferCategory.EXPENSE,
-            scope=TransferCategory.GLOBAL,
-            name='Old personal name',
-            description='Old personal description',
-        )
-        transfer_category_factory(
-            user=None,
-            category_type=TransferCategory.INCOME,
-            scope=TransferCategory.GLOBAL,
-            name='Old global name',
-            description='Old global description',
-        )
-
-        payload_old = {
-            'category_type': TransferCategory.EXPENSE,
-            'scope': TransferCategory.PERSONAL,
-            'name': 'New personal name',
-            'description': 'New personal description',
-        }
-
-        category = transfer_category_factory(user=base_user, **payload_old)
-        url = transfer_category_detail_url(category.id)
-
-        response = api_client.put(url, payload_new)
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        category.refresh_from_db()
-        for k, v in payload_old.items():
-            assert getattr(category, k) == v
-
-    def test_delete_personal_transfer_category(
-        self, api_client: APIClient, base_user: Any, transfer_category_factory: FactoryMetaClass
-    ):
-        """Test deleting personal TransferCategory."""
-        api_client.force_authenticate(base_user)
-        category = transfer_category_factory(user=base_user)
-        url = transfer_category_detail_url(category.id)
-
-        assert base_user.personal_transfer_categories.all().count() == 1
-
-        response = api_client.delete(url)
-
-        assert response.status_code == status.HTTP_204_NO_CONTENT
-        assert not base_user.personal_transfer_categories.all().exists()
-
-    def test_delete_global_transfer_categories(
-        self, api_client: APIClient, admin_user: Any, transfer_category_factory: FactoryMetaClass
-    ):
-        """Test deleting global TransferCategory."""
-        api_client.force_authenticate(admin_user)
-        category = transfer_category_factory(user=None)
-        url = transfer_category_detail_url(category.id)
-
-        assert TransferCategory.global_transfer_categories.all().count() == 1
-
-        response = api_client.delete(url)
-
-        assert response.status_code == status.HTTP_204_NO_CONTENT
-        assert not TransferCategory.global_transfer_categories.all().exists()
-
-    def test_error_on_delete_global_transfer_category_by_not_admin(
-        self, api_client: APIClient, base_user: Any, transfer_category_factory: FactoryMetaClass
-    ):
-        """Test error on attempt to delete global TransferCategory by user, that's not an admin."""
-        api_client.force_authenticate(base_user)
-        category = transfer_category_factory(user=None)
-        url = transfer_category_detail_url(category.id)
-
-        assert TransferCategory.global_transfer_categories.all().count() == 1
-
-        response = api_client.delete(url)
-
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert TransferCategory.global_transfer_categories.all().count() == 1
+#     def test_retrieve_categorys_list_by_member(
+#         self,
+#         api_client: APIClient,
+#         base_user: AbstractUser,
+#         budget_factory: FactoryMetaClass,
+#         transfer_category_factory: FactoryMetaClass,
+#     ):
+#         """
+#         GIVEN: Two TransferCategory model instances for single Budget created in database.
+#         WHEN: TransferCategoryViewSet called by Budget member.
+#         THEN: Response with serialized Budget TransferCategory list returned.
+#         """
+#         budget = budget_factory(members=[base_user])
+#         api_client.force_authenticate(base_user)
+#         for _ in range(2):
+#             transfer_category_factory(budget=budget)
+#
+#         response = api_client.get(category_url(budget.id))
+#
+#         categorys = TransferCategory.objects.filter(budget=budget)
+#         serializer = TransferCategorySerializer(categorys, many=True)
+#         assert response.status_code == status.HTTP_200_OK
+#         assert response.data['results'] == serializer.data
+#
+#     def test_categorys_list_limited_to_budget(
+#         self,
+#         api_client: APIClient,
+#         base_user: AbstractUser,
+#         budget_factory: FactoryMetaClass,
+#         transfer_category_factory: FactoryMetaClass,
+#     ):
+#         """
+#         GIVEN: Two TransferCategory model instances for different Budgets created in database.
+#         WHEN: TransferCategoryViewSet called by one of Budgets owner.
+#         THEN: Response with serialized TransferCategory list (only from given Budget) returned.
+#         """
+#         budget = budget_factory(owner=base_user)
+#         category = transfer_category_factory(budget=budget)
+#         transfer_category_factory()
+#         api_client.force_authenticate(base_user)
+#
+#         response = api_client.get(category_url(budget.id))
+#
+#         categorys = TransferCategory.objects.filter(budget=budget)
+#         serializer = TransferCategorySerializer(categorys, many=True)
+#         assert response.status_code == status.HTTP_200_OK
+#         assert len(response.data['results']) == len(serializer.data) == categorys.count() == 1
+#         assert response.data['results'] == serializer.data
+#         assert response.data['results'][0]['id'] == category.id
+#
+#
+# @pytest.mark.django_db
+# class TestTransferCategoryApiCreate:
+#     """Tests for create TransferCategory on TransferCategoryViewSet."""
+#
+#     PAYLOAD = {
+#         'name': 'Most important expenses',
+#         'description': 'Category for most important expenses.',
+#         'transfer_type': TransferCategory.TransferTypes.EXPENSE,
+#     }
+#
+#     @pytest.mark.parametrize('user_type', ['owner', 'member'])
+#     def test_create_single_category(
+#         self,
+#         api_client: APIClient,
+#         base_user: AbstractUser,
+#         user_factory: FactoryMetaClass,
+#         budget_factory: FactoryMetaClass,
+#         user_type: str,
+#     ):
+#         """
+#         GIVEN: Budget instance created in database. Valid payload prepared for TransferCategory.
+#         WHEN: TransferCategoryViewSet called with POST by User belonging to Budget with valid payload.
+#         THEN: TransferCategory object created in database with given payload
+#         """
+#         other_user = user_factory()
+#         if user_type == 'owner':
+#             budget = budget_factory(owner=base_user, members=[other_user])
+#         else:
+#             budget = budget_factory(members=[base_user, other_user])
+#         api_client.force_authenticate(base_user)
+#
+#         response = api_client.post(category_url(budget.id), self.PAYLOAD)
+#
+#         assert response.status_code == status.HTTP_201_CREATED
+#         assert TransferCategory.objects.filter(budget=budget).count() == 1
+#         category = TransferCategory.objects.get(id=response.data['id'])
+#         assert category.budget == budget
+#         for key in self.PAYLOAD:
+#             assert getattr(category, key) == self.PAYLOAD[key]
+#         serializer = TransferCategorySerializer(category)
+#         assert response.data == serializer.data
+#
+#     def test_create_two_categorys_for_single_budget(
+#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
+#     ):
+#         """
+#         GIVEN: Budget instance created in database. Valid payloads prepared for two TransferCategorys.
+#         WHEN: TransferCategoryViewSet called twice with POST by User belonging to Budget with valid payloads.
+#         THEN: Two TransferCategory objects created in database with given payloads.
+#         """
+#         budget = budget_factory(owner=base_user)
+#         api_client.force_authenticate(base_user)
+#         payload_1 = self.PAYLOAD.copy()
+#         payload_1['name'] = 'TransferCategory name 1'
+#         payload_2 = self.PAYLOAD.copy()
+#         payload_2['name'] = 'TransferCategory name 2'
+#
+#         response_1 = api_client.post(category_url(budget.id), payload_1)
+#         response_2 = api_client.post(category_url(budget.id), payload_2)
+#
+#         assert response_1.status_code == status.HTTP_201_CREATED
+#         assert response_2.status_code == status.HTTP_201_CREATED
+#         assert TransferCategory.objects.filter(budget=budget).count() == 2
+#         for response, payload in [(response_1, payload_1), (response_2, payload_2)]:
+#             category = TransferCategory.objects.get(id=response.data['id'])
+#             for key in payload:
+#                 assert getattr(category, key) == payload[key]
+#
+#     def test_create_same_category_for_two_budgets(self, api_client: APIClient, budget_factory: FactoryMetaClass):
+#         """
+#         GIVEN: Two Budget instances created in database. Valid payload prepared for two TransferCategorys.
+#         WHEN: TransferCategoryViewSet called twice with POST by different Users belonging to two different
+#         Budgets with valid payload.
+#         THEN: Two TransferCategory objects created in database with given payload for separate Budgets.
+#         """
+#         payload = self.PAYLOAD.copy()
+#         budget_1 = budget_factory()
+#         budget_2 = budget_factory()
+#
+#         api_client.force_authenticate(budget_1.owner)
+#         api_client.post(category_url(budget_1.id), payload)
+#         api_client.force_authenticate(budget_2.owner)
+#         api_client.post(category_url(budget_2.id), payload)
+#
+#         assert TransferCategory.objects.all().count() == 2
+#         assert TransferCategory.objects.filter(budget=budget_1).count() == 1
+#         assert TransferCategory.objects.filter(budget=budget_2).count() == 1
+#
+#     @pytest.mark.parametrize('field_name', ['name', 'description'])
+#     def test_error_value_too_long(
+#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass, field_name: str
+#     ):
+#         """
+#         GIVEN: Budget instance created in database. Payload for TransferCategory with field value too long.
+#         WHEN: TransferCategoryViewSet called with POST by User belonging to Budget with invalid payload.
+#         THEN: Bad request HTTP 400 returned. TransferCategory not created in database.
+#         """
+#         budget = budget_factory(owner=base_user)
+#         api_client.force_authenticate(base_user)
+#         max_length = TransferCategory._meta.get_field(field_name).max_length
+#         payload = self.PAYLOAD.copy()
+#         payload[field_name] = (max_length + 1) * 'a'
+#
+#         response = api_client.post(category_url(budget.id), payload)
+#
+#         assert response.status_code == status.HTTP_400_BAD_REQUEST
+#         assert field_name in response.data
+#         assert response.data[field_name][0] == f'Ensure this field has no more than {max_length} characters.'
+#         assert not TransferCategory.objects.filter(budget=budget).exists()
+#
+#     def test_error_name_already_used(
+#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
+#     ):
+#         """
+#         GIVEN: Budget instance created in database. Valid payload for TransferCategory.
+#         WHEN: TransferCategoryViewSet called twice with POST by User belonging to Budget with the same payload.
+#         THEN: Bad request HTTP 400 returned. Only one TransferCategory created in database.
+#         """
+#         budget = budget_factory(owner=base_user)
+#         api_client.force_authenticate(base_user)
+#         payload = self.PAYLOAD.copy()
+#
+#         api_client.post(category_url(budget.id), payload)
+#         response = api_client.post(category_url(budget.id), payload)
+#
+#         assert response.status_code == status.HTTP_400_BAD_REQUEST
+#         assert 'name' in response.data
+#         assert response.data['name'][0] == 'TransferCategory with given name already exists in Budget.'
+#         assert TransferCategory.objects.filter(budget=budget).count() == 1
+#
+#     def test_error_create_category_for_not_accessible_budget(
+#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
+#     ):
+#         """
+#         GIVEN: Budget instance created in database. Valid payload for TransferCategory.
+#         WHEN: TransferCategoryViewSet called with POST by User not belonging to Budget with valid payload.
+#         THEN: Forbidden HTTP 403 returned. Object not created.
+#         """
+#         budget = budget_factory()
+#         api_client.force_authenticate(base_user)
+#
+#         response = api_client.post(category_url(budget.id), self.PAYLOAD)
+#
+#         assert response.status_code == status.HTTP_403_FORBIDDEN
+#         assert response.data['detail'] == 'User does not have access to Budget.'
+#         assert not TransferCategory.objects.filter(budget=budget).exists()
+#
+#
+# @pytest.mark.django_db
+# class TestTransferCategoryApiDetail:
+#     """Tests for detail view on TransferCategoryViewSet."""
+#
+#     @pytest.mark.parametrize('user_type', ['owner', 'member'])
+#     def test_get_category_details(
+#         self,
+#         api_client: APIClient,
+#         base_user: AbstractUser,
+#         budget_factory: FactoryMetaClass,
+#         transfer_category_factory: FactoryMetaClass,
+#         user_type: str,
+#     ):
+#         """
+#         GIVEN: TransferCategory instance for Budget created in database.
+#         WHEN: TransferCategoryViewSet detail view called by User belonging to Budget.
+#         THEN: HTTP 200, TransferCategory details returned.
+#         """
+#         if user_type == 'owner':
+#             budget = budget_factory(owner=base_user)
+#         else:
+#             budget = budget_factory(members=[base_user])
+#         category = transfer_category_factory(budget=budget)
+#         api_client.force_authenticate(base_user)
+#         url = category_detail_url(budget.id, category.id)
+#
+#         response = api_client.get(url)
+#         serializer = TransferCategorySerializer(category)
+#
+#         assert response.status_code == status.HTTP_200_OK
+#         assert response.data == serializer.data
+#
+#     def test_error_get_category_details_unauthenticated(
+#         self, api_client: APIClient, base_user: AbstractUser, transfer_category_factory: FactoryMetaClass
+#     ):
+#         """
+#         GIVEN: TransferCategory instance for Budget created in database.
+#         WHEN: TransferCategoryViewSet detail view called without authentication.
+#         THEN: Unauthorized HTTP 401.
+#         """
+#         category = transfer_category_factory()
+#         url = category_detail_url(category.budget.id, category.id)
+#
+#         response = api_client.get(url)
+#
+#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+#
+#     def test_error_get_details_from_not_accessible_budget(
+#         self,
+#         api_client: APIClient,
+#         base_user: AbstractUser,
+#         budget_factory: FactoryMetaClass,
+#         transfer_category_factory: FactoryMetaClass,
+#     ):
+#         """
+#         GIVEN: TransferCategory instance for Budget created in database.
+#         WHEN: TransferCategoryViewSet detail view called by User not belonging to Budget.
+#         THEN: Forbidden HTTP 403 returned.
+#         """
+#         category = transfer_category_factory(budget=budget_factory())
+#         api_client.force_authenticate(base_user)
+#
+#         url = category_detail_url(category.budget.id, category.id)
+#         response = api_client.get(url)
+#
+#         assert response.status_code == status.HTTP_403_FORBIDDEN
+#         assert response.data['detail'] == 'User does not have access to Budget.'
+#
+#
+# @pytest.mark.django_db
+# class TestTransferCategoryApiPartialUpdate:
+#     """Tests for partial update view on TransferCategoryViewSet."""
+#
+#     PAYLOAD = {
+#         'name': 'Most important expenses',
+#         'description': 'Category for most important expenses.',
+#         'transfer_type': TransferCategory.TransferTypes.EXPENSE,
+#     }
+#
+#     @pytest.mark.parametrize(
+#         'param, value',
+#         [
+#             ('name', 'New name'),
+#             ('description', 'New description'),
+#             ('transfer_type', TransferCategory.TransferTypes.INCOME),
+#         ],
+#     )
+#     @pytest.mark.django_db
+#     def test_category_partial_update(
+#         self,
+#         api_client: APIClient,
+#         base_user: AbstractUser,
+#         budget_factory: FactoryMetaClass,
+#         transfer_category_factory: FactoryMetaClass,
+#         param: str,
+#         value: Any,
+#     ):
+#         """
+#         GIVEN: TransferCategory instance for Budget created in database.
+#         WHEN: TransferCategoryViewSet detail view called with PATCH by User belonging to Budget.
+#         THEN: HTTP 200, TransferCategory updated.
+#         """
+#         budget = budget_factory(owner=base_user)
+#         category = transfer_category_factory(budget=budget, **self.PAYLOAD)
+#         update_payload = {param: value}
+#         api_client.force_authenticate(base_user)
+#         url = category_detail_url(budget.id, category.id)
+#
+#         response = api_client.patch(url, update_payload)
+#
+#         assert response.status_code == status.HTTP_200_OK
+#         category.refresh_from_db()
+#         assert getattr(category, param) == update_payload[param]
+#
+#     def test_error_partial_update_unauthenticated(
+#         self, api_client: APIClient, base_user: AbstractUser, transfer_category_factory: FactoryMetaClass
+#     ):
+#         """
+#         GIVEN: TransferCategory instance for Budget created in database.
+#         WHEN: TransferCategoryViewSet detail view called with PATCH without authentication.
+#         THEN: Unauthorized HTTP 401.
+#         """
+#         category = transfer_category_factory()
+#         url = category_detail_url(category.budget.id, category.id)
+#
+#         response = api_client.patch(url, {})
+#
+#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+#
+#     def test_error_partial_update_category_from_not_accessible_budget(
+#         self,
+#         api_client: APIClient,
+#         base_user: AbstractUser,
+#         budget_factory: FactoryMetaClass,
+#         transfer_category_factory: FactoryMetaClass,
+#     ):
+#         """
+#         GIVEN: TransferCategory instance for Budget created in database.
+#         WHEN: TransferCategoryViewSet detail view called with PATCH by User not belonging to Budget.
+#         THEN: Forbidden HTTP 403 returned.
+#         """
+#         category = transfer_category_factory(budget=budget_factory())
+#         api_client.force_authenticate(base_user)
+#         url = category_detail_url(category.budget.id, category.id)
+#
+#         response = api_client.patch(url, {})
+#
+#         assert response.status_code == status.HTTP_403_FORBIDDEN
+#         assert response.data['detail'] == 'User does not have access to Budget.'
+#
+#     @pytest.mark.parametrize('param, value', [('name', PAYLOAD['name']), ('transfer_type', 999)])
+#     def test_error_on_category_partial_update(
+#         self,
+#         api_client: APIClient,
+#         base_user: Any,
+#         budget_factory: FactoryMetaClass,
+#         transfer_category_factory: FactoryMetaClass,
+#         param: str,
+#         value: Any,
+#     ):
+#         """
+#         GIVEN: TransferCategory instance for Budget created in database. Update payload with invalid value.
+#         WHEN: TransferCategoryViewSet detail view called with PATCH by User belonging to Budget
+#         with invalid payload.
+#         THEN: Bad request HTTP 400, TransferCategory not updated.
+#         """
+#         budget = budget_factory(owner=base_user)
+#         transfer_category_factory(budget=budget, **self.PAYLOAD)
+#         category = transfer_category_factory(budget=budget)
+#         old_value = getattr(category, param)
+#         update_payload = {param: value}
+#         api_client.force_authenticate(base_user)
+#         url = category_detail_url(budget.id, category.id)
+#
+#         response = api_client.patch(url, update_payload)
+#
+#         assert response.status_code == status.HTTP_400_BAD_REQUEST
+#         category.refresh_from_db()
+#         assert getattr(category, param) == old_value
+#
+#
+# @pytest.mark.django_db
+# class TestTransferCategoryApiFullUpdate:
+#     """Tests for full update view on TransferCategoryViewSet."""
+#
+#     INITIAL_PAYLOAD = {
+#         'name': 'Most important expenses',
+#         'description': 'Category for most important expenses.',
+#         'transfer_type': TransferCategory.TransferTypes.EXPENSE,
+#     }
+#
+#     UPDATE_PAYLOAD = {
+#         'name': 'Updated name',
+#         'description': 'Updated description',
+#         'transfer_type': TransferCategory.TransferTypes.INCOME,
+#     }
+#
+#     @pytest.mark.django_db
+#     def test_category_full_update(
+#         self,
+#         api_client: APIClient,
+#         base_user: AbstractUser,
+#         budget_factory: FactoryMetaClass,
+#         transfer_category_factory: FactoryMetaClass,
+#     ):
+#         """
+#         GIVEN: TransferCategory instance for Budget created in database.
+#         WHEN: TransferCategoryViewSet detail view called with PUT by User belonging to Budget.
+#         THEN: HTTP 200, TransferCategory updated.
+#         """
+#         budget = budget_factory(owner=base_user)
+#         category = transfer_category_factory(budget=budget, **self.INITIAL_PAYLOAD)
+#         api_client.force_authenticate(base_user)
+#         url = category_detail_url(budget.id, category.id)
+#
+#         response = api_client.put(url, self.UPDATE_PAYLOAD)
+#
+#         assert response.status_code == status.HTTP_200_OK
+#         category.refresh_from_db()
+#         for param in self.UPDATE_PAYLOAD:
+#             assert getattr(category, param) == self.UPDATE_PAYLOAD[param]
+#
+#     def test_error_full_update_unauthenticated(
+#         self, api_client: APIClient, base_user: AbstractUser, transfer_category_factory: FactoryMetaClass
+#     ):
+#         """
+#         GIVEN: TransferCategory instance for Budget created in database.
+#         WHEN: TransferCategoryViewSet detail view called with PUT without authentication.
+#         THEN: Unauthorized HTTP 401.
+#         """
+#         category = transfer_category_factory()
+#         url = category_detail_url(category.budget.id, category.id)
+#
+#         response = api_client.put(url, {})
+#
+#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+#
+#     def test_error_full_update_category_from_not_accessible_budget(
+#         self,
+#         api_client: APIClient,
+#         base_user: AbstractUser,
+#         budget_factory: FactoryMetaClass,
+#         transfer_category_factory: FactoryMetaClass,
+#     ):
+#         """
+#         GIVEN: TransferCategory instance for Budget created in database.
+#         WHEN: TransferCategoryViewSet detail view called with PUT by User not belonging to Budget.
+#         THEN: Forbidden HTTP 403 returned.
+#         """
+#         category = transfer_category_factory(budget=budget_factory())
+#         api_client.force_authenticate(base_user)
+#         url = category_detail_url(category.budget.id, category.id)
+#
+#         response = api_client.put(url, {})
+#
+#         assert response.status_code == status.HTTP_403_FORBIDDEN
+#         assert response.data['detail'] == 'User does not have access to Budget.'
+#
+#     @pytest.mark.parametrize('param, value', [('name', INITIAL_PAYLOAD['name']), ('transfer_type', 999)])
+#     def test_error_on_category_full_update(
+#         self,
+#         api_client: APIClient,
+#         base_user: Any,
+#         budget_factory: FactoryMetaClass,
+#         transfer_category_factory: FactoryMetaClass,
+#         param: str,
+#         value: Any,
+#     ):
+#         """
+#         GIVEN: TransferCategory instance for Budget created in database. Update payload with invalid value.
+#         WHEN: TransferCategoryViewSet detail view called with PUT by User belonging to Budget with invalid payload.
+#         THEN: Bad request HTTP 400, TransferCategory not updated.
+#         """
+#         budget = budget_factory(owner=base_user)
+#         transfer_category_factory(budget=budget, **self.INITIAL_PAYLOAD)
+#         category = transfer_category_factory(budget=budget)
+#         old_value = getattr(category, param)
+#         update_payload = self.UPDATE_PAYLOAD.copy()
+#         update_payload[param] = value
+#         api_client.force_authenticate(base_user)
+#         url = category_detail_url(budget.id, category.id)
+#
+#         response = api_client.put(url, update_payload)
+#
+#         assert response.status_code == status.HTTP_400_BAD_REQUEST
+#         category.refresh_from_db()
+#         assert getattr(category, param) == old_value
+#
+#
+# @pytest.mark.django_db
+# class TestTransferCategoryApiDelete:
+#     """Tests for delete TransferCategory on TransferCategoryViewSet."""
+#
+#     def test_delete_category(
+#         self,
+#         api_client: APIClient,
+#         base_user: Any,
+#         budget_factory: FactoryMetaClass,
+#         transfer_category_factory: FactoryMetaClass,
+#     ):
+#         """
+#         GIVEN: TransferCategory instance for Budget created in database.
+#         WHEN: TransferCategoryViewSet detail view called with DELETE by User belonging to Budget.
+#         THEN: No content HTTP 204, TransferCategory deleted.
+#         """
+#         budget = budget_factory(owner=base_user)
+#         category = transfer_category_factory(budget=budget)
+#         api_client.force_authenticate(base_user)
+#         url = category_detail_url(budget.id, category.id)
+#
+#         assert budget.categorys.all().exists() == 1
+#
+#         response = api_client.delete(url)
+#
+#         assert response.status_code == status.HTTP_204_NO_CONTENT
+#         assert not budget.categorys.all().exists()
+#
+#     def test_error_delete_unauthenticated(
+#         self, api_client: APIClient, base_user: AbstractUser, transfer_category_factory: FactoryMetaClass
+#     ):
+#         """
+#         GIVEN: TransferCategory instance for Budget created in database.
+#         WHEN: TransferCategoryViewSet detail view called with PUT without authentication.
+#         THEN: Unauthorized HTTP 401.
+#         """
+#         category = transfer_category_factory()
+#         url = category_detail_url(category.budget.id, category.id)
+#
+#         response = api_client.delete(url)
+#
+#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+#
+#     def test_error_delete_category_from_not_accessible_budget(
+#         self,
+#         api_client: APIClient,
+#         base_user: AbstractUser,
+#         budget_factory: FactoryMetaClass,
+#         transfer_category_factory: FactoryMetaClass,
+#     ):
+#         """
+#         GIVEN: TransferCategory instance for Budget created in database.
+#         WHEN: TransferCategoryViewSet detail view called with DELETE by User not belonging to Budget.
+#         THEN: Forbidden HTTP 403 returned.
+#         """
+#         category = transfer_category_factory(budget=budget_factory())
+#         api_client.force_authenticate(base_user)
+#         url = category_detail_url(category.budget.id, category.id)
+#
+#         response = api_client.delete(url)
+#
+#         assert response.status_code == status.HTTP_403_FORBIDDEN
+#         assert response.data['detail'] == 'User does not have access to Budget.'

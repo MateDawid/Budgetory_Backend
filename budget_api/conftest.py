@@ -9,14 +9,17 @@ from entities.tests.factories import EntityFactory
 from pytest_django.lazy_django import skip_if_no_django
 from pytest_factoryboy import register
 from rest_framework.test import APIClient, APIRequestFactory
-from transfers.tests.factories import TransferCategoryGroupFactory
+from transfers.tests.factories import (
+    TransferCategoryFactory,
+    TransferCategoryGroupFactory,
+)
 
 register(UserFactory)
 register(BudgetFactory)
 register(BudgetingPeriodFactory)
 register(DepositFactory)
 register(EntityFactory)
-# register(TransferCategoryFactory)
+register(TransferCategoryFactory)
 register(TransferCategoryGroupFactory)
 
 
