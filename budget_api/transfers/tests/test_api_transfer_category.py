@@ -1,9 +1,14 @@
 import pytest
 from budgets.models import Budget
+from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
 from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
+from transfers.models.transfer_category_model import TransferCategory
+from transfers.serializers.transfer_category_serializer import (
+    TransferCategorySerializer,
+)
 
 
 def category_url(budget_id):
@@ -49,87 +54,85 @@ class TestTransferCategoryApiAccess:
         assert response.data['detail'] == 'User does not have access to Budget.'
 
 
-# @pytest.mark.django_db
-# class TestTransferCategoryApiList:
-#     """Tests for list view on TransferCategoryViewSet."""
-#
-#     def test_retrieve_category_list_by_owner(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         transfer_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Two TransferCategory model instances for single Budget created in database.
-#         WHEN: TransferCategoryViewSet called by Budget owner.
-#         THEN: Response with serialized Budget TransferCategory list returned.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         for _ in range(2):
-#             transfer_category_factory(group__budget=budget)
-#         api_client.force_authenticate(base_user)
-#         for _ in range(2):
-#             transfer_category_factory(budget=budget)
-#
-#         response = api_client.get(category_url(budget.id))
-#
-#         categorys = TransferCategory.objects.filter(budget=budget)
-#         serializer = TransferCategorySerializer(categorys, many=True)
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data['results'] == serializer.data
+@pytest.mark.django_db
+class TestTransferCategoryApiList:
+    """Tests for list view on TransferCategoryViewSet."""
 
-#     def test_retrieve_categorys_list_by_member(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         transfer_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Two TransferCategory model instances for single Budget created in database.
-#         WHEN: TransferCategoryViewSet called by Budget member.
-#         THEN: Response with serialized Budget TransferCategory list returned.
-#         """
-#         budget = budget_factory(members=[base_user])
-#         api_client.force_authenticate(base_user)
-#         for _ in range(2):
-#             transfer_category_factory(budget=budget)
-#
-#         response = api_client.get(category_url(budget.id))
-#
-#         categorys = TransferCategory.objects.filter(budget=budget)
-#         serializer = TransferCategorySerializer(categorys, many=True)
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data['results'] == serializer.data
-#
-#     def test_categorys_list_limited_to_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         transfer_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Two TransferCategory model instances for different Budgets created in database.
-#         WHEN: TransferCategoryViewSet called by one of Budgets owner.
-#         THEN: Response with serialized TransferCategory list (only from given Budget) returned.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         category = transfer_category_factory(budget=budget)
-#         transfer_category_factory()
-#         api_client.force_authenticate(base_user)
-#
-#         response = api_client.get(category_url(budget.id))
-#
-#         categorys = TransferCategory.objects.filter(budget=budget)
-#         serializer = TransferCategorySerializer(categorys, many=True)
-#         assert response.status_code == status.HTTP_200_OK
-#         assert len(response.data['results']) == len(serializer.data) == categorys.count() == 1
-#         assert response.data['results'] == serializer.data
-#         assert response.data['results'][0]['id'] == category.id
-#
-#
+    def test_retrieve_category_list_by_owner(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two TransferCategory model instances for single Budget created in database.
+        WHEN: TransferCategoryViewSet called by Budget owner.
+        THEN: Response with serialized Budget TransferCategory list returned.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        for _ in range(2):
+            transfer_category_factory(group__budget=budget)
+
+        response = api_client.get(category_url(budget.id))
+
+        categories = TransferCategory.objects.filter(group__budget=budget)
+        serializer = TransferCategorySerializer(categories, many=True)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['results'] == serializer.data
+
+    def test_retrieve_category_list_by_member(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two TransferCategory model instances for single Budget created in database.
+        WHEN: TransferCategoryViewSet called by Budget member.
+        THEN: Response with serialized Budget TransferCategory list returned.
+        """
+        budget = budget_factory(members=[base_user])
+        api_client.force_authenticate(base_user)
+        for _ in range(2):
+            transfer_category_factory(group__budget=budget)
+
+        response = api_client.get(category_url(budget.id))
+
+        categories = TransferCategory.objects.filter(group__budget=budget)
+        serializer = TransferCategorySerializer(categories, many=True)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['results'] == serializer.data
+
+    def test_category_list_limited_to_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two TransferCategory model instances for different Budgets created in database.
+        WHEN: TransferCategoryViewSet called by one of Budgets owner.
+        THEN: Response with serialized TransferCategory list (only from given Budget) returned.
+        """
+        budget = budget_factory(owner=base_user)
+        category = transfer_category_factory(group__budget=budget)
+        transfer_category_factory()
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(category_url(budget.id))
+
+        categories = TransferCategory.objects.filter(group__budget=budget)
+        serializer = TransferCategorySerializer(categories, many=True)
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data['results']) == len(serializer.data) == categories.count() == 1
+        assert response.data['results'] == serializer.data
+        assert response.data['results'][0]['id'] == category.id
+
+
 # @pytest.mark.django_db
 # class TestTransferCategoryApiCreate:
 #     """Tests for create TransferCategory on TransferCategoryViewSet."""
