@@ -38,8 +38,10 @@ class TransferCategorySerializer(serializers.ModelSerializer):
         if group not in self.context['request'].budget.category_groups.all():
             raise serializers.ValidationError('TransferCategoryGroup does not belong to Budget.')
 
-    def _validate_owner(self, owner: AbstractUser):
-        if not (owner == self.context['request'].budget.owner or owner in self.context['request'].budget.members.all()):
+    def _validate_owner(self, owner: AbstractUser | None):
+        if owner and not (
+            owner == self.context['request'].budget.owner or owner in self.context['request'].budget.members.all()
+        ):
             raise serializers.ValidationError('Provided owner does not belong to Budget.')
 
     def _validate_name(self, name: str | None, owner: AbstractUser):
