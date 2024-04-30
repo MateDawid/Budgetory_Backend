@@ -696,69 +696,62 @@ class TestTransferCategoryApiPartialUpdate:
         assert 'non_field_errors' in response.data
         assert response.data['non_field_errors'][0] == 'Provided owner does not belong to Budget.'
 
-    # # TODO
-    # def test_error_partial_update_personal_category_name_already_used(
-    #     self,
-    #     api_client: APIClient,
-    #     base_user: AbstractUser,
-    #     budget_factory: FactoryMetaClass,
-    #     transfer_category_group_factory: FactoryMetaClass,
-    # ):
-    #     """
-    #     GIVEN: TransferCategory instance with owner created in database. Name of existing personal TransferCategory
-    #     and owner of existing TransferCategory in payload.
-    #     WHEN: TransferCategoryViewSet called with PATCH by User belonging to Budget with invalid payload.
-    #     THEN: Bad request HTTP 400 returned. TransferCategory not updated.
-    #     """
-    #     budget = budget_factory(owner=base_user)
-    #     group = transfer_category_group_factory(budget=budget)
-    #     payload = self.PAYLOAD.copy()
-    #     payload['group'] = group.id
-    #     payload['owner'] = base_user.id
-    #     api_client.force_authenticate(base_user)
-    #     api_client.post(category_url(budget.id), payload)
-    #
-    #     response = api_client.post(category_url(budget.id), payload)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     assert 'non_field_errors' in response.data
-    #     assert (
-    #         response.data['non_field_errors'][0]
-    #         == 'Personal TransferCategory with given name already exists in Budget for provided owner.'
-    #     )
-    #     assert TransferCategory.objects.filter(group__budget=budget, owner__isnull=False).count() == 1
-    #
-    # # TODO
-    # def test_error_partial_update_common_category_name_already_used(
-    #     self,
-    #     api_client: APIClient,
-    #     base_user: AbstractUser,
-    #     budget_factory: FactoryMetaClass,
-    #     transfer_category_group_factory: FactoryMetaClass,
-    # ):
-    #     """
-    #     GIVEN: TransferCategory instance with owner created in database. Name of existing personal TransferCategory
-    #     and owner of existing TransferCategory in payload.
-    #     WHEN: TransferCategoryViewSet called with PATCH by User belonging to Budget with invalid payload.
-    #     THEN: Bad request HTTP 400 returned. TransferCategory not updated.
-    #     """
-    #     budget = budget_factory(owner=base_user)
-    #     group = transfer_category_group_factory(budget=budget)
-    #     payload = self.PAYLOAD.copy()
-    #     payload['group'] = group.id
-    #     api_client.force_authenticate(base_user)
-    #     api_client.post(category_url(budget.id), payload)
-    #
-    #     response = api_client.post(category_url(budget.id), payload)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     assert 'non_field_errors' in response.data
-    #     assert (
-    #         response.data['non_field_errors'][0] == 'Common TransferCategory with given name already
-    #         exists in Budget.'
-    #     )
-    #     assert TransferCategory.objects.filter(group__budget=budget, owner__isnull=True).count() == 1
-    #
+    def test_error_partial_update_personal_category_name_already_used(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: TransferCategory instance with owner created in database. Name of existing personal TransferCategory
+        in payload.
+        WHEN: TransferCategoryViewSet called with PATCH by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. TransferCategory not updated.
+        """
+        budget = budget_factory(owner=base_user)
+        transfer_category_factory(group__budget=budget, owner=base_user, **self.PAYLOAD)
+        category = transfer_category_factory(group__budget=budget, owner=base_user)
+        payload = {'name': self.PAYLOAD['name']}
+        api_client.force_authenticate(base_user)
+        url = category_detail_url(category.group.budget.id, category.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'non_field_errors' in response.data
+        assert (
+            response.data['non_field_errors'][0]
+            == 'Personal TransferCategory with given name already exists in Budget for provided owner.'
+        )
+
+    def test_error_partial_update_common_category_name_already_used(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: TransferCategory instance with owner created in database. Name of existing personal TransferCategory
+        and owner of existing TransferCategory in payload.
+        WHEN: TransferCategoryViewSet called with PATCH by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. TransferCategory not updated.
+        """
+        budget = budget_factory(owner=base_user)
+        transfer_category_factory(group__budget=budget, owner=None, **self.PAYLOAD)
+        category = transfer_category_factory(group__budget=budget, owner=None)
+        payload = {'name': self.PAYLOAD['name']}
+        api_client.force_authenticate(base_user)
+        url = category_detail_url(category.group.budget.id, category.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'non_field_errors' in response.data
+        assert (
+            response.data['non_field_errors'][0] == 'Common TransferCategory with given name already exists in Budget.'
+        )
 
 
 # @pytest.mark.django_db
