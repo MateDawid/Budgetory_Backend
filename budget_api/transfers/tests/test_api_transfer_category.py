@@ -754,107 +754,204 @@ class TestTransferCategoryApiPartialUpdate:
         )
 
 
-# @pytest.mark.django_db
-# class TestTransferCategoryApiFullUpdate:
-#     """Tests for full update view on TransferCategoryViewSet."""
-#
-# INITIAL_PAYLOAD = {'name': 'Expenses for food', 'description': 'All money spent for food.', 'is_active': True}
-#
-# UPDATE_PAYLOAD = {'name': 'Expenses for clothes', 'description': 'All money spent for clothes.', 'is_active': False}
-#
-#
-#     @pytest.mark.django_db
-#     def test_category_full_update(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         transfer_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: TransferCategory instance for Budget created in database.
-#         WHEN: TransferCategoryViewSet detail view called with PUT by User belonging to Budget.
-#         THEN: HTTP 200, TransferCategory updated.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         category = transfer_category_factory(budget=budget, **self.INITIAL_PAYLOAD)
-#         api_client.force_authenticate(base_user)
-#         url = category_detail_url(budget.id, category.id)
-#
-#         response = api_client.put(url, self.UPDATE_PAYLOAD)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         category.refresh_from_db()
-#         for param in self.UPDATE_PAYLOAD:
-#             assert getattr(category, param) == self.UPDATE_PAYLOAD[param]
-#
-#     def test_error_full_update_unauthenticated(
-#         self, api_client: APIClient, base_user: AbstractUser, transfer_category_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: TransferCategory instance for Budget created in database.
-#         WHEN: TransferCategoryViewSet detail view called with PUT without authentication.
-#         THEN: Unauthorized HTTP 401.
-#         """
-#         category = transfer_category_factory()
-#         url = category_detail_url(category.budget.id, category.id)
-#
-#         response = api_client.put(url, {})
-#
-#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_error_full_update_category_from_not_accessible_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         transfer_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: TransferCategory instance for Budget created in database.
-#         WHEN: TransferCategoryViewSet detail view called with PUT by User not belonging to Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         category = transfer_category_factory(budget=budget_factory())
-#         api_client.force_authenticate(base_user)
-#         url = category_detail_url(category.budget.id, category.id)
-#
-#         response = api_client.put(url, {})
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data['detail'] == 'User does not have access to Budget.'
-#
-#     @pytest.mark.parametrize('param, value', [('name', INITIAL_PAYLOAD['name']), ('transfer_type', 999)])
-#     def test_error_on_category_full_update(
-#         self,
-#         api_client: APIClient,
-#         base_user: Any,
-#         budget_factory: FactoryMetaClass,
-#         transfer_category_factory: FactoryMetaClass,
-#         param: str,
-#         value: Any,
-#     ):
-#         """
-#         GIVEN: TransferCategory instance for Budget created in database. Update payload with invalid value.
-#         WHEN: TransferCategoryViewSet detail view called with PUT by User belonging to Budget with invalid payload.
-#         THEN: Bad request HTTP 400, TransferCategory not updated.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         transfer_category_factory(budget=budget, **self.INITIAL_PAYLOAD)
-#         category = transfer_category_factory(budget=budget)
-#         old_value = getattr(category, param)
-#         update_payload = self.UPDATE_PAYLOAD.copy()
-#         update_payload[param] = value
-#         api_client.force_authenticate(base_user)
-#         url = category_detail_url(budget.id, category.id)
-#
-#         response = api_client.put(url, update_payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         category.refresh_from_db()
-#         assert getattr(category, param) == old_value
-#
-#
+@pytest.mark.django_db
+class TestTransferCategoryApiFullUpdate:
+    """Tests for full update view on TransferCategoryViewSet."""
+
+    INITIAL_PAYLOAD = {'name': 'Expenses for food', 'description': 'All money spent for food.', 'is_active': True}
+
+    UPDATE_PAYLOAD = {'name': 'Expenses for clothes', 'description': 'All money spent for clothes.', 'is_active': False}
+
+    @pytest.mark.django_db
+    def test_category_full_update(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_group_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: TransferCategory instance for Budget created in database.
+        WHEN: TransferCategoryViewSet detail view called with PUT by User belonging to Budget.
+        THEN: HTTP 200, TransferCategory updated.
+        """
+        budget = budget_factory(owner=base_user)
+        category = transfer_category_factory(group__budget=budget, owner=None, **self.INITIAL_PAYLOAD)
+        new_group = transfer_category_group_factory(budget=budget)
+        update_payload = self.UPDATE_PAYLOAD.copy()
+        update_payload['group'] = new_group.id
+        update_payload['owner'] = base_user.id
+        api_client.force_authenticate(base_user)
+        url = category_detail_url(budget.id, category.id)
+
+        response = api_client.put(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        category.refresh_from_db()
+        for param in update_payload:
+            if param == 'group':
+                assert getattr(category, param) == new_group
+                continue
+            elif param == 'owner':
+                assert getattr(category, param) == base_user
+                continue
+            assert getattr(category, param) == update_payload[param]
+
+    def test_error_full_update_unauthenticated(
+        self, api_client: APIClient, base_user: AbstractUser, transfer_category_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: TransferCategory instance for Budget created in database.
+        WHEN: TransferCategoryViewSet detail view called with PUT without authentication.
+        THEN: Unauthorized HTTP 401.
+        """
+        category = transfer_category_factory()
+        url = category_detail_url(category.group.budget.id, category.id)
+
+        response = api_client.put(url, {})
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_error_full_update_category_from_not_accessible_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: TransferCategory instance for Budget created in database.
+        WHEN: TransferCategoryViewSet detail view called with PUT by User not belonging to Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        category = transfer_category_factory(group__budget=budget_factory())
+        api_client.force_authenticate(base_user)
+        url = category_detail_url(category.group.budget.id, category.id)
+
+        response = api_client.put(url, {})
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data['detail'] == 'User does not have access to Budget.'
+
+    def test_error_full_update_group_does_not_belong_to_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_group_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: TransferCategoryGroup and two Budget instances created in database. TransferCategoryGroup from outer
+        Budget in payload.
+        WHEN: TransferCategoryViewSet called with PUT by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. TransferCategory not updated.
+        """
+        budget = budget_factory(owner=base_user)
+        category = transfer_category_factory(group__budget=budget)
+        outer_group = transfer_category_group_factory()
+        payload = self.UPDATE_PAYLOAD.copy()
+        payload['group'] = outer_group.id
+        api_client.force_authenticate(base_user)
+        url = category_detail_url(category.group.budget.id, category.id)
+
+        response = api_client.put(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'non_field_errors' in response.data
+        assert response.data['non_field_errors'][0] == 'TransferCategoryGroup does not belong to Budget.'
+
+    def test_error_full_update_owner_does_not_belong_to_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: TransferCategoryGroup for Budget instance created in database. User not belonging to Budget as
+        'owner' in payload.
+        WHEN: TransferCategoryViewSet called with PUT by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. TransferCategory not updated.
+        """
+        budget = budget_factory(owner=base_user)
+        category = transfer_category_factory(group__budget=budget)
+        payload = self.UPDATE_PAYLOAD.copy()
+        payload['group'] = category.group.id
+        payload['owner'] = user_factory().id
+        api_client.force_authenticate(base_user)
+        url = category_detail_url(category.group.budget.id, category.id)
+
+        response = api_client.put(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'non_field_errors' in response.data
+        assert response.data['non_field_errors'][0] == 'Provided owner does not belong to Budget.'
+
+    def test_error_full_update_personal_category_name_already_used(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: TransferCategory instance with owner created in database. Name of existing personal TransferCategory
+        in payload.
+        WHEN: TransferCategoryViewSet called with PUT by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. TransferCategory not updated.
+        """
+        budget = budget_factory(owner=base_user)
+        transfer_category_factory(group__budget=budget, owner=base_user, **self.INITIAL_PAYLOAD)
+        category = transfer_category_factory(group__budget=budget, owner=base_user)
+        payload = self.UPDATE_PAYLOAD.copy()
+        payload['group'] = category.group.id
+        payload['name'] = self.INITIAL_PAYLOAD['name']
+        api_client.force_authenticate(base_user)
+        url = category_detail_url(category.group.budget.id, category.id)
+
+        response = api_client.put(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'non_field_errors' in response.data
+        assert (
+            response.data['non_field_errors'][0]
+            == 'Personal TransferCategory with given name already exists in Budget for provided owner.'
+        )
+
+    def test_error_full_update_common_category_name_already_used(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: TransferCategory instance with owner created in database. Name of existing personal TransferCategory
+        and owner of existing TransferCategory in payload.
+        WHEN: TransferCategoryViewSet called with PUT by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. TransferCategory not updated.
+        """
+        budget = budget_factory(owner=base_user)
+        transfer_category_factory(group__budget=budget, owner=None, **self.INITIAL_PAYLOAD)
+        category = transfer_category_factory(group__budget=budget, owner=None)
+        payload = self.UPDATE_PAYLOAD.copy()
+        payload['group'] = category.group.id
+        payload['name'] = self.INITIAL_PAYLOAD['name']
+        api_client.force_authenticate(base_user)
+        url = category_detail_url(category.group.budget.id, category.id)
+
+        response = api_client.put(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'non_field_errors' in response.data
+        assert (
+            response.data['non_field_errors'][0] == 'Common TransferCategory with given name already exists in Budget.'
+        )
+
+
 # @pytest.mark.django_db
 # class TestTransferCategoryApiDelete:
 #     """Tests for delete TransferCategory on TransferCategoryViewSet."""
