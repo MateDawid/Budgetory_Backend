@@ -593,7 +593,7 @@ class TestTransferCategoryGroupApiDelete:
         api_client.force_authenticate(base_user)
         url = category_group_detail_url(budget.id, category_group.id)
 
-        assert budget.category_groups.all().exists() == 1
+        assert budget.category_groups.all().count() == 1
 
         response = api_client.delete(url)
 
