@@ -16,7 +16,16 @@ BUDGET_DEFAULTS = (
             'description': 'Most important needs, like food, clothes, electricity, etc.',
             'transfer_type': TransferCategoryGroup.TransferTypes.EXPENSE,
         },
-        'categories': [],
+        'categories': [
+            {
+                'name': 'Flat fee',
+                'description': 'Expenses for flat fee.',
+            },
+            {
+                'name': 'Food',
+                'description': 'Expenses for food.',
+            },
+        ],
     },
     {
         'group': {
@@ -24,7 +33,16 @@ BUDGET_DEFAULTS = (
             'description': 'Installments, contributions, taxes, etc.',
             'transfer_type': TransferCategoryGroup.TransferTypes.EXPENSE,
         },
-        'categories': [],
+        'categories': [
+            {
+                'name': 'Taxes',
+                'description': 'Expenses for taxes.',
+            },
+            {
+                'name': 'Installments',
+                'description': 'Expenses for installments.',
+            },
+        ],
     },
     {
         'group': {
@@ -32,7 +50,16 @@ BUDGET_DEFAULTS = (
             'description': 'Reserves, savings, other important expenses.',
             'transfer_type': TransferCategoryGroup.TransferTypes.EXPENSE,
         },
-        'categories': [],
+        'categories': [
+            {
+                'name': 'Reserves',
+                'description': 'Money saved for reserves.',
+            },
+            {
+                'name': 'Important expenses',
+                'description': 'Other important expenses.',
+            },
+        ],
     },
     {
         'group': {
@@ -40,7 +67,16 @@ BUDGET_DEFAULTS = (
             'description': 'Surpluses, greatest debt, pleasures.',
             'transfer_type': TransferCategoryGroup.TransferTypes.EXPENSE,
         },
-        'categories': [],
+        'categories': [
+            {
+                'name': 'Greatest debt',
+                'description': 'Expense for greatest debt.',
+            },
+            {
+                'name': 'Entertainment',
+                'description': 'Expenses for entertainment.',
+            },
+        ],
     },
     # Incomes
     {
@@ -49,7 +85,16 @@ BUDGET_DEFAULTS = (
             'description': 'Salary, interest, etc.',
             'transfer_type': TransferCategoryGroup.TransferTypes.INCOME,
         },
-        'categories': [],
+        'categories': [
+            {
+                'name': 'Salary',
+                'description': 'Monthly salary.',
+            },
+            {
+                'name': 'Interest',
+                'description': 'Monthly interests.',
+            },
+        ],
     },
     {
         'group': {
@@ -57,7 +102,16 @@ BUDGET_DEFAULTS = (
             'description': 'Sale, gifts, etc.',
             'transfer_type': TransferCategoryGroup.TransferTypes.INCOME,
         },
-        'categories': [],
+        'categories': [
+            {
+                'name': 'Gifts',
+                'description': 'Money got as gift.',
+            },
+            {
+                'name': 'Sale',
+                'description': 'Money earned from selling stuff.',
+            },
+        ],
     },
     # Operational
     {
@@ -66,6 +120,15 @@ BUDGET_DEFAULTS = (
             'description': 'For transfers between Budget Deposits.',
             'transfer_type': TransferCategoryGroup.TransferTypes.RELOCATION,
         },
-        'categories': [],
+        'categories': [
+            {
+                'name': 'Payment of reserves',
+                'description': 'Moving money from Reserve Deposit to other one.',
+            },
+            {
+                'name': 'Transfer between accounts',
+                'description': 'Moving money from one Deposit to other one.',
+            },
+        ],
     },
 )
