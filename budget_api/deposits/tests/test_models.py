@@ -51,7 +51,7 @@ class TestDepositModel:
         assert Deposit.objects.filter(budget=budget).count() == 1
         assert deposit.owner is None
 
-    def test_creating_same_deposit_by_two_users(self, budget_factory: FactoryMetaClass):
+    def test_creating_same_deposit_for_two_budgets(self, budget_factory: FactoryMetaClass):
         """
         GIVEN: Two Budget model instances in database.
         WHEN: Same Deposit instance for different Budgets create attempt with valid data.

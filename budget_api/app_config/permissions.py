@@ -3,7 +3,7 @@ from rest_framework.request import Request
 from rest_framework.views import APIView
 
 
-class UserBelongToBudgetPermission(permissions.BasePermission):
+class UserBelongsToBudgetPermission(permissions.BasePermission):
     """Permission class for checking User access to Budget."""
 
     message: str = 'User does not have access to Budget.'
