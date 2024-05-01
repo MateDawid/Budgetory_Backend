@@ -26,7 +26,7 @@ class EntityViewSet(viewsets.ModelViewSet):
         user = getattr(self.request, 'user', None)
         if user and user.is_authenticated:
             return self.queryset.filter(Q(type='GLOBAL') | Q(type='PERSONAL', user=user)).distinct()
-        return self.queryset.none()
+        return self.queryset.none()  # pragma: no cover
 
     def create(self, request, *args, **kwargs):
         """Extend create method with passing user in serializer depending on Entity type."""

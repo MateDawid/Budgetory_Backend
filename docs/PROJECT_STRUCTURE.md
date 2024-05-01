@@ -62,44 +62,49 @@ Represents "container" in which incomes are stored and source for expenses - ban
 ### Features:
 - ✔️ Creating new Deposit by Budget member
 
-##  ⛔ TransferCategoryGroup
+##  ✔️ TransferCategoryGroup
 Group for TransferCategories.
 ### Fields:
-- ⛔ budget [Budget] - Budget for TransferCategoryGroup
-- ⛔ name [str] - Name of TransferCategoryGroup
-- ⛔ description [str] - TransferCategoryGroup description [optional]
-- ⛔ transfer_type [str] - Chosen Transfer type for TransferCategoryGroup. Choices:
+- ✔️ budget [Budget] - Budget for TransferCategoryGroup
+- ✔️ name [str] - Name of TransferCategoryGroup
+- ✔️ description [str] - TransferCategoryGroup description [optional]
+- ✔️ transfer_type [str] - Chosen Transfer type for TransferCategoryGroup. Choices:
    - INCOME - type for incomes
    - EXPENSE - type for expenses
    - RELOCATION - type for cash relocation between Deposits
 
 ### Features:
-- ⛔ Creating new TransferCategoryGroup by Budget member
-- ⛔ Removing TransferCategoryGroup by Budget member
-- ⛔ Create predefined TransferCategoryGroup objects on Budget creation 
+- ✔️ Creating new TransferCategoryGroup by Budget member
+- ✔️ Removing TransferCategoryGroup by Budget member
+- ✔️ Create predefined TransferCategoryGroup objects on Budget creation 
 
-##  ⛔ TransferCategory
+##  ✔️ TransferCategory
 Category for grouping Transfers.
 ### Fields:
-- ⛔ budget [Budget] - Budget for TransferCategory
+- ✔️ group [TransferCategoryGroup] - TransferCategoryGroup for TransferCategory
 - ✔️ name [str] - Name of TransferCategory
 - ✔️ description [str] - TransferCategory description [optional]
-- ⛔ transfer_type [str] - Chosen Transfer type for TransferCategory. Choices:
-   - INCOME - type for incomes
-   - EXPENSE - type for expenses
-   - RELOCATION - type for cash relocation between Deposits
-- ✔️ category_type [str] - Chosen TransferCategory type. Choices:
-   - PERSONAL - category for particular Budget member
-   - COMMON - category for all Budget members
-- ⛔ category_group [str] - TransferCategoryGroup for TransferCategory
-- ⛔ owner [User | None] - owner of TransferCategory with category_type = PERSONAL
+- ✔️ owner [User | None] - owner of TransferCategory. `None` for common category.
 - ✔️ is_active [bool] - Indicates if TransferCategory is active
 
 ### Features:
-- ⛔ Creating new TransferCategory by Budget member
-- ⛔ Removing COMMON TransferCategory by Budget member
-- ⛔ Removing PERSONAL TransferCategory by TransferCategory owner
-- ⛔ Create predefined TransferCategory objects on Budget creation
+- ✔️ Creating new TransferCategory by Budget member
+- ✔️ Create predefined TransferCategory objects on Budget creation
+
+## ⛔ Entity
+Representation of seller or payer, that is a source or goal of Transfer.
+### Fields:
+- ✔️ name [str] - Name of Entity
+- ✔️ description [str] - Description of Entity [optional]
+- ✔️ entity_type [str] - Type of Entity. Choices:
+  - GLOBAL - Entity available to choose by all app Users
+  - PERSONAL - Entity available to choose only in particular Budget
+- ⛔ budget [Budget | None] - Budget in which Entity will be available [optional]
+
+### Features:
+- ⛔ Creating, removing and updating PERSONAL Entity by Budget member
+- ⛔ Creating GLOBAL Entity by any User
+- ⛔ Removing and updating GLOBAL Entity by admin user
 
 ##  ⛔ ExpensePrediction
 Amount expected to spend in selected BudgetingPeriod for selected TransferCategory.
@@ -132,21 +137,6 @@ Abstract part of cash stored in Deposits marked as RESERVES designated to be spe
 - ⛔ Creating new Reserve by Budget member
 - ⛔ Removing Reserve by Budget member if no owner set.
 - ⛔ Removing Reserve for owner if owner set.
-
-## ⛔ Entity
-Representation of seller or payer, that is a source or goal of Transfer.
-### Fields:
-- ✔️ name [str] - Name of Entity
-- ✔️ description [str] - Description of Entity [optional]
-- ✔️ entity_type [str] - Type of Entity. Choices:
-  - GLOBAL - Entity available to choose by all app Users
-  - PERSONAL - Entity available to choose only in particular Budget
-- ⛔ budget [Budget | None] - Budget in which Entity will be available [optional]
-
-### Features:
-- ⛔ Creating, removing and updating PERSONAL Entity by Budget member
-- ⛔ Creating GLOBAL Entity by any User
-- ⛔ Removing and updating GLOBAL Entity by admin user
 
 ## ⛔ Transfer
 Representation of means flow between Deposit and Entity or another Deposit.

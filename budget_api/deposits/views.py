@@ -1,4 +1,4 @@
-from app_config.permissions import UserBelongToBudgetPermission
+from app_config.permissions import UserBelongsToBudgetPermission
 from budgets.mixins import BudgetMixin
 from deposits.models import Deposit
 from deposits.serializers import DepositSerializer
@@ -14,7 +14,7 @@ class DepositViewSet(BudgetMixin, viewsets.ModelViewSet):
     serializer_class = DepositSerializer
     queryset = Deposit.objects.all()
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, UserBelongToBudgetPermission]
+    permission_classes = [IsAuthenticated, UserBelongsToBudgetPermission]
 
     def get_queryset(self) -> QuerySet:
         """
@@ -23,7 +23,8 @@ class DepositViewSet(BudgetMixin, viewsets.ModelViewSet):
         Returns:
             QuerySet: Filtered Deposit QuerySet.
         """
-        return self.queryset.filter(budget=self.request.budget).distinct()
+        budget = getattr(self.request, 'budget', None)
+        return self.queryset.filter(budget=budget).distinct()
 
     def perform_create(self, serializer: DepositSerializer) -> None:
         """

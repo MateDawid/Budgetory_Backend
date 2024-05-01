@@ -10,6 +10,7 @@ from django.urls import reverse
 from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
+from transfers.budget_defaults import BUDGET_DEFAULTS
 
 BUDGETS_URL = reverse('budgets:budget-list')
 OWNED_BUDGETS_URL = reverse('budgets:budget-owned')
@@ -137,6 +138,11 @@ class TestBudgetApi:
                 assert getattr(budget, key) == payload[key]
         serializer = BudgetSerializer(budget)
         assert response.data == serializer.data
+        for group_data in BUDGET_DEFAULTS:
+            group = budget.category_groups.filter(**group_data['group']).first()
+            assert group
+            for category in group_data['categories']:
+                assert group.categories.filter(**category)
 
     def test_create_two_objects_by_one_user(
         self, api_client: APIClient, base_user: AbstractUser, user_factory: FactoryMetaClass

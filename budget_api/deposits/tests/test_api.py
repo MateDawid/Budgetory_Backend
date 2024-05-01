@@ -728,7 +728,7 @@ class TestDepositApiDelete:
         api_client.force_authenticate(base_user)
         url = deposit_detail_url(budget.id, deposit.id)
 
-        assert budget.deposits.all().exists() == 1
+        assert budget.deposits.all().count() == 1
 
         response = api_client.delete(url)
 

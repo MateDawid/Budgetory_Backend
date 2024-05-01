@@ -23,10 +23,11 @@ DJANGO_APPS = [
 OUTER_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
+    'django_filters',
     'drf_yasg',
 ]
 
-CREATED_APPS = ['app_users', 'budgets', 'data_import', 'deposits', 'entities', 'transfers']
+CREATED_APPS = ['app_users', 'budgets', 'deposits', 'entities', 'transfers']
 
 INSTALLED_APPS = DJANGO_APPS + OUTER_APPS + CREATED_APPS
 

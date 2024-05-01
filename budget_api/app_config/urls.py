@@ -31,8 +31,6 @@ urlpatterns = [
     path('api/users/', include('app_users.urls')),
     path('api/budgets/', include('budgets.urls')),
     path('api/entities/', include('entities.urls')),
-    path('api/transfers/', include('transfers.urls')),
-    path('api/data_import/', include('data_import.urls')),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

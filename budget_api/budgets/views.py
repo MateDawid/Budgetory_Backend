@@ -1,4 +1,4 @@
-from app_config.permissions import UserBelongToBudgetPermission
+from app_config.permissions import UserBelongsToBudgetPermission
 from budgets.mixins import BudgetMixin
 from budgets.models import Budget, BudgetingPeriod
 from budgets.serializers import BudgetingPeriodSerializer, BudgetSerializer
@@ -8,6 +8,9 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from transfers.budget_defaults import BUDGET_DEFAULTS
+from transfers.models.transfer_category_group_model import TransferCategoryGroup
+from transfers.models.transfer_category_model import TransferCategory
 
 
 class BudgetViewSet(viewsets.ModelViewSet):
@@ -23,7 +26,7 @@ class BudgetViewSet(viewsets.ModelViewSet):
         user = getattr(self.request, 'user', None)
         if user and user.is_authenticated:
             return self.queryset.filter(Q(owner=user) | Q(members=user)).order_by('id').distinct()
-        return self.queryset.none()
+        return self.queryset.none()  # pragma: no cover
 
     @action(detail=False, methods=['GET'])
     def owned(self, request, **kwargs):
@@ -41,7 +44,11 @@ class BudgetViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Save request User as owner of Budget model."""
-        serializer.save(owner=self.request.user)
+        budget = serializer.save(owner=self.request.user)
+        for group_data in BUDGET_DEFAULTS:
+            group = TransferCategoryGroup.objects.create(budget=budget, **group_data['group'])
+            for category in group_data['categories']:
+                TransferCategory.objects.create(group=group, **category)
 
 
 class BudgetingPeriodViewSet(BudgetMixin, viewsets.ModelViewSet):
@@ -50,7 +57,7 @@ class BudgetingPeriodViewSet(BudgetMixin, viewsets.ModelViewSet):
     serializer_class = BudgetingPeriodSerializer
     queryset = BudgetingPeriod.objects.all()
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, UserBelongToBudgetPermission]
+    permission_classes = [IsAuthenticated, UserBelongsToBudgetPermission]
 
     def get_queryset(self) -> QuerySet:
         """
@@ -68,7 +75,7 @@ class BudgetingPeriodViewSet(BudgetMixin, viewsets.ModelViewSet):
                     .order_by('-date_start')
                     .distinct()
                 )
-        return self.queryset.none()
+        return self.queryset.none()  # pragma: no cover
 
     def perform_create(self, serializer: BudgetingPeriodSerializer) -> None:
         """
