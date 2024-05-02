@@ -23,3 +23,6 @@ class Entity(models.Model):
             'name',
             'budget',
         )
+
+    def __str__(self):
+        return f'{self.name} ({self.budget.name})'
