@@ -131,154 +131,153 @@ class TestEntityApiList:
         assert response.data['results'][0]['id'] == entity.id
 
 
-# @pytest.mark.django_db
-# class TestEntityApiCreate:
-#     """Tests for create Entity on EntityViewSet."""
-#
-#     PAYLOAD = {
-#         'name': 'Most important expenses',
-#         'description': 'Category for most important expenses.',
-#         'transfer_type': Entity.TransferTypes.EXPENSE,
-#     }
-#
-#     @pytest.mark.parametrize('user_type', ['owner', 'member'])
-#     def test_create_single_entity(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         user_factory: FactoryMetaClass,
-#         budget_factory: FactoryMetaClass,
-#         user_type: str,
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Valid payload prepared for Entity.
-#         WHEN: EntityViewSet called with POST by User belonging to Budget with valid payload.
-#         THEN: Entity object created in database with given payload
-#         """
-#         other_user = user_factory()
-#         if user_type == 'owner':
-#             budget = budget_factory(owner=base_user, members=[other_user])
-#         else:
-#             budget = budget_factory(members=[base_user, other_user])
-#         api_client.force_authenticate(base_user)
-#
-#         response = api_client.post(entities_url(budget.id), self.PAYLOAD)
-#
-#         assert response.status_code == status.HTTP_201_CREATED
-#         assert Entity.objects.filter(budget=budget).count() == 1
-#         entity = Entity.objects.get(id=response.data['id'])
-#         assert entity.budget == budget
-#         for key in self.PAYLOAD:
-#             assert getattr(entity, key) == self.PAYLOAD[key]
-#         serializer = EntitySerializer(entity)
-#         assert response.data == serializer.data
-#
-#     def test_create_two_entities_for_single_budget(
-#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Valid payloads prepared for two entities.
-#         WHEN: EntityViewSet called twice with POST by User belonging to Budget with valid payloads.
-#         THEN: Two Entity objects created in database with given payloads.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#         payload_1 = self.PAYLOAD.copy()
-#         payload_1['name'] = 'Entity name 1'
-#         payload_2 = self.PAYLOAD.copy()
-#         payload_2['name'] = 'Entity name 2'
-#
-#         response_1 = api_client.post(entities_url(budget.id), payload_1)
-#         response_2 = api_client.post(entities_url(budget.id), payload_2)
-#
-#         assert response_1.status_code == status.HTTP_201_CREATED
-#         assert response_2.status_code == status.HTTP_201_CREATED
-#         assert Entity.objects.filter(budget=budget).count() == 2
-#         for response, payload in [(response_1, payload_1), (response_2, payload_2)]:
-#             entity = Entity.objects.get(id=response.data['id'])
-#             for key in payload:
-#                 assert getattr(entity, key) == payload[key]
-#
-#     def test_create_same_entity_for_two_budgets(self, api_client: APIClient, budget_factory: FactoryMetaClass):
-#         """
-#         GIVEN: Two Budget instances created in database. Valid payload prepared for two entities.
-#         WHEN: EntityViewSet called twice with POST by different Users belonging to two different
-#         Budgets with valid payload.
-#         THEN: Two Entity objects created in database with given payload for separate Budgets.
-#         """
-#         payload = self.PAYLOAD.copy()
-#         budget_1 = budget_factory()
-#         budget_2 = budget_factory()
-#
-#         api_client.force_authenticate(budget_1.owner)
-#         api_client.post(entities_url(budget_1.id), payload)
-#         api_client.force_authenticate(budget_2.owner)
-#         api_client.post(entities_url(budget_2.id), payload)
-#
-#         assert Entity.objects.all().count() == 2
-#         assert Entity.objects.filter(budget=budget_1).count() == 1
-#         assert Entity.objects.filter(budget=budget_2).count() == 1
-#
-#     @pytest.mark.parametrize('field_name', ['name', 'description'])
-#     def test_error_value_too_long(
-#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass, field_name: str
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Payload for Entity with field value too long.
-#         WHEN: EntityViewSet called with POST by User belonging to Budget with invalid payload.
-#         THEN: Bad request HTTP 400 returned. Entity not created in database.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#         max_length = Entity._meta.get_field(field_name).max_length
-#         payload = self.PAYLOAD.copy()
-#         payload[field_name] = (max_length + 1) * 'a'
-#
-#         response = api_client.post(entities_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert field_name in response.data
-#         assert response.data[field_name][0] == f'Ensure this field has no more than {max_length} characters.'
-#         assert not Entity.objects.filter(budget=budget).exists()
-#
-#     def test_error_name_already_used(
-#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Valid payload for Entity.
-#         WHEN: EntityViewSet called twice with POST by User belonging to Budget with the same payload.
-#         THEN: Bad request HTTP 400 returned. Only one Entity created in database.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#         payload = self.PAYLOAD.copy()
-#
-#         api_client.post(entities_url(budget.id), payload)
-#         response = api_client.post(entities_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert 'name' in response.data
-#         assert response.data['name'][0] == 'Entity with given name already exists in Budget.'
-#         assert Entity.objects.filter(budget=budget).count() == 1
-#
-#     def test_error_create_entity_for_not_accessible_budget(
-#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Valid payload for Entity.
-#         WHEN: EntityViewSet called with POST by User not belonging to Budget with valid payload.
-#         THEN: Forbidden HTTP 403 returned. Object not created.
-#         """
-#         budget = budget_factory()
-#         api_client.force_authenticate(base_user)
-#
-#         response = api_client.post(entities_url(budget.id), self.PAYLOAD)
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data['detail'] == 'User does not have access to Budget.'
-#         assert not Entity.objects.filter(budget=budget).exists()
-#
-#
+@pytest.mark.django_db
+class TestEntityApiCreate:
+    """Tests for create Entity on EntityViewSet."""
+
+    PAYLOAD = {
+        'name': 'Supermarket',
+        'description': 'Supermarket in which I buy food.',
+    }
+
+    @pytest.mark.parametrize('user_type', ['owner', 'member'])
+    def test_create_single_entity(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        user_type: str,
+    ):
+        """
+        GIVEN: Budget instance created in database. Valid payload prepared for Entity.
+        WHEN: EntityViewSet called with POST by User belonging to Budget with valid payload.
+        THEN: Entity object created in database with given payload
+        """
+        other_user = user_factory()
+        if user_type == 'owner':
+            budget = budget_factory(owner=base_user, members=[other_user])
+        else:
+            budget = budget_factory(members=[base_user, other_user])
+        api_client.force_authenticate(base_user)
+
+        response = api_client.post(entities_url(budget.id), self.PAYLOAD)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert Entity.objects.filter(budget=budget).count() == 1
+        entity = Entity.objects.get(id=response.data['id'])
+        assert entity.budget == budget
+        for key in self.PAYLOAD:
+            assert getattr(entity, key) == self.PAYLOAD[key]
+        serializer = EntitySerializer(entity)
+        assert response.data == serializer.data
+
+    def test_create_two_entities_for_single_budget(
+        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Budget instance created in database. Valid payloads prepared for two entities.
+        WHEN: EntityViewSet called twice with POST by User belonging to Budget with valid payloads.
+        THEN: Two Entity objects created in database with given payloads.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload_1 = self.PAYLOAD.copy()
+        payload_1['name'] = 'Entity name 1'
+        payload_2 = self.PAYLOAD.copy()
+        payload_2['name'] = 'Entity name 2'
+
+        response_1 = api_client.post(entities_url(budget.id), payload_1)
+        response_2 = api_client.post(entities_url(budget.id), payload_2)
+
+        assert response_1.status_code == status.HTTP_201_CREATED
+        assert response_2.status_code == status.HTTP_201_CREATED
+        assert Entity.objects.filter(budget=budget).count() == 2
+        for response, payload in [(response_1, payload_1), (response_2, payload_2)]:
+            entity = Entity.objects.get(id=response.data['id'])
+            for key in payload:
+                assert getattr(entity, key) == payload[key]
+
+    def test_create_same_entity_for_two_budgets(self, api_client: APIClient, budget_factory: FactoryMetaClass):
+        """
+        GIVEN: Two Budget instances created in database. Valid payload prepared for two entities.
+        WHEN: EntityViewSet called twice with POST by different Users belonging to two different
+        Budgets with valid payload.
+        THEN: Two Entity objects created in database with given payload for separate Budgets.
+        """
+        payload = self.PAYLOAD.copy()
+        budget_1 = budget_factory()
+        budget_2 = budget_factory()
+
+        api_client.force_authenticate(budget_1.owner)
+        api_client.post(entities_url(budget_1.id), payload)
+        api_client.force_authenticate(budget_2.owner)
+        api_client.post(entities_url(budget_2.id), payload)
+
+        assert Entity.objects.all().count() == 2
+        assert Entity.objects.filter(budget=budget_1).count() == 1
+        assert Entity.objects.filter(budget=budget_2).count() == 1
+
+    @pytest.mark.parametrize('field_name', ['name', 'description'])
+    def test_error_value_too_long(
+        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass, field_name: str
+    ):
+        """
+        GIVEN: Budget instance created in database. Payload for Entity with field value too long.
+        WHEN: EntityViewSet called with POST by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. Entity not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        max_length = Entity._meta.get_field(field_name).max_length
+        payload = self.PAYLOAD.copy()
+        payload[field_name] = (max_length + 1) * 'a'
+
+        response = api_client.post(entities_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert field_name in response.data
+        assert response.data[field_name][0] == f'Ensure this field has no more than {max_length} characters.'
+        assert not Entity.objects.filter(budget=budget).exists()
+
+    def test_error_name_already_used(
+        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Budget instance created in database. Valid payload for Entity.
+        WHEN: EntityViewSet called twice with POST by User belonging to Budget with the same payload.
+        THEN: Bad request HTTP 400 returned. Only one Entity created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+
+        api_client.post(entities_url(budget.id), payload)
+        response = api_client.post(entities_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'name' in response.data
+        assert response.data['name'][0] == 'Entity with given name already exists in Budget.'
+        assert Entity.objects.filter(budget=budget).count() == 1
+
+    def test_error_create_entity_for_not_accessible_budget(
+        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Budget instance created in database. Valid payload for Entity.
+        WHEN: EntityViewSet called with POST by User not belonging to Budget with valid payload.
+        THEN: Forbidden HTTP 403 returned. Object not created.
+        """
+        budget = budget_factory()
+        api_client.force_authenticate(base_user)
+
+        response = api_client.post(entities_url(budget.id), self.PAYLOAD)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data['detail'] == 'User does not have access to Budget.'
+        assert not Entity.objects.filter(budget=budget).exists()
+
+
 # @pytest.mark.django_db
 # class TestEntityApiDetail:
 #     """Tests for detail view on EntityViewSet."""
