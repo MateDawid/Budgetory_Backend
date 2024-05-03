@@ -22,7 +22,7 @@ class TransferCategoryGroupSerializer(serializers.ModelSerializer):
             str: Validated name of TransferCategoryGroup.
 
         Raises:
-            ValidationError: Raised if Deposit with given name exists in Budget already.
+            ValidationError: Raised if TransferCategoryGroup with given name exists in Budget already.
         """
         if self.Meta.model.objects.filter(budget=self.context['request'].budget, name__iexact=name).exists():
             raise ValidationError('TransferCategoryGroup with given name already exists in Budget.')

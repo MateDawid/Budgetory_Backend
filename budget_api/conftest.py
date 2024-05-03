@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from entities.tests.factories import EntityFactory
 from pytest_django.lazy_django import skip_if_no_django
 from pytest_factoryboy import register
-from rest_framework.test import APIClient, APIRequestFactory
+from rest_framework.test import APIClient
 from transfers.tests.factories import (
     TransferCategoryFactory,
     TransferCategoryGroupFactory,
@@ -21,12 +21,6 @@ register(DepositFactory)
 register(EntityFactory)
 register(TransferCategoryFactory)
 register(TransferCategoryGroupFactory)
-
-
-@pytest.fixture(scope='session')
-def api_rf() -> APIRequestFactory:
-    skip_if_no_django()
-    return APIRequestFactory()
 
 
 @pytest.fixture
