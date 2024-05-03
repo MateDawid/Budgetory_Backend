@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from budgets.models import Budget
 from django.contrib.auth.models import AbstractUser
@@ -347,133 +349,129 @@ class TestEntityApiDetail:
         assert response.data['detail'] == 'User does not have access to Budget.'
 
 
-# @pytest.mark.django_db
-# class TestEntityApiPartialUpdate:
-#     """Tests for partial update view on EntityViewSet."""
-#
-#     PAYLOAD = {
-#         'name': 'Most important expenses',
-#         'description': 'Category for most important expenses.',
-#         'transfer_type': Entity.TransferTypes.EXPENSE,
-#     }
-#
-#     @pytest.mark.parametrize(
-#         'param, value',
-#         [
-#             ('name', 'New name'),
-#             ('description', 'New description'),
-#             ('transfer_type', Entity.TransferTypes.INCOME),
-#         ],
-#     )
-#     @pytest.mark.django_db
-#     def test_entity_partial_update(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         entity_factory: FactoryMetaClass,
-#         param: str,
-#         value: Any,
-#     ):
-#         """
-#         GIVEN: Entity instance for Budget created in database.
-#         WHEN: EntityViewSet detail view called with PATCH by User belonging to Budget.
-#         THEN: HTTP 200, Entity updated.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         entity = entity_factory(budget=budget, **self.PAYLOAD)
-#         update_payload = {param: value}
-#         api_client.force_authenticate(base_user)
-#         url = entity_detail_url(budget.id, entity.id)
-#
-#         response = api_client.patch(url, update_payload)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         entity.refresh_from_db()
-#         assert getattr(entity, param) == update_payload[param]
-#
-#     def test_error_partial_update_unauthenticated(
-#         self, api_client: APIClient, base_user: AbstractUser, entity_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Entity instance for Budget created in database.
-#         WHEN: EntityViewSet detail view called with PATCH without authentication.
-#         THEN: Unauthorized HTTP 401.
-#         """
-#         entity = entity_factory()
-#         url = entity_detail_url(entity.budget.id, entity.id)
-#
-#         response = api_client.patch(url, {})
-#
-#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_error_partial_update_entity_from_not_accessible_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         entity_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Entity instance for Budget created in database.
-#         WHEN: EntityViewSet detail view called with PATCH by User not belonging to Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         entity = entity_factory(budget=budget_factory())
-#         api_client.force_authenticate(base_user)
-#         url = entity_detail_url(entity.budget.id, entity.id)
-#
-#         response = api_client.patch(url, {})
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data['detail'] == 'User does not have access to Budget.'
-#
-#     @pytest.mark.parametrize('param, value', [('name', PAYLOAD['name']), ('transfer_type', 999)])
-#     def test_error_on_entity_partial_update(
-#         self,
-#         api_client: APIClient,
-#         base_user: Any,
-#         budget_factory: FactoryMetaClass,
-#         entity_factory: FactoryMetaClass,
-#         param: str,
-#         value: Any,
-#     ):
-#         """
-#         GIVEN: Entity instance for Budget created in database. Update payload with invalid value.
-#         WHEN: EntityViewSet detail view called with PATCH by User belonging to Budget
-#         with invalid payload.
-#         THEN: Bad request HTTP 400, Entity not updated.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         entity_factory(budget=budget, **self.PAYLOAD)
-#         entity = entity_factory(budget=budget)
-#         old_value = getattr(entity, param)
-#         update_payload = {param: value}
-#         api_client.force_authenticate(base_user)
-#         url = entity_detail_url(budget.id, entity.id)
-#
-#         response = api_client.patch(url, update_payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         entity.refresh_from_db()
-#         assert getattr(entity, param) == old_value
-#
-#
+@pytest.mark.django_db
+class TestEntityApiPartialUpdate:
+    """Tests for partial update view on EntityViewSet."""
+
+    PAYLOAD = {
+        'name': 'Supermarket',
+        'description': 'Supermarket in which I buy food.',
+    }
+
+    @pytest.mark.parametrize(
+        'param, value',
+        [
+            ('name', 'New name'),
+            ('description', 'New description'),
+        ],
+    )
+    @pytest.mark.django_db
+    def test_entity_partial_update(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        param: str,
+        value: Any,
+    ):
+        """
+        GIVEN: Entity instance for Budget created in database.
+        WHEN: EntityViewSet detail view called with PATCH by User belonging to Budget.
+        THEN: HTTP 200, Entity updated.
+        """
+        budget = budget_factory(owner=base_user)
+        entity = entity_factory(budget=budget, **self.PAYLOAD)
+        update_payload = {param: value}
+        api_client.force_authenticate(base_user)
+        url = entity_detail_url(budget.id, entity.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        entity.refresh_from_db()
+        assert getattr(entity, param) == update_payload[param]
+
+    def test_error_partial_update_unauthenticated(
+        self, api_client: APIClient, base_user: AbstractUser, entity_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Entity instance for Budget created in database.
+        WHEN: EntityViewSet detail view called with PATCH without authentication.
+        THEN: Unauthorized HTTP 401.
+        """
+        entity = entity_factory()
+        url = entity_detail_url(entity.budget.id, entity.id)
+
+        response = api_client.patch(url, {})
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_error_partial_update_entity_from_not_accessible_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Entity instance for Budget created in database.
+        WHEN: EntityViewSet detail view called with PATCH by User not belonging to Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        entity = entity_factory(budget=budget_factory())
+        api_client.force_authenticate(base_user)
+        url = entity_detail_url(entity.budget.id, entity.id)
+
+        response = api_client.patch(url, {})
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data['detail'] == 'User does not have access to Budget.'
+
+    @pytest.mark.parametrize('param, value', [('name', PAYLOAD['name'])])
+    def test_error_on_entity_partial_update(
+        self,
+        api_client: APIClient,
+        base_user: Any,
+        budget_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        param: str,
+        value: Any,
+    ):
+        """
+        GIVEN: Entity instance for Budget created in database. Update payload with invalid value.
+        WHEN: EntityViewSet detail view called with PATCH by User belonging to Budget
+        with invalid payload.
+        THEN: Bad request HTTP 400, Entity not updated.
+        """
+        budget = budget_factory(owner=base_user)
+        entity_factory(budget=budget, **self.PAYLOAD)
+        entity = entity_factory(budget=budget)
+        old_value = getattr(entity, param)
+        update_payload = {param: value}
+        api_client.force_authenticate(base_user)
+        url = entity_detail_url(budget.id, entity.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        entity.refresh_from_db()
+        assert getattr(entity, param) == old_value
+
+
 # @pytest.mark.django_db
 # class TestEntityApiFullUpdate:
 #     """Tests for full update view on EntityViewSet."""
 #
-#     INITIAL_PAYLOAD = {
-#         'name': 'Most important expenses',
-#         'description': 'Category for most important expenses.',
-#         'transfer_type': Entity.TransferTypes.EXPENSE,
-#     }
+# INITIAL_PAYLOAD = {
+#     'name': 'Supermarket',
+#     'description': 'Supermarket in which I buy food.',
+# }
 #
-#     UPDATE_PAYLOAD = {
-#         'name': 'Updated name',
-#         'description': 'Updated description',
-#         'transfer_type': Entity.TransferTypes.INCOME,
-#     }
+# UPDATE_PAYLOAD = {
+#     'name': 'Some market',
+#     'description': 'Updated supermarket description.',
+# }
 #
 #     @pytest.mark.django_db
 #     def test_entity_full_update(
