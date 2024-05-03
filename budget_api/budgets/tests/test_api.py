@@ -283,8 +283,6 @@ class TestBudgetApi:
 
         assert response.status_code == status.HTTP_200_OK
         budget.refresh_from_db()
-        if param == 'members':
-            assert getattr(budget, param) == update_payload[param]
 
     def test_partial_update_with_members(
         self,

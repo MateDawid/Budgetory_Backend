@@ -122,7 +122,7 @@ class TestTransferCategoryModel:
 
         category = TransferCategory.objects.create(group=transfer_category_group, **payload)
 
-        for key in self.PAYLOAD:
+        for key in payload:
             if key == 'owner':
                 continue
             assert getattr(category, key) == self.PAYLOAD[key]
