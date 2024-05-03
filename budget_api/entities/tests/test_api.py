@@ -1,6 +1,9 @@
 import pytest
 from budgets.models import Budget
+from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
+from entities.models import Entity
+from entities.serializers import EntitySerializer
 from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -49,85 +52,85 @@ class TestEntityApiAccess:
         assert response.data['detail'] == 'User does not have access to Budget.'
 
 
-# @pytest.mark.django_db
-# class TestEntityApiList:
-#     """Tests for list view on EntityViewSet."""
-#
-#     def test_retrieve_entity_list_by_owner(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         entity_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Two Entity model instances for single Budget created in database.
-#         WHEN: EntityViewSet called by Budget owner.
-#         THEN: Response with serialized Budget Entity list returned.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#         for _ in range(2):
-#             entity_factory(budget=budget)
-#
-#         response = api_client.get(entity_url(budget.id))
-#
-#         entitys = Entity.objects.filter(budget=budget)
-#         serializer = EntitySerializer(entitys, many=True)
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data['results'] == serializer.data
-#
-#     def test_retrieve_entitys_list_by_member(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         entity_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Two Entity model instances for single Budget created in database.
-#         WHEN: EntityViewSet called by Budget member.
-#         THEN: Response with serialized Budget Entity list returned.
-#         """
-#         budget = budget_factory(members=[base_user])
-#         api_client.force_authenticate(base_user)
-#         for _ in range(2):
-#             entity_factory(budget=budget)
-#
-#         response = api_client.get(entity_url(budget.id))
-#
-#         entitys = Entity.objects.filter(budget=budget)
-#         serializer = EntitySerializer(entitys, many=True)
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data['results'] == serializer.data
-#
-#     def test_entitys_list_limited_to_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         entity_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Two Entity model instances for different Budgets created in database.
-#         WHEN: EntityViewSet called by one of Budgets owner.
-#         THEN: Response with serialized Entity list (only from given Budget) returned.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         entity = entity_factory(budget=budget)
-#         entity_factory()
-#         api_client.force_authenticate(base_user)
-#
-#         response = api_client.get(entity_url(budget.id))
-#
-#         entitys = Entity.objects.filter(budget=budget)
-#         serializer = EntitySerializer(entitys, many=True)
-#         assert response.status_code == status.HTTP_200_OK
-#         assert len(response.data['results']) == len(serializer.data) == entitys.count() == 1
-#         assert response.data['results'] == serializer.data
-#         assert response.data['results'][0]['id'] == entity.id
-#
-#
+@pytest.mark.django_db
+class TestEntityApiList:
+    """Tests for list view on EntityViewSet."""
+
+    def test_retrieve_entity_list_by_owner(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two Entity model instances for single Budget created in database.
+        WHEN: EntityViewSet called by Budget owner.
+        THEN: Response with serialized Budget Entity list returned.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        for _ in range(2):
+            entity_factory(budget=budget)
+
+        response = api_client.get(entities_url(budget.id))
+
+        entities = Entity.objects.filter(budget=budget)
+        serializer = EntitySerializer(entities, many=True)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['results'] == serializer.data
+
+    def test_retrieve_entities_list_by_member(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two Entity model instances for single Budget created in database.
+        WHEN: EntityViewSet called by Budget member.
+        THEN: Response with serialized Budget Entity list returned.
+        """
+        budget = budget_factory(members=[base_user])
+        api_client.force_authenticate(base_user)
+        for _ in range(2):
+            entity_factory(budget=budget)
+
+        response = api_client.get(entities_url(budget.id))
+
+        entities = Entity.objects.filter(budget=budget)
+        serializer = EntitySerializer(entities, many=True)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['results'] == serializer.data
+
+    def test_entities_list_limited_to_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two Entity model instances for different Budgets created in database.
+        WHEN: EntityViewSet called by one of Budgets owner.
+        THEN: Response with serialized Entity list (only from given Budget) returned.
+        """
+        budget = budget_factory(owner=base_user)
+        entity = entity_factory(budget=budget)
+        entity_factory()
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(entities_url(budget.id))
+
+        entities = Entity.objects.filter(budget=budget)
+        serializer = EntitySerializer(entities, many=True)
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data['results']) == len(serializer.data) == entities.count() == 1
+        assert response.data['results'] == serializer.data
+        assert response.data['results'][0]['id'] == entity.id
+
+
 # @pytest.mark.django_db
 # class TestEntityApiCreate:
 #     """Tests for create Entity on EntityViewSet."""
@@ -159,7 +162,7 @@ class TestEntityApiAccess:
 #             budget = budget_factory(members=[base_user, other_user])
 #         api_client.force_authenticate(base_user)
 #
-#         response = api_client.post(entity_url(budget.id), self.PAYLOAD)
+#         response = api_client.post(entities_url(budget.id), self.PAYLOAD)
 #
 #         assert response.status_code == status.HTTP_201_CREATED
 #         assert Entity.objects.filter(budget=budget).count() == 1
@@ -170,11 +173,11 @@ class TestEntityApiAccess:
 #         serializer = EntitySerializer(entity)
 #         assert response.data == serializer.data
 #
-#     def test_create_two_entitys_for_single_budget(
+#     def test_create_two_entities_for_single_budget(
 #         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
 #     ):
 #         """
-#         GIVEN: Budget instance created in database. Valid payloads prepared for two Entitys.
+#         GIVEN: Budget instance created in database. Valid payloads prepared for two entities.
 #         WHEN: EntityViewSet called twice with POST by User belonging to Budget with valid payloads.
 #         THEN: Two Entity objects created in database with given payloads.
 #         """
@@ -185,8 +188,8 @@ class TestEntityApiAccess:
 #         payload_2 = self.PAYLOAD.copy()
 #         payload_2['name'] = 'Entity name 2'
 #
-#         response_1 = api_client.post(entity_url(budget.id), payload_1)
-#         response_2 = api_client.post(entity_url(budget.id), payload_2)
+#         response_1 = api_client.post(entities_url(budget.id), payload_1)
+#         response_2 = api_client.post(entities_url(budget.id), payload_2)
 #
 #         assert response_1.status_code == status.HTTP_201_CREATED
 #         assert response_2.status_code == status.HTTP_201_CREATED
@@ -198,7 +201,7 @@ class TestEntityApiAccess:
 #
 #     def test_create_same_entity_for_two_budgets(self, api_client: APIClient, budget_factory: FactoryMetaClass):
 #         """
-#         GIVEN: Two Budget instances created in database. Valid payload prepared for two Entitys.
+#         GIVEN: Two Budget instances created in database. Valid payload prepared for two entities.
 #         WHEN: EntityViewSet called twice with POST by different Users belonging to two different
 #         Budgets with valid payload.
 #         THEN: Two Entity objects created in database with given payload for separate Budgets.
@@ -208,9 +211,9 @@ class TestEntityApiAccess:
 #         budget_2 = budget_factory()
 #
 #         api_client.force_authenticate(budget_1.owner)
-#         api_client.post(entity_url(budget_1.id), payload)
+#         api_client.post(entities_url(budget_1.id), payload)
 #         api_client.force_authenticate(budget_2.owner)
-#         api_client.post(entity_url(budget_2.id), payload)
+#         api_client.post(entities_url(budget_2.id), payload)
 #
 #         assert Entity.objects.all().count() == 2
 #         assert Entity.objects.filter(budget=budget_1).count() == 1
@@ -231,7 +234,7 @@ class TestEntityApiAccess:
 #         payload = self.PAYLOAD.copy()
 #         payload[field_name] = (max_length + 1) * 'a'
 #
-#         response = api_client.post(entity_url(budget.id), payload)
+#         response = api_client.post(entities_url(budget.id), payload)
 #
 #         assert response.status_code == status.HTTP_400_BAD_REQUEST
 #         assert field_name in response.data
@@ -250,8 +253,8 @@ class TestEntityApiAccess:
 #         api_client.force_authenticate(base_user)
 #         payload = self.PAYLOAD.copy()
 #
-#         api_client.post(entity_url(budget.id), payload)
-#         response = api_client.post(entity_url(budget.id), payload)
+#         api_client.post(entities_url(budget.id), payload)
+#         response = api_client.post(entities_url(budget.id), payload)
 #
 #         assert response.status_code == status.HTTP_400_BAD_REQUEST
 #         assert 'name' in response.data
@@ -269,7 +272,7 @@ class TestEntityApiAccess:
 #         budget = budget_factory()
 #         api_client.force_authenticate(base_user)
 #
-#         response = api_client.post(entity_url(budget.id), self.PAYLOAD)
+#         response = api_client.post(entities_url(budget.id), self.PAYLOAD)
 #
 #         assert response.status_code == status.HTTP_403_FORBIDDEN
 #         assert response.data['detail'] == 'User does not have access to Budget.'
@@ -586,12 +589,12 @@ class TestEntityApiAccess:
 #         api_client.force_authenticate(base_user)
 #         url = entity_detail_url(budget.id, entity.id)
 #
-#         assert budget.entitys.all().count() == 1
+#         assert budget.entities.all().count() == 1
 #
 #         response = api_client.delete(url)
 #
 #         assert response.status_code == status.HTTP_204_NO_CONTENT
-#         assert not budget.entitys.all().exists()
+#         assert not budget.entities.all().exists()
 #
 #     def test_error_delete_unauthenticated(
 #         self, api_client: APIClient, base_user: AbstractUser, entity_factory: FactoryMetaClass
