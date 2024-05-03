@@ -278,75 +278,75 @@ class TestEntityApiCreate:
         assert not Entity.objects.filter(budget=budget).exists()
 
 
-# @pytest.mark.django_db
-# class TestEntityApiDetail:
-#     """Tests for detail view on EntityViewSet."""
-#
-#     @pytest.mark.parametrize('user_type', ['owner', 'member'])
-#     def test_get_entity_details(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         entity_factory: FactoryMetaClass,
-#         user_type: str,
-#     ):
-#         """
-#         GIVEN: Entity instance for Budget created in database.
-#         WHEN: EntityViewSet detail view called by User belonging to Budget.
-#         THEN: HTTP 200, Entity details returned.
-#         """
-#         if user_type == 'owner':
-#             budget = budget_factory(owner=base_user)
-#         else:
-#             budget = budget_factory(members=[base_user])
-#         entity = entity_factory(budget=budget)
-#         api_client.force_authenticate(base_user)
-#         url = entity_detail_url(budget.id, entity.id)
-#
-#         response = api_client.get(url)
-#         serializer = EntitySerializer(entity)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data == serializer.data
-#
-#     def test_error_get_entity_details_unauthenticated(
-#         self, api_client: APIClient, base_user: AbstractUser, entity_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Entity instance for Budget created in database.
-#         WHEN: EntityViewSet detail view called without authentication.
-#         THEN: Unauthorized HTTP 401.
-#         """
-#         entity = entity_factory()
-#         url = entity_detail_url(entity.budget.id, entity.id)
-#
-#         response = api_client.get(url)
-#
-#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_error_get_details_from_not_accessible_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         entity_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Entity instance for Budget created in database.
-#         WHEN: EntityViewSet detail view called by User not belonging to Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         entity = entity_factory(budget=budget_factory())
-#         api_client.force_authenticate(base_user)
-#
-#         url = entity_detail_url(entity.budget.id, entity.id)
-#         response = api_client.get(url)
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data['detail'] == 'User does not have access to Budget.'
-#
-#
+@pytest.mark.django_db
+class TestEntityApiDetail:
+    """Tests for detail view on EntityViewSet."""
+
+    @pytest.mark.parametrize('user_type', ['owner', 'member'])
+    def test_get_entity_details(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        user_type: str,
+    ):
+        """
+        GIVEN: Entity instance for Budget created in database.
+        WHEN: EntityViewSet detail view called by User belonging to Budget.
+        THEN: HTTP 200, Entity details returned.
+        """
+        if user_type == 'owner':
+            budget = budget_factory(owner=base_user)
+        else:
+            budget = budget_factory(members=[base_user])
+        entity = entity_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        url = entity_detail_url(budget.id, entity.id)
+
+        response = api_client.get(url)
+        serializer = EntitySerializer(entity)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == serializer.data
+
+    def test_error_get_entity_details_unauthenticated(
+        self, api_client: APIClient, base_user: AbstractUser, entity_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Entity instance for Budget created in database.
+        WHEN: EntityViewSet detail view called without authentication.
+        THEN: Unauthorized HTTP 401.
+        """
+        entity = entity_factory()
+        url = entity_detail_url(entity.budget.id, entity.id)
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_error_get_details_from_not_accessible_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Entity instance for Budget created in database.
+        WHEN: EntityViewSet detail view called by User not belonging to Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        entity = entity_factory(budget=budget_factory())
+        api_client.force_authenticate(base_user)
+
+        url = entity_detail_url(entity.budget.id, entity.id)
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data['detail'] == 'User does not have access to Budget.'
+
+
 # @pytest.mark.django_db
 # class TestEntityApiPartialUpdate:
 #     """Tests for partial update view on EntityViewSet."""
