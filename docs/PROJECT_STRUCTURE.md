@@ -91,20 +91,16 @@ Category for grouping Transfers.
 - ✔️ Creating new TransferCategory by Budget member
 - ✔️ Create predefined TransferCategory objects on Budget creation
 
-## ⛔ Entity
+## ✔️ Entity
 Representation of seller or payer, that is a source or goal of Transfer.
 ### Fields:
+- ✔️ budget [Budget] - Budget in which Entity will be available [optional]
 - ✔️ name [str] - Name of Entity
 - ✔️ description [str] - Description of Entity [optional]
-- ✔️ entity_type [str] - Type of Entity. Choices:
-  - GLOBAL - Entity available to choose by all app Users
-  - PERSONAL - Entity available to choose only in particular Budget
-- ⛔ budget [Budget | None] - Budget in which Entity will be available [optional]
+
 
 ### Features:
-- ⛔ Creating, removing and updating PERSONAL Entity by Budget member
-- ⛔ Creating GLOBAL Entity by any User
-- ⛔ Removing and updating GLOBAL Entity by admin user
+- ✔️ Creating, removing and updating Entity by Budget owner or member
 
 ##  ⛔ ExpensePrediction
 Amount expected to spend in selected BudgetingPeriod for selected TransferCategory.
@@ -164,17 +160,3 @@ Representation of means flow between Deposit and Entity or another Deposit.
 ### Features:
 - ⛔ Creating, removing and updating Transfer with PERSONAL deposit.deposit_type by Deposit owner or Budget owner
 - ⛔ Creating, removing and updating Transfer with other than PERSONAL deposit.deposit_type by any Budget member
-
-## ⛔ ImportFile
-Imported file containing Transfers and Entities for selected Deposit
-### Fields:
-- ⛔ deposit [Deposit] - Deposit for which data is imported
-- ⛔ filename [str] - ImportFile name
-- ⛔ date_added [datetime.date] - File upload date
-- ⛔ user [User] - User uploading file
-- ⛔ results [dict] - Dictionary containing objects created by file upload
-
-### Features:
-- ⛔ Upload file by Deposit owner for PERSONAL Deposit
-- ⛔ Upload file by Budget member for non PERSONAL Deposit
-- ⛔ Return data for further edition to frontend before creating objects in database

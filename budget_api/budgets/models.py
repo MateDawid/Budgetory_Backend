@@ -60,16 +60,12 @@ class BudgetingPeriod(models.Model):
 
     def clean_is_active(self):
         """Check if is_active field is valid. If is_active not given, pass it to default model validation."""
-        if self.is_active is None:
-            return
         if self.is_active and self.budget.periods.filter(is_active=True).exclude(pk=self.pk).exists():
             raise ValidationError('is_active: Active period already exists.', code='active-invalid')
 
     def clean_dates(self):
         """Check if date_start and date_end fields are valid. If date_start or date_end not given,
         pass them to default model validation."""
-        if self.date_start is None or self.date_end is None:
-            return
         if self.date_start >= self.date_end:
             raise ValidationError('start_date: Start date should be earlier than end date.', code='date-invalid')
         if (
