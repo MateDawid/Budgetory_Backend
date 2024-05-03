@@ -1,4 +1,5 @@
 from app_config.permissions import UserBelongsToBudgetPermission
+from budgets.mixins import BudgetMixin
 from django.db.models import QuerySet
 from entities.models import Entity
 from entities.serializers import EntitySerializer
@@ -7,7 +8,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
 
-class EntityViewSet(viewsets.ModelViewSet):
+class EntityViewSet(BudgetMixin, viewsets.ModelViewSet):
     """View for managing Entities."""
 
     serializer_class = EntitySerializer
