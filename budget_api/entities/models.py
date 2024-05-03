@@ -1,13 +1,6 @@
 from django.db import models
 
 
-class GlobalEntityManager(models.Manager):
-    """Manager for global Entities."""
-
-    def get_queryset(self):
-        return super().get_queryset().filter(type=Entity.GLOBAL)
-
-
 class Entity(models.Model):
     """Entity model for seller (or source of income) representation."""
 
