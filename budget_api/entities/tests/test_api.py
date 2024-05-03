@@ -565,66 +565,66 @@ class TestEntityApiFullUpdate:
         assert getattr(entity, param) == old_value
 
 
-# @pytest.mark.django_db
-# class TestEntityApiDelete:
-#     """Tests for delete Entity on EntityViewSet."""
-#
-#     def test_delete_entity(
-#         self,
-#         api_client: APIClient,
-#         base_user: Any,
-#         budget_factory: FactoryMetaClass,
-#         entity_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Entity instance for Budget created in database.
-#         WHEN: EntityViewSet detail view called with DELETE by User belonging to Budget.
-#         THEN: No content HTTP 204, Entity deleted.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         entity = entity_factory(budget=budget)
-#         api_client.force_authenticate(base_user)
-#         url = entity_detail_url(budget.id, entity.id)
-#
-#         assert budget.entities.all().count() == 1
-#
-#         response = api_client.delete(url)
-#
-#         assert response.status_code == status.HTTP_204_NO_CONTENT
-#         assert not budget.entities.all().exists()
-#
-#     def test_error_delete_unauthenticated(
-#         self, api_client: APIClient, base_user: AbstractUser, entity_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Entity instance for Budget created in database.
-#         WHEN: EntityViewSet detail view called with PUT without authentication.
-#         THEN: Unauthorized HTTP 401.
-#         """
-#         entity = entity_factory()
-#         url = entity_detail_url(entity.budget.id, entity.id)
-#
-#         response = api_client.delete(url)
-#
-#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_error_delete_entity_from_not_accessible_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         entity_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Entity instance for Budget created in database.
-#         WHEN: EntityViewSet detail view called with DELETE by User not belonging to Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         entity = entity_factory(budget=budget_factory())
-#         api_client.force_authenticate(base_user)
-#         url = entity_detail_url(entity.budget.id, entity.id)
-#
-#         response = api_client.delete(url)
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data['detail'] == 'User does not have access to Budget.'
+@pytest.mark.django_db
+class TestEntityApiDelete:
+    """Tests for delete Entity on EntityViewSet."""
+
+    def test_delete_entity(
+        self,
+        api_client: APIClient,
+        base_user: Any,
+        budget_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Entity instance for Budget created in database.
+        WHEN: EntityViewSet detail view called with DELETE by User belonging to Budget.
+        THEN: No content HTTP 204, Entity deleted.
+        """
+        budget = budget_factory(owner=base_user)
+        entity = entity_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        url = entity_detail_url(budget.id, entity.id)
+
+        assert budget.entities.all().count() == 1
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not budget.entities.all().exists()
+
+    def test_error_delete_unauthenticated(
+        self, api_client: APIClient, base_user: AbstractUser, entity_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Entity instance for Budget created in database.
+        WHEN: EntityViewSet detail view called with PUT without authentication.
+        THEN: Unauthorized HTTP 401.
+        """
+        entity = entity_factory()
+        url = entity_detail_url(entity.budget.id, entity.id)
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_error_delete_entity_from_not_accessible_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Entity instance for Budget created in database.
+        WHEN: EntityViewSet detail view called with DELETE by User not belonging to Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        entity = entity_factory(budget=budget_factory())
+        api_client.force_authenticate(base_user)
+        url = entity_detail_url(entity.budget.id, entity.id)
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data['detail'] == 'User does not have access to Budget.'
