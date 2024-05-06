@@ -1,5 +1,5 @@
 from django_filters import rest_framework as filters
-from transfers.models.transfer_category_model import TransferCategory
+from transfers.models import TransferCategory
 
 
 class TransferCategoriesFilterSet(filters.FilterSet):

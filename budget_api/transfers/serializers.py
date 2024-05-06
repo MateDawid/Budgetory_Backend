@@ -2,8 +2,7 @@ from collections import OrderedDict
 
 from django.contrib.auth.models import AbstractUser
 from rest_framework import serializers
-from transfers.models.transfer_category_group_model import TransferCategoryGroup
-from transfers.models.transfer_category_model import TransferCategory
+from transfers.models import TransferCategory
 
 
 class TransferCategorySerializer(serializers.ModelSerializer):
@@ -26,17 +25,11 @@ class TransferCategorySerializer(serializers.ModelSerializer):
         """
         name = attrs.get('name') or getattr(self.instance, 'name', None)
         owner = attrs.get('owner') or getattr(self.instance, 'owner', None)
-        group = attrs.get('group') or getattr(self.instance, 'group', None)
 
-        self._validate_group(group)
         self._validate_owner(owner)
         self._validate_name(name, owner)
 
         return attrs
-
-    def _validate_group(self, group: TransferCategoryGroup):
-        if group not in self.context['request'].budget.category_groups.all():
-            raise serializers.ValidationError('TransferCategoryGroup does not belong to Budget.')
 
     def _validate_owner(self, owner: AbstractUser | None):
         if owner and not (

@@ -7,10 +7,8 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
 from transfers.filters import TransferCategoriesFilterSet
-from transfers.models.transfer_category_model import TransferCategory
-from transfers.serializers.transfer_category_serializer import (
-    TransferCategorySerializer,
-)
+from transfers.models import TransferCategory
+from transfers.serializers import TransferCategorySerializer
 
 
 class TransferCategoryViewSet(BudgetMixin, viewsets.ModelViewSet):
@@ -19,10 +17,10 @@ class TransferCategoryViewSet(BudgetMixin, viewsets.ModelViewSet):
     serializer_class = TransferCategorySerializer
     queryset = TransferCategory.objects.all()
     authentication_classes = [TokenAuthentication]
+    permission_classes = (IsAuthenticated, UserBelongsToBudgetPermission)
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
     filterset_class = TransferCategoriesFilterSet
     ordering = ('id', 'group', 'name')
-    permission_classes = [IsAuthenticated, UserBelongsToBudgetPermission]
 
     def get_queryset(self) -> QuerySet:
         """

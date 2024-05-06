@@ -8,9 +8,6 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from transfers.budget_defaults import BUDGET_DEFAULTS
-from transfers.models.transfer_category_group_model import TransferCategoryGroup
-from transfers.models.transfer_category_model import TransferCategory
 
 
 class BudgetViewSet(viewsets.ModelViewSet):
@@ -44,11 +41,7 @@ class BudgetViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Save request User as owner of Budget model."""
-        budget = serializer.save(owner=self.request.user)
-        for group_data in BUDGET_DEFAULTS:
-            group = TransferCategoryGroup.objects.create(budget=budget, **group_data['group'])
-            for category in group_data['categories']:
-                TransferCategory.objects.create(group=group, **category)
+        serializer.save(owner=self.request.user)
 
 
 class BudgetingPeriodViewSet(BudgetMixin, viewsets.ModelViewSet):
