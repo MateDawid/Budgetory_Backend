@@ -6,5 +6,5 @@ from transfers.models import TransferCategory
 class TransferCategoryAdmin(admin.ModelAdmin):
     """Custom admin view for TransferCategory model."""
 
-    list_display = ('name', 'group', 'owner', 'is_active')
-    list_filter = ('group__budget', 'group__budget__owner__email')
+    list_display = ('name', 'expense_group', 'income_group', 'budget', 'owner', 'is_active')
+    list_filter = ('budget', 'budget__owner__email', 'expense_group', 'income_group')
