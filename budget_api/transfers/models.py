@@ -5,9 +5,21 @@ from django.db import models
 class TransferCategory(models.Model):
     """TransferCategory model for grouping Transfer model instances."""
 
-    group = models.ForeignKey(
-        'transfers.TransferCategoryGroup', blank=False, null=False, on_delete=models.CASCADE, related_name='categories'
-    )
+    class ExpenseGroups(models.IntegerChoices):
+        """Choices for deposit_type value."""
+
+        MOST_IMPORTANT = 0, 'Most important'
+        DEBTS = 1, 'Debts'
+        SAVINGS = 2, 'Savings'
+        OTHERS = 3, 'Others'
+
+    class IncomeGroups(models.IntegerChoices):
+        """Choices for deposit_type value."""
+
+        REGULAR = 0, 'Regular'
+        IRREGULAR = 1, 'Irregular'
+
+    budget = models.ForeignKey('budgets.Budget', on_delete=models.CASCADE, related_name='transfer_categories')
     name = models.CharField(max_length=128)
     description = models.CharField(max_length=255, blank=True, null=True)
     owner = models.ForeignKey(
@@ -18,9 +30,15 @@ class TransferCategory(models.Model):
         related_name='personal_categories',
     )
     is_active = models.BooleanField(default=True)
+    expense_group = models.PositiveSmallIntegerField(choices=ExpenseGroups.choices, null=True, blank=True)
+    income_group = models.PositiveSmallIntegerField(choices=IncomeGroups.choices, null=True, blank=True)
 
     class Meta:
         verbose_name_plural = 'transfer categories'
+        unique_together = (
+            'name',
+            'budget',
+        )
 
     def __str__(self) -> str:
         """
@@ -29,4 +47,4 @@ class TransferCategory(models.Model):
         Returns:
             str: Custom string representation of instance.
         """
-        return f'{self.name} ({self.group.name})'
+        return f'{self.name} ({self.budget.name})'
