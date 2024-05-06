@@ -9,10 +9,7 @@ from entities.tests.factories import EntityFactory
 from pytest_django.lazy_django import skip_if_no_django
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
-from transfers.tests.factories import (
-    TransferCategoryFactory,
-    TransferCategoryGroupFactory,
-)
+from transfers.tests.factories import TransferCategoryFactory
 
 register(UserFactory)
 register(BudgetFactory)
@@ -20,7 +17,6 @@ register(BudgetingPeriodFactory)
 register(DepositFactory)
 register(EntityFactory)
 register(TransferCategoryFactory)
-register(TransferCategoryGroupFactory)
 
 
 @pytest.fixture

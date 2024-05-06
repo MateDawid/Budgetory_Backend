@@ -7,10 +7,8 @@ from django.urls import reverse
 from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
-from transfers.models.transfer_category_model import TransferCategory
-from transfers.serializers.transfer_category_serializer import (
-    TransferCategorySerializer,
-)
+from transfers.models import TransferCategory
+from transfers.serializers import TransferCategorySerializer
 
 
 def category_url(budget_id):
