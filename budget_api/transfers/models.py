@@ -35,10 +35,6 @@ class TransferCategory(models.Model):
 
     class Meta:
         verbose_name_plural = 'transfer categories'
-        unique_together = (
-            'name',
-            'budget',
-        )
 
     def __str__(self) -> str:
         """
