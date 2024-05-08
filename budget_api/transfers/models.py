@@ -8,16 +8,16 @@ class TransferCategory(models.Model):
     class ExpenseGroups(models.IntegerChoices):
         """Choices for deposit_type value."""
 
-        MOST_IMPORTANT = 0, 'Most important'
-        DEBTS = 1, 'Debts'
-        SAVINGS = 2, 'Savings'
-        OTHERS = 3, 'Others'
+        MOST_IMPORTANT = 1, 'Most important'
+        DEBTS = 2, 'Debts'
+        SAVINGS = 3, 'Savings'
+        OTHERS = 4, 'Others'
 
     class IncomeGroups(models.IntegerChoices):
         """Choices for deposit_type value."""
 
-        REGULAR = 0, 'Regular'
-        IRREGULAR = 1, 'Irregular'
+        REGULAR = 1, 'Regular'
+        IRREGULAR = 2, 'Irregular'
 
     budget = models.ForeignKey('budgets.Budget', on_delete=models.CASCADE, related_name='transfer_categories')
     name = models.CharField(max_length=128)
