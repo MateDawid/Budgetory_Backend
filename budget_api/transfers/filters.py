@@ -9,4 +9,4 @@ class TransferCategoriesFilterSet(filters.FilterSet):
 
     class Meta:
         model = TransferCategory
-        fields = ['group', 'owner', 'is_active']
+        fields = ['expense_group', 'income_group', 'owner', 'is_active']
