@@ -97,3 +97,19 @@ class TransferCategorySerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Only one type of group can be selected for TransferCategory.')
         elif not (expense_group or income_group):
             raise serializers.ValidationError('Expense group or income group has to be selected for TransferCategory.')
+
+    def to_representation(self, instance: TransferCategory) -> OrderedDict:
+        """
+        Returns human-readable values of TransferCategory expense_group and income_group.
+
+        Attributes:
+            instance [TransferCategory]: TransferCategory model instance
+
+        Returns:
+            OrderedDict: Dictionary containing readable TransferCategory expense_group and income_group.
+        """
+        representation = super().to_representation(instance)
+        representation['income_group'] = instance.get_income_group_display()
+        representation['expense_group'] = instance.get_expense_group_display()
+
+        return representation
