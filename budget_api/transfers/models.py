@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from transfers.managers import TransferCategoryManager
 
 
 class TransferCategory(models.Model):
@@ -32,6 +33,8 @@ class TransferCategory(models.Model):
     is_active = models.BooleanField(default=True)
     expense_group = models.PositiveSmallIntegerField(choices=ExpenseGroups.choices, null=True, blank=True)
     income_group = models.PositiveSmallIntegerField(choices=IncomeGroups.choices, null=True, blank=True)
+
+    objects = TransferCategoryManager()
 
     class Meta:
         verbose_name_plural = 'transfer categories'
