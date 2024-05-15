@@ -2,7 +2,64 @@ import pytest
 from budgets.models import Budget
 from django.db import DataError
 from factory.base import FactoryMetaClass
+from transfers.managers import CategoryType
 from transfers.models import TransferCategory
+
+
+@pytest.mark.django_db
+class TestTransferCategoryManager:
+    """Tests for TransferCategoryManager."""
+
+    def test_get_all_transfer_categories(self, transfer_category_factory: FactoryMetaClass):
+        """
+        GIVEN: One TransferCategory for each CategoryType in database.
+        WHEN: Querying for QuerySet with all TransferCategory objects.
+        THEN: QuerySet with all TransferCategory model instances returned.
+        """
+        transfer_category_factory(income_group=None, expense_group=None)
+        transfer_category_factory(income_group=TransferCategory.IncomeGroups.REGULAR, expense_group=None)
+        transfer_category_factory(income_group=None, expense_group=TransferCategory.ExpenseGroups.MOST_IMPORTANT)
+        queryset = TransferCategory.objects.all()
+        assert queryset.count() == 3
+
+    def test_get_income_categories(self, transfer_category_factory: FactoryMetaClass):
+        """
+        GIVEN: One TransferCategory for each CategoryType in database.
+        WHEN: Querying for QuerySet with INCOME TransferCategory objects.
+        THEN: QuerySet with only INCOME TransferCategory model instances returned.
+        """
+        transfer_category_factory(income_group=None, expense_group=None)
+        transfer_category_factory(income_group=TransferCategory.IncomeGroups.REGULAR, expense_group=None)
+        transfer_category_factory(income_group=None, expense_group=TransferCategory.ExpenseGroups.MOST_IMPORTANT)
+        queryset = TransferCategory.objects.income_categories()
+        assert queryset.count() == 1
+        assert queryset.first().category_type == CategoryType.INCOME.value
+
+    def test_get_expense_categories(self, transfer_category_factory: FactoryMetaClass):
+        """
+        GIVEN: One TransferCategory for each CategoryType in database.
+        WHEN: Querying for QuerySet with EXPENSE TransferCategory objects.
+        THEN: QuerySet with only EXPENSE TransferCategory model instances returned.
+        """
+        transfer_category_factory(income_group=None, expense_group=None)
+        transfer_category_factory(income_group=TransferCategory.IncomeGroups.REGULAR, expense_group=None)
+        transfer_category_factory(income_group=None, expense_group=TransferCategory.ExpenseGroups.MOST_IMPORTANT)
+        queryset = TransferCategory.objects.expense_categories()
+        assert queryset.count() == 1
+        assert queryset.first().category_type == CategoryType.EXPENSE.value
+
+    def test_get_operational_categories(self, transfer_category_factory: FactoryMetaClass):
+        """
+        GIVEN: One TransferCategory for each CategoryType in database.
+        WHEN: Querying for QuerySet with OPERATIONAL TransferCategory objects.
+        THEN: QuerySet with only OPERATIONAL TransferCategory model instances returned.
+        """
+        transfer_category_factory(income_group=None, expense_group=None)
+        transfer_category_factory(income_group=TransferCategory.IncomeGroups.REGULAR, expense_group=None)
+        transfer_category_factory(income_group=None, expense_group=TransferCategory.ExpenseGroups.MOST_IMPORTANT)
+        queryset = TransferCategory.objects.operational_categories()
+        assert queryset.count() == 1
+        assert queryset.first().category_type == CategoryType.OPERATIONAL.value
 
 
 @pytest.mark.django_db
