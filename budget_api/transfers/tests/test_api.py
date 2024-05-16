@@ -1,4 +1,5 @@
-from typing import Callable
+from dataclasses import dataclass
+from typing import Callable, Protocol
 
 import pytest
 from django.urls import reverse
@@ -6,64 +7,92 @@ from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
 from transfers.models import TransferCategory
+from transfers.serializers import (
+    ExpenseCategorySerializer,
+    IncomeCategorySerializer,
+    TransferCategorySerializer,
+)
 
 
-def expense_category_url(budget_id):
+def expense_category_url(budget_id: int):
     """Create and return an EXPENSE TransferCategory list URL."""
     return reverse('budgets:expense_category-list', args=[budget_id])
 
 
-def income_category_url(budget_id):
+def income_category_url(budget_id: int):
     """Create and return an INCOME TransferCategory list URL."""
     return reverse('budgets:income_category-list', args=[budget_id])
 
 
-def expense_category_detail_url(budget_id, category_id):
+def expense_category_detail_url(budget_id: int, category_id: int):
     """Create and return an EXPENSE TransferCategory detail URL."""
     return reverse('budgets:expense_category-detail', args=[budget_id, category_id])
 
 
-def income_category_detail_url(budget_id, category_id):
+def income_category_detail_url(budget_id: int, category_id: int):
     """Create and return an INCOME TransferCategory detail URL."""
     return reverse('budgets:income_category-detail', args=[budget_id, category_id])
 
 
-URLS_MAPPING: dict[str, Callable] = {
-    'income_category_list': income_category_url,
-    'income_category_detail': income_category_detail_url,
-    'expense_category_list': expense_category_url,
-    'expense_detail': expense_category_detail_url,
-}
+class TransferCategoryTestParams(Protocol):
+    serializer: TransferCategorySerializer
+    list_url: Callable
+    detail_url: Callable
+
+
+@dataclass
+class ExpenseCategoryTestParams:
+    serializer: TransferCategorySerializer = ExpenseCategorySerializer
+    list_url: Callable = expense_category_url
+    detail_url: Callable = expense_category_detail_url
+
+
+@dataclass
+class IncomeCategoryTestParams:
+    serializer: TransferCategorySerializer = IncomeCategorySerializer
+    list_url: Callable[[int], str] = income_category_url
+    detail_url: Callable[[int, int], str] = income_category_detail_url
 
 
 @pytest.mark.django_db
 class TestTransferCategoryApiAccess:
     """Tests for access to TransferCategoryViewSet."""
 
-    @pytest.mark.parametrize('url_name', list(URLS_MAPPING.keys()))
-    def test_auth_required(self, api_client: APIClient, transfer_category: TransferCategory, url_name: str):
+    @pytest.mark.parametrize('url', [IncomeCategoryTestParams.list_url, ExpenseCategoryTestParams.list_url])
+    def test_auth_required_on_list_view(
+        self, api_client: APIClient, transfer_category: TransferCategory, url: Callable[[int], str]
+    ):
         """
         GIVEN: TransferCategory model instance in database.
-        WHEN: TransferCategoryViewSet called without authentication.
+        WHEN: TransferCategoryViewSet list method called without authentication.
         THEN: Unauthorized HTTP 401 returned.
         """
-        if url_name.endswith('list'):
-            res = api_client.get(URLS_MAPPING[url_name](transfer_category.budget.id))
-        else:
-            res = api_client.get(URLS_MAPPING[url_name](transfer_category.budget.id, transfer_category.id))
-        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+        response = api_client.get(url(transfer_category.budget.id))
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    @pytest.mark.parametrize('url_name', list(URLS_MAPPING.keys()))
-    def test_user_not_budget_member(
+    @pytest.mark.parametrize('url', [IncomeCategoryTestParams.detail_url, ExpenseCategoryTestParams.detail_url])
+    def test_auth_required_on_detail_view(
+        self, api_client: APIClient, transfer_category: TransferCategory, url: Callable[[int, int], str]
+    ):
+        """
+        GIVEN: TransferCategory model instance in database.
+        WHEN: TransferCategoryViewSet detail method called without authentication.
+        THEN: Unauthorized HTTP 401 returned.
+        """
+        response = api_client.get(url(transfer_category.budget.id, transfer_category.id))
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    @pytest.mark.parametrize('url', [IncomeCategoryTestParams.list_url, ExpenseCategoryTestParams.list_url])
+    def test_user_not_budget_member_on_list_view(
         self,
         api_client: APIClient,
         user_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
-        url_name: str,
+        url: Callable[[int], str],
     ):
         """
         GIVEN: TransferCategory model instance in database.
-        WHEN: TransferCategoryViewSet called by User not belonging to given Budget.
+        WHEN: TransferCategoryViewSet list method called by User not belonging to given Budget.
         THEN: Forbidden HTTP 403 returned.
         """
         budget_owner = user_factory()
@@ -71,20 +100,40 @@ class TestTransferCategoryApiAccess:
         transfer_category = transfer_category_factory(budget__owner=budget_owner)
         api_client.force_authenticate(other_user)
 
-        if url_name.endswith('list'):
-            response = api_client.get(URLS_MAPPING[url_name](transfer_category.budget.id))
-        else:
-            response = api_client.get(URLS_MAPPING[url_name](transfer_category.budget.id, transfer_category.id))
+        response = api_client.get(url(transfer_category.budget.id))
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data['detail'] == 'User does not have access to Budget.'
+
+    @pytest.mark.parametrize('url', [IncomeCategoryTestParams.detail_url, ExpenseCategoryTestParams.detail_url])
+    def test_user_not_budget_member_on_detail_view(
+        self,
+        api_client: APIClient,
+        user_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        url: Callable[[int, int], str],
+    ):
+        """
+        GIVEN: TransferCategory model instance in database.
+        WHEN: TransferCategoryViewSet detail method called by User not belonging to given Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        budget_owner = user_factory()
+        other_user = user_factory()
+        transfer_category = transfer_category_factory(budget__owner=budget_owner)
+        api_client.force_authenticate(other_user)
+
+        response = api_client.get(url(transfer_category.budget.id, transfer_category.id))
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
         assert response.data['detail'] == 'User does not have access to Budget.'
 
 
-#
 # @pytest.mark.django_db
 # class TestTransferCategoryApiList:
 #     """Tests for list view on TransferCategoryViewSet."""
 #
+#     @pytest.mark.parametrize('url_name, ')
 #     def test_retrieve_category_list_by_owner(
 #         self,
 #         api_client: APIClient,
