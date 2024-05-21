@@ -1,11 +1,12 @@
-from dataclasses import dataclass
-from typing import Callable, Protocol
+from typing import Callable
 
 import pytest
+from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
 from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
+from transfers.managers import CategoryType
 from transfers.models import TransferCategory
 from transfers.serializers import (
     ExpenseCategorySerializer,
@@ -34,31 +35,11 @@ def income_category_detail_url(budget_id: int, category_id: int):
     return reverse('budgets:income_category-detail', args=[budget_id, category_id])
 
 
-class TransferCategoryTestParams(Protocol):
-    serializer: TransferCategorySerializer
-    list_url: Callable
-    detail_url: Callable
-
-
-@dataclass
-class ExpenseCategoryTestParams:
-    serializer: TransferCategorySerializer = ExpenseCategorySerializer
-    list_url: Callable = expense_category_url
-    detail_url: Callable = expense_category_detail_url
-
-
-@dataclass
-class IncomeCategoryTestParams:
-    serializer: TransferCategorySerializer = IncomeCategorySerializer
-    list_url: Callable[[int], str] = income_category_url
-    detail_url: Callable[[int, int], str] = income_category_detail_url
-
-
 @pytest.mark.django_db
 class TestTransferCategoryApiAccess:
     """Tests for access to TransferCategoryViewSet."""
 
-    @pytest.mark.parametrize('url', [IncomeCategoryTestParams.list_url, ExpenseCategoryTestParams.list_url])
+    @pytest.mark.parametrize('url', [expense_category_url, income_category_url])
     def test_auth_required_on_list_view(
         self, api_client: APIClient, transfer_category: TransferCategory, url: Callable[[int], str]
     ):
@@ -70,7 +51,7 @@ class TestTransferCategoryApiAccess:
         response = api_client.get(url(transfer_category.budget.id))
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    @pytest.mark.parametrize('url', [IncomeCategoryTestParams.detail_url, ExpenseCategoryTestParams.detail_url])
+    @pytest.mark.parametrize('url', [expense_category_detail_url, income_category_detail_url])
     def test_auth_required_on_detail_view(
         self, api_client: APIClient, transfer_category: TransferCategory, url: Callable[[int, int], str]
     ):
@@ -82,7 +63,7 @@ class TestTransferCategoryApiAccess:
         response = api_client.get(url(transfer_category.budget.id, transfer_category.id))
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    @pytest.mark.parametrize('url', [IncomeCategoryTestParams.list_url, ExpenseCategoryTestParams.list_url])
+    @pytest.mark.parametrize('url', [expense_category_url, income_category_url])
     def test_user_not_budget_member_on_list_view(
         self,
         api_client: APIClient,
@@ -105,7 +86,7 @@ class TestTransferCategoryApiAccess:
         assert response.status_code == status.HTTP_403_FORBIDDEN
         assert response.data['detail'] == 'User does not have access to Budget.'
 
-    @pytest.mark.parametrize('url', [IncomeCategoryTestParams.detail_url, ExpenseCategoryTestParams.detail_url])
+    @pytest.mark.parametrize('url', [expense_category_detail_url, income_category_detail_url])
     def test_user_not_budget_member_on_detail_view(
         self,
         api_client: APIClient,
@@ -129,86 +110,115 @@ class TestTransferCategoryApiAccess:
         assert response.data['detail'] == 'User does not have access to Budget.'
 
 
-# @pytest.mark.django_db
-# class TestTransferCategoryApiList:
-#     """Tests for list view on TransferCategoryViewSet."""
-#
-#     @pytest.mark.parametrize('url_name, ')
-#     def test_retrieve_category_list_by_owner(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         transfer_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Two TransferCategory model instances for single Budget created in database.
-#         WHEN: TransferCategoryViewSet called by Budget owner.
-#         THEN: Response with serialized Budget TransferCategory list returned.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#         for _ in range(2):
-#             transfer_category_factory(group__budget=budget)
-#
-#         response = api_client.get(category_url(budget.id))
-#
-#         categories = TransferCategory.objects.filter(group__budget=budget)
-#         serializer = TransferCategorySerializer(categories, many=True)
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data['results'] == serializer.data
-#
-#     def test_retrieve_category_list_by_member(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         transfer_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Two TransferCategory model instances for single Budget created in database.
-#         WHEN: TransferCategoryViewSet called by Budget member.
-#         THEN: Response with serialized Budget TransferCategory list returned.
-#         """
-#         budget = budget_factory(members=[base_user])
-#         api_client.force_authenticate(base_user)
-#         for _ in range(2):
-#             transfer_category_factory(group__budget=budget)
-#
-#         response = api_client.get(category_url(budget.id))
-#
-#         categories = TransferCategory.objects.filter(group__budget=budget)
-#         serializer = TransferCategorySerializer(categories, many=True)
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data['results'] == serializer.data
-#
-#     def test_category_list_limited_to_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         transfer_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Two TransferCategory model instances for different Budgets created in database.
-#         WHEN: TransferCategoryViewSet called by one of Budgets owner.
-#         THEN: Response with serialized TransferCategory list (only from given Budget) returned.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         category = transfer_category_factory(group__budget=budget)
-#         transfer_category_factory()
-#         api_client.force_authenticate(base_user)
-#
-#         response = api_client.get(category_url(budget.id))
-#
-#         categories = TransferCategory.objects.filter(group__budget=budget)
-#         serializer = TransferCategorySerializer(categories, many=True)
-#         assert response.status_code == status.HTTP_200_OK
-#         assert len(response.data['results']) == len(serializer.data) == categories.count() == 1
-#         assert response.data['results'] == serializer.data
-#         assert response.data['results'][0]['id'] == category.id
-#
-#
+@pytest.mark.django_db
+class TestTransferCategoryApiList:
+    """Tests for list view on TransferCategoryViewSet."""
+
+    @pytest.mark.parametrize(
+        'category_type, url, serializer',
+        [
+            pytest.param(CategoryType.INCOME, income_category_url, IncomeCategorySerializer),
+            pytest.param(CategoryType.EXPENSE, expense_category_url, ExpenseCategorySerializer),
+        ],
+    )
+    def test_retrieve_category_list_by_owner(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        category_type: CategoryType,
+        url: Callable[[int], str],
+        serializer: TransferCategorySerializer,
+    ):
+        """
+        GIVEN: Two TransferCategory model instances for single Budget created in database.
+        WHEN: TransferCategoryViewSet called by Budget owner.
+        THEN: Response with serialized Budget TransferCategory list returned.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        for _ in range(2):
+            transfer_category_factory(budget=budget, category_type=category_type)
+
+        response = api_client.get(url(budget.id))
+
+        categories = TransferCategory.objects.filter(budget=budget, category_type=category_type.value)
+        serializer = serializer(categories, many=True)  # noqa
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['results'] == serializer.data
+
+    @pytest.mark.parametrize(
+        'category_type, url, serializer',
+        [
+            pytest.param(CategoryType.INCOME, income_category_url, IncomeCategorySerializer),
+            pytest.param(CategoryType.EXPENSE, expense_category_url, ExpenseCategorySerializer),
+        ],
+    )
+    def test_retrieve_category_list_by_member(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        category_type: CategoryType,
+        url: Callable[[int], str],
+        serializer: TransferCategorySerializer,
+    ):
+        """
+        GIVEN: Two TransferCategory model instances for single Budget created in database.
+        WHEN: TransferCategoryViewSet called by Budget member.
+        THEN: Response with serialized Budget TransferCategory list returned.
+        """
+        budget = budget_factory(members=[base_user])
+        api_client.force_authenticate(base_user)
+        for _ in range(2):
+            transfer_category_factory(budget=budget, category_type=category_type)
+
+        response = api_client.get(url(budget.id))
+
+        categories = TransferCategory.objects.filter(budget=budget, category_type=category_type.value)
+        serializer = serializer(categories, many=True)  # noqa
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['results'] == serializer.data
+
+    @pytest.mark.parametrize(
+        'category_type, url, serializer',
+        [
+            pytest.param(CategoryType.INCOME, income_category_url, IncomeCategorySerializer),
+            pytest.param(CategoryType.EXPENSE, expense_category_url, ExpenseCategorySerializer),
+        ],
+    )
+    def test_category_list_limited_to_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        category_type: CategoryType,
+        url: Callable[[int], str],
+        serializer: TransferCategorySerializer,
+    ):
+        """
+        GIVEN: Two TransferCategory model instances for different Budgets created in database.
+        WHEN: TransferCategoryViewSet called by one of Budgets owner.
+        THEN: Response with serialized TransferCategory list (only from given Budget) returned.
+        """
+        budget = budget_factory(owner=base_user)
+        category = transfer_category_factory(budget=budget, category_type=category_type)
+        transfer_category_factory(category_type=category_type)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(url(budget.id))
+
+        categories = TransferCategory.objects.filter(budget=budget, category_type=category_type.value)
+        serializer = serializer(categories, many=True)  # noqa
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data['results']) == len(serializer.data) == categories.count() == 1
+        assert response.data['results'] == serializer.data
+        assert response.data['results'][0]['id'] == category.id
+
+
 # @pytest.mark.django_db
 # class TestTransferCategoryApiCreate:
 #     """Tests for create TransferCategory on TransferCategoryViewSet."""
