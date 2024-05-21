@@ -8,7 +8,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 from transfers.filters import ExpenseCategoryFilterSet, IncomeCategoryFilterSet
 from transfers.models import TransferCategory
-from transfers.serializers import ExpenseCategorySerializer, TransferCategorySerializer
+from transfers.serializers import (
+    ExpenseCategorySerializer,
+    IncomeCategorySerializer,
+    TransferCategorySerializer,
+)
 
 
 class TransferCategoryViewSet(BudgetMixin, ModelViewSet):
@@ -46,7 +50,7 @@ class ExpenseCategoryViewSet(TransferCategoryViewSet):
 
 
 class IncomeCategoryViewSet(TransferCategoryViewSet):
-    serializer_class = ExpenseCategorySerializer
+    serializer_class = IncomeCategorySerializer
     queryset = TransferCategory.objects.income_categories()
     filterset_class = IncomeCategoryFilterSet
     ordering = ('id', 'income_group', 'name')
