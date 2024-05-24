@@ -16,7 +16,7 @@ class EntitySerializer(serializers.ModelSerializer):
         Checks if Entity with given name exists in Budget already.
 
         Args:
-            name: Name of TransferCategoryGroup.
+            name: Name of Entity.
 
         Returns:
             str: Validated name of Entity.
