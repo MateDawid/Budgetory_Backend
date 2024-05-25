@@ -7,7 +7,7 @@ default:
       - localhost
   DATABASE:
     ENGINE: django.db.backends.postgresql
-    NAME: budget_app
+    NAME: budget_manager
     USER: ~
     PASSWORD: ~
     HOST: db
