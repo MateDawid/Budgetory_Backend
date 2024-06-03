@@ -339,6 +339,37 @@ class TestExpenseCategoryApiList:
         assert response.data['results'] == serializer.data
         assert response.data['results'][0]['id'] == category.id
 
+    @pytest.mark.parametrize('is_active', (True, False))
+    def test_get_categories_list_filtered_by_is_active(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+        is_active: bool,
+    ):
+        """
+        GIVEN: Two ExpenseCategory objects for single Budget.
+        WHEN: The ExpenseCategoryViewSet list view is called with is_active filter.
+        THEN: Response must contain all ExpenseCategory existing in database assigned to Budget matching given
+        is_active value.
+        """
+        budget = budget_factory(owner=base_user)
+        category = expense_category_factory(budget=budget, is_active=is_active)
+        expense_category_factory(budget=budget, is_active=not is_active)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(expense_category_url(budget.id), data={'is_active': is_active})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert ExpenseCategory.objects.all().count() == 2
+        categories = ExpenseCategory.objects.filter(budget=category.budget, is_active=is_active)
+        serializer = ExpenseCategorySerializer(categories, many=True)
+        assert response.data['results'] and serializer.data
+        assert len(response.data['results']) == len(serializer.data) == categories.count() == 1
+        assert response.data['results'] == serializer.data
+        assert response.data['results'][0]['id'] == category.id
+
 
 # @pytest.mark.django_db
 # class TestExpenseCategoryApiCreate:
