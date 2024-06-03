@@ -371,51 +371,50 @@ class TestExpenseCategoryApiList:
         assert response.data['results'][0]['id'] == category.id
 
 
-# @pytest.mark.django_db
-# class TestExpenseCategoryApiCreate:
-#     """Tests for create ExpenseCategory on ExpenseCategoryViewSet."""
-#
-#     PAYLOAD = {'name': 'Expenses for food', 'description': 'All money spent for food.', 'is_active': True}
-#
-#     @pytest.mark.parametrize('user_type', ['owner', 'member'])
-#     def test_create_single_category(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         user_factory: FactoryMetaClass,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_group_factory: FactoryMetaClass,
-#         user_type: str,
-#     ):
-#         """
-#         GIVEN: Budget and ExpenseCategoryGroup instances created in database. Valid payload prepared
-#         for ExpenseCategory.
-#         WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with valid payload.
-#         THEN: ExpenseCategory object created in database with given payload
-#         """
-#         other_user = user_factory()
-#         if user_type == 'owner':
-#             budget = budget_factory(owner=base_user, members=[other_user])
-#         else:
-#             budget = budget_factory(members=[base_user, other_user])
-#         group = expense_category_group_factory(budget=budget)
-#         payload = self.PAYLOAD.copy()
-#         payload['group'] = group.id
-#         api_client.force_authenticate(base_user)
-#
-#         response = api_client.post(category_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_201_CREATED
-#         assert ExpenseCategory.objects.filter(group__budget=budget).count() == 1
-#         category = ExpenseCategory.objects.get(id=response.data['id'])
-#         assert category.group == group
-#         for key in payload:
-#             if key == 'group':
-#                 continue
-#             assert getattr(category, key) == self.PAYLOAD[key]
-#         serializer = ExpenseCategorySerializer(category)
-#         assert response.data == serializer.data
-#
+@pytest.mark.django_db
+class TestExpenseCategoryApiCreate:
+    """Tests for create ExpenseCategory on ExpenseCategoryViewSet."""
+
+    PAYLOAD = {
+        'name': 'Expenses for food',
+        'group': ExpenseCategory.ExpenseGroups.MOST_IMPORTANT,
+        'description': 'All money spent for food.',
+        'is_active': True,
+    }
+
+    @pytest.mark.parametrize('user_type', ['owner', 'member'])
+    def test_create_single_category(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        user_type: str,
+    ):
+        """
+        GIVEN: Budget and ExpenseCategoryGroup instances created in database. Valid payload prepared
+        for ExpenseCategory.
+        WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with valid payload.
+        THEN: ExpenseCategory object created in database with given payload
+        """
+        other_user = user_factory()
+        if user_type == 'owner':
+            budget = budget_factory(owner=base_user, members=[other_user])
+        else:
+            budget = budget_factory(members=[base_user, other_user])
+        api_client.force_authenticate(base_user)
+
+        response = api_client.post(expense_category_url(budget.id), self.PAYLOAD)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert ExpenseCategory.objects.filter(budget=budget).count() == 1
+        category = ExpenseCategory.objects.get(id=response.data['id'])
+        for key in self.PAYLOAD:
+            assert getattr(category, key) == self.PAYLOAD[key]
+        serializer = ExpenseCategorySerializer(category)
+        assert response.data == serializer.data
+
+
 #     def test_create_category_with_owner(
 #         self,
 #         api_client: APIClient,
