@@ -392,7 +392,7 @@ class TestExpenseCategoryApiCreate:
         user_type: str,
     ):
         """
-        GIVEN: Budget and ExpenseCategoryGroup instances created in database. Valid payload prepared
+        GIVEN: Budget instances created in database. Valid payload prepared
         for ExpenseCategory.
         WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with valid payload.
         THEN: ExpenseCategory object created in database with given payload
@@ -414,53 +414,49 @@ class TestExpenseCategoryApiCreate:
         serializer = ExpenseCategorySerializer(category)
         assert response.data == serializer.data
 
+    def test_create_category_with_owner(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget instances created in database. Valid payload with owner prepared
+        for ExpenseCategory.
+        WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with valid payload.
+        THEN: ExpenseCategory object created in database with given payload
+        """
+        budget = budget_factory(owner=base_user)
+        payload = self.PAYLOAD.copy()
+        payload['owner'] = base_user.id
+        api_client.force_authenticate(base_user)
 
-#     def test_create_category_with_owner(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         user_factory: FactoryMetaClass,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_group_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Budget and ExpenseCategoryGroup instances created in database. Valid payload with owner prepared
-#         for ExpenseCategory.
-#         WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with valid payload.
-#         THEN: ExpenseCategory object created in database with given payload
-#         """
-#         budget = budget_factory(owner=base_user)
-#         group = expense_category_group_factory(budget=budget)
-#         payload = self.PAYLOAD.copy()
-#         payload['group'] = group.id
-#         payload['owner'] = base_user.id
-#         api_client.force_authenticate(base_user)
-#
-#         response = api_client.post(category_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_201_CREATED
-#         category = ExpenseCategory.objects.get(id=response.data['id'])
-#         assert category.owner == base_user
-#         assert base_user.personal_categories.filter(group__budget=budget).count() == 1
-#         serializer = ExpenseCategorySerializer(category)
-#         assert response.data == serializer.data
-#
+        response = api_client.post(expense_category_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        category = ExpenseCategory.objects.get(id=response.data['id'])
+        assert category.owner == base_user
+        assert base_user.personal_expense_categories.filter(budget=budget).count() == 1
+        serializer = ExpenseCategorySerializer(category)
+        assert response.data == serializer.data
+
+
 #     def test_create_two_categories_for_single_budget(
 #         self,
 #         api_client: APIClient,
 #         base_user: AbstractUser,
 #         budget_factory: FactoryMetaClass,
-#         expense_category_group_factory: FactoryMetaClass,
+#
 #     ):
 #         """
-#         GIVEN: Budget and ExpenseCategoryGroup instances created in database. Valid payloads prepared
+#         GIVEN: Budget instances created in database. Valid payloads prepared
 #         for two TransferCategories.
 #         WHEN: ExpenseCategoryViewSet called twice with POST by User belonging to Budget with valid payloads.
 #         THEN: Two ExpenseCategory objects created in database with given payloads.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         group_1 = expense_category_group_factory(budget=budget)
-#         group_2 = expense_category_group_factory(budget=budget)
+#         group_1 = (budget=budget)
+#         group_2 = (budget=budget)
 #         api_client.force_authenticate(base_user)
 #         payload_1 = self.PAYLOAD.copy()
 #         payload_1['name'] = 'ExpenseCategory name 1'
@@ -485,10 +481,10 @@ class TestExpenseCategoryApiCreate:
 #
 #     def test_create_same_category_for_two_budgets(
 #         self, api_client: APIClient, budget_factory: FactoryMetaClass,
-#         expense_category_group_factory: FactoryMetaClass
+#         : FactoryMetaClass
 #     ):
 #         """
-#         GIVEN: Two ExpenseCategoryGroup for two Budget instances created in database. Valid payload prepared for two
+#         GIVEN: Two Budget instances created in database. Valid payload prepared for two
 #         TransferCategories.
 #         WHEN: ExpenseCategoryViewSet called twice with POST by different Users belonging to two different
 #         Budgets with valid payload.
@@ -496,9 +492,9 @@ class TestExpenseCategoryApiCreate:
 #         """
 #         payload = self.PAYLOAD.copy()
 #         budget_1 = budget_factory()
-#         group_1 = expense_category_group_factory(budget=budget_1)
+#         group_1 = (budget=budget_1)
 #         budget_2 = budget_factory()
-#         group_2 = expense_category_group_factory(budget=budget_2)
+#         group_2 = (budget=budget_2)
 #
 #         api_client.force_authenticate(budget_1.owner)
 #         payload['group'] = group_1.id
@@ -517,17 +513,17 @@ class TestExpenseCategoryApiCreate:
 #         api_client: APIClient,
 #         base_user: AbstractUser,
 #         budget_factory: FactoryMetaClass,
-#         expense_category_group_factory: FactoryMetaClass,
+#
 #         field_name: str,
 #     ):
 #         """
-#         GIVEN: ExpenseCategoryGroup for Budget instance created in database. Payload for ExpenseCategory with
+#         GIVEN: Budget instance created in database. Payload for ExpenseCategory with
 #         field value too long.
 #         WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with invalid payload.
 #         THEN: Bad request HTTP 400 returned. ExpenseCategory not created in database.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         group = expense_category_group_factory(budget=budget)
+#         group = (budget=budget)
 #         api_client.force_authenticate(base_user)
 #         max_length = ExpenseCategory._meta.get_field(field_name).max_length
 #         payload = self.PAYLOAD.copy()
@@ -542,14 +538,14 @@ class TestExpenseCategoryApiCreate:
 #         assert not ExpenseCategory.objects.filter(group__budget=budget).exists()
 #
 #     def test_error_create_category_for_not_accessible_budget(
-#         self, api_client: APIClient, base_user: AbstractUser, expense_category_group_factory: FactoryMetaClass
+#         self, api_client: APIClient, base_user: AbstractUser, : FactoryMetaClass
 #     ):
 #         """
-#         GIVEN: ExpenseCategoryGroup for Budget instance created in database. Valid payload for ExpenseCategory.
+#         GIVEN: Budget instance created in database. Valid payload for ExpenseCategory.
 #         WHEN: ExpenseCategoryViewSet called with POST by User not belonging to Budget with valid payload.
 #         THEN: Forbidden HTTP 403 returned. Object not created.
 #         """
-#         group = expense_category_group_factory()
+#         group = ()
 #         payload = self.PAYLOAD.copy()
 #         payload['group'] = group.id
 #         api_client.force_authenticate(base_user)
@@ -560,49 +556,22 @@ class TestExpenseCategoryApiCreate:
 #         assert response.data['detail'] == 'User does not have access to Budget.'
 #         assert not ExpenseCategory.objects.filter(group__budget=group.budget).exists()
 #
-#     def test_error_group_does_not_belong_to_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_group_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: ExpenseCategoryGroup and two Budget instances created in database. ExpenseCategoryGroup from outer
-#         Budget in payload.
-#         WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with invalid payload.
-#         THEN: Bad request HTTP 400 returned. No ExpenseCategory created in database.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         outer_group = expense_category_group_factory()
-#         payload = self.PAYLOAD.copy()
-#         payload['group'] = outer_group.id
-#         api_client.force_authenticate(base_user)
-#
-#         api_client.post(category_url(budget.id), payload)
-#         response = api_client.post(category_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert 'non_field_errors' in response.data
-#         assert response.data['non_field_errors'][0] == 'ExpenseCategoryGroup does not belong to Budget.'
-#         assert not ExpenseCategory.objects.filter(group__budget=budget).exists()
-#
 #     def test_error_owner_does_not_belong_to_budget(
 #         self,
 #         api_client: APIClient,
 #         base_user: AbstractUser,
 #         user_factory: FactoryMetaClass,
 #         budget_factory: FactoryMetaClass,
-#         expense_category_group_factory: FactoryMetaClass,
+#
 #     ):
 #         """
-#         GIVEN: ExpenseCategoryGroup for Budget instance created in database. User not belonging to Budget as
+#         GIVEN: Budget instance created in database. User not belonging to Budget as
 #         'owner' in payload.
 #         WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with invalid payload.
 #         THEN: Bad request HTTP 400 returned. No ExpenseCategory created in database.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         group = expense_category_group_factory(budget=budget)
+#         group = (budget=budget)
 #         outer_user = user_factory()
 #         payload = self.PAYLOAD.copy()
 #         payload['group'] = group.id
@@ -622,7 +591,7 @@ class TestExpenseCategoryApiCreate:
 #         api_client: APIClient,
 #         base_user: AbstractUser,
 #         budget_factory: FactoryMetaClass,
-#         expense_category_group_factory: FactoryMetaClass,
+#
 #     ):
 #         """
 #         GIVEN: ExpenseCategory instance with owner created in database. Name of existing personal ExpenseCategory
@@ -631,7 +600,7 @@ class TestExpenseCategoryApiCreate:
 #         THEN: Bad request HTTP 400 returned. No ExpenseCategory created in database.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         group = expense_category_group_factory(budget=budget)
+#         group = (budget=budget)
 #         payload = self.PAYLOAD.copy()
 #         payload['group'] = group.id
 #         payload['owner'] = base_user.id
@@ -653,7 +622,7 @@ class TestExpenseCategoryApiCreate:
 #         api_client: APIClient,
 #         base_user: AbstractUser,
 #         budget_factory: FactoryMetaClass,
-#         expense_category_group_factory: FactoryMetaClass,
+#
 #     ):
 #         """
 #         GIVEN: ExpenseCategory instance with owner created in database. Name of existing personal ExpenseCategory
@@ -662,7 +631,7 @@ class TestExpenseCategoryApiCreate:
 #         THEN: Bad request HTTP 400 returned. No ExpenseCategory created in database.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         group = expense_category_group_factory(budget=budget)
+#         group = (budget=budget)
 #         payload = self.PAYLOAD.copy()
 #         payload['group'] = group.id
 #         api_client.force_authenticate(base_user)
@@ -796,7 +765,7 @@ class TestExpenseCategoryApiCreate:
 #         base_user: AbstractUser,
 #         user_factory: FactoryMetaClass,
 #         budget_factory: FactoryMetaClass,
-#         expense_category_group_factory: FactoryMetaClass,
+#
 #         expense_category_factory: FactoryMetaClass,
 #     ):
 #         """
@@ -807,7 +776,7 @@ class TestExpenseCategoryApiCreate:
 #         member = user_factory()
 #         budget = budget_factory(owner=base_user, members=[member])
 #         category = expense_category_factory(group__budget=budget, owner=None, **self.PAYLOAD)
-#         new_group = expense_category_group_factory(budget=budget)
+#         new_group = (budget=budget)
 #         update_payload = {'group': new_group.id}
 #         api_client.force_authenticate(base_user)
 #         url = category_detail_url(budget.id, category.id)
@@ -880,33 +849,6 @@ class TestExpenseCategoryApiCreate:
 #         assert response.status_code == status.HTTP_403_FORBIDDEN
 #         assert response.data['detail'] == 'User does not have access to Budget.'
 #
-#     def test_error_partial_update_group_does_not_belong_to_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_group_factory: FactoryMetaClass,
-#         expense_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: ExpenseCategoryGroup and two Budget instances created in database. ExpenseCategoryGroup from outer
-#         Budget in payload.
-#         WHEN: ExpenseCategoryViewSet called with PATCH by User belonging to Budget with invalid payload.
-#         THEN: Bad request HTTP 400 returned. ExpenseCategory not updated.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         category = expense_category_factory(group__budget=budget)
-#         outer_group = expense_category_group_factory()
-#         payload = {'group': outer_group.id}
-#         api_client.force_authenticate(base_user)
-#         url = category_detail_url(category.group.budget.id, category.id)
-#
-#         response = api_client.patch(url, payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert 'non_field_errors' in response.data
-#         assert response.data['non_field_errors'][0] == 'ExpenseCategoryGroup does not belong to Budget.'
-#
 #     def test_error_partial_update_owner_does_not_belong_to_budget(
 #         self,
 #         api_client: APIClient,
@@ -916,7 +858,7 @@ class TestExpenseCategoryApiCreate:
 #         expense_category_factory: FactoryMetaClass,
 #     ):
 #         """
-#         GIVEN: ExpenseCategoryGroup for Budget instance created in database. User not belonging to Budget as
+#         GIVEN: Budget instance created in database. User not belonging to Budget as
 #         'owner' in payload.
 #         WHEN: ExpenseCategoryViewSet called with PATCH by User belonging to Budget with invalid payload.
 #         THEN: Bad request HTTP 400 returned. ExpenseCategory not updated.
@@ -1007,7 +949,7 @@ class TestExpenseCategoryApiCreate:
 #         api_client: APIClient,
 #         base_user: AbstractUser,
 #         budget_factory: FactoryMetaClass,
-#         expense_category_group_factory: FactoryMetaClass,
+#
 #         expense_category_factory: FactoryMetaClass,
 #     ):
 #         """
@@ -1017,7 +959,7 @@ class TestExpenseCategoryApiCreate:
 #         """
 #         budget = budget_factory(owner=base_user)
 #         category = expense_category_factory(group__budget=budget, owner=None, **self.INITIAL_PAYLOAD)
-#         new_group = expense_category_group_factory(budget=budget)
+#         new_group = (budget=budget)
 #         update_payload = self.UPDATE_PAYLOAD.copy()
 #         update_payload['group'] = new_group.id
 #         update_payload['owner'] = base_user.id
@@ -1073,34 +1015,6 @@ class TestExpenseCategoryApiCreate:
 #         assert response.status_code == status.HTTP_403_FORBIDDEN
 #         assert response.data['detail'] == 'User does not have access to Budget.'
 #
-#     def test_error_full_update_group_does_not_belong_to_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_group_factory: FactoryMetaClass,
-#         expense_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: ExpenseCategoryGroup and two Budget instances created in database. ExpenseCategoryGroup from outer
-#         Budget in payload.
-#         WHEN: ExpenseCategoryViewSet called with PUT by User belonging to Budget with invalid payload.
-#         THEN: Bad request HTTP 400 returned. ExpenseCategory not updated.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         category = expense_category_factory(group__budget=budget)
-#         outer_group = expense_category_group_factory()
-#         payload = self.UPDATE_PAYLOAD.copy()
-#         payload['group'] = outer_group.id
-#         api_client.force_authenticate(base_user)
-#         url = category_detail_url(category.group.budget.id, category.id)
-#
-#         response = api_client.put(url, payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert 'non_field_errors' in response.data
-#         assert response.data['non_field_errors'][0] == 'ExpenseCategoryGroup does not belong to Budget.'
-#
 #     def test_error_full_update_owner_does_not_belong_to_budget(
 #         self,
 #         api_client: APIClient,
@@ -1110,7 +1024,7 @@ class TestExpenseCategoryApiCreate:
 #         expense_category_factory: FactoryMetaClass,
 #     ):
 #         """
-#         GIVEN: ExpenseCategoryGroup for Budget instance created in database. User not belonging to Budget as
+#         GIVEN: Budget instance created in database. User not belonging to Budget as
 #         'owner' in payload.
 #         WHEN: ExpenseCategoryViewSet called with PUT by User belonging to Budget with invalid payload.
 #         THEN: Bad request HTTP 400 returned. ExpenseCategory not updated.
