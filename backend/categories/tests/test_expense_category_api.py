@@ -277,6 +277,39 @@ class TestExpenseCategoryApiList:
         assert len(response.data['results']) == len(serializer.data) == categories.count() == 2
         assert response.data['results'] == serializer.data
 
+    def test_get_categories_list_filtered_by_group(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two ExpenseCategory objects for single Budget.
+        WHEN: The ExpenseCategoryViewSet list view is called with name filter.
+        THEN: Response must contain all ExpenseCategory existing in database assigned to Budget matching given
+        group value.
+        """
+        budget = budget_factory(owner=base_user)
+        category = expense_category_factory(group=ExpenseCategory.ExpenseGroups.MOST_IMPORTANT, budget=budget)
+        expense_category_factory(group=ExpenseCategory.ExpenseGroups.DEBTS, budget=budget)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(
+            expense_category_url(budget.id), data={'group': ExpenseCategory.ExpenseGroups.MOST_IMPORTANT.value}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert ExpenseCategory.objects.all().count() == 2
+        categories = ExpenseCategory.objects.filter(
+            budget=category.budget, group=ExpenseCategory.ExpenseGroups.MOST_IMPORTANT.value
+        )
+        serializer = ExpenseCategorySerializer(categories, many=True)
+        assert response.data['results'] and serializer.data
+        assert len(response.data['results']) == len(serializer.data) == categories.count() == 1
+        assert response.data['results'] == serializer.data
+        assert response.data['results'][0]['id'] == category.id
+
 
 # @pytest.mark.django_db
 # class TestExpenseCategoryApiCreate:
