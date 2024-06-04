@@ -620,75 +620,75 @@ class TestExpenseCategoryApiCreate:
         assert ExpenseCategory.objects.filter(budget=budget, owner__isnull=True).count() == 1
 
 
-# @pytest.mark.django_db
-# class TestExpenseCategoryApiDetail:
-#     """Tests for detail view on ExpenseCategoryViewSet."""
-#
-#     @pytest.mark.parametrize('user_type', ['owner', 'member'])
-#     def test_get_category_details(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_factory: FactoryMetaClass,
-#         user_type: str,
-#     ):
-#         """
-#         GIVEN: ExpenseCategory instance for Budget created in database.
-#         WHEN: ExpenseCategoryViewSet detail view called by User belonging to Budget.
-#         THEN: HTTP 200, ExpenseCategory details returned.
-#         """
-#         if user_type == 'owner':
-#             budget = budget_factory(owner=base_user)
-#         else:
-#             budget = budget_factory(members=[base_user])
-#         category = expense_category_factory(budget=budget)
-#         api_client.force_authenticate(base_user)
-#         url = category_detail_url(budget.id, category.id)
-#
-#         response = api_client.get(url)
-#         serializer = ExpenseCategorySerializer(category)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data == serializer.data
-#
-#     def test_error_get_category_details_unauthenticated(
-#         self, api_client: APIClient, base_user: AbstractUser, expense_category_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: ExpenseCategory instance for Budget created in database.
-#         WHEN: ExpenseCategoryViewSet detail view called without authentication.
-#         THEN: Unauthorized HTTP 401.
-#         """
-#         category = expense_category_factory()
-#         url = category_detail_url(category.group.budget.id, category.id)
-#
-#         response = api_client.get(url)
-#
-#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_error_get_details_from_not_accessible_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: ExpenseCategory instance for Budget created in database.
-#         WHEN: ExpenseCategoryViewSet detail view called by User not belonging to Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         category = expense_category_factory(budget=budget_factory())
-#         api_client.force_authenticate(base_user)
-#
-#         url = category_detail_url(category.group.budget.id, category.id)
-#         response = api_client.get(url)
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data['detail'] == 'User does not have access to Budget.'
-#
-#
+@pytest.mark.django_db
+class TestExpenseCategoryApiDetail:
+    """Tests for detail view on ExpenseCategoryViewSet."""
+
+    @pytest.mark.parametrize('user_type', ['owner', 'member'])
+    def test_get_category_details(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+        user_type: str,
+    ):
+        """
+        GIVEN: ExpenseCategory instance for Budget created in database.
+        WHEN: ExpenseCategoryViewSet detail view called by User belonging to Budget.
+        THEN: HTTP 200, ExpenseCategory details returned.
+        """
+        if user_type == 'owner':
+            budget = budget_factory(owner=base_user)
+        else:
+            budget = budget_factory(members=[base_user])
+        category = expense_category_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        url = expense_category_detail_url(budget.id, category.id)
+
+        response = api_client.get(url)
+        serializer = ExpenseCategorySerializer(category)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == serializer.data
+
+    def test_error_get_category_details_unauthenticated(
+        self, api_client: APIClient, base_user: AbstractUser, expense_category_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: ExpenseCategory instance for Budget created in database.
+        WHEN: ExpenseCategoryViewSet detail view called without authentication.
+        THEN: Unauthorized HTTP 401.
+        """
+        category = expense_category_factory()
+        url = expense_category_detail_url(category.budget.id, category.id)
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_error_get_details_from_not_accessible_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: ExpenseCategory instance for Budget created in database.
+        WHEN: ExpenseCategoryViewSet detail view called by User not belonging to Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        category = expense_category_factory(budget=budget_factory())
+        api_client.force_authenticate(base_user)
+
+        url = expense_category_detail_url(category.budget.id, category.id)
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data['detail'] == 'User does not have access to Budget.'
+
+
 # @pytest.mark.django_db
 # class TestExpenseCategoryApiPartialUpdate:
 #     """Tests for partial update view on ExpenseCategoryViewSet."""
@@ -722,7 +722,7 @@ class TestExpenseCategoryApiCreate:
 #         category = expense_category_factory(budget=budget, owner=None, **self.PAYLOAD)
 #         update_payload = {param: value}
 #         api_client.force_authenticate(base_user)
-#         url = category_detail_url(budget.id, category.id)
+#         url = expense_category_detail_url(budget.id, category.id)
 #
 #         response = api_client.patch(url, update_payload)
 #
@@ -751,7 +751,7 @@ class TestExpenseCategoryApiCreate:
 #         new_group = (budget=budget)
 #         update_payload = {'group': new_group.id}
 #         api_client.force_authenticate(base_user)
-#         url = category_detail_url(budget.id, category.id)
+#         url = expense_category_detail_url(budget.id, category.id)
 #
 #         response = api_client.patch(url, update_payload)
 #
@@ -777,7 +777,7 @@ class TestExpenseCategoryApiCreate:
 #         category = expense_category_factory(budget=budget, owner=None, **self.PAYLOAD)
 #         update_payload = {'owner': member.id}
 #         api_client.force_authenticate(base_user)
-#         url = category_detail_url(budget.id, category.id)
+#         url = expense_category_detail_url(budget.id, category.id)
 #
 #         response = api_client.patch(url, update_payload)
 #
@@ -794,7 +794,7 @@ class TestExpenseCategoryApiCreate:
 #         THEN: Unauthorized HTTP 401.
 #         """
 #         category = expense_category_factory()
-#         url = category_detail_url(category.group.budget.id, category.id)
+#         url = expense_category_detail_url(category.group.budget.id, category.id)
 #
 #         response = api_client.patch(url, {})
 #
@@ -814,7 +814,7 @@ class TestExpenseCategoryApiCreate:
 #         """
 #         category = expense_category_factory(budget=budget_factory())
 #         api_client.force_authenticate(base_user)
-#         url = category_detail_url(category.group.budget.id, category.id)
+#         url = expense_category_detail_url(category.group.budget.id, category.id)
 #
 #         response = api_client.patch(url, {})
 #
@@ -839,7 +839,7 @@ class TestExpenseCategoryApiCreate:
 #         category = expense_category_factory(budget=budget)
 #         payload = {'owner': user_factory().id}
 #         api_client.force_authenticate(base_user)
-#         url = category_detail_url(category.group.budget.id, category.id)
+#         url = expense_category_detail_url(category.group.budget.id, category.id)
 #
 #         response = api_client.patch(url, payload)
 #
@@ -865,7 +865,7 @@ class TestExpenseCategoryApiCreate:
 #         category = expense_category_factory(budget=budget, owner=base_user)
 #         payload = {'name': self.PAYLOAD['name']}
 #         api_client.force_authenticate(base_user)
-#         url = category_detail_url(category.group.budget.id, category.id)
+#         url = expense_category_detail_url(category.group.budget.id, category.id)
 #
 #         response = api_client.patch(url, payload)
 #
@@ -894,7 +894,7 @@ class TestExpenseCategoryApiCreate:
 #         category = expense_category_factory(budget=budget, owner=None)
 #         payload = {'name': self.PAYLOAD['name']}
 #         api_client.force_authenticate(base_user)
-#         url = category_detail_url(category.group.budget.id, category.id)
+#         url = expense_category_detail_url(category.group.budget.id, category.id)
 #
 #         response = api_client.patch(url, payload)
 #
@@ -936,7 +936,7 @@ class TestExpenseCategoryApiCreate:
 #         update_payload['group'] = new_group.id
 #         update_payload['owner'] = base_user.id
 #         api_client.force_authenticate(base_user)
-#         url = category_detail_url(budget.id, category.id)
+#         url = expense_category_detail_url(budget.id, category.id)
 #
 #         response = api_client.put(url, update_payload)
 #
@@ -960,7 +960,7 @@ class TestExpenseCategoryApiCreate:
 #         THEN: Unauthorized HTTP 401.
 #         """
 #         category = expense_category_factory()
-#         url = category_detail_url(category.group.budget.id, category.id)
+#         url = expense_category_detail_url(category.group.budget.id, category.id)
 #
 #         response = api_client.put(url, {})
 #
@@ -980,7 +980,7 @@ class TestExpenseCategoryApiCreate:
 #         """
 #         category = expense_category_factory(budget=budget_factory())
 #         api_client.force_authenticate(base_user)
-#         url = category_detail_url(category.group.budget.id, category.id)
+#         url = expense_category_detail_url(category.group.budget.id, category.id)
 #
 #         response = api_client.put(url, {})
 #
@@ -1007,7 +1007,7 @@ class TestExpenseCategoryApiCreate:
 #         payload['group'] = category.group.id
 #         payload['owner'] = user_factory().id
 #         api_client.force_authenticate(base_user)
-#         url = category_detail_url(category.group.budget.id, category.id)
+#         url = expense_category_detail_url(category.group.budget.id, category.id)
 #
 #         response = api_client.put(url, payload)
 #
@@ -1035,7 +1035,7 @@ class TestExpenseCategoryApiCreate:
 #         payload['group'] = category.group.id
 #         payload['name'] = self.INITIAL_PAYLOAD['name']
 #         api_client.force_authenticate(base_user)
-#         url = category_detail_url(category.group.budget.id, category.id)
+#         url = expense_category_detail_url(category.group.budget.id, category.id)
 #
 #         response = api_client.put(url, payload)
 #
@@ -1066,7 +1066,7 @@ class TestExpenseCategoryApiCreate:
 #         payload['group'] = category.group.id
 #         payload['name'] = self.INITIAL_PAYLOAD['name']
 #         api_client.force_authenticate(base_user)
-#         url = category_detail_url(category.group.budget.id, category.id)
+#         url = expense_category_detail_url(category.group.budget.id, category.id)
 #
 #         response = api_client.put(url, payload)
 #
@@ -1097,7 +1097,7 @@ class TestExpenseCategoryApiCreate:
 #         budget = budget_factory(owner=base_user)
 #         category = expense_category_factory(budget=budget)
 #         api_client.force_authenticate(base_user)
-#         url = category_detail_url(budget.id, category.id)
+#         url = expense_category_detail_url(budget.id, category.id)
 #
 #         assert ExpenseCategory.objects.filter(budget=budget).count() == 1
 #
@@ -1115,7 +1115,7 @@ class TestExpenseCategoryApiCreate:
 #         THEN: Unauthorized HTTP 401.
 #         """
 #         category = expense_category_factory()
-#         url = category_detail_url(category.group.budget.id, category.id)
+#         url = expense_category_detail_url(category.group.budget.id, category.id)
 #
 #         response = api_client.delete(url)
 #
@@ -1135,7 +1135,7 @@ class TestExpenseCategoryApiCreate:
 #         """
 #         category = expense_category_factory(budget=budget_factory())
 #         api_client.force_authenticate(base_user)
-#         url = category_detail_url(category.group.budget.id, category.id)
+#         url = expense_category_detail_url(category.group.budget.id, category.id)
 #
 #         response = api_client.delete(url)
 #
