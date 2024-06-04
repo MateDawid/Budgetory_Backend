@@ -537,37 +537,35 @@ class TestExpenseCategoryApiCreate:
         assert response.data['detail'] == 'User does not have access to Budget.'
         assert not ExpenseCategory.objects.filter(budget=budget).exists()
 
+    def test_error_owner_does_not_belong_to_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget instance created in database. User not belonging to Budget as
+        'owner' in payload.
+        WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. No ExpenseCategory created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        outer_user = user_factory()
+        payload = self.PAYLOAD.copy()
 
-#     def test_error_owner_does_not_belong_to_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         user_factory: FactoryMetaClass,
-#         budget_factory: FactoryMetaClass,
-#
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. User not belonging to Budget as
-#         'owner' in payload.
-#         WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with invalid payload.
-#         THEN: Bad request HTTP 400 returned. No ExpenseCategory created in database.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         group = (budget=budget)
-#         outer_user = user_factory()
-#         payload = self.PAYLOAD.copy()
-#
-#         payload['owner'] = outer_user.id
-#         api_client.force_authenticate(base_user)
-#
-#         api_client.post(expense_category_url(budget.id), payload)
-#         response = api_client.post(expense_category_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert 'non_field_errors' in response.data
-#         assert response.data['non_field_errors'][0] == 'Provided owner does not belong to Budget.'
-#         assert not ExpenseCategory.objects.filter(budget=budget).exists()
-#
+        payload['owner'] = outer_user.id
+        api_client.force_authenticate(base_user)
+
+        api_client.post(expense_category_url(budget.id), payload)
+        response = api_client.post(expense_category_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'non_field_errors' in response.data
+        assert response.data['non_field_errors'][0] == 'Provided owner does not belong to Budget.'
+        assert not ExpenseCategory.objects.filter(budget=budget).exists()
+
+
 #     def test_error_personal_category_name_already_used(
 #         self,
 #         api_client: APIClient,
