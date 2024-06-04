@@ -440,73 +440,57 @@ class TestExpenseCategoryApiCreate:
         serializer = ExpenseCategorySerializer(category)
         assert response.data == serializer.data
 
+    def test_create_two_categories_for_single_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget instances created in database. Valid payloads prepared
+        for two ExpenseCategories.
+        WHEN: ExpenseCategoryViewSet called twice with POST by User belonging to Budget with valid payloads.
+        THEN: Two ExpenseCategory objects created in database with given payloads.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload_1 = self.PAYLOAD.copy()
+        payload_1['name'] = 'ExpenseCategory name 1'
+        payload_2 = self.PAYLOAD.copy()
+        payload_2['name'] = 'ExpenseCategory name 2'
 
-#     def test_create_two_categories_for_single_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#
-#     ):
-#         """
-#         GIVEN: Budget instances created in database. Valid payloads prepared
-#         for two TransferCategories.
-#         WHEN: ExpenseCategoryViewSet called twice with POST by User belonging to Budget with valid payloads.
-#         THEN: Two ExpenseCategory objects created in database with given payloads.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         group_1 = (budget=budget)
-#         group_2 = (budget=budget)
-#         api_client.force_authenticate(base_user)
-#         payload_1 = self.PAYLOAD.copy()
-#         payload_1['name'] = 'ExpenseCategory name 1'
-#         payload_1['group'] = group_1.id
-#         payload_2 = self.PAYLOAD.copy()
-#         payload_2['name'] = 'ExpenseCategory name 2'
-#         payload_2['group'] = group_2.id
-#
-#         response_1 = api_client.post(category_url(budget.id), payload_1)
-#         response_2 = api_client.post(category_url(budget.id), payload_2)
-#
-#         assert response_1.status_code == status.HTTP_201_CREATED
-#         assert response_2.status_code == status.HTTP_201_CREATED
-#         assert ExpenseCategory.objects.filter(group__budget=budget).count() == 2
-#         for response, payload, group in [(response_1, payload_1, group_1), (response_2, payload_2, group_2)]:
-#             category = ExpenseCategory.objects.get(id=response.data['id'])
-#             for key in payload:
-#                 if key == 'group':
-#                     assert category.group == group
-#                 else:
-#                     assert getattr(category, key) == payload[key]
-#
-#     def test_create_same_category_for_two_budgets(
-#         self, api_client: APIClient, budget_factory: FactoryMetaClass,
-#         : FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Two Budget instances created in database. Valid payload prepared for two
-#         TransferCategories.
-#         WHEN: ExpenseCategoryViewSet called twice with POST by different Users belonging to two different
-#         Budgets with valid payload.
-#         THEN: Two ExpenseCategory objects created in database with given payload for separate Budgets.
-#         """
-#         payload = self.PAYLOAD.copy()
-#         budget_1 = budget_factory()
-#         group_1 = (budget=budget_1)
-#         budget_2 = budget_factory()
-#         group_2 = (budget=budget_2)
-#
-#         api_client.force_authenticate(budget_1.owner)
-#         payload['group'] = group_1.id
-#         api_client.post(category_url(budget_1.id), payload)
-#         api_client.force_authenticate(budget_2.owner)
-#         payload['group'] = group_2.id
-#         api_client.post(category_url(budget_2.id), payload)
-#
-#         assert ExpenseCategory.objects.all().count() == 2
-#         assert ExpenseCategory.objects.filter(group__budget=budget_1).count() == 1
-#         assert ExpenseCategory.objects.filter(group__budget=budget_2).count() == 1
-#
+        response_1 = api_client.post(expense_category_url(budget.id), payload_1)
+        response_2 = api_client.post(expense_category_url(budget.id), payload_2)
+
+        assert response_1.status_code == status.HTTP_201_CREATED
+        assert response_2.status_code == status.HTTP_201_CREATED
+        assert ExpenseCategory.objects.filter(budget=budget).count() == 2
+        for response, payload in [(response_1, payload_1), (response_2, payload_2)]:
+            category = ExpenseCategory.objects.get(id=response.data['id'])
+            for key in payload:
+                assert getattr(category, key) == payload[key]
+
+    def test_create_same_category_for_two_budgets(self, api_client: APIClient, budget_factory: FactoryMetaClass):
+        """
+        GIVEN: Two Budget instances created in database. Valid payload prepared for two ExpenseCategories.
+        WHEN: ExpenseCategoryViewSet called twice with POST by different Users belonging to two different
+        Budgets with valid payload.
+        THEN: Two ExpenseCategory objects created in database with given payload for separate Budgets.
+        """
+        payload = self.PAYLOAD.copy()
+        budget_1 = budget_factory()
+        budget_2 = budget_factory()
+
+        api_client.force_authenticate(budget_1.owner)
+        api_client.post(expense_category_url(budget_1.id), payload)
+        api_client.force_authenticate(budget_2.owner)
+        api_client.post(expense_category_url(budget_2.id), payload)
+
+        assert ExpenseCategory.objects.all().count() == 2
+        assert ExpenseCategory.objects.filter(budget=budget_1).count() == 1
+        assert ExpenseCategory.objects.filter(budget=budget_2).count() == 1
+
+
 #     @pytest.mark.parametrize('field_name', ['name', 'description'])
 #     def test_error_value_too_long(
 #         self,
@@ -530,7 +514,7 @@ class TestExpenseCategoryApiCreate:
 #         payload['group'] = group.id
 #         payload[field_name] = (max_length + 1) * 'a'
 #
-#         response = api_client.post(category_url(budget.id), payload)
+#         response = api_client.post(expense_category_url(budget.id), payload)
 #
 #         assert response.status_code == status.HTTP_400_BAD_REQUEST
 #         assert field_name in response.data
@@ -550,7 +534,7 @@ class TestExpenseCategoryApiCreate:
 #         payload['group'] = group.id
 #         api_client.force_authenticate(base_user)
 #
-#         response = api_client.post(category_url(group.budget.id), payload)
+#         response = api_client.post(expense_category_url(group.budget.id), payload)
 #
 #         assert response.status_code == status.HTTP_403_FORBIDDEN
 #         assert response.data['detail'] == 'User does not have access to Budget.'
@@ -578,8 +562,8 @@ class TestExpenseCategoryApiCreate:
 #         payload['owner'] = outer_user.id
 #         api_client.force_authenticate(base_user)
 #
-#         api_client.post(category_url(budget.id), payload)
-#         response = api_client.post(category_url(budget.id), payload)
+#         api_client.post(expense_category_url(budget.id), payload)
+#         response = api_client.post(expense_category_url(budget.id), payload)
 #
 #         assert response.status_code == status.HTTP_400_BAD_REQUEST
 #         assert 'non_field_errors' in response.data
@@ -605,9 +589,9 @@ class TestExpenseCategoryApiCreate:
 #         payload['group'] = group.id
 #         payload['owner'] = base_user.id
 #         api_client.force_authenticate(base_user)
-#         api_client.post(category_url(budget.id), payload)
+#         api_client.post(expense_category_url(budget.id), payload)
 #
-#         response = api_client.post(category_url(budget.id), payload)
+#         response = api_client.post(expense_category_url(budget.id), payload)
 #
 #         assert response.status_code == status.HTTP_400_BAD_REQUEST
 #         assert 'non_field_errors' in response.data
@@ -635,9 +619,9 @@ class TestExpenseCategoryApiCreate:
 #         payload = self.PAYLOAD.copy()
 #         payload['group'] = group.id
 #         api_client.force_authenticate(base_user)
-#         api_client.post(category_url(budget.id), payload)
+#         api_client.post(expense_category_url(budget.id), payload)
 #
-#         response = api_client.post(category_url(budget.id), payload)
+#         response = api_client.post(expense_category_url(budget.id), payload)
 #
 #         assert response.status_code == status.HTTP_400_BAD_REQUEST
 #         assert 'non_field_errors' in response.data
