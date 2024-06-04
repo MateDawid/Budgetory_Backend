@@ -490,37 +490,34 @@ class TestExpenseCategoryApiCreate:
         assert ExpenseCategory.objects.filter(budget=budget_1).count() == 1
         assert ExpenseCategory.objects.filter(budget=budget_2).count() == 1
 
+    @pytest.mark.parametrize('field_name', ['name', 'description'])
+    def test_error_value_too_long(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        field_name: str,
+    ):
+        """
+        GIVEN: Budget instance created in database. Payload for ExpenseCategory with
+        field value too long.
+        WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. ExpenseCategory not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        max_length = ExpenseCategory._meta.get_field(field_name).max_length
+        payload = self.PAYLOAD.copy()
+        payload[field_name] = (max_length + 1) * 'a'
 
-#     @pytest.mark.parametrize('field_name', ['name', 'description'])
-#     def test_error_value_too_long(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#
-#         field_name: str,
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Payload for ExpenseCategory with
-#         field value too long.
-#         WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with invalid payload.
-#         THEN: Bad request HTTP 400 returned. ExpenseCategory not created in database.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         group = (budget=budget)
-#         api_client.force_authenticate(base_user)
-#         max_length = ExpenseCategory._meta.get_field(field_name).max_length
-#         payload = self.PAYLOAD.copy()
-#         payload['group'] = group.id
-#         payload[field_name] = (max_length + 1) * 'a'
-#
-#         response = api_client.post(expense_category_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert field_name in response.data
-#         assert response.data[field_name][0] == f'Ensure this field has no more than {max_length} characters.'
-#         assert not ExpenseCategory.objects.filter(group__budget=budget).exists()
-#
+        response = api_client.post(expense_category_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert field_name in response.data
+        assert response.data[field_name][0] == f'Ensure this field has no more than {max_length} characters.'
+        assert not ExpenseCategory.objects.filter(budget=budget).exists()
+
+
 #     def test_error_create_category_for_not_accessible_budget(
 #         self, api_client: APIClient, base_user: AbstractUser, : FactoryMetaClass
 #     ):
@@ -538,7 +535,7 @@ class TestExpenseCategoryApiCreate:
 #
 #         assert response.status_code == status.HTTP_403_FORBIDDEN
 #         assert response.data['detail'] == 'User does not have access to Budget.'
-#         assert not ExpenseCategory.objects.filter(group__budget=group.budget).exists()
+#         assert not ExpenseCategory.objects.filter(budget=group.budget).exists()
 #
 #     def test_error_owner_does_not_belong_to_budget(
 #         self,
@@ -568,7 +565,7 @@ class TestExpenseCategoryApiCreate:
 #         assert response.status_code == status.HTTP_400_BAD_REQUEST
 #         assert 'non_field_errors' in response.data
 #         assert response.data['non_field_errors'][0] == 'Provided owner does not belong to Budget.'
-#         assert not ExpenseCategory.objects.filter(group__budget=budget).exists()
+#         assert not ExpenseCategory.objects.filter(budget=budget).exists()
 #
 #     def test_error_personal_category_name_already_used(
 #         self,
@@ -599,7 +596,7 @@ class TestExpenseCategoryApiCreate:
 #             response.data['non_field_errors'][0]
 #             == 'Personal ExpenseCategory with given name already exists in Budget for provided owner.'
 #         )
-#         assert ExpenseCategory.objects.filter(group__budget=budget, owner__isnull=False).count() == 1
+#         assert ExpenseCategory.objects.filter(budget=budget, owner__isnull=False).count() == 1
 #
 #     def test_error_common_category_name_already_used(
 #         self,
@@ -629,7 +626,7 @@ class TestExpenseCategoryApiCreate:
 #             response.data['non_field_errors'][0] == 'Common ExpenseCategory with
 #             given name already exists in Budget.'
 #         )
-#         assert ExpenseCategory.objects.filter(group__budget=budget, owner__isnull=True).count() == 1
+#         assert ExpenseCategory.objects.filter(budget=budget, owner__isnull=True).count() == 1
 #
 #
 # @pytest.mark.django_db
@@ -654,7 +651,7 @@ class TestExpenseCategoryApiCreate:
 #             budget = budget_factory(owner=base_user)
 #         else:
 #             budget = budget_factory(members=[base_user])
-#         category = expense_category_factory(group__budget=budget)
+#         category = expense_category_factory(budget=budget)
 #         api_client.force_authenticate(base_user)
 #         url = category_detail_url(budget.id, category.id)
 #
@@ -691,7 +688,7 @@ class TestExpenseCategoryApiCreate:
 #         WHEN: ExpenseCategoryViewSet detail view called by User not belonging to Budget.
 #         THEN: Forbidden HTTP 403 returned.
 #         """
-#         category = expense_category_factory(group__budget=budget_factory())
+#         category = expense_category_factory(budget=budget_factory())
 #         api_client.force_authenticate(base_user)
 #
 #         url = category_detail_url(category.group.budget.id, category.id)
@@ -731,7 +728,7 @@ class TestExpenseCategoryApiCreate:
 #         THEN: HTTP 200, ExpenseCategory updated.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         category = expense_category_factory(group__budget=budget, owner=None, **self.PAYLOAD)
+#         category = expense_category_factory(budget=budget, owner=None, **self.PAYLOAD)
 #         update_payload = {param: value}
 #         api_client.force_authenticate(base_user)
 #         url = category_detail_url(budget.id, category.id)
@@ -759,7 +756,7 @@ class TestExpenseCategoryApiCreate:
 #         """
 #         member = user_factory()
 #         budget = budget_factory(owner=base_user, members=[member])
-#         category = expense_category_factory(group__budget=budget, owner=None, **self.PAYLOAD)
+#         category = expense_category_factory(budget=budget, owner=None, **self.PAYLOAD)
 #         new_group = (budget=budget)
 #         update_payload = {'group': new_group.id}
 #         api_client.force_authenticate(base_user)
@@ -786,7 +783,7 @@ class TestExpenseCategoryApiCreate:
 #         """
 #         member = user_factory()
 #         budget = budget_factory(owner=base_user, members=[member])
-#         category = expense_category_factory(group__budget=budget, owner=None, **self.PAYLOAD)
+#         category = expense_category_factory(budget=budget, owner=None, **self.PAYLOAD)
 #         update_payload = {'owner': member.id}
 #         api_client.force_authenticate(base_user)
 #         url = category_detail_url(budget.id, category.id)
@@ -824,7 +821,7 @@ class TestExpenseCategoryApiCreate:
 #         WHEN: ExpenseCategoryViewSet detail view called with PATCH by User not belonging to Budget.
 #         THEN: Forbidden HTTP 403 returned.
 #         """
-#         category = expense_category_factory(group__budget=budget_factory())
+#         category = expense_category_factory(budget=budget_factory())
 #         api_client.force_authenticate(base_user)
 #         url = category_detail_url(category.group.budget.id, category.id)
 #
@@ -848,7 +845,7 @@ class TestExpenseCategoryApiCreate:
 #         THEN: Bad request HTTP 400 returned. ExpenseCategory not updated.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         category = expense_category_factory(group__budget=budget)
+#         category = expense_category_factory(budget=budget)
 #         payload = {'owner': user_factory().id}
 #         api_client.force_authenticate(base_user)
 #         url = category_detail_url(category.group.budget.id, category.id)
@@ -873,8 +870,8 @@ class TestExpenseCategoryApiCreate:
 #         THEN: Bad request HTTP 400 returned. ExpenseCategory not updated.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         expense_category_factory(group__budget=budget, owner=base_user, **self.PAYLOAD)
-#         category = expense_category_factory(group__budget=budget, owner=base_user)
+#         expense_category_factory(budget=budget, owner=base_user, **self.PAYLOAD)
+#         category = expense_category_factory(budget=budget, owner=base_user)
 #         payload = {'name': self.PAYLOAD['name']}
 #         api_client.force_authenticate(base_user)
 #         url = category_detail_url(category.group.budget.id, category.id)
@@ -902,8 +899,8 @@ class TestExpenseCategoryApiCreate:
 #         THEN: Bad request HTTP 400 returned. ExpenseCategory not updated.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         expense_category_factory(group__budget=budget, owner=None, **self.PAYLOAD)
-#         category = expense_category_factory(group__budget=budget, owner=None)
+#         expense_category_factory(budget=budget, owner=None, **self.PAYLOAD)
+#         category = expense_category_factory(budget=budget, owner=None)
 #         payload = {'name': self.PAYLOAD['name']}
 #         api_client.force_authenticate(base_user)
 #         url = category_detail_url(category.group.budget.id, category.id)
@@ -942,7 +939,7 @@ class TestExpenseCategoryApiCreate:
 #         THEN: HTTP 200, ExpenseCategory updated.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         category = expense_category_factory(group__budget=budget, owner=None, **self.INITIAL_PAYLOAD)
+#         category = expense_category_factory(budget=budget, owner=None, **self.INITIAL_PAYLOAD)
 #         new_group = (budget=budget)
 #         update_payload = self.UPDATE_PAYLOAD.copy()
 #         update_payload['group'] = new_group.id
@@ -990,7 +987,7 @@ class TestExpenseCategoryApiCreate:
 #         WHEN: ExpenseCategoryViewSet detail view called with PUT by User not belonging to Budget.
 #         THEN: Forbidden HTTP 403 returned.
 #         """
-#         category = expense_category_factory(group__budget=budget_factory())
+#         category = expense_category_factory(budget=budget_factory())
 #         api_client.force_authenticate(base_user)
 #         url = category_detail_url(category.group.budget.id, category.id)
 #
@@ -1014,7 +1011,7 @@ class TestExpenseCategoryApiCreate:
 #         THEN: Bad request HTTP 400 returned. ExpenseCategory not updated.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         category = expense_category_factory(group__budget=budget)
+#         category = expense_category_factory(budget=budget)
 #         payload = self.UPDATE_PAYLOAD.copy()
 #         payload['group'] = category.group.id
 #         payload['owner'] = user_factory().id
@@ -1041,8 +1038,8 @@ class TestExpenseCategoryApiCreate:
 #         THEN: Bad request HTTP 400 returned. ExpenseCategory not updated.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         expense_category_factory(group__budget=budget, owner=base_user, **self.INITIAL_PAYLOAD)
-#         category = expense_category_factory(group__budget=budget, owner=base_user)
+#         expense_category_factory(budget=budget, owner=base_user, **self.INITIAL_PAYLOAD)
+#         category = expense_category_factory(budget=budget, owner=base_user)
 #         payload = self.UPDATE_PAYLOAD.copy()
 #         payload['group'] = category.group.id
 #         payload['name'] = self.INITIAL_PAYLOAD['name']
@@ -1072,8 +1069,8 @@ class TestExpenseCategoryApiCreate:
 #         THEN: Bad request HTTP 400 returned. ExpenseCategory not updated.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         expense_category_factory(group__budget=budget, owner=None, **self.INITIAL_PAYLOAD)
-#         category = expense_category_factory(group__budget=budget, owner=None)
+#         expense_category_factory(budget=budget, owner=None, **self.INITIAL_PAYLOAD)
+#         category = expense_category_factory(budget=budget, owner=None)
 #         payload = self.UPDATE_PAYLOAD.copy()
 #         payload['group'] = category.group.id
 #         payload['name'] = self.INITIAL_PAYLOAD['name']
@@ -1107,16 +1104,16 @@ class TestExpenseCategoryApiCreate:
 #         THEN: No content HTTP 204, ExpenseCategory deleted.
 #         """
 #         budget = budget_factory(owner=base_user)
-#         category = expense_category_factory(group__budget=budget)
+#         category = expense_category_factory(budget=budget)
 #         api_client.force_authenticate(base_user)
 #         url = category_detail_url(budget.id, category.id)
 #
-#         assert ExpenseCategory.objects.filter(group__budget=budget).count() == 1
+#         assert ExpenseCategory.objects.filter(budget=budget).count() == 1
 #
 #         response = api_client.delete(url)
 #
 #         assert response.status_code == status.HTTP_204_NO_CONTENT
-#         assert not ExpenseCategory.objects.filter(group__budget=budget).exists()
+#         assert not ExpenseCategory.objects.filter(budget=budget).exists()
 #
 #     def test_error_delete_unauthenticated(
 #         self, api_client: APIClient, base_user: AbstractUser, expense_category_factory: FactoryMetaClass
@@ -1145,7 +1142,7 @@ class TestExpenseCategoryApiCreate:
 #         WHEN: ExpenseCategoryViewSet detail view called with DELETE by User not belonging to Budget.
 #         THEN: Forbidden HTTP 403 returned.
 #         """
-#         category = expense_category_factory(group__budget=budget_factory())
+#         category = expense_category_factory(budget=budget_factory())
 #         api_client.force_authenticate(base_user)
 #         url = category_detail_url(category.group.budget.id, category.id)
 #
