@@ -499,8 +499,7 @@ class TestExpenseCategoryApiCreate:
         field_name: str,
     ):
         """
-        GIVEN: Budget instance created in database. Payload for ExpenseCategory with
-        field value too long.
+        GIVEN: Budget instance created in database. Payload for ExpenseCategory with field value too long.
         WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpenseCategory not created in database.
         """
@@ -517,26 +516,28 @@ class TestExpenseCategoryApiCreate:
         assert response.data[field_name][0] == f'Ensure this field has no more than {max_length} characters.'
         assert not ExpenseCategory.objects.filter(budget=budget).exists()
 
+    def test_error_create_category_for_not_accessible_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget instance created in database. Valid payload for ExpenseCategory.
+        WHEN: ExpenseCategoryViewSet called with POST by User not belonging to Budget with valid payload.
+        THEN: Forbidden HTTP 403 returned. Object not created.
+        """
+        budget = budget_factory()
+        payload = self.PAYLOAD.copy()
+        api_client.force_authenticate(base_user)
 
-#     def test_error_create_category_for_not_accessible_budget(
-#         self, api_client: APIClient, base_user: AbstractUser, : FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Valid payload for ExpenseCategory.
-#         WHEN: ExpenseCategoryViewSet called with POST by User not belonging to Budget with valid payload.
-#         THEN: Forbidden HTTP 403 returned. Object not created.
-#         """
-#         group = ()
-#         payload = self.PAYLOAD.copy()
-#         payload['group'] = group.id
-#         api_client.force_authenticate(base_user)
-#
-#         response = api_client.post(expense_category_url(group.budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data['detail'] == 'User does not have access to Budget.'
-#         assert not ExpenseCategory.objects.filter(budget=group.budget).exists()
-#
+        response = api_client.post(expense_category_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data['detail'] == 'User does not have access to Budget.'
+        assert not ExpenseCategory.objects.filter(budget=budget).exists()
+
+
 #     def test_error_owner_does_not_belong_to_budget(
 #         self,
 #         api_client: APIClient,
@@ -555,7 +556,7 @@ class TestExpenseCategoryApiCreate:
 #         group = (budget=budget)
 #         outer_user = user_factory()
 #         payload = self.PAYLOAD.copy()
-#         payload['group'] = group.id
+#
 #         payload['owner'] = outer_user.id
 #         api_client.force_authenticate(base_user)
 #
@@ -583,7 +584,7 @@ class TestExpenseCategoryApiCreate:
 #         budget = budget_factory(owner=base_user)
 #         group = (budget=budget)
 #         payload = self.PAYLOAD.copy()
-#         payload['group'] = group.id
+#
 #         payload['owner'] = base_user.id
 #         api_client.force_authenticate(base_user)
 #         api_client.post(expense_category_url(budget.id), payload)
@@ -614,7 +615,7 @@ class TestExpenseCategoryApiCreate:
 #         budget = budget_factory(owner=base_user)
 #         group = (budget=budget)
 #         payload = self.PAYLOAD.copy()
-#         payload['group'] = group.id
+#
 #         api_client.force_authenticate(base_user)
 #         api_client.post(expense_category_url(budget.id), payload)
 #
