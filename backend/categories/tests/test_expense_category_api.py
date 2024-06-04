@@ -565,69 +565,61 @@ class TestExpenseCategoryApiCreate:
         assert response.data['non_field_errors'][0] == 'Provided owner does not belong to Budget.'
         assert not ExpenseCategory.objects.filter(budget=budget).exists()
 
+    def test_error_personal_category_name_already_used(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: ExpenseCategory instance with owner created in database. Name of existing personal ExpenseCategory
+        and owner of existing ExpenseCategory in payload.
+        WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. No ExpenseCategory created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        payload = self.PAYLOAD.copy()
+        payload['owner'] = base_user.id
+        api_client.force_authenticate(base_user)
+        api_client.post(expense_category_url(budget.id), payload)
 
-#     def test_error_personal_category_name_already_used(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#
-#     ):
-#         """
-#         GIVEN: ExpenseCategory instance with owner created in database. Name of existing personal ExpenseCategory
-#         and owner of existing ExpenseCategory in payload.
-#         WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with invalid payload.
-#         THEN: Bad request HTTP 400 returned. No ExpenseCategory created in database.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         group = (budget=budget)
-#         payload = self.PAYLOAD.copy()
-#
-#         payload['owner'] = base_user.id
-#         api_client.force_authenticate(base_user)
-#         api_client.post(expense_category_url(budget.id), payload)
-#
-#         response = api_client.post(expense_category_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert 'non_field_errors' in response.data
-#         assert (
-#             response.data['non_field_errors'][0]
-#             == 'Personal ExpenseCategory with given name already exists in Budget for provided owner.'
-#         )
-#         assert ExpenseCategory.objects.filter(budget=budget, owner__isnull=False).count() == 1
-#
-#     def test_error_common_category_name_already_used(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#
-#     ):
-#         """
-#         GIVEN: ExpenseCategory instance with owner created in database. Name of existing personal ExpenseCategory
-#         and owner of existing ExpenseCategory in payload.
-#         WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with invalid payload.
-#         THEN: Bad request HTTP 400 returned. No ExpenseCategory created in database.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         group = (budget=budget)
-#         payload = self.PAYLOAD.copy()
-#
-#         api_client.force_authenticate(base_user)
-#         api_client.post(expense_category_url(budget.id), payload)
-#
-#         response = api_client.post(expense_category_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert 'non_field_errors' in response.data
-#         assert (
-#             response.data['non_field_errors'][0] == 'Common ExpenseCategory with
-#             given name already exists in Budget.'
-#         )
-#         assert ExpenseCategory.objects.filter(budget=budget, owner__isnull=True).count() == 1
-#
-#
+        response = api_client.post(expense_category_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'non_field_errors' in response.data
+        assert (
+            response.data['non_field_errors'][0]
+            == 'Personal ExpenseCategory with given name already exists in Budget for provided owner.'
+        )
+        assert ExpenseCategory.objects.filter(budget=budget, owner__isnull=False).count() == 1
+
+    def test_error_common_category_name_already_used(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: ExpenseCategory instance with owner created in database. Name of existing common
+        ExpenseCategory in payload.
+        WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. No ExpenseCategory created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        payload = self.PAYLOAD.copy()
+        api_client.force_authenticate(base_user)
+        api_client.post(expense_category_url(budget.id), payload)
+
+        response = api_client.post(expense_category_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'non_field_errors' in response.data
+        assert (
+            response.data['non_field_errors'][0] == 'Common ExpenseCategory with given name already exists in Budget.'
+        )
+        assert ExpenseCategory.objects.filter(budget=budget, owner__isnull=True).count() == 1
+
+
 # @pytest.mark.django_db
 # class TestExpenseCategoryApiDetail:
 #     """Tests for detail view on ExpenseCategoryViewSet."""
