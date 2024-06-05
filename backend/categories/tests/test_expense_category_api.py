@@ -739,32 +739,33 @@ class TestExpenseCategoryApiPartialUpdate:
         assert getattr(category, param) == update_payload[param]
         assert category.owner is None
 
+    def test_category_partial_update_owner(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: ExpenseCategory instance for Budget created in database. Update payload with "owner" value prepared.
+        WHEN: ExpenseCategorySet detail view called with PATCH by User belonging to Budget with valid payload.
+        THEN: HTTP 200, Deposit updated with "owner" value.
+        """
+        member = user_factory()
+        budget = budget_factory(owner=base_user, members=[member])
+        category = expense_category_factory(budget=budget, owner=None, **self.PAYLOAD)
+        update_payload = {'owner': member.id}
+        api_client.force_authenticate(base_user)
+        url = expense_category_detail_url(budget.id, category.id)
 
-#     def test_category_partial_update_owner(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         user_factory: FactoryMetaClass,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: ExpenseCategory instance for Budget created in database. Update payload with "owner" value prepared.
-#         WHEN: ExpenseCategorySet detail view called with PATCH by User belonging to Budget with valid payload.
-#         THEN: HTTP 200, Deposit updated with "owner" value.
-#         """
-#         member = user_factory()
-#         budget = budget_factory(owner=base_user, members=[member])
-#         category = expense_category_factory(budget=budget, owner=None, **self.PAYLOAD)
-#         update_payload = {'owner': member.id}
-#         api_client.force_authenticate(base_user)
-#         url = expense_category_detail_url(budget.id, category.id)
-#
-#         response = api_client.patch(url, update_payload)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         category.refresh_from_db()
-#         assert category.owner == member
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        category.refresh_from_db()
+        assert category.owner == member
+
+
 #
 #     def test_error_partial_update_unauthenticated(
 #         self, api_client: APIClient, base_user: AbstractUser, expense_category_factory: FactoryMetaClass
