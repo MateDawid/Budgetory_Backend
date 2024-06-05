@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from categories.models import ExpenseCategory
 from categories.serializers import ExpenseCategorySerializer
@@ -689,76 +691,55 @@ class TestExpenseCategoryApiDetail:
         assert response.data['detail'] == 'User does not have access to Budget.'
 
 
-# @pytest.mark.django_db
-# class TestExpenseCategoryApiPartialUpdate:
-#     """Tests for partial update view on ExpenseCategoryViewSet."""
-#
-#     PAYLOAD = {'name': 'Expenses for food', 'description': 'All money spent for food.', 'is_active': True}
-#
-#     @pytest.mark.parametrize(
-#         'param, value',
-#         [
-#             ('name', 'New name'),
-#             ('description', 'New description'),
-#             ('is_active', False),
-#         ],
-#     )
-#     @pytest.mark.django_db
-#     def test_category_partial_update(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_factory: FactoryMetaClass,
-#         param: str,
-#         value: Any,
-#     ):
-#         """
-#         GIVEN: ExpenseCategory instance for Budget created in database.
-#         WHEN: ExpenseCategoryViewSet detail view called with PATCH by User belonging to Budget.
-#         THEN: HTTP 200, ExpenseCategory updated.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         category = expense_category_factory(budget=budget, owner=None, **self.PAYLOAD)
-#         update_payload = {param: value}
-#         api_client.force_authenticate(base_user)
-#         url = expense_category_detail_url(budget.id, category.id)
-#
-#         response = api_client.patch(url, update_payload)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         category.refresh_from_db()
-#         assert getattr(category, param) == update_payload[param]
-#         assert category.owner is None
-#
-#     def test_category_partial_update_group(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         user_factory: FactoryMetaClass,
-#         budget_factory: FactoryMetaClass,
-#
-#         expense_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: ExpenseCategory instance for Budget created in database. Update payload with "group" value prepared.
-#         WHEN: ExpenseCategorySet detail view called with PATCH by User belonging to Budget with valid payload.
-#         THEN: HTTP 200, Deposit updated with "group" value.
-#         """
-#         member = user_factory()
-#         budget = budget_factory(owner=base_user, members=[member])
-#         category = expense_category_factory(budget=budget, owner=None, **self.PAYLOAD)
-#         new_group = (budget=budget)
-#         update_payload = {'group': new_group.id}
-#         api_client.force_authenticate(base_user)
-#         url = expense_category_detail_url(budget.id, category.id)
-#
-#         response = api_client.patch(url, update_payload)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         category.refresh_from_db()
-#         assert category.group == new_group
-#
+@pytest.mark.django_db
+class TestExpenseCategoryApiPartialUpdate:
+    """Tests for partial update view on ExpenseCategoryViewSet."""
+
+    PAYLOAD = {
+        'name': 'Expenses for food',
+        'group': ExpenseCategory.ExpenseGroups.MOST_IMPORTANT,
+        'description': 'All money spent for food.',
+        'is_active': True,
+    }
+
+    @pytest.mark.parametrize(
+        'param, value',
+        [
+            ('name', 'New name'),
+            ('group', ExpenseCategory.ExpenseGroups.DEBTS),
+            ('description', 'New description'),
+            ('is_active', False),
+        ],
+    )
+    @pytest.mark.django_db
+    def test_category_partial_update(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+        param: str,
+        value: Any,
+    ):
+        """
+        GIVEN: ExpenseCategory instance for Budget created in database.
+        WHEN: ExpenseCategoryViewSet detail view called with PATCH by User belonging to Budget.
+        THEN: HTTP 200, ExpenseCategory updated.
+        """
+        budget = budget_factory(owner=base_user)
+        category = expense_category_factory(budget=budget, owner=None, **self.PAYLOAD)
+        update_payload = {param: value}
+        api_client.force_authenticate(base_user)
+        url = expense_category_detail_url(budget.id, category.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        category.refresh_from_db()
+        assert getattr(category, param) == update_payload[param]
+        assert category.owner is None
+
+
 #     def test_category_partial_update_owner(
 #         self,
 #         api_client: APIClient,
