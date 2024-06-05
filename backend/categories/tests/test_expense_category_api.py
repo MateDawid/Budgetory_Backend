@@ -885,178 +885,177 @@ class TestExpenseCategoryApiPartialUpdate:
         )
 
 
-# @pytest.mark.django_db
-# class TestExpenseCategoryApiFullUpdate:
-#     """Tests for full update view on ExpenseCategoryViewSet."""
-#
-#     INITIAL_PAYLOAD = {'name': 'Expenses for food', 'description': 'All money spent for food.', 'is_active': True}
-#
-#     UPDATE_PAYLOAD = {'name': 'Expenses for clothes', 'description': 'All money spent
-#     for clothes.', 'is_active': False}
-#
-#     @pytest.mark.django_db
-#     def test_category_full_update(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#
-#         expense_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: ExpenseCategory instance for Budget created in database.
-#         WHEN: ExpenseCategoryViewSet detail view called with PUT by User belonging to Budget.
-#         THEN: HTTP 200, ExpenseCategory updated.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         category = expense_category_factory(budget=budget, owner=None, **self.INITIAL_PAYLOAD)
-#         new_group = (budget=budget)
-#         update_payload = self.UPDATE_PAYLOAD.copy()
-#         update_payload['group'] = new_group.id
-#         update_payload['owner'] = base_user.id
-#         api_client.force_authenticate(base_user)
-#         url = expense_category_detail_url(budget.id, category.id)
-#
-#         response = api_client.put(url, update_payload)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         category.refresh_from_db()
-#         for param in update_payload:
-#             if param == 'group':
-#                 assert getattr(category, param) == new_group
-#                 continue
-#             elif param == 'owner':
-#                 assert getattr(category, param) == base_user
-#                 continue
-#             assert getattr(category, param) == update_payload[param]
-#
-#     def test_error_full_update_unauthenticated(
-#         self, api_client: APIClient, base_user: AbstractUser, expense_category_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: ExpenseCategory instance for Budget created in database.
-#         WHEN: ExpenseCategoryViewSet detail view called with PUT without authentication.
-#         THEN: Unauthorized HTTP 401.
-#         """
-#         category = expense_category_factory()
-#         url = expense_category_detail_url(category.budget.id, category.id)
-#
-#         response = api_client.put(url, {})
-#
-#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_error_full_update_category_from_not_accessible_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: ExpenseCategory instance for Budget created in database.
-#         WHEN: ExpenseCategoryViewSet detail view called with PUT by User not belonging to Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         category = expense_category_factory(budget=budget_factory())
-#         api_client.force_authenticate(base_user)
-#         url = expense_category_detail_url(category.budget.id, category.id)
-#
-#         response = api_client.put(url, {})
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data['detail'] == 'User does not have access to Budget.'
-#
-#     def test_error_full_update_owner_does_not_belong_to_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         user_factory: FactoryMetaClass,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. User not belonging to Budget as
-#         'owner' in payload.
-#         WHEN: ExpenseCategoryViewSet called with PUT by User belonging to Budget with invalid payload.
-#         THEN: Bad request HTTP 400 returned. ExpenseCategory not updated.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         category = expense_category_factory(budget=budget)
-#         payload = self.UPDATE_PAYLOAD.copy()
-#         payload['group'] = category.group.id
-#         payload['owner'] = user_factory().id
-#         api_client.force_authenticate(base_user)
-#         url = expense_category_detail_url(category.budget.id, category.id)
-#
-#         response = api_client.put(url, payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert 'non_field_errors' in response.data
-#         assert response.data['non_field_errors'][0] == 'Provided owner does not belong to Budget.'
-#
-#     def test_error_full_update_personal_category_name_already_used(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: ExpenseCategory instance with owner created in database. Name of existing personal ExpenseCategory
-#         in payload.
-#         WHEN: ExpenseCategoryViewSet called with PUT by User belonging to Budget with invalid payload.
-#         THEN: Bad request HTTP 400 returned. ExpenseCategory not updated.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         expense_category_factory(budget=budget, owner=base_user, **self.INITIAL_PAYLOAD)
-#         category = expense_category_factory(budget=budget, owner=base_user)
-#         payload = self.UPDATE_PAYLOAD.copy()
-#         payload['group'] = category.group.id
-#         payload['name'] = self.INITIAL_PAYLOAD['name']
-#         api_client.force_authenticate(base_user)
-#         url = expense_category_detail_url(category.budget.id, category.id)
-#
-#         response = api_client.put(url, payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert 'non_field_errors' in response.data
-#         assert (
-#             response.data['non_field_errors'][0]
-#             == 'Personal ExpenseCategory with given name already exists in Budget for provided owner.'
-#         )
-#
-#     def test_error_full_update_common_category_name_already_used(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: ExpenseCategory instance with owner created in database. Name of existing personal ExpenseCategory
-#         and owner of existing ExpenseCategory in payload.
-#         WHEN: ExpenseCategoryViewSet called with PUT by User belonging to Budget with invalid payload.
-#         THEN: Bad request HTTP 400 returned. ExpenseCategory not updated.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         expense_category_factory(budget=budget, owner=None, **self.INITIAL_PAYLOAD)
-#         category = expense_category_factory(budget=budget, owner=None)
-#         payload = self.UPDATE_PAYLOAD.copy()
-#         payload['group'] = category.group.id
-#         payload['name'] = self.INITIAL_PAYLOAD['name']
-#         api_client.force_authenticate(base_user)
-#         url = expense_category_detail_url(category.budget.id, category.id)
-#
-#         response = api_client.put(url, payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert 'non_field_errors' in response.data
-#         assert (
-#             response.data['non_field_errors'][0] == 'Common ExpenseCategory with
-#             given name already exists in Budget.'
-#         )
-#
-#
+@pytest.mark.django_db
+class TestExpenseCategoryApiFullUpdate:
+    """Tests for full update view on ExpenseCategoryViewSet."""
+
+    INITIAL_PAYLOAD = {
+        'name': 'Expenses for food',
+        'group': ExpenseCategory.ExpenseGroups.MOST_IMPORTANT,
+        'description': 'All money spent for food.',
+        'is_active': True,
+    }
+
+    UPDATE_PAYLOAD = {
+        'name': 'Expenses for clothes',
+        'group': ExpenseCategory.ExpenseGroups.DEBTS,
+        'description': 'All money spent for clothes.',
+        'is_active': False,
+    }
+
+    @pytest.mark.django_db
+    def test_category_full_update(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: ExpenseCategory instance for Budget created in database.
+        WHEN: ExpenseCategoryViewSet detail view called with PUT by User belonging to Budget.
+        THEN: HTTP 200, ExpenseCategory updated.
+        """
+        budget = budget_factory(owner=base_user)
+        category = expense_category_factory(budget=budget, owner=None, **self.INITIAL_PAYLOAD)
+        update_payload = self.UPDATE_PAYLOAD.copy()
+        update_payload['owner'] = base_user.id
+        api_client.force_authenticate(base_user)
+        url = expense_category_detail_url(budget.id, category.id)
+
+        response = api_client.put(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        category.refresh_from_db()
+        for param in update_payload:
+            if param == 'owner':
+                assert getattr(category, param) == base_user
+                continue
+            assert getattr(category, param) == update_payload[param]
+
+    def test_error_full_update_unauthenticated(
+        self, api_client: APIClient, base_user: AbstractUser, expense_category_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: ExpenseCategory instance for Budget created in database.
+        WHEN: ExpenseCategoryViewSet detail view called with PUT without authentication.
+        THEN: Unauthorized HTTP 401.
+        """
+        category = expense_category_factory()
+        url = expense_category_detail_url(category.budget.id, category.id)
+
+        response = api_client.put(url, {})
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_error_full_update_category_from_not_accessible_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: ExpenseCategory instance for Budget created in database.
+        WHEN: ExpenseCategoryViewSet detail view called with PUT by User not belonging to Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        category = expense_category_factory(budget=budget_factory())
+        api_client.force_authenticate(base_user)
+        url = expense_category_detail_url(category.budget.id, category.id)
+
+        response = api_client.put(url, {})
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data['detail'] == 'User does not have access to Budget.'
+
+    def test_error_full_update_owner_does_not_belong_to_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget instance created in database. User not belonging to Budget as
+        'owner' in payload.
+        WHEN: ExpenseCategoryViewSet called with PUT by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. ExpenseCategory not updated.
+        """
+        budget = budget_factory(owner=base_user)
+        category = expense_category_factory(budget=budget)
+        payload = self.UPDATE_PAYLOAD.copy()
+        payload['owner'] = user_factory().id
+        api_client.force_authenticate(base_user)
+        url = expense_category_detail_url(category.budget.id, category.id)
+
+        response = api_client.put(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'non_field_errors' in response.data
+        assert response.data['non_field_errors'][0] == 'Provided owner does not belong to Budget.'
+
+    def test_error_full_update_personal_category_name_already_used(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: ExpenseCategory instance with owner created in database. Name of existing personal ExpenseCategory
+        in payload.
+        WHEN: ExpenseCategoryViewSet called with PUT by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. ExpenseCategory not updated.
+        """
+        budget = budget_factory(owner=base_user)
+        expense_category_factory(budget=budget, owner=base_user, **self.INITIAL_PAYLOAD)
+        category = expense_category_factory(budget=budget, owner=base_user)
+        payload = self.UPDATE_PAYLOAD.copy()
+        payload['name'] = self.INITIAL_PAYLOAD['name']
+        api_client.force_authenticate(base_user)
+        url = expense_category_detail_url(category.budget.id, category.id)
+
+        response = api_client.put(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'non_field_errors' in response.data
+        assert (
+            response.data['non_field_errors'][0]
+            == 'Personal ExpenseCategory with given name already exists in Budget for provided owner.'
+        )
+
+    def test_error_full_update_common_category_name_already_used(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: ExpenseCategory instance with owner created in database. Name of existing personal ExpenseCategory
+        and owner of existing ExpenseCategory in payload.
+        WHEN: ExpenseCategoryViewSet called with PUT by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. ExpenseCategory not updated.
+        """
+        budget = budget_factory(owner=base_user)
+        expense_category_factory(budget=budget, owner=None, **self.INITIAL_PAYLOAD)
+        category = expense_category_factory(budget=budget, owner=None)
+        payload = self.UPDATE_PAYLOAD.copy()
+        payload['name'] = self.INITIAL_PAYLOAD['name']
+        api_client.force_authenticate(base_user)
+        url = expense_category_detail_url(category.budget.id, category.id)
+
+        response = api_client.put(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'non_field_errors' in response.data
+        assert (
+            response.data['non_field_errors'][0] == 'Common ExpenseCategory with given name already exists in Budget.'
+        )
+
+
 # @pytest.mark.django_db
 # class TestExpenseCategoryApiDelete:
 #     """Tests for delete ExpenseCategory on ExpenseCategoryViewSet."""
