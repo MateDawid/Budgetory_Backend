@@ -1,6 +1,6 @@
 version: "3.9"
 
-name: budget_manager
+name: budgetmanager
 services:
   backend:
     build:
