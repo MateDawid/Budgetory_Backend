@@ -3,6 +3,7 @@ from typing import Any
 import pytest
 from app_users.tests.factories import UserFactory
 from budgets.tests.factories import BudgetFactory, BudgetingPeriodFactory
+from categories.tests.factories import ExpenseCategoryFactory, IncomeCategoryFactory
 from deposits.tests.factories import DepositFactory
 from django.contrib.auth import get_user_model
 from entities.tests.factories import EntityFactory
@@ -15,6 +16,8 @@ register(BudgetFactory)
 register(BudgetingPeriodFactory)
 register(DepositFactory)
 register(EntityFactory)
+register(IncomeCategoryFactory)
+register(ExpenseCategoryFactory)
 
 
 @pytest.fixture

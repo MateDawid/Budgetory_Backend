@@ -2,7 +2,7 @@
 REST API for BudgetManager application.
 
 ## Structure of models
-![MODELS.jpg](MODELS.jpg)
+![MODELS.png](MODELS.png)
 
 ## ✔️ User
 API user representation.
@@ -62,58 +62,57 @@ Represents "container" in which incomes are stored and source for expenses - ban
 ### Features:
 - ✔️ Creating new Deposit by Budget member
 
-##  ✔️ TransferCategoryGroup
-Group for TransferCategories.
+## ✔️ IncomeCategory
+Category for grouping Incomes.
 ### Fields:
-- ✔️ budget [Budget] - Budget for TransferCategoryGroup
-- ✔️ name [str] - Name of TransferCategoryGroup
-- ✔️ description [str] - TransferCategoryGroup description [optional]
-- ✔️ transfer_type [str] - Chosen Transfer type for TransferCategoryGroup. Choices:
-   - INCOME - type for incomes
-   - EXPENSE - type for expenses
-   - RELOCATION - type for cash relocation between Deposits
+- ✔️ budget [Budget] - Budget for IncomeCategory
+- ✔️ name [str] - Name of IncomeCategory
+- ✔️ description [str] - IncomeCategory description [optional]
+- ✔️ owner [User | None] - owner of IncomeCategory. `None` for common category.
+- ✔️ is_active [bool] - Indicates if IncomeCategory is active
+- ✔️ group [int | None] - Group of incomes
 
 ### Features:
-- ✔️ Creating new TransferCategoryGroup by Budget member
-- ✔️ Removing TransferCategoryGroup by Budget member
-- ✔️ Create predefined TransferCategoryGroup objects on Budget creation 
+- ✔️ Creating new IncomeCategory by Budget member
+- ✔️ Create predefined IncomeCategory objects on Budget creation
 
-##  ✔️ TransferCategory
-Category for grouping Transfers.
+## ✔️ ExpenseCategory
+Category for grouping Incomes.
 ### Fields:
-- ✔️ group [TransferCategoryGroup] - TransferCategoryGroup for TransferCategory
-- ✔️ name [str] - Name of TransferCategory
-- ✔️ description [str] - TransferCategory description [optional]
-- ✔️ owner [User | None] - owner of TransferCategory. `None` for common category.
-- ✔️ is_active [bool] - Indicates if TransferCategory is active
+- ✔️ budget [Budget] - Budget for ExpenseCategory
+- ✔️ name [str] - Name of ExpenseCategory
+- ✔️ description [str] - ExpenseCategory description [optional]
+- ✔️ owner [User | None] - owner of ExpenseCategory. `None` for common category.
+- ✔️ is_active [bool] - Indicates if ExpenseCategory is active
+- ✔️ group [int | None] - Group of expenses
 
 ### Features:
-- ✔️ Creating new TransferCategory by Budget member
-- ✔️ Create predefined TransferCategory objects on Budget creation
+- ✔️ Creating new ExpenseCategory by Budget member
+- ✔️ Create predefined ExpenseCategory objects on Budget creation
 
-## ✔️ Entity
-Representation of seller or payer, that is a source or goal of Transfer.
+## ⛔ Entity
+Representation of seller or payer, that is a source or goal of Income/Expense.
 ### Fields:
 - ✔️ budget [Budget] - Budget in which Entity will be available [optional]
 - ✔️ name [str] - Name of Entity
 - ✔️ description [str] - Description of Entity [optional]
-
+- ⛔ deposit [Deposit] - Deposit object represented by Entity in Incomes/Expenses [optional]
 
 ### Features:
-- ✔️ Creating, removing and updating Entity by Budget owner or member
+- ⛔ Creating, removing and updating Entity by Budget owner or member
 
 ##  ⛔ ExpensePrediction
-Amount expected to spend in selected BudgetingPeriod for selected TransferCategory.
+Amount expected to spend in selected BudgetingPeriod for selected ExpenseCategory.
 ### Fields:
 - ⛔ period [BudgetingPeriod] - BudgetingPeriod for ExpensePrediction
-- ⛔ category [TransferCategory] - TransferCategory for ExpensePrediction
-- ⛔ value [float] - Amount expected to be spent for TransferCategory in given BudgetingPeriod
+- ⛔ category [ExpenseCategory] - ExpenseCategory for ExpensePrediction
+- ⛔ value [float] - Amount expected to be spent for ExpenseCategory in given BudgetingPeriod
 - ⛔ description [str] - Additional description for prediction [optional]
 
 ### Features:
 - ⛔ Creating new ExpensePrediction by Budget member
-- ⛔ Removing ExpensePrediction for COMMON TransferCategory by Budget member
-- ⛔ Removing ExpensePrediction for PERSONAL TransferCategory by TransferCategory owner
+- ⛔ Removing ExpensePrediction for COMMON ExpenseCategory by Budget member
+- ⛔ Removing ExpensePrediction for PERSONAL ExpenseCategory by ExpenseCategory owner
 
 ## ⛔ Reserve
 Abstract part of cash stored in Deposits marked as RESERVES designated to be spent on particular purpose.
@@ -125,38 +124,42 @@ Abstract part of cash stored in Deposits marked as RESERVES designated to be spe
 - ⛔ end_date [datetime.date | None] - Deadline for gathering means for Reserve.
 - ⛔ is_active [bool] - Indicates if Reserve is active.
 - ⛔ owner [User | None] - Owner of Reserve. [optional]
-- ⛔ reserve_type [str] - Type of Reserve. Choices:
-  - SINGLE - Single time Reserve, f.e. buying TV.
-  - CYCLIC - Cyclic Reserve, f.e. car insurance.
 
 ### Features:
 - ⛔ Creating new Reserve by Budget member
 - ⛔ Removing Reserve by Budget member if no owner set.
 - ⛔ Removing Reserve for owner if owner set.
 
-## ⛔ Transfer
+## ⛔ Income
 Representation of means flow between Deposit and Entity or another Deposit.
 ### Fields:
-- ⛔ name [str] - Brief name of Transfer
-- ⛔ description [str] - Broader description of Transfer [optional]
-- ⛔ value [float] - amount spent or received by Transfer
-- ⛔ date [datetime.date] - date of Transfer
-- ⛔ period [BudgetingPeriod] - BudgetingPeriod for Transfer
-- ⛔ partaker [Entity | Deposit] - object receiving or sending Transfer. Options:
-  - Deposit for RELOCATION transfer_type - Budget Deposit into which money was sent
-  - Entity for EXPENSE transfer_type - money paid some Entity for expense
-  - Entity for INCOME transfer_type - money received from some Entity, like salary
-- ⛔ deposit [Deposit] - Deposit from which or to which Transfer was made. Options:
-  - RELOCATION transfer_type - Budget Deposit from which money was sent
-  - EXPENSE transfer_type - Budget Deposit from which money was sent
-  - INCOME transfer_type - Budget Deposit into which money was sent
-- ⛔ category [TransferCategory] - TransferCategory for Transfer
-- ⛔ transfer_type [str] - Chosen Transfer type for Transfer. Choices:
-   - INCOME - type for incomes
-   - EXPENSE - type for expenses
-   - RELOCATION - type for cash relocation between Deposits
-- ⛔ reserve [Reserve | None] - Reserve that status was updated by Transfer [optional]
+- ⛔ name [str] - Brief name of Income
+- ⛔ description [str] - Broader description of Income [optional]
+- ⛔ value [float] - amount received by Income
+- ⛔ date [datetime.date] - date of Income
+- ⛔ period [BudgetingPeriod] - BudgetingPeriod for Income
+- ⛔ entity [Entity] - person/institution that pays us money
+- ⛔ deposit [Deposit] - Deposit receiving money by Income
+- ⛔ category [IncomeCategory] - IncomeCategory for Income
+- ⛔ reserve [Reserve | None] - Reserve that status was updated by Income [optional]
 
 ### Features:
-- ⛔ Creating, removing and updating Transfer with PERSONAL deposit.deposit_type by Deposit owner or Budget owner
-- ⛔ Creating, removing and updating Transfer with other than PERSONAL deposit.deposit_type by any Budget member
+- ⛔ Creating, removing and updating Income with PERSONAL deposit.deposit_type by Deposit owner or Budget owner
+- ⛔ Creating, removing and updating Income with other than PERSONAL deposit.deposit_type by any Budget member
+
+## ⛔ Expense
+Representation of means flow between Deposit and Entity or another Deposit.
+### Fields:
+- ⛔ name [str] - Brief name of Expense
+- ⛔ description [str] - Broader description of Expense [optional]
+- ⛔ value [float] - amount spent by Expense
+- ⛔ date [datetime.date] - date of Expense
+- ⛔ period [BudgetingPeriod] - BudgetingPeriod for Expense
+- ⛔ entity [Entity] - person/institution that we are paying money
+- ⛔ deposit [Deposit] - Deposit paying for Expense
+- ⛔ category [ExpenseCategory] - ExpenseCategory for Expense
+- ⛔ reserve [Reserve | None] - Reserve that status was updated by Expense [optional]
+
+### Features:
+- ⛔ Creating, removing and updating Expense with PERSONAL deposit.deposit_type by Deposit owner or Budget owner
+- ⛔ Creating, removing and updating Expense with other than PERSONAL deposit.deposit_type by any Budget member
