@@ -4,6 +4,11 @@ from typing import Any
 import pytest
 from budgets.models import Budget, BudgetingPeriod
 from budgets.serializers import BudgetingPeriodSerializer, BudgetSerializer
+from categories.budget_defaults import (
+    DEFAULT_EXPENSE_CATEGORIES,
+    DEFAULT_INCOME_CATEGORIES,
+)
+from categories.models import ExpenseCategory, IncomeCategory
 from django.contrib.auth.models import AbstractUser
 from django.db.models import Q
 from django.urls import reverse
@@ -137,6 +142,12 @@ class TestBudgetApi:
                 assert getattr(budget, key) == payload[key]
         serializer = BudgetSerializer(budget)
         assert response.data == serializer.data
+        default_expense_categories = ExpenseCategory.objects.filter(budget=budget)
+        for expense_category in DEFAULT_EXPENSE_CATEGORIES:
+            assert default_expense_categories.filter(**expense_category).exists()
+        default_income_categories = IncomeCategory.objects.filter(budget=budget)
+        for income_category in DEFAULT_INCOME_CATEGORIES:
+            assert default_income_categories.filter(**income_category).exists()
 
     def test_create_two_objects_by_one_user(
         self, api_client: APIClient, base_user: AbstractUser, user_factory: FactoryMetaClass

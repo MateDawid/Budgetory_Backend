@@ -62,33 +62,33 @@ Represents "container" in which incomes are stored and source for expenses - ban
 ### Features:
 - ✔️ Creating new Deposit by Budget member
 
-## ⛔ IncomeCategory
+## ✔️ IncomeCategory
 Category for grouping Incomes.
 ### Fields:
-- ⛔ budget [Budget] - Budget for IncomeCategory
-- ⛔ name [str] - Name of IncomeCategory
-- ⛔ description [str] - IncomeCategory description [optional]
-- ⛔ owner [User | None] - owner of IncomeCategory. `None` for common category.
-- ⛔ is_active [bool] - Indicates if IncomeCategory is active
-- ⛔ group [int | None] - Group of incomes
+- ✔️ budget [Budget] - Budget for IncomeCategory
+- ✔️ name [str] - Name of IncomeCategory
+- ✔️ description [str] - IncomeCategory description [optional]
+- ✔️ owner [User | None] - owner of IncomeCategory. `None` for common category.
+- ✔️ is_active [bool] - Indicates if IncomeCategory is active
+- ✔️ group [int | None] - Group of incomes
 
 ### Features:
-- ⛔ Creating new IncomeCategory by Budget member
-- ⛔ Create predefined IncomeCategory objects on Budget creation
+- ✔️ Creating new IncomeCategory by Budget member
+- ✔️ Create predefined IncomeCategory objects on Budget creation
 
-## ⛔ ExpenseCategory
+## ✔️ ExpenseCategory
 Category for grouping Incomes.
 ### Fields:
-- ⛔ budget [Budget] - Budget for ExpenseCategory
-- ⛔ name [str] - Name of ExpenseCategory
-- ⛔ description [str] - ExpenseCategory description [optional]
-- ⛔ owner [User | None] - owner of ExpenseCategory. `None` for common category.
-- ⛔ is_active [bool] - Indicates if ExpenseCategory is active
-- ⛔ group [int | None] - Group of expenses
+- ✔️ budget [Budget] - Budget for ExpenseCategory
+- ✔️ name [str] - Name of ExpenseCategory
+- ✔️ description [str] - ExpenseCategory description [optional]
+- ✔️ owner [User | None] - owner of ExpenseCategory. `None` for common category.
+- ✔️ is_active [bool] - Indicates if ExpenseCategory is active
+- ✔️ group [int | None] - Group of expenses
 
 ### Features:
-- ⛔ Creating new ExpenseCategory by Budget member
-- ⛔ Create predefined ExpenseCategory objects on Budget creation
+- ✔️ Creating new ExpenseCategory by Budget member
+- ✔️ Create predefined ExpenseCategory objects on Budget creation
 
 ## ⛔ Entity
 Representation of seller or payer, that is a source or goal of Income/Expense.
