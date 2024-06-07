@@ -1,16 +1,15 @@
 version: "3.9"
 
-
 services:
-  budget_api:
+  backend:
     build:
       context: .
       args:
         - DEV=${DEV}
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - ./budget_api/:/usr/src/budget_app/budget_api/
-      - ./.secrets.yaml:/usr/src/budget_app/.secrets.yaml
+      - ./backend/:/usr/src/budget_manager/backend/
+      - ./.secrets.yaml:/usr/src/budget_manager/.secrets.yaml
     ports:
       - 8000:8000
     environment:
@@ -29,7 +28,7 @@ services:
     environment:
       - POSTGRES_USER=budget_api
       - POSTGRES_PASSWORD=budget_api
-      - POSTGRES_DB=budget_app
+      - POSTGRES_DB=budget_manager
 
 volumes:
   postgres_data:

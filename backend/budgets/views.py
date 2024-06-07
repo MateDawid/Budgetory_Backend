@@ -2,6 +2,11 @@ from app_config.permissions import UserBelongsToBudgetPermission
 from budgets.mixins import BudgetMixin
 from budgets.models import Budget, BudgetingPeriod
 from budgets.serializers import BudgetingPeriodSerializer, BudgetSerializer
+from categories.budget_defaults import (
+    DEFAULT_EXPENSE_CATEGORIES,
+    DEFAULT_INCOME_CATEGORIES,
+)
+from categories.models import ExpenseCategory, IncomeCategory
 from django.db.models import Q, QuerySet
 from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
@@ -40,8 +45,13 @@ class BudgetViewSet(viewsets.ModelViewSet):
         return Response({'results': serializer.data})
 
     def perform_create(self, serializer):
-        """Save request User as owner of Budget model."""
-        serializer.save(owner=self.request.user)
+        """Saves request User as owner of Budget model and creates default ExpenseCategory and
+        IncomeCategory objects."""
+        budget = serializer.save(owner=self.request.user)
+        for expense_category in DEFAULT_EXPENSE_CATEGORIES:
+            ExpenseCategory.objects.create(budget=budget, **expense_category)
+        for income_category in DEFAULT_INCOME_CATEGORIES:
+            IncomeCategory.objects.create(budget=budget, **income_category)
 
 
 class BudgetingPeriodViewSet(BudgetMixin, viewsets.ModelViewSet):
