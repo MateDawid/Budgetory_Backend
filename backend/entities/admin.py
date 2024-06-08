@@ -6,5 +6,5 @@ from entities.models import Entity
 class EntityAdmin(admin.ModelAdmin):
     """Custom admin view for Deposit model."""
 
-    list_display = ('name', 'description', 'budget')
+    list_display = ('name', 'budget', 'description', 'deposit')
     list_filter = ('budget__name', 'budget__owner__email')
