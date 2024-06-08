@@ -12,12 +12,12 @@ from rest_framework.test import APIClient
 
 
 def entities_url(budget_id):
-    """Create and return a Entity detail URL."""
+    """Create and return an Entity detail URL."""
     return reverse('budgets:entity-list', args=[budget_id])
 
 
 def entity_detail_url(budget_id, entity_id):
-    """Create and return a Entity detail URL."""
+    """Create and return an Entity detail URL."""
     return reverse('budgets:entity-detail', args=[budget_id, entity_id])
 
 
@@ -169,6 +169,7 @@ class TestEntityApiCreate:
         assert Entity.objects.filter(budget=budget).count() == 1
         entity = Entity.objects.get(id=response.data['id'])
         assert entity.budget == budget
+        assert entity.deposit is None
         for key in self.PAYLOAD:
             assert getattr(entity, key) == self.PAYLOAD[key]
         serializer = EntitySerializer(entity)
