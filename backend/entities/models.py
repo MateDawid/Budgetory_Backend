@@ -9,6 +9,9 @@ class Entity(models.Model):
     )
     name = models.CharField(max_length=128)
     description = models.CharField(max_length=255, blank=True)
+    deposit = models.OneToOneField(
+        'deposits.Deposit', on_delete=models.SET_NULL, related_name='entity', null=True, blank=True
+    )
 
     class Meta:
         verbose_name_plural = 'entities'

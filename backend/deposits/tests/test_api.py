@@ -6,6 +6,7 @@ from deposits.models import Deposit
 from deposits.serializers import DepositSerializer
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
+from entities.models import Entity
 from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -186,6 +187,7 @@ class TestDepositApiCreate:
             assert getattr(deposit, key) == payload[key]
         serializer = DepositSerializer(deposit)
         assert response.data == serializer.data
+        assert Entity.objects.filter(budget=budget, deposit=deposit).exists()
 
     def test_create_two_deposits_for_single_budget(
         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
@@ -274,6 +276,61 @@ class TestDepositApiCreate:
         assert 'name' in response.data
         assert response.data['name'][0] == 'Deposit with given name already exists in Budget.'
         assert Deposit.objects.filter(budget=budget).count() == 1
+
+    def test_error_owner_does_not_belong_to_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget instance created in database. User not belonging to Budget as
+        'owner' in payload.
+        WHEN: DepositViewSet called with POST by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. No Deposit created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        outer_user = user_factory()
+        payload = self.PAYLOAD.copy()
+
+        payload['owner'] = outer_user.id
+        api_client.force_authenticate(base_user)
+
+        api_client.post(deposit_url(budget.id), payload)
+        response = api_client.post(deposit_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'owner' in response.data
+        assert response.data['owner'][0] == 'Provided owner does not belong to Budget.'
+        assert not Deposit.objects.filter(budget=budget).exists()
+
+    def test_error_deposit_with_existing_entity_name(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget instance created in database. Valid payload for Deposit.
+        WHEN: DepositViewSet called twice with POST by User belonging to Budget with the same payload.
+        THEN: Bad request HTTP 400 returned. Only one Deposit created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        name = 'Deposit name'
+        entity_factory(budget=budget, name=name)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload['name'] = name
+
+        api_client.post(deposit_url(budget.id), payload)
+        response = api_client.post(deposit_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'name' in response.data
+        assert response.data['name'][0] == 'Entity with given name already exists in Budget.'
+        assert not Deposit.objects.all().exists()
 
     def test_is_active_default_value(
         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
