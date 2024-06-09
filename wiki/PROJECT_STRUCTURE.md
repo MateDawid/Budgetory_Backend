@@ -90,16 +90,17 @@ Category for grouping Incomes.
 - ✔️ Creating new ExpenseCategory by Budget member
 - ✔️ Create predefined ExpenseCategory objects on Budget creation
 
-## ⛔ Entity
+## ✔️ Entity
 Representation of seller or payer, that is a source or goal of Income/Expense.
 ### Fields:
 - ✔️ budget [Budget] - Budget in which Entity will be available [optional]
 - ✔️ name [str] - Name of Entity
 - ✔️ description [str] - Description of Entity [optional]
-- ⛔ deposit [Deposit] - Deposit object represented by Entity in Incomes/Expenses [optional]
+- ✔️ deposit [Deposit] - Deposit object represented by Entity in Incomes/Expenses [optional]
 
 ### Features:
-- ⛔ Creating, removing and updating Entity by Budget owner or member
+- ✔️ Creating, removing and updating Entity by Budget owner or member.
+- ✔️ Creating new Entity with `deposit` field on Deposit creation.
 
 ##  ⛔ ExpensePrediction
 Amount expected to spend in selected BudgetingPeriod for selected ExpenseCategory.
