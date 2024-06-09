@@ -3,6 +3,7 @@ from budgets.mixins import BudgetMixin
 from deposits.models import Deposit
 from deposits.serializers import DepositSerializer
 from django.db.models import QuerySet
+from entities.models import Entity
 from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
@@ -28,9 +29,13 @@ class DepositViewSet(BudgetMixin, viewsets.ModelViewSet):
 
     def perform_create(self, serializer: DepositSerializer) -> None:
         """
-        Additionally save Budget from URL on Deposit instance during saving serializer.
+        Additionally save Budget from URL on Deposit instance during saving serializer. Create Entity object for
+        Deposit representation in Transfers.
 
         Args:
             serializer [DepositSerializer]: Serializer for Deposit model.
         """
-        serializer.save(budget=self.request.budget)
+        deposit = serializer.save(budget=self.request.budget)
+        Entity.objects.create(
+            budget=deposit.budget, name=deposit.name, description=deposit.description, deposit=deposit
+        )
