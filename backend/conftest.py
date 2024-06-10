@@ -7,6 +7,7 @@ from categories.tests.factories import ExpenseCategoryFactory, IncomeCategoryFac
 from deposits.tests.factories import DepositFactory
 from django.contrib.auth import get_user_model
 from entities.tests.factories import EntityFactory
+from predictions.tests.factories import ExpensePredictionFactory
 from pytest_django.lazy_django import skip_if_no_django
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
@@ -18,6 +19,7 @@ register(DepositFactory)
 register(EntityFactory)
 register(IncomeCategoryFactory)
 register(ExpenseCategoryFactory)
+register(ExpensePredictionFactory)
 
 
 @pytest.fixture
