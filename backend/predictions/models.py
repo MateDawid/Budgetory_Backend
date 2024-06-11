@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -22,3 +23,20 @@ class ExpensePrediction(models.Model):
             str: Custom string representation of instance.
         """
         return f'[{self.period.name}] {self.category.name}'
+
+    def save(self, *args, **kwargs) -> None:
+        """
+        Override save method to execute validation before saving model in database.
+        """
+        self.validate_budget()
+        super().save(*args, **kwargs)
+
+    def validate_budget(self) -> None:
+        """
+        Checks if category Budget and period Budget are the same.
+
+        Raises:
+            ValidationError: Raised when category Budget and period Budget are not the same.
+        """
+        if self.period.budget != self.category.budget:
+            raise ValidationError('Budget does not match for period and category fields', code='budget-invalid')
