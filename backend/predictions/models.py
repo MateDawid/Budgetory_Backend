@@ -39,4 +39,4 @@ class ExpensePrediction(models.Model):
             ValidationError: Raised when category Budget and period Budget are not the same.
         """
         if self.period.budget != self.category.budget:
-            raise ValidationError('Budget does not match for period and category fields', code='budget-invalid')
+            raise ValidationError('Budget for period and category fields is not the same.', code='budget-invalid')

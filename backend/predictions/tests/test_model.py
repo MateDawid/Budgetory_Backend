@@ -2,15 +2,15 @@ from decimal import Decimal
 
 import pytest
 from budgets.models import Budget
-from categories.models import ExpenseCategory
-from django.db import DataError
+from django.core.exceptions import ValidationError
+from django.db import DataError, IntegrityError
 from factory.base import FactoryMetaClass
 from predictions.models import ExpensePrediction
 
 
 @pytest.mark.django_db
-class TestExpenseCategoryModel:
-    """Tests for ExpenseCategory model"""
+class TestExpensePredictionModel:
+    """Tests for ExpensePrediction model"""
 
     PAYLOAD = {
         'value': Decimal('100.00'),
@@ -35,7 +35,7 @@ class TestExpenseCategoryModel:
             assert getattr(prediction, key) == self.PAYLOAD[key]
         assert prediction.period == period
         assert prediction.category == category
-        assert ExpenseCategory.objects.all().count() == 1
+        assert ExpensePrediction.objects.all().count() == 1
         assert str(prediction) == f'[{prediction.period.name}] {prediction.category.name}'
 
     @pytest.mark.django_db(transaction=True)
@@ -44,7 +44,7 @@ class TestExpenseCategoryModel:
     ):
         """
         GIVEN: BudgetingPeriod and ExpenseCategory models instances in database.
-        WHEN: ExpenseCategory instance create attempt with description value too long.
+        WHEN: ExpensePrediction instance create attempt with description value too long.
         THEN: DataError raised.
         """
         max_length = ExpensePrediction._meta.get_field('description').max_length
@@ -64,7 +64,7 @@ class TestExpenseCategoryModel:
     ):
         """
         GIVEN: BudgetingPeriod and ExpenseCategory models instances in database.
-        WHEN: ExpenseCategory instance create attempt with "value" value too long.
+        WHEN: ExpensePrediction instance create attempt with "value" value too long.
         THEN: DataError raised.
         """
         max_length = (
@@ -81,8 +81,44 @@ class TestExpenseCategoryModel:
         assert 'numeric field overflow' in str(exc.value)
         assert not ExpensePrediction.objects.all().exists()
 
-    def test_error_on_second_prediction_for_category_in_period(self):
-        assert False
+    @pytest.mark.django_db(transaction=True)
+    def test_error_on_second_prediction_for_category_in_period(
+        self, budget: Budget, budgeting_period_factory: FactoryMetaClass, expense_category_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: BudgetingPeriod and ExpenseCategory models instances in database.
+        WHEN: Trying to create two ExpensePrediction instances for the same period and category.
+        THEN: IntegrityError raised.
+        """
+        period = budgeting_period_factory(budget=budget)
+        category = expense_category_factory(budget=budget)
+        ExpensePrediction.objects.create(period=period, category=category, **self.PAYLOAD)
 
-    def test_error_different_budgets_in_category_and_period(self):
-        assert False
+        with pytest.raises(IntegrityError) as exc:
+            ExpensePrediction.objects.create(period=period, category=category, **self.PAYLOAD)
+
+        assert 'duplicate key value violates unique constraint' in str(exc.value)
+        assert ExpensePrediction.objects.all().count() == 1
+
+    @pytest.mark.django_db(transaction=True)
+    def test_error_different_budgets_in_category_and_period(
+        self,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: BudgetingPeriod and ExpenseCategory models instances for different Budgets in database.
+        WHEN: Trying to create ExpensePrediction with period and category in different budgets.
+        THEN: ValidationError raised.
+        """
+        budget_1 = budget_factory()
+        budget_2 = budget_factory()
+        period = budgeting_period_factory(budget=budget_1)
+        category = expense_category_factory(budget=budget_2)
+
+        with pytest.raises(ValidationError) as exc:
+            ExpensePrediction.objects.create(period=period, category=category, **self.PAYLOAD)
+
+        assert str(exc.value.args[0]) == 'Budget for period and category fields is not the same.'
+        assert not ExpensePrediction.objects.all().exists()
