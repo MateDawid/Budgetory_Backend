@@ -2,6 +2,7 @@ default:
   ENVIRONMENT:
     SECRET_KEY: ~
     DEBUG: ~
+    DEBUG_TOOLBAR_ENABLED: ~
     ALLOWED_HOSTS:
       - 127.0.0.1
       - localhost
