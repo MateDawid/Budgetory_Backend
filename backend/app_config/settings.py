@@ -7,6 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = settings.ENVIRONMENT.SECRET_KEY
 DEBUG = bool(settings.ENVIRONMENT.get('DEBUG', 0))
+DEBUG_TOOLBAR_ENABLED = bool(settings.ENVIRONMENT.get('DEBUG_TOOLBAR_ENABLED', 0))
 ALLOWED_HOSTS = [host(settings) if callable(host) else host for host in settings.ENVIRONMENT.ALLOWED_HOSTS]
 
 # Application definition
@@ -40,6 +41,13 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+if DEBUG_TOOLBAR_ENABLED:
+    INSTALLED_APPS += ['debug_toolbar']  # NOQA
+    MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
+    INTERNAL_IPS = ['127.0.0.1', '0.0.0.0', 'localhost']
+    DEBUG_TOOLBAR_CONFIG = {'SHOW_TOOLBAR_CALLBACK': lambda request: True}
+
 
 ROOT_URLCONF = 'app_config.urls'
 
