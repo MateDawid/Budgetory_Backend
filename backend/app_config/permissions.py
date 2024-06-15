@@ -19,8 +19,5 @@ class UserBelongsToBudgetPermission(permissions.BasePermission):
         Returns:
             bool: True if User is owner or member of Budget, else False.
         """
-        return bool(
-            request.budget
-            and request.user
-            and (request.user == request.budget.owner or request.user in request.budget.members.all())
-        )
+        budget = getattr(view, 'budget', None)
+        return bool(budget and request.user and (request.user == budget.owner or request.user in budget.members.all()))

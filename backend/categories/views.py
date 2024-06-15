@@ -1,5 +1,5 @@
 from app_config.permissions import UserBelongsToBudgetPermission
-from budgets.mixins import BudgetMixin
+from app_config.viewsets import BudgetModelViewSet
 from categories.filters import ExpenseCategoryFilterSet, IncomeCategoryFilterSet
 from categories.models import ExpenseCategory, IncomeCategory
 from categories.serializers import (
@@ -12,10 +12,9 @@ from django_filters import rest_framework as filters
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.viewsets import ModelViewSet
 
 
-class TransferCategoryViewSet(BudgetMixin, ModelViewSet):
+class TransferCategoryViewSet(BudgetModelViewSet):
     """Base view for managing TransferCategories."""
 
     authentication_classes = [TokenAuthentication]
@@ -28,8 +27,7 @@ class TransferCategoryViewSet(BudgetMixin, ModelViewSet):
         Returns:
             QuerySet: Filtered TransferCategory QuerySet.
         """
-        budget = getattr(self.request, 'budget', None)
-        return self.queryset.prefetch_related('owner').filter(budget=budget).distinct()
+        return self.queryset.prefetch_related('owner').filter(budget=self.budget).distinct()
 
     def perform_create(self, serializer: TransferCategorySerializer) -> None:
         """
@@ -37,7 +35,7 @@ class TransferCategoryViewSet(BudgetMixin, ModelViewSet):
         Args:
             serializer [TransferCategorySerializer]: Serializer for TransferCategory model.
         """
-        serializer.save(budget=self.request.budget)
+        serializer.save(budget=self.budget)
 
 
 class ExpenseCategoryViewSet(TransferCategoryViewSet):

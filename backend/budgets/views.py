@@ -1,5 +1,5 @@
 from app_config.permissions import UserBelongsToBudgetPermission
-from budgets.mixins import BudgetMixin
+from app_config.viewsets import BudgetModelViewSet
 from budgets.models import Budget, BudgetingPeriod
 from budgets.serializers import BudgetingPeriodSerializer, BudgetSerializer
 from categories.budget_defaults import (
@@ -54,7 +54,7 @@ class BudgetViewSet(viewsets.ModelViewSet):
             IncomeCategory.objects.create(budget=budget, **income_category)
 
 
-class BudgetingPeriodViewSet(BudgetMixin, viewsets.ModelViewSet):
+class BudgetingPeriodViewSet(BudgetModelViewSet):
     """View for manage BudgetingPeriods."""
 
     serializer_class = BudgetingPeriodSerializer
@@ -87,4 +87,4 @@ class BudgetingPeriodViewSet(BudgetMixin, viewsets.ModelViewSet):
         Args:
             serializer [BudgetingPeriodSerializer]: Serializer for BudgetingPeriod
         """
-        serializer.save(budget=self.request.budget)
+        serializer.save(budget=self.budget)
