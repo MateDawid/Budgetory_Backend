@@ -49,7 +49,7 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
             ValidationError: Raised when BudgetingPeriod for Budget with given name already exists in database.
         """
         try:
-            self.Meta.model.objects.get(budget=self.context['request'].budget, name=name)
+            self.Meta.model.objects.get(budget=self.context['view'].budget, name=name)
         except self.Meta.model.DoesNotExist:
             pass
         else:
@@ -71,7 +71,7 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
         """
         if is_active is True:
             active_periods = (
-                self.context['request']
+                self.context['view']
                 .budget.periods.filter(is_active=True)
                 .exclude(pk=getattr(self.instance, 'pk', None))
             )
@@ -98,7 +98,7 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
         if date_start >= date_end:
             raise ValidationError('Start date should be earlier than end date.')
         if (
-            self.context['request']
+            self.context['view']
             .budget.periods.filter(
                 Q(date_start__lte=date_start, date_end__gte=date_start)
                 | Q(date_start__lte=date_end, date_end__gte=date_end)

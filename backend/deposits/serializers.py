@@ -28,9 +28,9 @@ class DepositSerializer(serializers.ModelSerializer):
         Raises:
             ValidationError: Raised if Deposit with given name exists in Budget already.
         """
-        if self.Meta.model.objects.filter(budget=self.context['request'].budget, name__iexact=name).exists():
+        if self.Meta.model.objects.filter(budget=self.context['view'].budget, name__iexact=name).exists():
             raise ValidationError('Deposit with given name already exists in Budget.')
-        elif Entity.objects.filter(budget=self.context['request'].budget, name__iexact=name).exists():
+        elif Entity.objects.filter(budget=self.context['view'].budget, name__iexact=name).exists():
             raise ValidationError('Entity with given name already exists in Budget.')
         return name
 
@@ -45,7 +45,7 @@ class DepositSerializer(serializers.ModelSerializer):
             AbstractUser | None: User model instance or None.
         """
         if owner and not (
-            owner == self.context['request'].budget.owner or owner in self.context['request'].budget.members.all()
+            owner == self.context['view'].budget.owner or owner in self.context['view'].budget.members.all()
         ):
             raise ValidationError('Provided owner does not belong to Budget.')
         return owner

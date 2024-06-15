@@ -41,7 +41,7 @@ class TransferCategorySerializer(serializers.ModelSerializer):
         Raises:
             ValidationError: Raised when given User does not belong to Budget.
         """
-        if not (owner == self.context['request'].budget.owner or owner in self.context['request'].budget.members.all()):
+        if not (owner == self.context['view'].budget.owner or owner in self.context['view'].budget.members.all()):
             raise serializers.ValidationError('Provided owner does not belong to Budget.')
 
     def _validate_category_name(self, name: str, owner: AbstractUser | None) -> None:
@@ -53,7 +53,7 @@ class TransferCategorySerializer(serializers.ModelSerializer):
         Raises:
             ValidationError: Raised when TransferCategory for particular owner already exists in Budget.
         """
-        query_filters = {'budget': self.context['request'].budget, 'name__iexact': name, 'owner': owner}
+        query_filters = {'budget': self.context['view'].budget, 'name__iexact': name, 'owner': owner}
         if owner:
             query_filters['owner'] = owner
         else:

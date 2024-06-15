@@ -1,14 +1,13 @@
 from app_config.permissions import UserBelongsToBudgetPermission
-from budgets.mixins import BudgetMixin
+from app_config.viewsets import BudgetModelViewSet
 from django.db.models import QuerySet
 from entities.models import Entity
 from entities.serializers import EntitySerializer
-from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
 
-class EntityViewSet(BudgetMixin, viewsets.ModelViewSet):
+class EntityViewSet(BudgetModelViewSet):
     """View for managing Entities."""
 
     serializer_class = EntitySerializer
@@ -23,8 +22,7 @@ class EntityViewSet(BudgetMixin, viewsets.ModelViewSet):
         Returns:
             QuerySet: Filtered Entity QuerySet.
         """
-        budget = getattr(self.request, 'budget', None)
-        return self.queryset.filter(budget=budget).distinct()
+        return self.queryset.filter(budget=self.budget).distinct()
 
     def perform_create(self, serializer: EntitySerializer) -> None:
         """
@@ -33,4 +31,4 @@ class EntityViewSet(BudgetMixin, viewsets.ModelViewSet):
         Args:
             serializer [EntitySerializer]: Serializer for Entity model.
         """
-        serializer.save(budget=self.request.budget)
+        serializer.save(budget=self.budget)
