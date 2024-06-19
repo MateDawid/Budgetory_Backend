@@ -1,5 +1,4 @@
 from app_config.permissions import UserBelongsToBudgetPermission
-from app_config.viewsets import BudgetModelViewSet
 from budgets.models import Budget, BudgetingPeriod
 from budgets.serializers import BudgetingPeriodSerializer, BudgetSerializer
 from categories.budget_defaults import (
@@ -8,14 +7,14 @@ from categories.budget_defaults import (
 )
 from categories.models import ExpenseCategory, IncomeCategory
 from django.db.models import Q, QuerySet
-from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
 
 
-class BudgetViewSet(viewsets.ModelViewSet):
+class BudgetViewSet(ModelViewSet):
     """View for manage Budgets."""
 
     serializer_class = BudgetSerializer
@@ -54,7 +53,7 @@ class BudgetViewSet(viewsets.ModelViewSet):
             IncomeCategory.objects.create(budget=budget, **income_category)
 
 
-class BudgetingPeriodViewSet(BudgetModelViewSet):
+class BudgetingPeriodViewSet(ModelViewSet):
     """View for manage BudgetingPeriods."""
 
     serializer_class = BudgetingPeriodSerializer
@@ -87,4 +86,4 @@ class BudgetingPeriodViewSet(BudgetModelViewSet):
         Args:
             serializer [BudgetingPeriodSerializer]: Serializer for BudgetingPeriod
         """
-        serializer.save(budget=self.budget)
+        serializer.save(budget_id=self.kwargs.get('budget_pk'))
