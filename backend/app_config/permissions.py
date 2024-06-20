@@ -20,4 +20,4 @@ class UserBelongsToBudgetPermission(permissions.BasePermission):
             bool: True if User is owner or member of Budget, else False.
         """
         budget_pk = getattr(view, 'kwargs', {}).get('budget_pk')
-        return request.user.joined_budgets.filter(pk=budget_pk)
+        return request.user.joined_budgets.filter(pk=budget_pk).exist()
