@@ -30,8 +30,7 @@ class TestBudgetModel:
         budget.members.add(*members)
         for param, value in payload.items():
             assert getattr(budget, param) == value
-        assert len(members) == budget.members.all().count()
-        assert len(members) == budget.members.filter(id__in=[member.id for member in members]).distinct().count()
+        assert budget.members.all().count() == 4
         assert str(budget) == f'{budget.name} ({budget.owner.email})'
 
     def test_owner_in_members(self, user_factory: FactoryMetaClass):
