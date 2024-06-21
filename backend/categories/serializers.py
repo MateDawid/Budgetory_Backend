@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
+from app_users.models import User
 from categories.models import ExpenseCategory, IncomeCategory
-from django.contrib.auth.models import AbstractUser
 from django.db.models import Model
 from rest_framework import serializers
 
@@ -33,27 +33,27 @@ class TransferCategorySerializer(serializers.ModelSerializer):
 
         return attrs
 
-    def _validate_owner(self, owner: AbstractUser) -> None:
+    def _validate_owner(self, owner: User) -> None:
         """
         Checks if provided owner belongs to Budget.
         Args:
-            owner [AbstractUser]: TransferCategory owner or None.
+            owner [User]: TransferCategory owner or None.
         Raises:
             ValidationError: Raised when given User does not belong to Budget.
         """
-        if not (owner == self.context['view'].budget.owner or owner in self.context['view'].budget.members.all()):
+        if not owner.is_budget_member(self.context['view'].kwargs['budget_pk']):
             raise serializers.ValidationError('Provided owner does not belong to Budget.')
 
-    def _validate_category_name(self, name: str, owner: AbstractUser | None) -> None:
+    def _validate_category_name(self, name: str, owner: User | None) -> None:
         """
         Checks if TransferCategory with provided name already exists in Budget.
         Args:
             name [str]: Name for TransferCategory
-            owner [AbstractUser]: Owner of TransferCategory
+            owner [User]: Owner of TransferCategory
         Raises:
             ValidationError: Raised when TransferCategory for particular owner already exists in Budget.
         """
-        query_filters = {'budget': self.context['view'].budget, 'name__iexact': name, 'owner': owner}
+        query_filters = {'budget': self.context['view'].kwargs['budget_pk'], 'name__iexact': name, 'owner': owner}
         if owner:
             query_filters['owner'] = owner
         else:

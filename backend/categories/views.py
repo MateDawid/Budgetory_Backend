@@ -1,5 +1,4 @@
 from app_config.permissions import UserBelongsToBudgetPermission
-from app_config.viewsets import BudgetModelViewSet
 from categories.filters import ExpenseCategoryFilterSet, IncomeCategoryFilterSet
 from categories.models import ExpenseCategory, IncomeCategory
 from categories.serializers import (
@@ -12,14 +11,16 @@ from django_filters import rest_framework as filters
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.viewsets import ModelViewSet
 
 
-class TransferCategoryViewSet(BudgetModelViewSet):
+class TransferCategoryViewSet(ModelViewSet):
     """Base view for managing TransferCategories."""
 
     authentication_classes = [TokenAuthentication]
     permission_classes = (IsAuthenticated, UserBelongsToBudgetPermission)
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
+    ordering = ('id', 'group', 'name')
 
     def get_queryset(self) -> QuerySet:
         """
@@ -27,7 +28,7 @@ class TransferCategoryViewSet(BudgetModelViewSet):
         Returns:
             QuerySet: Filtered TransferCategory QuerySet.
         """
-        return self.queryset.prefetch_related('owner').filter(budget=self.budget).distinct()
+        return self.queryset.prefetch_related('owner').filter(budget__pk=self.kwargs.get('budget_pk')).distinct()
 
     def perform_create(self, serializer: TransferCategorySerializer) -> None:
         """
@@ -35,18 +36,16 @@ class TransferCategoryViewSet(BudgetModelViewSet):
         Args:
             serializer [TransferCategorySerializer]: Serializer for TransferCategory model.
         """
-        serializer.save(budget=self.budget)
+        serializer.save(budget_id=self.kwargs.get('budget_pk'))
 
 
 class ExpenseCategoryViewSet(TransferCategoryViewSet):
     serializer_class = ExpenseCategorySerializer
     queryset = ExpenseCategory.objects.all()
     filterset_class = ExpenseCategoryFilterSet
-    ordering = ('id', 'group', 'name')
 
 
 class IncomeCategoryViewSet(TransferCategoryViewSet):
     serializer_class = IncomeCategorySerializer
     queryset = IncomeCategory.objects.all()
     filterset_class = IncomeCategoryFilterSet
-    ordering = ('id', 'group', 'name')
