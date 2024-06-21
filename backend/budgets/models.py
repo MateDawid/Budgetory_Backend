@@ -26,7 +26,7 @@ class Budget(models.Model):
     def save(self, *args, **kwargs):
         """Override save method to remove Budget owner from Budget members."""
         super().save(*args, **kwargs)
-        self.members.remove(self.owner)
+        self.members.add(self.owner)
 
 
 class BudgetingPeriod(models.Model):
