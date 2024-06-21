@@ -34,11 +34,11 @@ class TestBudgetModel:
         assert len(members) == budget.members.filter(id__in=[member.id for member in members]).distinct().count()
         assert str(budget) == f'{budget.name} ({budget.owner.email})'
 
-    def test_owner_not_in_members(self, user_factory: FactoryMetaClass):
+    def test_owner_in_members(self, user_factory: FactoryMetaClass):
         """
         GIVEN: User model instance in database.
-        WHEN: Budget instance create attempt with owner in members list.
-        THEN: Budget model instance exists in database without owner in members list.
+        WHEN: Budget instance create attempt without owner in members list.
+        THEN: Budget model instance exists in database with owner in members list.
         """
         owner = user_factory()
         members = [user_factory() for _ in range(3)]
@@ -53,8 +53,8 @@ class TestBudgetModel:
         budget.members.add(owner)
         budget.save()
 
-        assert owner not in budget.members.all()
-        assert len(members) == budget.members.all().count()
+        assert owner in budget.members.all()
+        assert budget.members.all().count() == len(members) + 1
 
     def test_creating_same_object_by_two_users(self, user_factory: FactoryMetaClass):
         """

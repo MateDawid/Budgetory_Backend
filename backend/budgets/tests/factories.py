@@ -34,7 +34,7 @@ class BudgetFactory(factory.django.DjangoModelFactory):
         """
         if not create or not users:
             return
-        self.members.add(*users)
+        self.members.add(*users, self.owner)
 
 
 class BudgetingPeriodFactory(factory.django.DjangoModelFactory):
