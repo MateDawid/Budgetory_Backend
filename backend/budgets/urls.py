@@ -3,6 +3,7 @@ from categories.views import ExpenseCategoryViewSet, IncomeCategoryViewSet
 from deposits.views import DepositViewSet
 from django.urls import include, path
 from entities.views import EntityViewSet
+from predictions.views import ExpensePredictionViewSet
 from rest_framework import routers
 from rest_framework_nested.routers import NestedSimpleRouter
 
@@ -18,6 +19,7 @@ budget_router.register(r'deposits', DepositViewSet, basename='deposit')
 budget_router.register(r'entities', EntityViewSet, basename='entity')
 budget_router.register(r'income_categories', IncomeCategoryViewSet, basename='income_category')
 budget_router.register(r'expense_categories', ExpenseCategoryViewSet, basename='expense_category')
+budget_router.register(r'expense_predictions', ExpensePredictionViewSet, basename='expense_prediction')
 
 urlpatterns = [
     path('', include(router.urls)),
