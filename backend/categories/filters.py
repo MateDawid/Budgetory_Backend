@@ -14,11 +14,13 @@ class TransferCategoryFilterSet(filters.FilterSet):
 
     def get_common_categories(self, queryset, name, value):
         """
-        Filtering QuerySet with objects containing .
+        Filtering QuerySet TransferCategories with or without owner.
+
         Args:
             queryset [QuerySet]: Input QuerySet
             name [str]: Name of filtered param
             value [Decimal]: Value of filtered param
+
         Returns:
             QuerySet: Input QuerySet filtered by filter param value.
         """
