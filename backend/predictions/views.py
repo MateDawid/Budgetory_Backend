@@ -1,15 +1,16 @@
 from app_config.permissions import UserBelongsToBudgetPermission
 from django.db.models import QuerySet
+from django_filters import rest_framework as filters
+from predictions.filters import ExpensePredictionFilterSet
 from predictions.models import ExpensePrediction
 from predictions.serializers import ExpensePredictionSerializer
-from rest_framework import mixins
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.viewsets import GenericViewSet
+from rest_framework.viewsets import ModelViewSet
 
 
-# class ExpensePredictionViewSet(ModelViewSet):
-class ExpensePredictionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
+class ExpensePredictionViewSet(ModelViewSet):
     """Base view for managing ExpensePredictions."""
 
     authentication_classes = [TokenAuthentication]
@@ -17,10 +18,10 @@ class ExpensePredictionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin,
         IsAuthenticated,
         UserBelongsToBudgetPermission,
     )
-    # filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
+    filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
     serializer_class = ExpensePredictionSerializer
 
-    # filterset_class = ExpensePredictionFilterSet
+    filterset_class = ExpensePredictionFilterSet
     ordering = ('id', 'period', 'category')
 
     def get_queryset(self) -> QuerySet:
