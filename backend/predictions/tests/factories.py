@@ -11,5 +11,5 @@ class ExpensePredictionFactory(factory.django.DjangoModelFactory):
 
     period = factory.SubFactory(BudgetingPeriodFactory)
     category = factory.SubFactory(ExpenseCategoryFactory)
-    value = factory.Faker('pyint', min_value=0, max_value=9999999999)
+    value = factory.Faker('pyint', min_value=0, max_value=99999999)
     description = factory.Faker('text', max_nb_chars=255)
