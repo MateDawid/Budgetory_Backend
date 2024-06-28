@@ -1,9 +1,10 @@
-import datetime
 import random
 import string
+from datetime import date
 
 import factory
 from app_users.tests.factories import UserFactory
+from dateutil.relativedelta import relativedelta
 from django.contrib.auth.models import AbstractUser
 
 
@@ -44,9 +45,23 @@ class BudgetingPeriodFactory(factory.django.DjangoModelFactory):
         model = 'budgets.BudgetingPeriod'
 
     budget = factory.SubFactory(BudgetFactory)
-    date_start = datetime.date(2023, 1, 1)
-    date_end = datetime.date(2023, 1, 31)
-    is_active = factory.Faker('boolean')
+    is_active = factory.Sequence(lambda _: False)
+
+    @factory.lazy_attribute
+    def date_start(self) -> date:
+        """Generates date_start field."""
+        last_date_start = self.budget.periods.all().order_by('date_start').values_list('date_start', flat=True).last()
+        if not last_date_start:
+            return date(2023, 1, 1)
+        return last_date_start + relativedelta(months=1)
+
+    @factory.lazy_attribute
+    def date_end(self) -> date:
+        """Generates date_end field."""
+        last_date_start = self.budget.periods.all().order_by('date_start').values_list('date_start', flat=True).last()
+        if not last_date_start:
+            return date(2023, 1, 31)
+        return last_date_start + relativedelta(months=2) - relativedelta(days=1)
 
     @factory.lazy_attribute
     def name(self) -> str:
