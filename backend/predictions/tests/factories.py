@@ -1,5 +1,5 @@
 import factory
-from budgets.models import BudgetingPeriod
+from budgets.models import Budget, BudgetingPeriod
 from budgets.tests.factories import BudgetingPeriodFactory
 from categories.models import ExpenseCategory
 from categories.tests.factories import ExpenseCategoryFactory
@@ -22,10 +22,10 @@ class ExpensePredictionFactory(factory.django.DjangoModelFactory):
         Returns:
             ExpenseCategory: ExpenseCategory with the same Budget as period.
         """
-        category = self._Resolver__step.builder.extras.get('category')
-        if category:
-            return BudgetingPeriodFactory(budget=self.category.budget)
-        return BudgetingPeriodFactory()
+        budget = self._Resolver__step.builder.extras.get('budget')
+        if not budget:
+            raise ValueError('No budget provided.')
+        return BudgetingPeriodFactory(budget=budget)
 
     @factory.lazy_attribute
     def category(self, *args) -> BudgetingPeriod:
@@ -35,7 +35,19 @@ class ExpensePredictionFactory(factory.django.DjangoModelFactory):
         Returns:
             BudgetingPeriod: BudgetingPeriod with the same Budget as category.
         """
-        period = self._Resolver__step.attributes.get('period')
-        if period:
-            return ExpenseCategoryFactory(budget=self.period.budget)
-        return ExpenseCategoryFactory()
+        budget = self._Resolver__step.builder.extras.get('budget')
+        if not budget:
+            raise ValueError('No budget provided.')
+        return ExpenseCategoryFactory(budget=budget)
+
+    @factory.post_generation
+    def budget(self, create: bool, budget: Budget, **kwargs) -> None:
+        """
+        Enables to pass "budget" as parameter to factory.
+
+        Args:
+            create [bool]: Indicates if object is created or updated.
+            budget [Budget]: Budget model instance.
+            **kwargs [dict]: Keyword arguments
+        """
+        pass
