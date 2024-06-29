@@ -1,6 +1,6 @@
 import factory
 from budgets.models import Budget, BudgetingPeriod
-from budgets.tests.factories import BudgetingPeriodFactory
+from budgets.tests.factories import BudgetFactory, BudgetingPeriodFactory
 from categories.models import ExpenseCategory
 from categories.tests.factories import ExpenseCategoryFactory
 
@@ -24,7 +24,7 @@ class ExpensePredictionFactory(factory.django.DjangoModelFactory):
         """
         budget = self._Resolver__step.builder.extras.get('budget')
         if not budget:
-            raise ValueError('No budget provided.')
+            budget = BudgetFactory()
         return BudgetingPeriodFactory(budget=budget)
 
     @factory.lazy_attribute
@@ -37,7 +37,7 @@ class ExpensePredictionFactory(factory.django.DjangoModelFactory):
         """
         budget = self._Resolver__step.builder.extras.get('budget')
         if not budget:
-            raise ValueError('No budget provided.')
+            budget = self.period.budget
         return ExpenseCategoryFactory(budget=budget)
 
     @factory.post_generation

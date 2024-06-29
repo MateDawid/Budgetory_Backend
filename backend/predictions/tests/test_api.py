@@ -95,7 +95,6 @@ class TestExpensePredictionApiList:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
@@ -110,69 +109,69 @@ class TestExpensePredictionApiList:
 
         response = api_client.get(expense_prediction_url(budget.id))
 
-        categories = ExpensePrediction.objects.filter(period__budget=budget)
-        serializer = ExpensePredictionSerializer(categories, many=True)
+        predictions = ExpensePrediction.objects.filter(period__budget=budget)
+        serializer = ExpensePredictionSerializer(predictions, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert response.data['results'] == serializer.data
 
-    # def test_prediction_list_limited_to_budget(
-    #     self,
-    #     api_client: APIClient,
-    #     base_user: AbstractUser,
-    #     budget_factory: FactoryMetaClass,
-    #     expense_prediction_factory: FactoryMetaClass,
-    # ):
-    #     """
-    #     GIVEN: Two ExpensePrediction model instances for different Budgets created in database.
-    #     WHEN: ExpensePredictionViewSet called by one of Budgets owner.
-    #     THEN: Response with serialized ExpensePrediction list (only from given Budget) returned.
-    #     """
-    #     budget = budget_factory(owner=base_user)
-    #     prediction = expense_prediction_factory(budget=budget)
-    #     expense_prediction_factory()
-    #     api_client.force_authenticate(base_user)
-    #
-    #     response = api_client.get(expense_prediction_url(budget.id))
-    #
-    #     categories = ExpensePrediction.objects.filter(budget=budget)
-    #     serializer = ExpensePredictionSerializer(categories, many=True)
-    #     assert response.status_code == status.HTTP_200_OK
-    #     assert len(response.data['results']) == len(serializer.data) == categories.count() == 1
-    #     assert response.data['results'] == serializer.data
-    #     assert response.data['results'][0]['id'] == prediction.id
-    #
-    # @pytest.mark.parametrize('sort_param', ('id', '-id', 'group', '-group', 'name', '-name'))
-    # def test_get_categories_list_sorted_by_param(
-    #     self,
-    #     api_client: APIClient,
-    #     base_user: AbstractUser,
-    #     budget_factory: FactoryMetaClass,
-    #     expense_prediction_factory: FactoryMetaClass,
-    #     sort_param: str,
-    # ):
-    #     """
-    #     GIVEN: Three ExpensePrediction objects created in database.
-    #     WHEN: The ExpensePredictionViewSet list view is called with sorting by given param and without any filters.
-    #     THEN: Response must contain all ExpensePrediction existing in database sorted by given param.
-    #     """
-    #     budget = budget_factory(owner=base_user)
-    #     for _ in range(3):
-    #         expense_prediction_factory(budget=budget)
-    #     api_client.force_authenticate(base_user)
-    #
-    #     response = api_client.get(expense_prediction_url(budget.id), data={'ordering': sort_param})
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     categories = ExpensePrediction.objects.all().order_by(sort_param)
-    #     serializer = ExpensePredictionSerializer(categories, many=True)
-    #     assert response.data['results'] and serializer.data
-    #     assert len(response.data['results']) == len(serializer.data) == len(categories) == 3
-    #     assert response.data['results'] == serializer.data
-    #
+    def test_prediction_list_limited_to_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two ExpensePrediction model instances for different Budgets created in database.
+        WHEN: ExpensePredictionViewSet called by one of Budgets owner.
+        THEN: Response with serialized ExpensePrediction list (only from given Budget) returned.
+        """
+        budget = budget_factory(owner=base_user)
+        prediction = expense_prediction_factory(budget=budget)
+        expense_prediction_factory()
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(expense_prediction_url(budget.id))
+
+        predictions = ExpensePrediction.objects.filter(period__budget=budget)
+        serializer = ExpensePredictionSerializer(predictions, many=True)
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data['results']) == len(serializer.data) == predictions.count() == 1
+        assert response.data['results'] == serializer.data
+        assert response.data['results'][0]['id'] == prediction.id
+
+    @pytest.mark.parametrize('sort_param', ('id', '-id', 'period', '-period', 'category', '-category'))
+    def test_get_predictions_list_sorted_by_param(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+        sort_param: str,
+    ):
+        """
+        GIVEN: Three ExpensePrediction objects created in database.
+        WHEN: The ExpensePredictionViewSet list view is called with sorting by given param and without any filters.
+        THEN: Response must contain all ExpensePrediction existing in database sorted by given param.
+        """
+        budget = budget_factory(owner=base_user)
+        for _ in range(5):
+            expense_prediction_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(expense_prediction_url(budget.id), data={'ordering': sort_param})
+
+        assert response.status_code == status.HTTP_200_OK
+        predictions = ExpensePrediction.objects.all().order_by(sort_param)
+        serializer = ExpensePredictionSerializer(predictions, many=True)
+        assert response.data['results'] and serializer.data
+        assert len(response.data['results']) == len(serializer.data) == len(predictions) == 3
+        assert response.data['results'] == serializer.data
+
     # @pytest.mark.parametrize(
     #     'filter_value', ('Test', 'TEST', 'test', 'name', 'NAME', 'Name', 'Test name', 'TEST NAME', 'test name')
     # )
-    # def test_get_categories_list_filtered_by_name(
+    # def test_get_predictions_list_filtered_by_name(
     #     self,
     #     api_client: APIClient,
     #     base_user: AbstractUser,
@@ -195,17 +194,17 @@ class TestExpensePredictionApiList:
     #
     #     assert response.status_code == status.HTTP_200_OK
     #     assert ExpensePrediction.objects.all().count() == 2
-    #     categories = ExpensePrediction.objects.filter(budget=prediction.budget, name__icontains=filter_value)
+    #     predictions = ExpensePrediction.objects.filter(budget=prediction.budget, name__icontains=filter_value)
     #     serializer = ExpensePredictionSerializer(
-    #         categories,
+    #         predictions,
     #         many=True,
     #     )
     #     assert response.data['results'] and serializer.data
-    #     assert len(response.data['results']) == len(serializer.data) == categories.count() == 1
+    #     assert len(response.data['results']) == len(serializer.data) == predictions.count() == 1
     #     assert response.data['results'] == serializer.data
     #     assert response.data['results'][0]['id'] == prediction.id
     #
-    # def test_get_categories_list_filtered_by_common_only_true(
+    # def test_get_predictions_list_filtered_by_common_only_true(
     #     self,
     #     api_client: APIClient,
     #     base_user: AbstractUser,
@@ -226,14 +225,14 @@ class TestExpensePredictionApiList:
     #
     #     assert response.status_code == status.HTTP_200_OK
     #     assert ExpensePrediction.objects.all().count() == 2
-    #     categories = ExpensePrediction.objects.filter(budget=prediction.budget, owner__isnull=True)
-    #     serializer = ExpensePredictionSerializer(categories, many=True)
+    #     predictions = ExpensePrediction.objects.filter(budget=prediction.budget, owner__isnull=True)
+    #     serializer = ExpensePredictionSerializer(predictions, many=True)
     #     assert response.data['results'] and serializer.data
-    #     assert len(response.data['results']) == len(serializer.data) == categories.count() == 1
+    #     assert len(response.data['results']) == len(serializer.data) == predictions.count() == 1
     #     assert response.data['results'] == serializer.data
     #     assert response.data['results'][0]['id'] == prediction.id
     #
-    # def test_get_categories_list_filtered_by_common_only_false(
+    # def test_get_predictions_list_filtered_by_common_only_false(
     #     self,
     #     api_client: APIClient,
     #     base_user: AbstractUser,
@@ -254,13 +253,13 @@ class TestExpensePredictionApiList:
     #
     #     assert response.status_code == status.HTTP_200_OK
     #     assert ExpensePrediction.objects.all().count() == 2
-    #     categories = ExpensePrediction.objects.filter(budget=budget)
-    #     serializer = ExpensePredictionSerializer(categories, many=True)
+    #     predictions = ExpensePrediction.objects.filter(budget=budget)
+    #     serializer = ExpensePredictionSerializer(predictions, many=True)
     #     assert response.data['results'] and serializer.data
-    #     assert len(response.data['results']) == len(serializer.data) == categories.count() == 2
+    #     assert len(response.data['results']) == len(serializer.data) == predictions.count() == 2
     #     assert response.data['results'] == serializer.data
     #
-    # def test_get_categories_list_filtered_by_group(
+    # def test_get_predictions_list_filtered_by_group(
     #     self,
     #     api_client: APIClient,
     #     base_user: AbstractUser,
@@ -284,16 +283,16 @@ class TestExpensePredictionApiList:
     #
     #     assert response.status_code == status.HTTP_200_OK
     #     assert ExpensePrediction.objects.all().count() == 2
-    #     categories = ExpensePrediction.objects.filter(
+    #     predictions = ExpensePrediction.objects.filter(
     #         budget=prediction.budget, group=ExpensePrediction.IncomeGroups.REGULAR.value
     #     )
-    #     serializer = ExpensePredictionSerializer(categories, many=True)
+    #     serializer = ExpensePredictionSerializer(predictions, many=True)
     #     assert response.data['results'] and serializer.data
-    #     assert len(response.data['results']) == len(serializer.data) == categories.count() == 1
+    #     assert len(response.data['results']) == len(serializer.data) == predictions.count() == 1
     #     assert response.data['results'] == serializer.data
     #     assert response.data['results'][0]['id'] == prediction.id
     #
-    # def test_get_categories_list_filtered_by_owner(
+    # def test_get_predictions_list_filtered_by_owner(
     #     self,
     #     api_client: APIClient,
     #     base_user: AbstractUser,
@@ -315,15 +314,15 @@ class TestExpensePredictionApiList:
     #
     #     assert response.status_code == status.HTTP_200_OK
     #     assert ExpensePrediction.objects.all().count() == 2
-    #     categories = ExpensePrediction.objects.filter(budget=prediction.budget, owner=base_user)
-    #     serializer = ExpensePredictionSerializer(categories, many=True)
+    #     predictions = ExpensePrediction.objects.filter(budget=prediction.budget, owner=base_user)
+    #     serializer = ExpensePredictionSerializer(predictions, many=True)
     #     assert response.data['results'] and serializer.data
-    #     assert len(response.data['results']) == len(serializer.data) == categories.count() == 1
+    #     assert len(response.data['results']) == len(serializer.data) == predictions.count() == 1
     #     assert response.data['results'] == serializer.data
     #     assert response.data['results'][0]['id'] == prediction.id
     #
     # @pytest.mark.parametrize('is_active', (True, False))
-    # def test_get_categories_list_filtered_by_is_active(
+    # def test_get_predictions_list_filtered_by_is_active(
     #     self,
     #     api_client: APIClient,
     #     base_user: AbstractUser,
@@ -346,9 +345,9 @@ class TestExpensePredictionApiList:
     #
     #     assert response.status_code == status.HTTP_200_OK
     #     assert ExpensePrediction.objects.all().count() == 2
-    #     categories = ExpensePrediction.objects.filter(budget=prediction.budget, is_active=is_active)
-    #     serializer = ExpensePredictionSerializer(categories, many=True)
+    #     predictions = ExpensePrediction.objects.filter(budget=prediction.budget, is_active=is_active)
+    #     serializer = ExpensePredictionSerializer(predictions, many=True)
     #     assert response.data['results'] and serializer.data
-    #     assert len(response.data['results']) == len(serializer.data) == categories.count() == 1
+    #     assert len(response.data['results']) == len(serializer.data) == predictions.count() == 1
     #     assert response.data['results'] == serializer.data
     #     assert response.data['results'][0]['id'] == prediction.id
