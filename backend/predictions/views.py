@@ -22,7 +22,8 @@ class ExpensePredictionViewSet(ModelViewSet):
     serializer_class = ExpensePredictionSerializer
 
     filterset_class = ExpensePredictionFilterSet
-    ordering = ('id', 'period', 'category')
+    ordering = ('period__name', 'category__name')
+    ordering_fields = ('id', 'period', 'category', 'period__name', 'category__name')
 
     def get_queryset(self) -> QuerySet:
         """
