@@ -140,7 +140,21 @@ class TestExpensePredictionApiList:
         assert response.data['results'] == serializer.data
         assert response.data['results'][0]['id'] == prediction.id
 
-    @pytest.mark.parametrize('sort_param', ('id', '-id', 'period', '-period', 'category', '-category'))
+    @pytest.mark.parametrize(
+        'sort_param',
+        (
+            'id',
+            '-id',
+            'period',
+            '-period',
+            'category',
+            '-category',
+            'period__name',
+            '-period__name',
+            'category__name',
+            '-category__name',
+        ),
+    )
     def test_get_predictions_list_sorted_by_param(
         self,
         api_client: APIClient,
@@ -165,7 +179,7 @@ class TestExpensePredictionApiList:
         predictions = ExpensePrediction.objects.all().order_by(sort_param)
         serializer = ExpensePredictionSerializer(predictions, many=True)
         assert response.data['results'] and serializer.data
-        assert len(response.data['results']) == len(serializer.data) == len(predictions) == 3
+        assert len(response.data['results']) == len(serializer.data) == len(predictions) == 5
         assert response.data['results'] == serializer.data
 
     # @pytest.mark.parametrize(
