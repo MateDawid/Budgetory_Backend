@@ -182,186 +182,146 @@ class TestExpensePredictionApiList:
         assert len(response.data['results']) == len(serializer.data) == len(predictions) == 5
         assert response.data['results'] == serializer.data
 
-    # @pytest.mark.parametrize(
-    #     'filter_value', ('Test', 'TEST', 'test', 'name', 'NAME', 'Name', 'Test name', 'TEST NAME', 'test name')
-    # )
-    # def test_get_predictions_list_filtered_by_name(
-    #     self,
-    #     api_client: APIClient,
-    #     base_user: AbstractUser,
-    #     budget_factory: FactoryMetaClass,
-    #     expense_prediction_factory: FactoryMetaClass,
-    #     filter_value: str,
-    # ):
-    #     """
-    #     GIVEN: Two ExpensePrediction objects for single Budget.
-    #     WHEN: The ExpensePredictionViewSet list view is called with name filter.
-    #     THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
-    #     name value.
-    #     """
-    #     budget = budget_factory(owner=base_user)
-    #     prediction = expense_prediction_factory(name='Test name', budget=budget)
-    #     expense_prediction_factory(name='Other prediction', budget=budget)
-    #     api_client.force_authenticate(base_user)
-    #
-    #     response = api_client.get(expense_prediction_url(budget.id), data={'name': filter_value})
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     assert ExpensePrediction.objects.all().count() == 2
-    #     predictions = ExpensePrediction.objects.filter(budget=prediction.budget, name__icontains=filter_value)
-    #     serializer = ExpensePredictionSerializer(
-    #         predictions,
-    #         many=True,
-    #     )
-    #     assert response.data['results'] and serializer.data
-    #     assert len(response.data['results']) == len(serializer.data) == predictions.count() == 1
-    #     assert response.data['results'] == serializer.data
-    #     assert response.data['results'][0]['id'] == prediction.id
-    #
-    # def test_get_predictions_list_filtered_by_common_only_true(
-    #     self,
-    #     api_client: APIClient,
-    #     base_user: AbstractUser,
-    #     budget_factory: FactoryMetaClass,
-    #     expense_prediction_factory: FactoryMetaClass,
-    # ):
-    #     """
-    #     GIVEN: Two ExpensePrediction objects for single Budget.
-    #     WHEN: The ExpensePredictionViewSet list view is called with True common_only filter.
-    #     THEN: Response must contain only common ExpensePrediction objects existing in database assigned to Budget.
-    #     """
-    #     budget = budget_factory(owner=base_user)
-    #     prediction = expense_prediction_factory(budget=budget, owner=None)
-    #     expense_prediction_factory(budget=budget, owner=base_user)
-    #     api_client.force_authenticate(base_user)
-    #
-    #     response = api_client.get(expense_prediction_url(budget.id), data={'common_only': True})
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     assert ExpensePrediction.objects.all().count() == 2
-    #     predictions = ExpensePrediction.objects.filter(budget=prediction.budget, owner__isnull=True)
-    #     serializer = ExpensePredictionSerializer(predictions, many=True)
-    #     assert response.data['results'] and serializer.data
-    #     assert len(response.data['results']) == len(serializer.data) == predictions.count() == 1
-    #     assert response.data['results'] == serializer.data
-    #     assert response.data['results'][0]['id'] == prediction.id
-    #
-    # def test_get_predictions_list_filtered_by_common_only_false(
-    #     self,
-    #     api_client: APIClient,
-    #     base_user: AbstractUser,
-    #     budget_factory: FactoryMetaClass,
-    #     expense_prediction_factory: FactoryMetaClass,
-    # ):
-    #     """
-    #     GIVEN: Two ExpensePrediction objects for single Budget.
-    #     WHEN: The ExpensePredictionViewSet list view is called with False common_only filter.
-    #     THEN: Response must contain all ExpensePrediction objects existing in database assigned to Budget.
-    #     """
-    #     budget = budget_factory(owner=base_user)
-    #     expense_prediction_factory(budget=budget, owner=base_user)
-    #     expense_prediction_factory(budget=budget, owner=None)
-    #     api_client.force_authenticate(base_user)
-    #
-    #     response = api_client.get(expense_prediction_url(budget.id), data={'common_only': False})
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     assert ExpensePrediction.objects.all().count() == 2
-    #     predictions = ExpensePrediction.objects.filter(budget=budget)
-    #     serializer = ExpensePredictionSerializer(predictions, many=True)
-    #     assert response.data['results'] and serializer.data
-    #     assert len(response.data['results']) == len(serializer.data) == predictions.count() == 2
-    #     assert response.data['results'] == serializer.data
-    #
-    # def test_get_predictions_list_filtered_by_group(
-    #     self,
-    #     api_client: APIClient,
-    #     base_user: AbstractUser,
-    #     budget_factory: FactoryMetaClass,
-    #     expense_prediction_factory: FactoryMetaClass,
-    # ):
-    #     """
-    #     GIVEN: Two ExpensePrediction objects for single Budget.
-    #     WHEN: The ExpensePredictionViewSet list view is called with group filter.
-    #     THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
-    #     group value.
-    #     """
-    #     budget = budget_factory(owner=base_user)
-    #     prediction = expense_prediction_factory(group=ExpensePrediction.IncomeGroups.REGULAR, budget=budget)
-    #     expense_prediction_factory(group=ExpensePrediction.IncomeGroups.IRREGULAR, budget=budget)
-    #     api_client.force_authenticate(base_user)
-    #
-    #     response = api_client.get(
-    #         expense_prediction_url(budget.id), data={'group': ExpensePrediction.IncomeGroups.REGULAR.value}
-    #     )
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     assert ExpensePrediction.objects.all().count() == 2
-    #     predictions = ExpensePrediction.objects.filter(
-    #         budget=prediction.budget, group=ExpensePrediction.IncomeGroups.REGULAR.value
-    #     )
-    #     serializer = ExpensePredictionSerializer(predictions, many=True)
-    #     assert response.data['results'] and serializer.data
-    #     assert len(response.data['results']) == len(serializer.data) == predictions.count() == 1
-    #     assert response.data['results'] == serializer.data
-    #     assert response.data['results'][0]['id'] == prediction.id
-    #
-    # def test_get_predictions_list_filtered_by_owner(
-    #     self,
-    #     api_client: APIClient,
-    #     base_user: AbstractUser,
-    #     budget_factory: FactoryMetaClass,
-    #     expense_prediction_factory: FactoryMetaClass,
-    # ):
-    #     """
-    #     GIVEN: Two ExpensePrediction objects for single Budget.
-    #     WHEN: The ExpensePredictionViewSet list view is called with owner filter.
-    #     THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
-    #     owner value.
-    #     """
-    #     budget = budget_factory(owner=base_user)
-    #     prediction = expense_prediction_factory(budget=budget, owner=base_user)
-    #     expense_prediction_factory(budget=budget, owner=None)
-    #     api_client.force_authenticate(base_user)
-    #
-    #     response = api_client.get(expense_prediction_url(budget.id), data={'owner': base_user.id})
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     assert ExpensePrediction.objects.all().count() == 2
-    #     predictions = ExpensePrediction.objects.filter(budget=prediction.budget, owner=base_user)
-    #     serializer = ExpensePredictionSerializer(predictions, many=True)
-    #     assert response.data['results'] and serializer.data
-    #     assert len(response.data['results']) == len(serializer.data) == predictions.count() == 1
-    #     assert response.data['results'] == serializer.data
-    #     assert response.data['results'][0]['id'] == prediction.id
-    #
-    # @pytest.mark.parametrize('is_active', (True, False))
-    # def test_get_predictions_list_filtered_by_is_active(
-    #     self,
-    #     api_client: APIClient,
-    #     base_user: AbstractUser,
-    #     budget_factory: FactoryMetaClass,
-    #     expense_prediction_factory: FactoryMetaClass,
-    #     is_active: bool,
-    # ):
-    #     """
-    #     GIVEN: Two ExpensePrediction objects for single Budget.
-    #     WHEN: The ExpensePredictionViewSet list view is called with is_active filter.
-    #     THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
-    #     is_active value.
-    #     """
-    #     budget = budget_factory(owner=base_user)
-    #     prediction = expense_prediction_factory(budget=budget, is_active=is_active)
-    #     expense_prediction_factory(budget=budget, is_active=not is_active)
-    #     api_client.force_authenticate(base_user)
-    #
-    #     response = api_client.get(expense_prediction_url(budget.id), data={'is_active': is_active})
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     assert ExpensePrediction.objects.all().count() == 2
-    #     predictions = ExpensePrediction.objects.filter(budget=prediction.budget, is_active=is_active)
-    #     serializer = ExpensePredictionSerializer(predictions, many=True)
-    #     assert response.data['results'] and serializer.data
-    #     assert len(response.data['results']) == len(serializer.data) == predictions.count() == 1
-    #     assert response.data['results'] == serializer.data
-    #     assert response.data['results'][0]['id'] == prediction.id
+    def test_get_predictions_list_filtered_by_period_id(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two ExpensePrediction objects for single Budget.
+        WHEN: The ExpensePredictionViewSet list view is called with period_id filter.
+        THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
+        period_id value.
+        """
+        budget = budget_factory(owner=base_user)
+        period = budgeting_period_factory(budget=budget, name='Test name')
+        prediction = expense_prediction_factory(budget=budget, period=period)
+        expense_prediction_factory(budget=budget, period=budgeting_period_factory(budget=budget, name='Other period'))
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(expense_prediction_url(budget.id), data={'period_id': period.id})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert ExpensePrediction.objects.all().count() == 2
+        predictions = ExpensePrediction.objects.filter(period__budget=budget, period__id=period.id)
+        serializer = ExpensePredictionSerializer(
+            predictions,
+            many=True,
+        )
+        assert response.data['results'] and serializer.data
+        assert len(response.data['results']) == len(serializer.data) == predictions.count() == 1
+        assert response.data['results'] == serializer.data
+        assert response.data['results'][0]['id'] == prediction.id
+
+    @pytest.mark.parametrize(
+        'filter_value', ('Test', 'TEST', 'test', 'name', 'NAME', 'Name', 'Test name', 'TEST NAME', 'test name')
+    )
+    def test_get_predictions_list_filtered_by_period_name(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+        filter_value: str,
+    ):
+        """
+        GIVEN: Two ExpensePrediction objects for single Budget.
+        WHEN: The ExpensePredictionViewSet list view is called with period_name filter.
+        THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
+        period_name value.
+        """
+        budget = budget_factory(owner=base_user)
+        period = budgeting_period_factory(budget=budget, name='Test name')
+        prediction = expense_prediction_factory(budget=budget, period=period)
+        expense_prediction_factory(budget=budget, period=budgeting_period_factory(budget=budget, name='Other'))
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(expense_prediction_url(budget.id), data={'period_name': filter_value})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert ExpensePrediction.objects.all().count() == 2
+        predictions = ExpensePrediction.objects.filter(period__budget=budget, period__name__icontains=filter_value)
+        serializer = ExpensePredictionSerializer(
+            predictions,
+            many=True,
+        )
+        assert response.data['results'] and serializer.data
+        assert len(response.data['results']) == len(serializer.data) == predictions.count() == 1
+        assert response.data['results'] == serializer.data
+        assert response.data['results'][0]['id'] == prediction.id
+
+    def test_get_predictions_list_filtered_by_category_id(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two ExpensePrediction objects for single Budget.
+        WHEN: The ExpensePredictionViewSet list view is called with category_id filter.
+        THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
+        category_id value.
+        """
+        budget = budget_factory(owner=base_user)
+        category = expense_category_factory(budget=budget, name='Test name')
+        prediction = expense_prediction_factory(budget=budget, category=category)
+        expense_prediction_factory(budget=budget, category=expense_category_factory(budget=budget, name='Other'))
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(expense_prediction_url(budget.id), data={'category_id': category.id})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert ExpensePrediction.objects.all().count() == 2
+        predictions = ExpensePrediction.objects.filter(period__budget=budget, category__id=category.id)
+        serializer = ExpensePredictionSerializer(
+            predictions,
+            many=True,
+        )
+        assert response.data['results'] and serializer.data
+        assert len(response.data['results']) == len(serializer.data) == predictions.count() == 1
+        assert response.data['results'] == serializer.data
+        assert response.data['results'][0]['id'] == prediction.id
+
+    @pytest.mark.parametrize(
+        'filter_value', ('Test', 'TEST', 'test', 'name', 'NAME', 'Name', 'Test name', 'TEST NAME', 'test name')
+    )
+    def test_get_predictions_list_filtered_by_category_name(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+        filter_value: str,
+    ):
+        """
+        GIVEN: Two ExpensePrediction objects for single Budget.
+        WHEN: The ExpensePredictionViewSet list view is called with category_name filter.
+        THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
+        category_name value.
+        """
+        budget = budget_factory(owner=base_user)
+        category = expense_category_factory(budget=budget, name='Test name')
+        prediction = expense_prediction_factory(budget=budget, category=category)
+        expense_prediction_factory(budget=budget, category=expense_category_factory(budget=budget, name='Other'))
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(expense_prediction_url(budget.id), data={'category_name': filter_value})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert ExpensePrediction.objects.all().count() == 2
+        predictions = ExpensePrediction.objects.filter(category__budget=budget, category__name__icontains=filter_value)
+        serializer = ExpensePredictionSerializer(
+            predictions,
+            many=True,
+        )
+        assert response.data['results'] and serializer.data
+        assert len(response.data['results']) == len(serializer.data) == predictions.count() == 1
+        assert response.data['results'] == serializer.data
+        assert response.data['results'][0]['id'] == prediction.id
