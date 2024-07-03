@@ -82,6 +82,30 @@ class TestExpensePredictionModel:
         assert not ExpensePrediction.objects.all().exists()
 
     @pytest.mark.django_db(transaction=True)
+    @pytest.mark.parametrize('value', [Decimal('0.00'), Decimal('-0.01')])
+    def test_error_value_too_low(
+        self,
+        budget: Budget,
+        budgeting_period_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+        value: Decimal,
+    ):
+        """
+        GIVEN: BudgetingPeriod and ExpenseCategory models instances in database.
+        WHEN: ExpensePrediction instance create attempt with "value" value too low.
+        THEN: DataError raised.
+        """
+        payload = self.PAYLOAD.copy()
+        payload['value'] = value
+        payload['period'] = budgeting_period_factory(budget=budget)
+        payload['category'] = expense_category_factory(budget=budget)
+
+        with pytest.raises(IntegrityError) as exc:
+            ExpensePrediction.objects.create(**payload)
+        assert 'violates check constraint "value_gte_0"' in str(exc.value)
+        assert not ExpensePrediction.objects.all().exists()
+
+    @pytest.mark.django_db(transaction=True)
     def test_error_on_second_prediction_for_category_in_period(
         self, budget: Budget, budgeting_period_factory: FactoryMetaClass, expense_category_factory: FactoryMetaClass
     ):
