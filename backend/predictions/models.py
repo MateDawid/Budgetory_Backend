@@ -1,5 +1,8 @@
+from decimal import Decimal
+
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import CheckConstraint, Q
 
 
 class ExpensePrediction(models.Model):
@@ -14,6 +17,12 @@ class ExpensePrediction(models.Model):
 
     class Meta:
         unique_together = ('period', 'category')
+        constraints = (
+            CheckConstraint(
+                check=Q(value__gt=Decimal('0.00')),
+                name='value_gte_0',
+            ),
+        )
 
     def __str__(self) -> str:
         """
