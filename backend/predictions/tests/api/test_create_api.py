@@ -55,13 +55,11 @@ class TestExpensePredictionApiCreate:
         serializer = ExpensePredictionSerializer(prediction)
         assert response.data == serializer.data
 
-    @pytest.mark.parametrize('field_name', ['description'])
-    def test_error_value_too_long(
+    def test_error_description_too_long(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
-        field_name: str,
     ):
         """
         GIVEN: Budget, BudgetingPeriod and ExpenseCategory instances created in database. Payload for ExpensePrediction
@@ -71,15 +69,15 @@ class TestExpensePredictionApiCreate:
         """
         budget = budget_factory(owner=base_user)
         api_client.force_authenticate(base_user)
-        max_length = ExpensePrediction._meta.get_field(field_name).max_length
+        max_length = ExpensePrediction._meta.get_field('description').max_length
         payload = self.PAYLOAD.copy()
-        payload[field_name] = (max_length + 1) * 'a'
+        payload['description'] = (max_length + 1) * 'a'
 
         response = api_client.post(expense_prediction_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert field_name in response.data
-        assert response.data[field_name][0] == f'Ensure this field has no more than {max_length} characters.'
+        assert 'description' in response.data
+        assert response.data['description'][0] == f'Ensure this field has no more than {max_length} characters.'
         assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
 
     def test_error_create_prediction_for_not_accessible_budget(
@@ -89,7 +87,8 @@ class TestExpensePredictionApiCreate:
         budget_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget instance created in database. Valid payload for ExpensePrediction.
+        GIVEN: Budget, BudgetingPeriod and ExpenseCategory instances created in database. Valid payload
+        for ExpensePrediction.
         WHEN: ExpensePredictionViewSet called with POST by User not belonging to Budget with valid payload.
         THEN: Forbidden HTTP 403 returned. Object not created.
         """
@@ -103,84 +102,34 @@ class TestExpensePredictionApiCreate:
         assert response.data['detail'] == 'User does not have access to Budget.'
         assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
 
-    # def test_error_owner_does_not_belong_to_budget(
-    #     self,
-    #     api_client: APIClient,
-    #     base_user: AbstractUser,
-    #     user_factory: FactoryMetaClass,
-    #     budget_factory: FactoryMetaClass,
-    # ):
-    #     """
-    #     GIVEN: Budget instance created in database. User not belonging to Budget as
-    #     'owner' in payload.
-    #     WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with invalid payload.
-    #     THEN: Bad request HTTP 400 returned. No ExpensePrediction created in database.
-    #     """
-    #     budget = budget_factory(owner=base_user)
-    #     outer_user = user_factory()
-    #     payload = self.PAYLOAD.copy()
-    #
-    #     payload['owner'] = outer_user.id
-    #     api_client.force_authenticate(base_user)
-    #
-    #     api_client.post(income_category_url(budget.id), payload)
-    #     response = api_client.post(income_category_url(budget.id), payload)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     assert 'non_field_errors' in response.data
-    #     assert response.data['non_field_errors'][0] == 'Provided owner does not belong to Budget.'
-    #     assert not ExpensePrediction.objects.filter(budget=budget).exists()
-    #
-    # def test_error_personal_category_name_already_used(
-    #     self,
-    #     api_client: APIClient,
-    #     base_user: AbstractUser,
-    #     budget_factory: FactoryMetaClass,
-    # ):
-    #     """
-    #     GIVEN: ExpensePrediction instance with owner created in database. Name of existing personal ExpensePrediction
-    #     and owner of existing ExpensePrediction in payload.
-    #     WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with invalid payload.
-    #     THEN: Bad request HTTP 400 returned. No ExpensePrediction created in database.
-    #     """
-    #     budget = budget_factory(owner=base_user)
-    #     payload = self.PAYLOAD.copy()
-    #     payload['owner'] = base_user.id
-    #     api_client.force_authenticate(base_user)
-    #     api_client.post(income_category_url(budget.id), payload)
-    #
-    #     response = api_client.post(income_category_url(budget.id), payload)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     assert 'non_field_errors' in response.data
-    #     assert (
-    #         response.data['non_field_errors'][0]
-    #         == 'Personal ExpensePrediction with given name already exists in Budget for provided owner.'
-    #     )
-    #     assert ExpensePrediction.objects.filter(budget=budget, owner__isnull=False).count() == 1
-    #
-    # def test_error_common_category_name_already_used(
-    #     self,
-    #     api_client: APIClient,
-    #     base_user: AbstractUser,
-    #     budget_factory: FactoryMetaClass,
-    # ):
-    #     """
-    #     GIVEN: ExpensePrediction instance with owner created in database. Name of existing common
-    #     ExpensePrediction in payload.
-    #     WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with invalid payload.
-    #     THEN: Bad request HTTP 400 returned. No ExpensePrediction created in database.
-    #     """
-    #     budget = budget_factory(owner=base_user)
-    #     payload = self.PAYLOAD.copy()
-    #     api_client.force_authenticate(base_user)
-    #     api_client.post(income_category_url(budget.id), payload)
-    #
-    #     response = api_client.post(income_category_url(budget.id), payload)
-    #
-    #     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    #     assert 'non_field_errors' in response.data
-    #     assert response.data['non_field_errors'][0] == 'Common ExpensePrediction with given name already exists in
-    #     Budget.'
-    #     assert ExpensePrediction.objects.filter(budget=budget, owner__isnull=True).count() == 1
-    #
+    @pytest.mark.parametrize('value', [Decimal('0.00'), Decimal('-0.01')])
+    def test_error_value_lower_than_min(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+        value: Decimal,
+    ):
+        """
+        GIVEN: Budget, BudgetingPeriod and ExpenseCategory instances created in database. Payload for ExpensePrediction
+        with field value too long.
+        WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. ExpensePrediction not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        period = budgeting_period_factory(budget=budget)
+        category = expense_category_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload['period'] = period.id
+        payload['category'] = category.id
+        payload['value'] = value
+
+        response = api_client.post(expense_prediction_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'value' in response.data
+        assert response.data['value'][0] == 'Value should be higher than 0.00.'
+        assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
