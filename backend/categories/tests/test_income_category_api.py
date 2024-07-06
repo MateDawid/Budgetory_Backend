@@ -514,8 +514,8 @@ class TestIncomeCategoryApiCreate:
         response = api_client.post(income_category_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert field_name in response.data
-        assert response.data[field_name][0] == f'Ensure this field has no more than {max_length} characters.'
+        assert field_name in response.data['detail']
+        assert response.data['detail'][field_name][0] == f'Ensure this field has no more than {max_length} characters.'
         assert not IncomeCategory.objects.filter(budget=budget).exists()
 
     def test_error_create_category_for_not_accessible_budget(
@@ -563,8 +563,8 @@ class TestIncomeCategoryApiCreate:
         response = api_client.post(income_category_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data
-        assert response.data['non_field_errors'][0] == 'Provided owner does not belong to Budget.'
+        assert 'non_field_errors' in response.data['detail']
+        assert response.data['detail']['non_field_errors'][0] == 'Provided owner does not belong to Budget.'
         assert not IncomeCategory.objects.filter(budget=budget).exists()
 
     def test_error_personal_category_name_already_used(
@@ -588,9 +588,9 @@ class TestIncomeCategoryApiCreate:
         response = api_client.post(income_category_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data
+        assert 'non_field_errors' in response.data['detail']
         assert (
-            response.data['non_field_errors'][0]
+            response.data['detail']['non_field_errors'][0]
             == 'Personal IncomeCategory with given name already exists in Budget for provided owner.'
         )
         assert IncomeCategory.objects.filter(budget=budget, owner__isnull=False).count() == 1
@@ -615,8 +615,11 @@ class TestIncomeCategoryApiCreate:
         response = api_client.post(income_category_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data
-        assert response.data['non_field_errors'][0] == 'Common IncomeCategory with given name already exists in Budget.'
+        assert 'non_field_errors' in response.data['detail']
+        assert (
+            response.data['detail']['non_field_errors'][0]
+            == 'Common IncomeCategory with given name already exists in Budget.'
+        )
         assert IncomeCategory.objects.filter(budget=budget, owner__isnull=True).count() == 1
 
 
@@ -822,8 +825,8 @@ class TestIncomeCategoryApiPartialUpdate:
         response = api_client.patch(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data
-        assert response.data['non_field_errors'][0] == 'Provided owner does not belong to Budget.'
+        assert 'non_field_errors' in response.data['detail']
+        assert response.data['detail']['non_field_errors'][0] == 'Provided owner does not belong to Budget.'
 
     def test_error_partial_update_personal_category_name_already_used(
         self,
@@ -848,9 +851,9 @@ class TestIncomeCategoryApiPartialUpdate:
         response = api_client.patch(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data
+        assert 'non_field_errors' in response.data['detail']
         assert (
-            response.data['non_field_errors'][0]
+            response.data['detail']['non_field_errors'][0]
             == 'Personal IncomeCategory with given name already exists in Budget for provided owner.'
         )
 
@@ -877,8 +880,11 @@ class TestIncomeCategoryApiPartialUpdate:
         response = api_client.patch(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data
-        assert response.data['non_field_errors'][0] == 'Common IncomeCategory with given name already exists in Budget.'
+        assert 'non_field_errors' in response.data['detail']
+        assert (
+            response.data['detail']['non_field_errors'][0]
+            == 'Common IncomeCategory with given name already exists in Budget.'
+        )
 
 
 @pytest.mark.django_db
@@ -989,8 +995,8 @@ class TestIncomeCategoryApiFullUpdate:
         response = api_client.put(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data
-        assert response.data['non_field_errors'][0] == 'Provided owner does not belong to Budget.'
+        assert 'non_field_errors' in response.data['detail']
+        assert response.data['detail']['non_field_errors'][0] == 'Provided owner does not belong to Budget.'
 
     def test_error_full_update_personal_category_name_already_used(
         self,
@@ -1016,9 +1022,9 @@ class TestIncomeCategoryApiFullUpdate:
         response = api_client.put(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data
+        assert 'non_field_errors' in response.data['detail']
         assert (
-            response.data['non_field_errors'][0]
+            response.data['detail']['non_field_errors'][0]
             == 'Personal IncomeCategory with given name already exists in Budget for provided owner.'
         )
 
@@ -1046,8 +1052,11 @@ class TestIncomeCategoryApiFullUpdate:
         response = api_client.put(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data
-        assert response.data['non_field_errors'][0] == 'Common IncomeCategory with given name already exists in Budget.'
+        assert 'non_field_errors' in response.data['detail']
+        assert (
+            response.data['detail']['non_field_errors'][0]
+            == 'Common IncomeCategory with given name already exists in Budget.'
+        )
 
 
 @pytest.mark.django_db

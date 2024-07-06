@@ -76,8 +76,10 @@ class TestExpensePredictionApiCreate:
         response = api_client.post(expense_prediction_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'description' in response.data
-        assert response.data['description'][0] == f'Ensure this field has no more than {max_length} characters.'
+        assert 'description' in response.data['detail']
+        assert (
+            response.data['detail']['description'][0] == f'Ensure this field has no more than {max_length} characters.'
+        )
         assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
 
     def test_error_create_prediction_for_not_accessible_budget(
@@ -130,6 +132,6 @@ class TestExpensePredictionApiCreate:
         response = api_client.post(expense_prediction_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'value' in response.data
-        assert response.data['value'][0] == 'Value should be higher than 0.00.'
+        assert 'value' in response.data['detail']
+        assert response.data['detail']['value'][0] == 'Value should be higher than 0.00.'
         assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
