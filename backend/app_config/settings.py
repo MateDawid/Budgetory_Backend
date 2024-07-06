@@ -142,7 +142,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'app_users.User'
 
-REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'app_config.paginations.DefaultPagination'}
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'app_config.paginations.DefaultPagination',
+    'EXCEPTION_HANDLER': 'app_config.exception_handlers.default_exception_handler',
+}
 
 SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': False,
