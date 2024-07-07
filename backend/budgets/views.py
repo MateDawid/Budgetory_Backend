@@ -1,5 +1,4 @@
 from app_config.permissions import UserBelongsToBudgetPermission
-from budgets.mixins import BudgetMixin
 from budgets.models import Budget, BudgetingPeriod
 from budgets.serializers import BudgetingPeriodSerializer, BudgetSerializer
 from categories.budget_defaults import (
@@ -7,15 +6,16 @@ from categories.budget_defaults import (
     DEFAULT_INCOME_CATEGORIES,
 )
 from categories.models import ExpenseCategory, IncomeCategory
+from django.db import transaction
 from django.db.models import Q, QuerySet
-from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
 
 
-class BudgetViewSet(viewsets.ModelViewSet):
+class BudgetViewSet(ModelViewSet):
     """View for manage Budgets."""
 
     serializer_class = BudgetSerializer
@@ -47,14 +47,15 @@ class BudgetViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Saves request User as owner of Budget model and creates default ExpenseCategory and
         IncomeCategory objects."""
-        budget = serializer.save(owner=self.request.user)
-        for expense_category in DEFAULT_EXPENSE_CATEGORIES:
-            ExpenseCategory.objects.create(budget=budget, **expense_category)
-        for income_category in DEFAULT_INCOME_CATEGORIES:
-            IncomeCategory.objects.create(budget=budget, **income_category)
+        with transaction.atomic():
+            budget = serializer.save(owner=self.request.user)
+            for expense_category in DEFAULT_EXPENSE_CATEGORIES:
+                ExpenseCategory.objects.create(budget=budget, **expense_category)
+            for income_category in DEFAULT_INCOME_CATEGORIES:
+                IncomeCategory.objects.create(budget=budget, **income_category)
 
 
-class BudgetingPeriodViewSet(BudgetMixin, viewsets.ModelViewSet):
+class BudgetingPeriodViewSet(ModelViewSet):
     """View for manage BudgetingPeriods."""
 
     serializer_class = BudgetingPeriodSerializer
@@ -87,4 +88,4 @@ class BudgetingPeriodViewSet(BudgetMixin, viewsets.ModelViewSet):
         Args:
             serializer [BudgetingPeriodSerializer]: Serializer for BudgetingPeriod
         """
-        serializer.save(budget=self.request.budget)
+        serializer.save(budget_id=self.kwargs.get('budget_pk'))

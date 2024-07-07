@@ -19,8 +19,7 @@ class UserBelongsToBudgetPermission(permissions.BasePermission):
         Returns:
             bool: True if User is owner or member of Budget, else False.
         """
-        return bool(
-            request.budget
-            and request.user
-            and (request.user == request.budget.owner or request.user in request.budget.members.all())
-        )
+        if request.method == 'OPTIONS':  # pragma: no cover
+            return request.user.is_authenticated
+        budget_pk = getattr(view, 'kwargs', {}).get('budget_pk')
+        return request.user.is_budget_member(budget_pk)

@@ -239,8 +239,8 @@ class TestEntityApiCreate:
         response = api_client.post(entities_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert field_name in response.data
-        assert response.data[field_name][0] == f'Ensure this field has no more than {max_length} characters.'
+        assert field_name in response.data['detail']
+        assert response.data['detail'][field_name][0] == f'Ensure this field has no more than {max_length} characters.'
         assert not Entity.objects.filter(budget=budget).exists()
 
     def test_error_name_already_used(
@@ -259,8 +259,8 @@ class TestEntityApiCreate:
         response = api_client.post(entities_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'name' in response.data
-        assert response.data['name'][0] == 'Entity with given name already exists in Budget.'
+        assert 'name' in response.data['detail']
+        assert response.data['detail']['name'][0] == 'Entity with given name already exists in Budget.'
         assert Entity.objects.filter(budget=budget).count() == 1
 
     def test_error_create_entity_for_not_accessible_budget(
