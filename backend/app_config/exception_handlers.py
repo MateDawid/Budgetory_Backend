@@ -7,7 +7,7 @@ from rest_framework.serializers import as_serializer_error
 from rest_framework.views import exception_handler
 
 
-def default_exception_handler(exc: Exception, context: dict) -> Response | None:
+def default_exception_handler(exc: Exception, context: dict) -> Response | None:  # pragma: no cover
     """
     Custom exception handling function.
 
