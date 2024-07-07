@@ -102,34 +102,17 @@ Representation of seller or payer, that is a source or goal of Income/Expense.
 - ✔️ Creating, removing and updating Entity by Budget owner or member.
 - ✔️ Creating new Entity with `deposit` field on Deposit creation.
 
-##  ⛔ ExpensePrediction
+##  ✔️ ExpensePrediction
 Amount expected to spend in selected BudgetingPeriod for selected ExpenseCategory.
 ### Fields:
-- ⛔ period [BudgetingPeriod] - BudgetingPeriod for ExpensePrediction
-- ⛔ category [ExpenseCategory] - ExpenseCategory for ExpensePrediction
-- ⛔ value [float] - Amount expected to be spent for ExpenseCategory in given BudgetingPeriod
-- ⛔ description [str] - Additional description for prediction [optional]
+- ✔️ period [BudgetingPeriod] - BudgetingPeriod for ExpensePrediction
+- ✔️ category [ExpenseCategory] - ExpenseCategory for ExpensePrediction
+- ✔️ value [float] - Amount expected to be spent for ExpenseCategory in given BudgetingPeriod
+- ✔️ description [str] - Additional description for prediction [optional]
 
 ### Features:
-- ⛔ Creating new ExpensePrediction by Budget member
-- ⛔ Removing ExpensePrediction for COMMON ExpenseCategory by Budget member
-- ⛔ Removing ExpensePrediction for PERSONAL ExpenseCategory by ExpenseCategory owner
-
-## ⛔ Reserve
-Abstract part of cash stored in Deposits marked as RESERVES designated to be spent on particular purpose.
-### Fields:
-- ⛔ budget [Budget] - Budget for Reserve.
-- ⛔ name [str] - Name of Reserve.
-- ⛔ description [str] - Description for Reserve. [optional]
-- ⛔ goal_value [float] - Amount needed to spent on Reserve purpose.
-- ⛔ end_date [datetime.date | None] - Deadline for gathering means for Reserve.
-- ⛔ is_active [bool] - Indicates if Reserve is active.
-- ⛔ owner [User | None] - Owner of Reserve. [optional]
-
-### Features:
-- ⛔ Creating new Reserve by Budget member
-- ⛔ Removing Reserve by Budget member if no owner set.
-- ⛔ Removing Reserve for owner if owner set.
+- ✔️ Creating new ExpensePrediction by Budget member
+- ✔️ Removing ExpensePrediction by Budget member
 
 ## ⛔ Income
 Representation of means flow between Deposit and Entity or another Deposit.
@@ -164,3 +147,20 @@ Representation of means flow between Deposit and Entity or another Deposit.
 ### Features:
 - ⛔ Creating, removing and updating Expense with PERSONAL deposit.deposit_type by Deposit owner or Budget owner
 - ⛔ Creating, removing and updating Expense with other than PERSONAL deposit.deposit_type by any Budget member
+
+
+## ⛔ Reserve
+Abstract part of cash stored in Deposits marked as RESERVES designated to be spent on particular purpose.
+### Fields:
+- ⛔ budget [Budget] - Budget for Reserve.
+- ⛔ name [str] - Name of Reserve.
+- ⛔ description [str] - Description for Reserve. [optional]
+- ⛔ goal_value [float] - Amount needed to spent on Reserve purpose.
+- ⛔ end_date [datetime.date | None] - Deadline for gathering means for Reserve.
+- ⛔ is_active [bool] - Indicates if Reserve is active.
+- ⛔ owner [User | None] - Owner of Reserve. [optional]
+
+### Features:
+- ⛔ Creating new Reserve by Budget member
+- ⛔ Removing Reserve by Budget member if no owner set.
+- ⛔ Removing Reserve for owner if owner set.

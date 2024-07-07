@@ -1,15 +1,15 @@
 from app_config.permissions import UserBelongsToBudgetPermission
-from budgets.mixins import BudgetMixin
 from deposits.models import Deposit
 from deposits.serializers import DepositSerializer
+from django.db import transaction
 from django.db.models import QuerySet
 from entities.models import Entity
-from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.viewsets import ModelViewSet
 
 
-class DepositViewSet(BudgetMixin, viewsets.ModelViewSet):
+class DepositViewSet(ModelViewSet):
     """View for managing Deposits."""
 
     serializer_class = DepositSerializer
@@ -24,8 +24,7 @@ class DepositViewSet(BudgetMixin, viewsets.ModelViewSet):
         Returns:
             QuerySet: Filtered Deposit QuerySet.
         """
-        budget = getattr(self.request, 'budget', None)
-        return self.queryset.filter(budget=budget).distinct()
+        return self.queryset.filter(budget__pk=self.kwargs.get('budget_pk')).distinct()
 
     def perform_create(self, serializer: DepositSerializer) -> None:
         """
@@ -35,7 +34,8 @@ class DepositViewSet(BudgetMixin, viewsets.ModelViewSet):
         Args:
             serializer [DepositSerializer]: Serializer for Deposit model.
         """
-        deposit = serializer.save(budget=self.request.budget)
-        Entity.objects.create(
-            budget=deposit.budget, name=deposit.name, description=deposit.description, deposit=deposit
-        )
+        with transaction.atomic():
+            deposit = serializer.save(budget_id=self.kwargs.get('budget_pk'))
+            Entity.objects.create(
+                budget=deposit.budget, name=deposit.name, description=deposit.description, deposit=deposit
+            )

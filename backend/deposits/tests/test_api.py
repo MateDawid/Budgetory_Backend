@@ -253,8 +253,8 @@ class TestDepositApiCreate:
         response = api_client.post(deposit_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert field_name in response.data
-        assert response.data[field_name][0] == f'Ensure this field has no more than {max_length} characters.'
+        assert field_name in response.data['detail']
+        assert response.data['detail'][field_name][0] == f'Ensure this field has no more than {max_length} characters.'
         assert not Deposit.objects.filter(budget=budget).exists()
 
     def test_error_name_already_used(
@@ -273,8 +273,8 @@ class TestDepositApiCreate:
         response = api_client.post(deposit_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'name' in response.data
-        assert response.data['name'][0] == 'Deposit with given name already exists in Budget.'
+        assert 'name' in response.data['detail']
+        assert response.data['detail']['name'][0] == 'Deposit with given name already exists in Budget.'
         assert Deposit.objects.filter(budget=budget).count() == 1
 
     def test_error_owner_does_not_belong_to_budget(
@@ -301,8 +301,8 @@ class TestDepositApiCreate:
         response = api_client.post(deposit_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'owner' in response.data
-        assert response.data['owner'][0] == 'Provided owner does not belong to Budget.'
+        assert 'owner' in response.data['detail']
+        assert response.data['detail']['owner'][0] == 'Provided owner does not belong to Budget.'
         assert not Deposit.objects.filter(budget=budget).exists()
 
     def test_error_deposit_with_existing_entity_name(
@@ -328,8 +328,8 @@ class TestDepositApiCreate:
         response = api_client.post(deposit_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'name' in response.data
-        assert response.data['name'][0] == 'Entity with given name already exists in Budget.'
+        assert 'name' in response.data['detail']
+        assert response.data['detail']['name'][0] == 'Entity with given name already exists in Budget.'
         assert not Deposit.objects.all().exists()
 
     def test_is_active_default_value(

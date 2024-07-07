@@ -208,8 +208,8 @@ class TestBudgetApi:
         response = api_client.post(BUDGETS_URL, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'name' in response.data
-        assert response.data['name'][0] == f'Ensure this field has no more than {max_length} characters.'
+        assert 'name' in response.data['detail']
+        assert response.data['detail']['name'][0] == f'Ensure this field has no more than {max_length} characters.'
         assert not Budget.objects.filter(owner=base_user).exists()
 
     def test_error_name_already_used(self, api_client: APIClient, base_user: AbstractUser):
@@ -221,8 +221,8 @@ class TestBudgetApi:
         response = api_client.post(BUDGETS_URL, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'name' in response.data
-        assert response.data['name'][0] == f'User already owns Budget with name "{payload["name"]}".'
+        assert 'name' in response.data['detail']
+        assert response.data['detail']['name'][0] == f'User already owns Budget with name "{payload["name"]}".'
         assert Budget.objects.filter(owner=base_user).count() == 1
 
     def test_get_object_details(self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass):
@@ -708,8 +708,8 @@ class TestBudgetingPeriodApiCreate:
         response = api_client.post(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'name' in response.data
-        assert response.data['name'][0] == f'Ensure this field has no more than {max_length} characters.'
+        assert 'name' in response.data['detail']
+        assert response.data['detail']['name'][0] == f'Ensure this field has no more than {max_length} characters.'
         assert not BudgetingPeriod.objects.filter(budget=budget).exists()
 
     def test_error_name_already_used(
@@ -736,8 +736,8 @@ class TestBudgetingPeriodApiCreate:
         response = api_client.post(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'name' in response.data
-        assert response.data['name'][0] == f'Period with name "{payload["name"]}" already exists in Budget.'
+        assert 'name' in response.data['detail']
+        assert response.data['detail']['name'][0] == f'Period with name "{payload["name"]}" already exists in Budget.'
         assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
 
     def test_create_active_period_successfully(
@@ -805,8 +805,8 @@ class TestBudgetingPeriodApiCreate:
         response = api_client.post(url, payload_2)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'is_active' in response.data
-        assert response.data['is_active'][0] == 'Active period already exists in Budget.'
+        assert 'is_active' in response.data['detail']
+        assert response.data['detail']['is_active'][0] == 'Active period already exists in Budget.'
         assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
         assert BudgetingPeriod.objects.filter(budget=budget).first() == active_period
 
@@ -860,10 +860,10 @@ class TestBudgetingPeriodApiCreate:
         response = api_client.post(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'date_start' in response.data or 'date_end' in response.data
+        assert 'date_start' in response.data['detail'] or 'date_end' in response.data['detail']
         assert (
-            response.data.get('date_start', [''])[0] == error_message
-            or response.data.get('date_end', [''])[0] == error_message
+            response.data['detail'].get('date_start', [''])[0] == error_message
+            or response.data['detail'].get('date_end', [''])[0] == error_message
         )
         assert not BudgetingPeriod.objects.filter(budget=budget).exists()
 
@@ -884,8 +884,8 @@ class TestBudgetingPeriodApiCreate:
         response = api_client.post(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data
-        assert response.data['non_field_errors'][0] == 'Start date should be earlier than end date.'
+        assert 'non_field_errors' in response.data['detail']
+        assert response.data['detail']['non_field_errors'][0] == 'Start date should be earlier than end date.'
         assert not BudgetingPeriod.objects.filter(budget=budget).exists()
 
     @pytest.mark.parametrize(
@@ -965,9 +965,10 @@ class TestBudgetingPeriodApiCreate:
         response = api_client.post(url, payload_invalid)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data
+        assert 'non_field_errors' in response.data['detail']
         assert (
-            response.data['non_field_errors'][0] == 'Budgeting period date range collides with other period in Budget.'
+            response.data['detail']['non_field_errors'][0]
+            == 'Budgeting period date range collides with other period in Budget.'
         )
         assert BudgetingPeriod.objects.filter(budget=budget).count() == 2
 
