@@ -1,6 +1,5 @@
 from budgets.views import BudgetingPeriodViewSet, BudgetViewSet
 from categories.views import ExpenseCategoryViewSet, IncomeCategoryViewSet
-from deposits.views import DepositViewSet
 from django.urls import include, path
 from entities.views import EntityViewSet
 from predictions.views import ExpensePredictionViewSet
@@ -15,7 +14,7 @@ router.register(r'', BudgetViewSet)
 
 budget_router = NestedSimpleRouter(router, r'', lookup='budget')
 budget_router.register(r'periods', BudgetingPeriodViewSet, basename='period')
-budget_router.register(r'deposits', DepositViewSet, basename='deposit')
+# budget_router.register(r'deposits', DepositViewSet, basename='deposit')
 budget_router.register(r'entities', EntityViewSet, basename='entity')
 budget_router.register(r'income_categories', IncomeCategoryViewSet, basename='income_category')
 budget_router.register(r'expense_categories', ExpenseCategoryViewSet, basename='expense_category')

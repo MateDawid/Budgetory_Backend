@@ -28,7 +28,7 @@ OUTER_APPS = [
     'drf_yasg',
 ]
 
-CREATED_APPS = ['app_users', 'budgets', 'deposits', 'entities', 'categories', 'predictions']
+CREATED_APPS = ['app_users', 'budgets', 'entities', 'categories', 'predictions']
 
 INSTALLED_APPS = DJANGO_APPS + OUTER_APPS + CREATED_APPS
 
