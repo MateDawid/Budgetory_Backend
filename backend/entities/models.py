@@ -1,4 +1,5 @@
 from django.db import models
+from entities.managers import DepositManager
 
 
 class Entity(models.Model):
@@ -11,6 +12,9 @@ class Entity(models.Model):
     description = models.CharField(max_length=255, blank=True)
     is_active = models.BooleanField(default=True)
     is_deposit = models.BooleanField(default=False)
+
+    objects = models.Manager()
+    deposits = DepositManager()
 
     class Meta:
         verbose_name_plural = 'entities'
@@ -26,14 +30,8 @@ class Entity(models.Model):
 class Deposit(Entity):
     """Deposit proxy model for Entity owned by Budget member representation."""
 
-    class DepositManager(models.Manager):
-        """Manager for Deposit Entities."""
-
-        def get_queryset(self):
-            return super().get_queryset().filter(is_deposit=True)
+    objects = DepositManager()
 
     class Meta:
         proxy = True
         verbose_name_plural = 'deposits'
-
-    objects = DepositManager()
