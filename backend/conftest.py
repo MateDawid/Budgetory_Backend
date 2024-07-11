@@ -4,9 +4,8 @@ import pytest
 from app_users.tests.factories import UserFactory
 from budgets.tests.factories import BudgetFactory, BudgetingPeriodFactory
 from categories.tests.factories import ExpenseCategoryFactory, IncomeCategoryFactory
-from deposits.tests.factories import DepositFactory
 from django.contrib.auth import get_user_model
-from entities.tests.factories import EntityFactory
+from entities.tests.factories import DepositFactory, EntityFactory
 from predictions.tests.factories import ExpensePredictionFactory
 from pytest_django.lazy_django import skip_if_no_django
 from pytest_factoryboy import register

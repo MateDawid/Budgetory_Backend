@@ -9,9 +9,11 @@ from factory.base import FactoryMetaClass
 class TestEntityModel:
     """Tests for Entity model"""
 
-    PAYLOAD = {
+    PAYLOAD: dict = {
         'name': 'Supermarket',
         'description': 'Supermarket in which I buy food.',
+        'is_active': True,
+        'is_deposit': False,
     }
 
     def test_create_entity_successfully(self, budget: Budget):
@@ -30,22 +32,21 @@ class TestEntityModel:
         assert Entity.objects.filter(budget=budget).count() == 1
         assert str(entity) == f'{entity.name} ({entity.budget.name})'
 
-    def test_creating_same_entity_for_two_budgets(self, budget_factory: FactoryMetaClass):
+    def test_create_deposit(self, budget: Budget, entity_factory: FactoryMetaClass, deposit_factory: FactoryMetaClass):
         """
-        GIVEN: Two Budget model instances in database.
-        WHEN: Same Entity instance for different Budgets create attempt with valid data.
-        THEN: Two Entity model instances existing in database with given data.
+        GIVEN: Budget and two Entities (with is_deposit=False and is_deposit=True) models instances in database.
+        WHEN: Calling .deposits Entity manager for objects.
+        THEN: Manager returns only object with is_deposit=True.
         """
-        budget_1 = budget_factory()
-        budget_2 = budget_factory()
-        payload = self.PAYLOAD.copy()
-        for budget in (budget_1, budget_2):
-            payload['budget'] = budget
-            Entity.objects.create(**payload)
+        entity_factory(budget=budget)
+        deposit = deposit_factory(budget=budget)
 
-        assert Entity.objects.all().count() == 2
-        assert budget_1.entities.all().count() == 1
-        assert budget_2.entities.all().count() == 1
+        entity_qs = Entity.objects.all()
+        deposit_qs = Entity.deposits.all()
+
+        assert entity_qs.count() == 2
+        assert deposit_qs.count() == 1
+        assert deposit in deposit_qs
 
     @pytest.mark.django_db(transaction=True)
     @pytest.mark.parametrize('field_name', ['name', 'description'])
