@@ -29,6 +29,23 @@ class TestDepositModel:
         assert deposit.is_deposit is True
         assert str(deposit) == f'{deposit.name} ({deposit.budget.name})'
 
+    def test_is_deposit_true_on_deposit_save(self, budget: Budget):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: Deposit instance create attempt with is_deposit=False in payload.
+        THEN: Deposit model instance exists in database with is_deposit=True.
+        """
+        payload = self.PAYLOAD.copy()
+        payload['budget'] = budget
+        payload['is_deposit'] = False
+
+        deposit = Deposit(**payload)
+        deposit.full_clean()
+        deposit.save()
+
+        assert Deposit.objects.filter(budget=budget).count() == 1
+        assert deposit.is_deposit is True
+
     @pytest.mark.django_db(transaction=True)
     @pytest.mark.parametrize('field_name', ['name', 'description'])
     def test_error_value_too_long(self, budget: Budget, field_name: str):
