@@ -35,3 +35,10 @@ class Deposit(Entity):
     class Meta:
         proxy = True
         verbose_name_plural = 'deposits'
+
+    def save(self, *args, **kwargs) -> None:
+        """
+        Overridden save method to make sure, that is_deposit is always True.
+        """
+        self.is_deposit = True
+        super().save(*args, **kwargs)
