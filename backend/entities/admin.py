@@ -1,5 +1,6 @@
 from django.contrib import admin
-from entities.models import Deposit, Entity
+from entities.models.deposit import Deposit
+from entities.models.entity import Entity
 
 
 @admin.register(Entity)

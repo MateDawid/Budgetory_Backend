@@ -1,6 +1,6 @@
 from app_users.models import User
 from deposits.models import Deposit
-from entities.models import Entity
+from entities.models.entity import Entity
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 

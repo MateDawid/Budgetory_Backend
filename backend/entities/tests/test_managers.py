@@ -1,6 +1,6 @@
 import pytest
 from budgets.models import Budget
-from entities.models import Entity
+from entities.models.entity import Entity
 from entities.tests.factories import EntityFactory
 from factory.base import FactoryMetaClass
 
