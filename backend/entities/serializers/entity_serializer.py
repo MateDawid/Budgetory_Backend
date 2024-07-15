@@ -8,7 +8,7 @@ class EntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Entity
-        fields = ['id', 'name', 'description']
+        fields = ['id', 'name', 'description', 'is_active', 'is_deposit']
         read_only_fields = ['id']
 
     def validate_name(self, name: str):
