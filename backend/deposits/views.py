@@ -3,7 +3,7 @@ from deposits.models import Deposit
 from deposits.serializers import DepositSerializer
 from django.db import transaction
 from django.db.models import QuerySet
-from entities.models import Entity
+from entities.models.entity import Entity
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet

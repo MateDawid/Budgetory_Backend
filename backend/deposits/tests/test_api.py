@@ -6,7 +6,7 @@ from deposits.models import Deposit
 from deposits.serializers import DepositSerializer
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
-from entities.models import Entity
+from entities.models.entity import Entity
 from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient

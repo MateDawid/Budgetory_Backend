@@ -4,7 +4,7 @@ import pytest
 from budgets.models import Budget
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
-from entities.models import Entity
+from entities.models.entity import Entity
 from entities.serializers import EntitySerializer
 from factory.base import FactoryMetaClass
 from rest_framework import status
