@@ -1,5 +1,6 @@
 import factory
-from budgets.tests.factories import BudgetFactory
+
+from tests.backend.budgets.factories import BudgetFactory
 
 
 class EntityFactory(factory.django.DjangoModelFactory):

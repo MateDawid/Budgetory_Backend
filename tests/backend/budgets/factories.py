@@ -3,9 +3,10 @@ import string
 from datetime import date
 
 import factory
-from app_users.tests.factories import UserFactory
 from dateutil.relativedelta import relativedelta
 from django.contrib.auth.models import AbstractUser
+
+from tests.backend.app_users.factories import UserFactory
 
 
 class BudgetFactory(factory.django.DjangoModelFactory):

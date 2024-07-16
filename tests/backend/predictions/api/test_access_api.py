@@ -1,12 +1,13 @@
 import pytest
 from factory.base import FactoryMetaClass
 from predictions.models import ExpensePrediction
-from predictions.tests.api.urls import (
+from rest_framework import status
+from rest_framework.test import APIClient
+
+from tests.backend.predictions.api.urls import (
     expense_prediction_detail_url,
     expense_prediction_url,
 )
-from rest_framework import status
-from rest_framework.test import APIClient
 
 
 @pytest.mark.django_db
