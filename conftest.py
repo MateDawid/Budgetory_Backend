@@ -1,15 +1,19 @@
 from typing import Any
 
 import pytest
-from app_users.tests.factories import UserFactory
-from budgets.tests.factories import BudgetFactory, BudgetingPeriodFactory
-from categories.tests.factories import ExpenseCategoryFactory, IncomeCategoryFactory
 from django.contrib.auth import get_user_model
 from entities.tests.factories import DepositFactory, EntityFactory
-from predictions.tests.factories import ExpensePredictionFactory
 from pytest_django.lazy_django import skip_if_no_django
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
+
+from tests.backend.app_users.factories import UserFactory
+from tests.backend.budgets.factories import BudgetFactory, BudgetingPeriodFactory
+from tests.backend.categories.factories import (
+    ExpenseCategoryFactory,
+    IncomeCategoryFactory,
+)
+from tests.backend.predictions.factories import ExpensePredictionFactory
 
 register(UserFactory)
 register(BudgetFactory)

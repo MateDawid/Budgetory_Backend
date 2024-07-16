@@ -1,8 +1,9 @@
 import factory
 from budgets.models import Budget, BudgetingPeriod
-from budgets.tests.factories import BudgetFactory, BudgetingPeriodFactory
 from categories.models import ExpenseCategory
-from categories.tests.factories import ExpenseCategoryFactory
+
+from tests.backend.budgets.factories import BudgetFactory, BudgetingPeriodFactory
+from tests.backend.categories.factories import ExpenseCategoryFactory
 
 
 class ExpensePredictionFactory(factory.django.DjangoModelFactory):

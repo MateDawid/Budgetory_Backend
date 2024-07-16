@@ -1,9 +1,10 @@
 import random
 
 import factory.fuzzy
-from app_users.tests.factories import UserFactory
-from budgets.tests.factories import BudgetFactory
 from categories.models import ExpenseCategory, IncomeCategory
+
+from tests.backend.app_users.factories import UserFactory
+from tests.backend.budgets.factories import BudgetFactory
 
 
 class IncomeCategoryFactory(factory.django.DjangoModelFactory):

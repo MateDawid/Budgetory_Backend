@@ -27,8 +27,14 @@ pytest-factoryboy = "^2.5.1"
 
 [tool.pytest.ini_options]
 minversion = "7.4.0"
+testpaths = [
+    "tests"
+]
 DJANGO_SETTINGS_MODULE = "app_config.settings"
-pythonpath  = "backend"
+pythonpath  = [
+    "backend",
+    "tests"
+]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

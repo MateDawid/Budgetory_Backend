@@ -2,9 +2,10 @@ import pytest
 from django.contrib.auth.models import AbstractUser
 from factory.base import FactoryMetaClass
 from predictions.serializers import ExpensePredictionSerializer
-from predictions.tests.api.urls import expense_prediction_detail_url
 from rest_framework import status
 from rest_framework.test import APIClient
+
+from tests.backend.predictions.api.urls import expense_prediction_detail_url
 
 
 @pytest.mark.django_db
