@@ -1,9 +1,7 @@
 from app_config.permissions import UserBelongsToBudgetPermission
-from deposits.models import Deposit
-from deposits.serializers import DepositSerializer
-from django.db import transaction
 from django.db.models import QuerySet
-from entities.models.entity import Entity
+from entities.models.deposit import Deposit
+from entities.serializers.deposit_serializer import DepositSerializer
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
@@ -34,8 +32,4 @@ class DepositViewSet(ModelViewSet):
         Args:
             serializer [DepositSerializer]: Serializer for Deposit model.
         """
-        with transaction.atomic():
-            deposit = serializer.save(budget_id=self.kwargs.get('budget_pk'))
-            Entity.objects.create(
-                budget=deposit.budget, name=deposit.name, description=deposit.description, deposit=deposit
-            )
+        serializer.save(budget_id=self.kwargs.get('budget_pk'), is_deposit=True)
