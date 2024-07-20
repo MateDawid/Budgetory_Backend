@@ -4,12 +4,13 @@ services:
   backend:
     build:
       context: .
+      dockerfile: .\backend\docker\Dockerfile
       args:
         - DEV=${DEV}
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - ./backend/:/usr/src/budget_manager/backend/
-      - ./.secrets.yaml:/usr/src/budget_manager/.secrets.yaml
+      - ./backend/:/backend
+      - ./backend/.secrets.yaml:/backend/.secrets.yaml
     ports:
       - 8000:8000
     environment:
