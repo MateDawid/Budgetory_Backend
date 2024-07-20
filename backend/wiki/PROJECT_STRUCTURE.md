@@ -44,23 +44,29 @@ Period in which financial values are aggregated.
 - ✔️ Creating new valid BudgetingPeriod by Budget member
 - ✔️ Closing BudgetingPeriod by Budget member
 
+## ✔️ Entity
+Representation of actor in transfer - receiver or payer.
+### Fields:
+- ✔️ budget [Budget] - Budget in which Entity will be available [optional]
+- ✔️ name [str] - Name of Entity
+- ✔️ description [str] - Description of Entity [optional]
+- ✔️ is_active [bool] - Indicates if Deposit is active
+- ✔️ owner [User | None] - owner of Deposit [optional]
+
+### Features:
+- ✔️ Creating, removing and updating Entity by Budget owner or member.
+
 ## ✔️ Deposit 
-Represents "container" in which incomes are stored and source for expenses - bank accounts, cash, gold, etc.
+Proxy model for Entity - represents specific type of Transfer actor, that is controlled by Budget user.
 ### Fields:
 - ✔️ budget [Budget] - Budget for Deposit
 - ✔️ name [str] - Name of Deposit
 - ✔️ description [str] - Deposit description [optional]
 - ✔️ is_active [bool] - Indicates if Deposit is active
-- ✔️ deposit_type [str] - Chosen Deposit type. Choices:
-   - PERSONAL - personal Deposit
-   - COMMON - Deposit for all Budget members
-   - RESERVES - Deposit for storing Reserves
-   - INVESTMENTS - Deposit for storing investments
-   - SAVINGS - Deposit for savings
 - ✔️ owner [User | None] - owner of Deposit
 
 ### Features:
-- ✔️ Creating new Deposit by Budget member
+- ✔️ Creating, removing and updating Deposit by Budget owner or member.
 
 ## ✔️ IncomeCategory
 Category for grouping Incomes.
@@ -89,18 +95,6 @@ Category for grouping Incomes.
 ### Features:
 - ✔️ Creating new ExpenseCategory by Budget member
 - ✔️ Create predefined ExpenseCategory objects on Budget creation
-
-## ✔️ Entity
-Representation of seller or payer, that is a source or goal of Income/Expense.
-### Fields:
-- ✔️ budget [Budget] - Budget in which Entity will be available [optional]
-- ✔️ name [str] - Name of Entity
-- ✔️ description [str] - Description of Entity [optional]
-- ✔️ deposit [Deposit] - Deposit object represented by Entity in Incomes/Expenses [optional]
-
-### Features:
-- ✔️ Creating, removing and updating Entity by Budget owner or member.
-- ✔️ Creating new Entity with `deposit` field on Deposit creation.
 
 ##  ✔️ ExpensePrediction
 Amount expected to spend in selected BudgetingPeriod for selected ExpenseCategory.
