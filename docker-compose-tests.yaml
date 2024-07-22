@@ -4,7 +4,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: .\backend\docker\Dockerfile
+      dockerfile: backend\docker\Dockerfile
       target: testing-image
       args:
         - DEV=${DEV}
