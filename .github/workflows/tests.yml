@@ -8,7 +8,6 @@ jobs:
     name: Tests
     runs-on: ubuntu-20.04
     env:
-      DEV: true
       SECRET_KEY: test_secret_key
       DB_USER: budget_api
       DB_PASSWORD: budget_api
@@ -16,6 +15,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Test
-        run: docker-compose run --rm backend sh -c "python manage.py wait_for_db && pytest"
+        run: docker-compose -f docker-compose-tests.yml run --rm backend sh -c "python manage.py wait_for_db && pytest"
       - name: Cleanup
         run: docker-compose down
