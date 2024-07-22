@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: .\backend\docker\Dockerfile
-      target: release-image
+      target: testing-image
       args:
         - DEV=${DEV}
     command: python manage.py runserver 0.0.0.0:8000
