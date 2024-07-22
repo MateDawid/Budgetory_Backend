@@ -32,7 +32,7 @@ testpaths = [
 ]
 DJANGO_SETTINGS_MODULE = "app_config.settings"
 pythonpath  = [
-    "backend",
+    "src",
     "tests"
 ]
 
