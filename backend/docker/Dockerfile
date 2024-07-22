@@ -21,8 +21,10 @@ FROM base-image as testing-image
 
 # Install dependencies with testing utils
 RUN poetry config virtualenvs.create false && \
-    poetry install
+    poetry install \
+
 COPY ./backend/tests /backend/tests
+
 CMD ['python', '-m', 'pytest']
 
 FROM base-image as release-image
