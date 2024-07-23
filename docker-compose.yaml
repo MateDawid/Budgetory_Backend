@@ -4,13 +4,14 @@ services:
   backend:
     build:
       context: .
-      dockerfile: backend\docker\Dockerfile
+      dockerfile: ./backend/docker/Dockerfile
       target: release-image
       args:
         - DEV=${DEV}
+    image: backend:release-image
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - ./backend/:/backend
+      - ./backend/src:/backend/src
       - ./backend/.secrets.yaml:/backend/.secrets.yaml
     ports:
       - 8000:8000
