@@ -7,7 +7,7 @@ from rest_framework.serializers import as_serializer_error
 from rest_framework.views import exception_handler
 
 
-def default_exception_handler(exc: Exception, context: dict) -> Response | None:  # pragma: no cover
+def default_exception_handler(exc: Exception, context: dict) -> Response | None:
     """
     Custom exception handling function.
 
@@ -33,7 +33,7 @@ def default_exception_handler(exc: Exception, context: dict) -> Response | None:
     if response is None:
         return response
 
-    if isinstance(exc.detail, (list, dict)):
+    if isinstance(getattr(exc, 'detail', None), (list, dict)):
         response.data = {'detail': response.data}
 
     return response
