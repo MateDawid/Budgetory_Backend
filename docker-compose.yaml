@@ -24,6 +24,12 @@ services:
       - DYNACONF_DATABASE__PASSWORD=${DB_PASSWORD}
     depends_on:
       - db
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8000/api/healthcheck", "||", "exit", "1"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
   db:
     image: postgres:15
     ports:
