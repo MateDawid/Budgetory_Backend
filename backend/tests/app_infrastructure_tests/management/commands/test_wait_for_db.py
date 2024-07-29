@@ -5,7 +5,7 @@ from django.db.utils import OperationalError
 from psycopg2 import OperationalError as Psycopg2Error
 
 
-@patch('app_users.management.commands.wait_for_db.Command.check')
+@patch('app_infrastructure.management.commands.wait_for_db.Command.check')
 class TestWaitForDBCommand:
     """Tests for wait_for_db admin command."""
 
