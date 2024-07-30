@@ -1,11 +1,11 @@
-from app_users.models import User
 from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.models import AbstractUser
 
 
 class UserManager(BaseUserManager):
     """Manager for user."""
 
-    def create_user(self, email: str, password: str = None, **extra_fields: dict) -> User:
+    def create_user(self, email: str, password: str = None, **extra_fields: dict) -> AbstractUser:
         """
         Create, save and return a new user.
 
@@ -25,7 +25,7 @@ class UserManager(BaseUserManager):
 
         return user
 
-    def create_superuser(self, email: str, password: str) -> User:
+    def create_superuser(self, email: str, password: str) -> AbstractUser:
         """
         Create and return a new superuser.
 
