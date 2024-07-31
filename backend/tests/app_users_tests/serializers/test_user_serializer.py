@@ -16,7 +16,11 @@ class TestUserSerializer:
     }
 
     def test_create_user_successful(self):
-        """Test successful user creation."""
+        """
+        GIVEN: Payload for User creation.
+        WHEN: UserSerializer .is_valid() and .create() called with given data.
+        THEN: User created with given data.
+        """
         serializer = UserSerializer(data=self.payload)
         assert serializer.is_valid(raise_exception=True)
         assert 'password' not in serializer.data
@@ -27,7 +31,11 @@ class TestUserSerializer:
 
     @pytest.mark.django_db(transaction=True)
     def test_user_with_email_exists(self):
-        """Test error returned if user email exists."""
+        """
+        GIVEN: Payload for User creation with already existing email.
+        WHEN: UserSerializer .is_valid() and .create() called with given data.
+        THEN: IntegrityError raised on .create() call. User not created.
+        """
         serializer = UserSerializer(data=self.payload)
         assert serializer.is_valid(raise_exception=True)
         serializer.create(serializer.validated_data)
@@ -36,7 +44,11 @@ class TestUserSerializer:
         assert UserSerializer.Meta.model.objects.filter(email=self.payload['email']).count() == 1
 
     def test_user_with_password_too_short(self):
-        """Test an error is returned if password less than 5 chars."""
+        """
+        GIVEN: Payload for User creation with password too short.
+        WHEN: UserSerializer .is_valid() called with given data.
+        THEN: ValidationError raised on .is_valid() call. User not created.
+        """
         payload = self.payload.copy()
         payload['password'] = 'pw'
         serializer = UserSerializer(data=payload)
@@ -47,7 +59,11 @@ class TestUserSerializer:
 
     @pytest.mark.parametrize('param', ['email', 'password', 'name'])
     def test_user_with_param_not_given(self, param: str):
-        """Test an error is returned if param not given."""
+        """
+        GIVEN: Payload for User creation with param missing.
+        WHEN: UserSerializer .is_valid() called with given data.
+        THEN: ValidationError raised on .is_valid() call. User not created.
+        """
         payload = self.payload.copy()
         del payload[param]
         serializer = UserSerializer(data=payload)
@@ -59,7 +75,11 @@ class TestUserSerializer:
         'param, value', [('email', 'new@example.com'), ('password', 'newpass123'), ('name', 'New name')]
     )
     def test_user_update_successful(self, param: str, value: str):
-        """Test update user param."""
+        """
+        GIVEN: Payload for User update.
+        WHEN: UserSerializer .is_valid() and .create() called with given data.
+        THEN: User updated with given payload.
+        """
         user = get_user_model().objects.create_user(**self.payload)
         user_id = user.id
         payload = self.payload.copy()
