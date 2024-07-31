@@ -1,11 +1,11 @@
-FROM python:3.11.4-slim-buster as base-image
+FROM python:3.11.4-slim-bookworm as base-image
 
 ARG DEV="false"
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
-    netcat \
+    netcat-traditional \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
