@@ -154,3 +154,24 @@ SWAGGER_SETTINGS = {
         'token': {'type': 'apiKey', 'description': 'User token', 'name': 'Authorization', 'in': 'header'}
     },
 }
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'default_formatter': {'format': '[%(levelname)s][%(asctime)s] %(message)s', 'datefmt': '%Y-%m-%d %H:%M:%S(%z)'},
+    },
+    'handlers': {
+        'default_stream_handler': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'default_formatter',
+        },
+    },
+    'loggers': {
+        'default_logger': {
+            'handlers': ['default_stream_handler'],
+            'level': 'INFO',
+        },
+    },
+}
