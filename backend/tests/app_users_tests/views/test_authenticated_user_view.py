@@ -1,6 +1,5 @@
-from typing import Any
-
 import pytest
+from app_users.models import User
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -23,7 +22,7 @@ class TestAuthenticatedUserView:
         assert str(response.data['detail']) == 'Authentication credentials were not provided.'
 
     @pytest.mark.django_db
-    def test_retrieve_profile_success(self, api_client: APIClient, base_user: Any):
+    def test_retrieve_profile_success(self, api_client: APIClient, base_user: User):
         """
         GIVEN: Authenticated user as request.user.
         WHEN: GET request on AuthenticatedUserView.
@@ -36,7 +35,7 @@ class TestAuthenticatedUserView:
         assert response.data == {'name': base_user.name, 'email': base_user.email}
 
     @pytest.mark.django_db
-    def test_post_me_not_allowed(self, api_client: APIClient, base_user: Any):
+    def test_post_me_not_allowed(self, api_client: APIClient, base_user: User):
         """
         GIVEN: Authenticated user as request.user.
         WHEN: POST request on AuthenticatedUserView.
@@ -48,7 +47,7 @@ class TestAuthenticatedUserView:
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
     @pytest.mark.django_db
-    def test_update_user_profile(self, api_client: APIClient, base_user: Any):
+    def test_update_user_profile(self, api_client: APIClient, base_user: User):
         """
         GIVEN: Authenticated user as request.user.
         WHEN: PATCH request on AuthenticatedUserView.
