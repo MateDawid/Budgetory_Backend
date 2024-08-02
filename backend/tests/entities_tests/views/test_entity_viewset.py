@@ -1,10 +1,10 @@
 from typing import Any
 
 import pytest
-from budgets.models import Budget
+from budgets.models.budget_model import Budget
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
-from entities.models.entity import Entity
+from entities.models.entity_model import Entity
 from entities.serializers.entity_serializer import EntitySerializer
 from factory.base import FactoryMetaClass
 from rest_framework import status

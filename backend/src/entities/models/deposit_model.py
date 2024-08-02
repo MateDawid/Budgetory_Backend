@@ -1,5 +1,5 @@
 from entities.managers import DepositManager
-from entities.models.entity import Entity
+from entities.models.entity_model import Entity
 
 
 class Deposit(Entity):
