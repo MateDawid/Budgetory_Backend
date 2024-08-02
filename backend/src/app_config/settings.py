@@ -159,7 +159,7 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'default_formatter': {'format': '[%(levelname)s][%(asctime)s] %(message)s', 'datefmt': '%Y-%m-%d %H:%M:%S(%z)'},
+        'default_formatter': {'format': '[%(asctime)s] "%(levelname)s: %(message)s"', 'datefmt': '%d/%b/%Y %H:%M:%S'},
     },
     'handlers': {
         'default_stream_handler': {
