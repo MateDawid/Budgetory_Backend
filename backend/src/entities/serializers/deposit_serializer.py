@@ -1,4 +1,4 @@
-from entities.models.deposit import Deposit
+from entities.models.deposit_model import Deposit
 from entities.serializers.entity_serializer import EntitySerializer
 
 

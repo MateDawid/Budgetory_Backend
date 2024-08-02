@@ -1,4 +1,4 @@
-from entities.models.entity import Entity
+from entities.models.entity_model import Entity
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 

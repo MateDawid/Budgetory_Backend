@@ -1,6 +1,6 @@
 from app_config.permissions import UserBelongsToBudgetPermission
 from django.db.models import QuerySet
-from entities.models.deposit import Deposit
+from entities.models.deposit_model import Deposit
 from entities.serializers.deposit_serializer import DepositSerializer
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated

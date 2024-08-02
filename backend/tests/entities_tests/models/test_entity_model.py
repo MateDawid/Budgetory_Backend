@@ -1,8 +1,8 @@
 import pytest
-from budgets.models import Budget
+from budgets.models.budget_model import Budget
 from django.core.exceptions import ValidationError
 from django.db import DataError, IntegrityError
-from entities.models.entity import Entity
+from entities.models.entity_model import Entity
 
 
 @pytest.mark.django_db
