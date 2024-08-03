@@ -1,4 +1,4 @@
-from budgets.models import Budget, BudgetingPeriod
+from budgets.models.budget_model import Budget
 from django.contrib import admin
 
 
@@ -13,11 +13,3 @@ class BudgetAdmin(admin.ModelAdmin):
         """Override save_related method to remove Budget owner from Budget members on saving model in admin panel."""
         super().save_related(request, form, formsets, change)
         form.instance.members.add(form.instance.owner)
-
-
-@admin.register(BudgetingPeriod)
-class BudgetingPeriodAdmin(admin.ModelAdmin):
-    """Custom admin view for BudgetingPeriod model."""
-
-    list_display = ('name', 'budget', 'date_start', 'date_end', 'is_active')
-    list_filter = ('is_active', 'budget__name', 'budget__owner__email')
