@@ -1,32 +1,6 @@
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
-
-
-class Budget(models.Model):
-    """Model for object gathering all data like incomes, expenses and predictions for particular budget."""
-
-    name = models.CharField(max_length=128)
-    description = models.TextField(null=True, blank=True, max_length=300)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='owned_budgets')
-    members = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='joined_budgets', blank=True)
-    currency = models.CharField(max_length=3)
-
-    class Meta:
-        unique_together = (
-            'name',
-            'owner',
-        )
-
-    def __str__(self):
-        """String representation of BudgetingPeriod model instance."""
-        return f'{self.name} ({self.owner.email})'
-
-    def save(self, *args, **kwargs):
-        """Override save method to remove Budget owner from Budget members."""
-        super().save(*args, **kwargs)
-        self.members.add(self.owner)
 
 
 class BudgetingPeriod(models.Model):
@@ -44,28 +18,49 @@ class BudgetingPeriod(models.Model):
             'budget',
         )
 
-    def __str__(self):
-        """String representation of BudgetingPeriod model instance."""
+    def __str__(self) -> str:
+        """
+        Method for returning string representation of BudgetingPeriod model instance.
+
+        Returns:
+            str: String representation of BudgetingPeriod model instance.
+        """
         return f'{self.name} ({self.budget.name})'
 
-    def save(self, *args, **kwargs):
-        """Override save method to execute clean() method before saving model in database."""
+    def save(self, *args: list, **kwargs: dict) -> None:
+        """
+        Overrides .save() method to execute .clean() method before saving model in database.
+        """
         self.clean()
         super().save(*args, **kwargs)
 
-    def clean(self):
-        """Clean BudgetingPeriod input data before saving in database."""
+    def clean(self) -> None:
+        """
+        Validates BudgetingPeriod input data before saving in database.
+        """
         self.clean_is_active()
         self.clean_dates()
 
-    def clean_is_active(self):
-        """Check if is_active field is valid. If is_active not given, pass it to default model validation."""
+    def clean_is_active(self) -> None:
+        """
+        Validates is_active field. If is_active not given, passes it to default model validation.
+
+        Raises:
+            ValidationError: Raised when is_active=True and another BudgetingPeriod with such flag
+            already exists for Budget.
+        """
         if self.is_active and self.budget.periods.filter(is_active=True).exclude(pk=self.pk).exists():
             raise ValidationError('is_active: Active period already exists.', code='active-invalid')
 
-    def clean_dates(self):
-        """Check if date_start and date_end fields are valid. If date_start or date_end not given,
-        pass them to default model validation."""
+    def clean_dates(self) -> None:
+        """
+        Validates date_start and date_end fields. If date_start or date_end not given, passes them to default
+        model validation.
+
+        Raises:
+            ValidationError: Raised when date_start and date_end not in logic order or collide with another
+            BudgetingPeriod daterange.
+        """
         if self.date_start >= self.date_end:
             raise ValidationError('start_date: Start date should be earlier than end date.', code='date-invalid')
         if (
