@@ -2,8 +2,11 @@ from datetime import date
 from typing import Any
 
 import pytest
-from budgets.models import Budget, BudgetingPeriod
-from budgets.serializers import BudgetingPeriodSerializer, BudgetSerializer
+from budgets.models.budget_model import Budget, BudgetingPeriod
+from budgets.serializers.budget_serializer import (
+    BudgetingPeriodSerializer,
+    BudgetSerializer,
+)
 from categories.budget_defaults import (
     DEFAULT_EXPENSE_CATEGORIES,
     DEFAULT_INCOME_CATEGORIES,
