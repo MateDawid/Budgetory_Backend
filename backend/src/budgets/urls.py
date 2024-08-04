@@ -1,4 +1,5 @@
-from budgets.views import BudgetingPeriodViewSet, BudgetViewSet
+from budgets.views.budget_viewset import BudgetViewSet
+from budgets.views.budgeting_period_viewset import BudgetingPeriodViewSet
 from categories.views import ExpenseCategoryViewSet, IncomeCategoryViewSet
 from django.urls import include, path
 from entities.views.deposit_viewset import DepositViewSet
