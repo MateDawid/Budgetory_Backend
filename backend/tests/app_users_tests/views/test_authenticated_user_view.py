@@ -35,7 +35,7 @@ class TestAuthenticatedUserView:
         assert response.data == {'name': base_user.name, 'email': base_user.email}
 
     @pytest.mark.django_db
-    def test_post_me_not_allowed(self, api_client: APIClient, base_user: User):
+    def test_post_not_allowed(self, api_client: APIClient, base_user: User):
         """
         GIVEN: Authenticated user as request.user.
         WHEN: POST request on AuthenticatedUserView.
@@ -43,6 +43,18 @@ class TestAuthenticatedUserView:
         """
         api_client.force_authenticate(base_user)
         response = api_client.post(ME_URL, {})
+
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+    @pytest.mark.django_db
+    def test_put_not_allowed(self, api_client: APIClient, base_user: User):
+        """
+        GIVEN: Authenticated user as request.user.
+        WHEN: PUT request on AuthenticatedUserView.
+        THEN: HTTP 405 returned.
+        """
+        api_client.force_authenticate(base_user)
+        response = api_client.put(ME_URL, {})
 
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
