@@ -1,4 +1,4 @@
-from app_config.permissions import UserBelongsToBudgetPermission
+from app_infrastructure.permissions import UserBelongsToBudgetPermission
 from budgets.models import BudgetingPeriod
 from budgets.serializers.budgeting_period_serializer import BudgetingPeriodSerializer
 from django.db.models import Q, QuerySet

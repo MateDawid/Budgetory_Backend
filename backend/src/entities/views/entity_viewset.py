@@ -1,4 +1,4 @@
-from app_config.permissions import UserBelongsToBudgetPermission
+from app_infrastructure.permissions import UserBelongsToBudgetPermission
 from django.db.models import QuerySet
 from entities.models.entity_model import Entity
 from entities.serializers.entity_serializer import EntitySerializer

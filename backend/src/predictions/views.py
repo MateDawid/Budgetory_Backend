@@ -1,4 +1,4 @@
-from app_config.permissions import UserBelongsToBudgetPermission
+from app_infrastructure.permissions import UserBelongsToBudgetPermission
 from django.db.models import QuerySet
 from django_filters import rest_framework as filters
 from predictions.filters import ExpensePredictionFilterSet
