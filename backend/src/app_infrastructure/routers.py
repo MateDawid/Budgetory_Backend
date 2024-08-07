@@ -1,5 +1,6 @@
 from rest_framework.routers import DefaultRouter
 from rest_framework.viewsets import ViewSet
+from rest_framework_nested.routers import NestedMixin
 
 
 class AppRouter(DefaultRouter):
@@ -28,3 +29,11 @@ class AppRouter(DefaultRouter):
             elif hasattr(viewset, action):
                 bound_methods[method] = action
         return bound_methods
+
+
+class AppNestedRouter(NestedMixin, AppRouter):
+    """
+    Custom nested router class that disables indicated methods.
+    """
+
+    pass
