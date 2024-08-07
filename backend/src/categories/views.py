@@ -1,4 +1,4 @@
-from app_config.permissions import UserBelongsToBudgetPermission
+from app_infrastructure.permissions import UserBelongsToBudgetPermission
 from categories.filters import ExpenseCategoryFilterSet, IncomeCategoryFilterSet
 from categories.models import ExpenseCategory, IncomeCategory
 from categories.serializers import (
