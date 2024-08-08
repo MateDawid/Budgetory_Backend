@@ -1,3 +1,14 @@
+"""
+Tests for BudgetViewSet:
+* TestBudgetViewSetList - GET on list view.
+* TestBudgetViewSetOwnedList - GET on owned view.
+* TestBudgetViewSetMemberedList - GET on membered view.
+* TestBudgetViewSetCreate - POST on list view.
+* TestBudgetViewSetDetail - GET on detail view.
+* TestBudgetViewSetUpdate - PATCH on detail view.
+* TestBudgetViewSetDelete - DELETE on detail view.
+"""
+
 from typing import Any
 
 import pytest
@@ -86,8 +97,8 @@ class TestBudgetViewSetList:
 
 
 @pytest.mark.django_db
-class TestBudgetViewSetOwned:
-    """Tests for owned view on BudgetViewSet."""
+class TestBudgetViewSetOwnedList:
+    """Tests for owned list view on BudgetViewSet."""
 
     def test_auth_required(self, api_client: APIClient):
         """
@@ -122,8 +133,8 @@ class TestBudgetViewSetOwned:
 
 
 @pytest.mark.django_db
-class TestBudgetViewSetMembered:
-    """Tests for membered view on BudgetViewSet."""
+class TestBudgetViewSetMemberedList:
+    """Tests for membered list view on BudgetViewSet."""
 
     def test_auth_required(self, api_client: APIClient):
         """
@@ -155,58 +166,6 @@ class TestBudgetViewSetMembered:
         serializer = BudgetSerializer(membered_budgets, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert response.data['results'] == serializer.data
-
-
-@pytest.mark.django_db
-class TestBudgetViewSetDetail:
-    """Tests for detail view on BudgetViewSet."""
-
-    def test_auth_required(self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass):
-        """
-        GIVEN: AnonymousUser as request.user.
-        WHEN: BudgetViewSet detail endpoint called without authentication.
-        THEN: Unauthorized HTTP 401 returned.
-        """
-        budget = budget_factory(owner=base_user)
-        url = budget_detail_url(budget.id)
-
-        response = api_client.get(url)
-
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
-
-    def test_get_budget_details(self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass):
-        """
-        GIVEN: Budget owned by authenticated User created in database.
-        WHEN: BudgetViewSet detail endpoint called by authenticated User.
-        THEN: HTTP 200. List of Budgets membered by authenticated User returned.
-        """
-        api_client.force_authenticate(base_user)
-        budget = budget_factory(owner=base_user)
-        url = budget_detail_url(budget.id)
-
-        response = api_client.get(url)
-        serializer = BudgetSerializer(budget)
-
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data == serializer.data
-
-    def test_error_get_other_user_budget_details(
-        self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
-    ):
-        """
-        GIVEN: Budget owned by some User created in database.
-        WHEN: BudgetViewSet detail endpoint for another Users Budget called by authenticated User.
-        THEN: HTTP 404 returned.
-        """
-        user_1 = user_factory()
-        user_2 = user_factory()
-        budget = budget_factory(owner=user_1)
-        api_client.force_authenticate(user_2)
-
-        url = budget_detail_url(budget.id)
-        response = api_client.get(url)
-
-        assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 @pytest.mark.django_db
@@ -297,6 +256,58 @@ class TestBudgetViewSetCreate:
         assert 'name' in response.data['detail']
         assert response.data['detail']['name'][0] == f'User already owns Budget with name "{payload["name"]}".'
         assert Budget.objects.filter(owner=base_user).count() == 1
+
+
+@pytest.mark.django_db
+class TestBudgetViewSetDetail:
+    """Tests for detail view on BudgetViewSet."""
+
+    def test_auth_required(self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass):
+        """
+        GIVEN: AnonymousUser as request.user.
+        WHEN: BudgetViewSet detail endpoint called without authentication.
+        THEN: Unauthorized HTTP 401 returned.
+        """
+        budget = budget_factory(owner=base_user)
+        url = budget_detail_url(budget.id)
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_get_budget_details(self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass):
+        """
+        GIVEN: Budget owned by authenticated User created in database.
+        WHEN: BudgetViewSet detail endpoint called by authenticated User.
+        THEN: HTTP 200. List of Budgets membered by authenticated User returned.
+        """
+        api_client.force_authenticate(base_user)
+        budget = budget_factory(owner=base_user)
+        url = budget_detail_url(budget.id)
+
+        response = api_client.get(url)
+        serializer = BudgetSerializer(budget)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == serializer.data
+
+    def test_error_get_other_user_budget_details(
+        self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Budget owned by some User created in database.
+        WHEN: BudgetViewSet detail endpoint for another Users Budget called by authenticated User.
+        THEN: HTTP 404 returned.
+        """
+        user_1 = user_factory()
+        user_2 = user_factory()
+        budget = budget_factory(owner=user_1)
+        api_client.force_authenticate(user_2)
+
+        url = budget_detail_url(budget.id)
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 @pytest.mark.django_db
