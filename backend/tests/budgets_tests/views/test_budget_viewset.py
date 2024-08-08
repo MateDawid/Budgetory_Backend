@@ -334,7 +334,7 @@ class TestBudgetViewSetUpdate:
         'param, value',
         [('name', 'New name'), ('description', 'New description'), ('currency', 'PLN')],
     )
-    def test_budget_update(
+    def test_budget_update_single_field(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -357,6 +357,7 @@ class TestBudgetViewSetUpdate:
 
         assert response.status_code == status.HTTP_200_OK
         budget.refresh_from_db()
+        assert getattr(budget, param) == value
 
     def test_update_with_members(
         self,
@@ -383,6 +384,36 @@ class TestBudgetViewSetUpdate:
         assert response.status_code == status.HTTP_200_OK
         budget.refresh_from_db()
         assert list(budget.members.all().values_list('id', flat=True)) == update_payload['members']
+
+    def test_budget_update_many_fields(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget owner as request.user. Valid update params in payload.
+        WHEN: BudgetViewSet detail endpoint called with PATCH.
+        THEN: HTTP 200 returned. Budget updated in database.
+        """
+        user_1 = user_factory()
+        user_2 = user_factory()
+        api_client.force_authenticate(base_user)
+        payload = {'name': 'Budget', 'description': 'Some budget', 'currency': 'eur', 'members': [user_1.id]}
+        budget = budget_factory(owner=base_user, **payload)
+        update_payload = {'name': 'UPDATE', 'description': 'Updated budget', 'currency': 'pln', 'members': [user_2.id]}
+        url = budget_detail_url(budget.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        budget.refresh_from_db()
+        for param, value in update_payload.items():
+            if param == 'members':
+                assert list(budget.members.all().values_list('id', flat=True)) == update_payload['members']
+            else:
+                assert getattr(budget, param) == value
 
     @pytest.mark.parametrize(
         'param, value',
