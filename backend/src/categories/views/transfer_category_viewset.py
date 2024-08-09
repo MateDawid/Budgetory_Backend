@@ -1,9 +1,5 @@
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
-from categories.filters import ExpenseCategoryFilterSet, IncomeCategoryFilterSet
-from categories.models import ExpenseCategory, IncomeCategory
-from categories.serializers import (
-    ExpenseCategorySerializer,
-    IncomeCategorySerializer,
+from categories.serializers.transfer_category_serializer import (
     TransferCategorySerializer,
 )
 from django.db.models import QuerySet
@@ -20,7 +16,7 @@ class TransferCategoryViewSet(ModelViewSet):
     authentication_classes = [TokenAuthentication]
     permission_classes = (IsAuthenticated, UserBelongsToBudgetPermission)
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
-    ordering = ('id', 'group', 'name')
+    ordering = ("id", "group", "name")
 
     def get_queryset(self) -> QuerySet:
         """
@@ -28,7 +24,7 @@ class TransferCategoryViewSet(ModelViewSet):
         Returns:
             QuerySet: Filtered TransferCategory QuerySet.
         """
-        return self.queryset.prefetch_related('owner').filter(budget__pk=self.kwargs.get('budget_pk')).distinct()
+        return self.queryset.prefetch_related("owner").filter(budget__pk=self.kwargs.get("budget_pk")).distinct()
 
     def perform_create(self, serializer: TransferCategorySerializer) -> None:
         """
@@ -36,16 +32,4 @@ class TransferCategoryViewSet(ModelViewSet):
         Args:
             serializer [TransferCategorySerializer]: Serializer for TransferCategory model.
         """
-        serializer.save(budget_id=self.kwargs.get('budget_pk'))
-
-
-class ExpenseCategoryViewSet(TransferCategoryViewSet):
-    serializer_class = ExpenseCategorySerializer
-    queryset = ExpenseCategory.objects.all()
-    filterset_class = ExpenseCategoryFilterSet
-
-
-class IncomeCategoryViewSet(TransferCategoryViewSet):
-    serializer_class = IncomeCategorySerializer
-    queryset = IncomeCategory.objects.all()
-    filterset_class = IncomeCategoryFilterSet
+        serializer.save(budget_id=self.kwargs.get("budget_pk"))
