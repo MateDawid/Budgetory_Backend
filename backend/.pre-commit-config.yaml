@@ -10,13 +10,12 @@ repos:
         files: (^|/).+\.(py|html|sh|css|js)$
       - id: end-of-file-fixer
       - id: check-yaml
-      - id: double-quote-string-fixer
 
   - repo: https://github.com/psf/black
     rev: 22.3.0
     hooks:
       - id: black
-        args: ['--line-length=120', '--skip-string-normalization']
+        args: ['--line-length=120']
 
   - repo: https://github.com/timothycrosley/isort
     rev: 5.12.0
