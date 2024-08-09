@@ -1,4 +1,3 @@
-from categories.models import ExpenseCategory, IncomeCategory
 from django.db.models import QuerySet
 from django_filters import rest_framework as filters
 
@@ -6,12 +5,12 @@ from django_filters import rest_framework as filters
 class TransferCategoryFilterSet(filters.FilterSet):
     """Base FilterSet for TransferCategory endpoints."""
 
-    name = filters.CharFilter(lookup_expr='icontains', field_name='name')
-    common_only = filters.BooleanFilter(method='get_common_categories')
+    name = filters.CharFilter(lookup_expr="icontains", field_name="name")
+    common_only = filters.BooleanFilter(method="get_common_categories")
 
     class Meta:
         abstract = True
-        fields = ['group', 'owner', 'is_active']
+        fields = ["group", "owner", "is_active"]
 
     def get_common_categories(self, queryset: QuerySet, name: str, value: str):
         """
@@ -28,17 +27,3 @@ class TransferCategoryFilterSet(filters.FilterSet):
         if value:
             return queryset.filter(owner__isnull=True)
         return queryset
-
-
-class ExpenseCategoryFilterSet(TransferCategoryFilterSet):
-    """FilterSet for /expense_categories endpoint."""
-
-    class Meta(TransferCategoryFilterSet.Meta):
-        model = ExpenseCategory
-
-
-class IncomeCategoryFilterSet(TransferCategoryFilterSet):
-    """FilterSet for /income_categories endpoint."""
-
-    class Meta(TransferCategoryFilterSet.Meta):
-        model = IncomeCategory
