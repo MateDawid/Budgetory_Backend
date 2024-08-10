@@ -1,5 +1,5 @@
 import pytest
-from budgets.models import Budget
+from budgets.models.budget_model import Budget
 from categories.models import IncomeCategory
 from django.db import DataError
 from factory.base import FactoryMetaClass
@@ -10,10 +10,10 @@ class TestIncomeCategoryModel:
     """Tests for IncomeCategory model"""
 
     PAYLOAD = {
-        'name': 'Salary',
-        'description': 'Category for salaries.',
-        'is_active': True,
-        'group': IncomeCategory.IncomeGroups.REGULAR,
+        "name": "Salary",
+        "description": "Category for salaries.",
+        "is_active": True,
+        "group": IncomeCategory.IncomeGroups.REGULAR,
     }
 
     def test_create_income_category_without_owner(self, budget: Budget):
@@ -28,7 +28,7 @@ class TestIncomeCategoryModel:
             assert getattr(category, key) == self.PAYLOAD[key]
         assert category.owner is None
         assert IncomeCategory.objects.filter(budget=budget).count() == 1
-        assert str(category) == f'{category.name} ({category.budget.name})'
+        assert str(category) == f"{category.name} ({category.budget.name})"
 
     def test_create_category_with_owner(self, user_factory: FactoryMetaClass, budget: Budget):
         """
@@ -39,17 +39,17 @@ class TestIncomeCategoryModel:
         payload = self.PAYLOAD.copy()
         category_owner = user_factory()
         budget.members.add(category_owner)
-        payload['owner'] = category_owner
+        payload["owner"] = category_owner
 
         category = IncomeCategory.objects.create(budget=budget, **payload)
 
         for key in payload:
-            if key == 'owner':
+            if key == "owner":
                 continue
             assert getattr(category, key) == self.PAYLOAD[key]
         assert category.owner == category_owner
         assert IncomeCategory.objects.filter(budget=budget).count() == 1
-        assert str(category) == f'{category.name} ({category.budget.name})'
+        assert str(category) == f"{category.name} ({category.budget.name})"
 
     def test_creating_same_category_for_two_budgets(self, budget_factory: FactoryMetaClass):
         """
@@ -61,7 +61,7 @@ class TestIncomeCategoryModel:
         budget_2 = budget_factory()
         payload = self.PAYLOAD.copy()
         for budget in (budget_1, budget_2):
-            payload['budget'] = budget
+            payload["budget"] = budget
             IncomeCategory.objects.create(**payload)
 
         assert IncomeCategory.objects.all().count() == 2
@@ -69,7 +69,7 @@ class TestIncomeCategoryModel:
         assert IncomeCategory.objects.filter(budget=budget_2).count() == 1
 
     @pytest.mark.django_db(transaction=True)
-    @pytest.mark.parametrize('field_name', ['name', 'description'])
+    @pytest.mark.parametrize("field_name", ["name", "description"])
     def test_error_value_too_long(self, budget: Budget, field_name: str):
         """
         GIVEN: Budget model instance in database.
@@ -78,9 +78,9 @@ class TestIncomeCategoryModel:
         """
         max_length = IncomeCategory._meta.get_field(field_name).max_length
         payload = self.PAYLOAD.copy()
-        payload[field_name] = (max_length + 1) * 'a'
+        payload[field_name] = (max_length + 1) * "a"
 
         with pytest.raises(DataError) as exc:
             IncomeCategory.objects.create(**payload)
-        assert str(exc.value) == f'value too long for type character varying({max_length})\n'
+        assert str(exc.value) == f"value too long for type character varying({max_length})\n"
         assert not IncomeCategory.objects.filter(budget=budget).exists()
