@@ -1,8 +1,9 @@
 from typing import Any
 
 import pytest
+from budgets.models.budget_model import Budget
 from categories.models import IncomeCategory
-from categories.serializers import IncomeCategorySerializer
+from categories.serializers.income_category_serializer import IncomeCategorySerializer
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
 from factory.base import FactoryMetaClass
@@ -12,19 +13,19 @@ from rest_framework.test import APIClient
 
 def income_category_url(budget_id: int):
     """Create and return an IncomeCategory list URL."""
-    return reverse('budgets:income_category-list', args=[budget_id])
+    return reverse("budgets:income_category-list", args=[budget_id])
 
 
 def income_category_detail_url(budget_id: int, category_id: int):
     """Create and return an IncomeCategory detail URL."""
-    return reverse('budgets:income_category-detail', args=[budget_id, category_id])
+    return reverse("budgets:income_category-detail", args=[budget_id, category_id])
 
 
 @pytest.mark.django_db
-class TestIncomeCategoryApiAccess:
+class TestIncomeCategoryViewSetAccess:
     """Tests for access to IncomeCategoryViewSet."""
 
-    def test_auth_required_on_list_view(self, api_client: APIClient, income_category: IncomeCategory):
+    def test_auth_required(self, api_client: APIClient, income_category: IncomeCategory):
         """
         GIVEN: IncomeCategory model instance in database.
         WHEN: IncomeCategoryViewSet list method called without authentication.
@@ -33,16 +34,7 @@ class TestIncomeCategoryApiAccess:
         response = api_client.get(income_category_url(income_category.budget.id))
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_auth_required_on_detail_view(self, api_client: APIClient, income_category: IncomeCategory):
-        """
-        GIVEN: IncomeCategory model instance in database.
-        WHEN: IncomeCategoryViewSet detail method called without authentication.
-        THEN: Unauthorized HTTP 401 returned.
-        """
-        response = api_client.get(income_category_detail_url(income_category.budget.id, income_category.id))
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
-
-    def test_user_not_budget_member_on_list_view(
+    def test_user_not_budget_member(
         self, api_client: APIClient, user_factory: FactoryMetaClass, income_category_factory: FactoryMetaClass
     ):
         """
@@ -58,7 +50,16 @@ class TestIncomeCategoryApiAccess:
         response = api_client.get(income_category_url(income_category.budget.id))
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data['detail'] == 'User does not have access to Budget.'
+        assert response.data["detail"] == "User does not have access to Budget."
+
+    def test_auth_required_on_detail_view(self, api_client: APIClient, income_category: IncomeCategory):
+        """
+        GIVEN: IncomeCategory model instance in database.
+        WHEN: IncomeCategoryViewSet detail method called without authentication.
+        THEN: Unauthorized HTTP 401 returned.
+        """
+        response = api_client.get(income_category_detail_url(income_category.budget.id, income_category.id))
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_user_not_budget_member_on_detail_view(
         self,
@@ -79,12 +80,39 @@ class TestIncomeCategoryApiAccess:
         response = api_client.get(income_category_detail_url(income_category.budget.id, income_category.id))
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data['detail'] == 'User does not have access to Budget.'
+        assert response.data["detail"] == "User does not have access to Budget."
 
 
 @pytest.mark.django_db
-class TestIncomeCategoryApiList:
+class TestIncomeCategoryViewSetList:
     """Tests for list view on IncomeCategoryViewSet."""
+
+    def test_auth_required(self, api_client: APIClient, income_category: IncomeCategory):
+        """
+        GIVEN: IncomeCategory model instance in database.
+        WHEN: IncomeCategoryViewSet list method called without authentication.
+        THEN: Unauthorized HTTP 401 returned.
+        """
+        response = api_client.get(income_category_url(income_category.budget.id))
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_user_not_budget_member(
+        self, api_client: APIClient, user_factory: FactoryMetaClass, income_category_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: IncomeCategory model instance in database.
+        WHEN: IncomeCategoryViewSet list method called by User not belonging to given Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        budget_owner = user_factory()
+        other_user = user_factory()
+        income_category = income_category_factory(budget__owner=budget_owner)
+        api_client.force_authenticate(other_user)
+
+        response = api_client.get(income_category_url(income_category.budget.id))
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data["detail"] == "User does not have access to Budget."
 
     def test_retrieve_category_list_by_owner(
         self,
@@ -108,7 +136,7 @@ class TestIncomeCategoryApiList:
         categories = IncomeCategory.objects.filter(budget=budget)
         serializer = IncomeCategorySerializer(categories, many=True)
         assert response.status_code == status.HTTP_200_OK
-        assert response.data['results'] == serializer.data
+        assert response.data["results"] == serializer.data
 
     def test_retrieve_category_list_by_member(
         self,
@@ -132,7 +160,7 @@ class TestIncomeCategoryApiList:
         categories = IncomeCategory.objects.filter(budget=budget)
         serializer = IncomeCategorySerializer(categories, many=True)
         assert response.status_code == status.HTTP_200_OK
-        assert response.data['results'] == serializer.data
+        assert response.data["results"] == serializer.data
 
     def test_category_list_limited_to_budget(
         self,
@@ -156,11 +184,11 @@ class TestIncomeCategoryApiList:
         categories = IncomeCategory.objects.filter(budget=budget)
         serializer = IncomeCategorySerializer(categories, many=True)
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data['results']) == len(serializer.data) == categories.count() == 1
-        assert response.data['results'] == serializer.data
-        assert response.data['results'][0]['id'] == category.id
+        assert len(response.data["results"]) == len(serializer.data) == categories.count() == 1
+        assert response.data["results"] == serializer.data
+        assert response.data["results"][0]["id"] == category.id
 
-    @pytest.mark.parametrize('sort_param', ('id', '-id', 'group', '-group', 'name', '-name'))
+    @pytest.mark.parametrize("sort_param", ("id", "-id", "group", "-group", "name", "-name"))
     def test_get_categories_list_sorted_by_param(
         self,
         api_client: APIClient,
@@ -179,17 +207,17 @@ class TestIncomeCategoryApiList:
             income_category_factory(budget=budget)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(income_category_url(budget.id), data={'ordering': sort_param})
+        response = api_client.get(income_category_url(budget.id), data={"ordering": sort_param})
 
         assert response.status_code == status.HTTP_200_OK
         categories = IncomeCategory.objects.all().order_by(sort_param)
         serializer = IncomeCategorySerializer(categories, many=True)
-        assert response.data['results'] and serializer.data
-        assert len(response.data['results']) == len(serializer.data) == len(categories) == 3
-        assert response.data['results'] == serializer.data
+        assert response.data["results"] and serializer.data
+        assert len(response.data["results"]) == len(serializer.data) == len(categories) == 3
+        assert response.data["results"] == serializer.data
 
     @pytest.mark.parametrize(
-        'filter_value', ('Test', 'TEST', 'test', 'name', 'NAME', 'Name', 'Test name', 'TEST NAME', 'test name')
+        "filter_value", ("Test", "TEST", "test", "name", "NAME", "Name", "Test name", "TEST NAME", "test name")
     )
     def test_get_categories_list_filtered_by_name(
         self,
@@ -206,11 +234,11 @@ class TestIncomeCategoryApiList:
         name value.
         """
         budget = budget_factory(owner=base_user)
-        category = income_category_factory(name='Test name', budget=budget)
-        income_category_factory(name='Other category', budget=budget)
+        category = income_category_factory(name="Test name", budget=budget)
+        income_category_factory(name="Other category", budget=budget)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(income_category_url(budget.id), data={'name': filter_value})
+        response = api_client.get(income_category_url(budget.id), data={"name": filter_value})
 
         assert response.status_code == status.HTTP_200_OK
         assert IncomeCategory.objects.all().count() == 2
@@ -219,10 +247,10 @@ class TestIncomeCategoryApiList:
             categories,
             many=True,
         )
-        assert response.data['results'] and serializer.data
-        assert len(response.data['results']) == len(serializer.data) == categories.count() == 1
-        assert response.data['results'] == serializer.data
-        assert response.data['results'][0]['id'] == category.id
+        assert response.data["results"] and serializer.data
+        assert len(response.data["results"]) == len(serializer.data) == categories.count() == 1
+        assert response.data["results"] == serializer.data
+        assert response.data["results"][0]["id"] == category.id
 
     def test_get_categories_list_filtered_by_common_only_true(
         self,
@@ -241,16 +269,16 @@ class TestIncomeCategoryApiList:
         income_category_factory(budget=budget, owner=base_user)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(income_category_url(budget.id), data={'common_only': True})
+        response = api_client.get(income_category_url(budget.id), data={"common_only": True})
 
         assert response.status_code == status.HTTP_200_OK
         assert IncomeCategory.objects.all().count() == 2
         categories = IncomeCategory.objects.filter(budget=category.budget, owner__isnull=True)
         serializer = IncomeCategorySerializer(categories, many=True)
-        assert response.data['results'] and serializer.data
-        assert len(response.data['results']) == len(serializer.data) == categories.count() == 1
-        assert response.data['results'] == serializer.data
-        assert response.data['results'][0]['id'] == category.id
+        assert response.data["results"] and serializer.data
+        assert len(response.data["results"]) == len(serializer.data) == categories.count() == 1
+        assert response.data["results"] == serializer.data
+        assert response.data["results"][0]["id"] == category.id
 
     def test_get_categories_list_filtered_by_common_only_false(
         self,
@@ -269,15 +297,15 @@ class TestIncomeCategoryApiList:
         income_category_factory(budget=budget, owner=None)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(income_category_url(budget.id), data={'common_only': False})
+        response = api_client.get(income_category_url(budget.id), data={"common_only": False})
 
         assert response.status_code == status.HTTP_200_OK
         assert IncomeCategory.objects.all().count() == 2
         categories = IncomeCategory.objects.filter(budget=budget)
         serializer = IncomeCategorySerializer(categories, many=True)
-        assert response.data['results'] and serializer.data
-        assert len(response.data['results']) == len(serializer.data) == categories.count() == 2
-        assert response.data['results'] == serializer.data
+        assert response.data["results"] and serializer.data
+        assert len(response.data["results"]) == len(serializer.data) == categories.count() == 2
+        assert response.data["results"] == serializer.data
 
     def test_get_categories_list_filtered_by_group(
         self,
@@ -298,7 +326,7 @@ class TestIncomeCategoryApiList:
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            income_category_url(budget.id), data={'group': IncomeCategory.IncomeGroups.REGULAR.value}
+            income_category_url(budget.id), data={"group": IncomeCategory.IncomeGroups.REGULAR.value}
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -307,10 +335,10 @@ class TestIncomeCategoryApiList:
             budget=category.budget, group=IncomeCategory.IncomeGroups.REGULAR.value
         )
         serializer = IncomeCategorySerializer(categories, many=True)
-        assert response.data['results'] and serializer.data
-        assert len(response.data['results']) == len(serializer.data) == categories.count() == 1
-        assert response.data['results'] == serializer.data
-        assert response.data['results'][0]['id'] == category.id
+        assert response.data["results"] and serializer.data
+        assert len(response.data["results"]) == len(serializer.data) == categories.count() == 1
+        assert response.data["results"] == serializer.data
+        assert response.data["results"][0]["id"] == category.id
 
     def test_get_categories_list_filtered_by_owner(
         self,
@@ -330,18 +358,18 @@ class TestIncomeCategoryApiList:
         income_category_factory(budget=budget, owner=None)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(income_category_url(budget.id), data={'owner': base_user.id})
+        response = api_client.get(income_category_url(budget.id), data={"owner": base_user.id})
 
         assert response.status_code == status.HTTP_200_OK
         assert IncomeCategory.objects.all().count() == 2
         categories = IncomeCategory.objects.filter(budget=category.budget, owner=base_user)
         serializer = IncomeCategorySerializer(categories, many=True)
-        assert response.data['results'] and serializer.data
-        assert len(response.data['results']) == len(serializer.data) == categories.count() == 1
-        assert response.data['results'] == serializer.data
-        assert response.data['results'][0]['id'] == category.id
+        assert response.data["results"] and serializer.data
+        assert len(response.data["results"]) == len(serializer.data) == categories.count() == 1
+        assert response.data["results"] == serializer.data
+        assert response.data["results"][0]["id"] == category.id
 
-    @pytest.mark.parametrize('is_active', (True, False))
+    @pytest.mark.parametrize("is_active", (True, False))
     def test_get_categories_list_filtered_by_is_active(
         self,
         api_client: APIClient,
@@ -361,30 +389,53 @@ class TestIncomeCategoryApiList:
         income_category_factory(budget=budget, is_active=not is_active)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(income_category_url(budget.id), data={'is_active': is_active})
+        response = api_client.get(income_category_url(budget.id), data={"is_active": is_active})
 
         assert response.status_code == status.HTTP_200_OK
         assert IncomeCategory.objects.all().count() == 2
         categories = IncomeCategory.objects.filter(budget=category.budget, is_active=is_active)
         serializer = IncomeCategorySerializer(categories, many=True)
-        assert response.data['results'] and serializer.data
-        assert len(response.data['results']) == len(serializer.data) == categories.count() == 1
-        assert response.data['results'] == serializer.data
-        assert response.data['results'][0]['id'] == category.id
+        assert response.data["results"] and serializer.data
+        assert len(response.data["results"]) == len(serializer.data) == categories.count() == 1
+        assert response.data["results"] == serializer.data
+        assert response.data["results"][0]["id"] == category.id
 
 
 @pytest.mark.django_db
-class TestIncomeCategoryApiCreate:
+class TestIncomeCategoryViewSetCreate:
     """Tests for create IncomeCategory on IncomeCategoryViewSet."""
 
     PAYLOAD = {
-        'name': 'Salary',
-        'group': IncomeCategory.IncomeGroups.REGULAR,
-        'description': 'Monthly salary.',
-        'is_active': True,
+        "name": "Incomes for food",
+        "group": IncomeCategory.IncomeGroups.REGULAR,
+        "description": "All money spent for food.",
+        "is_active": True,
     }
 
-    @pytest.mark.parametrize('user_type', ['owner', 'member'])
+    def test_auth_required(self, api_client: APIClient, budget: Budget):
+        """
+        GIVEN: IncomeCategory model instance in database.
+        WHEN: IncomeCategoryViewSet list method called without authentication.
+        THEN: Unauthorized HTTP 401 returned.
+        """
+        response = api_client.post(income_category_url(budget.id), data={})
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_user_not_budget_member(self, api_client: APIClient, user_factory: FactoryMetaClass, budget: Budget):
+        """
+        GIVEN: IncomeCategory model instance in database.
+        WHEN: IncomeCategoryViewSet list method called by User not belonging to given Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        user = user_factory()
+        api_client.force_authenticate(user)
+
+        response = api_client.post(income_category_url(budget.id))
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data["detail"] == "User does not have access to Budget."
+
+    @pytest.mark.parametrize("user_type", ["owner", "member"])
     def test_create_single_category(
         self,
         api_client: APIClient,
@@ -400,7 +451,7 @@ class TestIncomeCategoryApiCreate:
         THEN: IncomeCategory object created in database with given payload
         """
         other_user = user_factory()
-        if user_type == 'owner':
+        if user_type == "owner":
             budget = budget_factory(owner=base_user, members=[other_user])
         else:
             budget = budget_factory(members=[base_user, other_user])
@@ -410,7 +461,7 @@ class TestIncomeCategoryApiCreate:
 
         assert response.status_code == status.HTTP_201_CREATED
         assert IncomeCategory.objects.filter(budget=budget).count() == 1
-        category = IncomeCategory.objects.get(id=response.data['id'])
+        category = IncomeCategory.objects.get(id=response.data["id"])
         for key in self.PAYLOAD:
             assert getattr(category, key) == self.PAYLOAD[key]
         serializer = IncomeCategorySerializer(category)
@@ -430,13 +481,13 @@ class TestIncomeCategoryApiCreate:
         """
         budget = budget_factory(owner=base_user)
         payload = self.PAYLOAD.copy()
-        payload['owner'] = base_user.id
+        payload["owner"] = base_user.id
         api_client.force_authenticate(base_user)
 
         response = api_client.post(income_category_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_201_CREATED
-        category = IncomeCategory.objects.get(id=response.data['id'])
+        category = IncomeCategory.objects.get(id=response.data["id"])
         assert category.owner == base_user
         assert base_user.personal_income_categories.filter(budget=budget).count() == 1
         serializer = IncomeCategorySerializer(category)
@@ -450,16 +501,16 @@ class TestIncomeCategoryApiCreate:
     ):
         """
         GIVEN: Budget instances created in database. Valid payloads prepared
-        for two ExpenseCategories.
+        for two IncomeCategories.
         WHEN: IncomeCategoryViewSet called twice with POST by User belonging to Budget with valid payloads.
         THEN: Two IncomeCategory objects created in database with given payloads.
         """
         budget = budget_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         payload_1 = self.PAYLOAD.copy()
-        payload_1['name'] = 'IncomeCategory name 1'
+        payload_1["name"] = "IncomeCategory name 1"
         payload_2 = self.PAYLOAD.copy()
-        payload_2['name'] = 'IncomeCategory name 2'
+        payload_2["name"] = "IncomeCategory name 2"
 
         response_1 = api_client.post(income_category_url(budget.id), payload_1)
         response_2 = api_client.post(income_category_url(budget.id), payload_2)
@@ -468,13 +519,13 @@ class TestIncomeCategoryApiCreate:
         assert response_2.status_code == status.HTTP_201_CREATED
         assert IncomeCategory.objects.filter(budget=budget).count() == 2
         for response, payload in [(response_1, payload_1), (response_2, payload_2)]:
-            category = IncomeCategory.objects.get(id=response.data['id'])
+            category = IncomeCategory.objects.get(id=response.data["id"])
             for key in payload:
                 assert getattr(category, key) == payload[key]
 
     def test_create_same_category_for_two_budgets(self, api_client: APIClient, budget_factory: FactoryMetaClass):
         """
-        GIVEN: Two Budget instances created in database. Valid payload prepared for two ExpenseCategories.
+        GIVEN: Two Budget instances created in database. Valid payload prepared for two IncomeCategories.
         WHEN: IncomeCategoryViewSet called twice with POST by different Users belonging to two different
         Budgets with valid payload.
         THEN: Two IncomeCategory objects created in database with given payload for separate Budgets.
@@ -492,7 +543,7 @@ class TestIncomeCategoryApiCreate:
         assert IncomeCategory.objects.filter(budget=budget_1).count() == 1
         assert IncomeCategory.objects.filter(budget=budget_2).count() == 1
 
-    @pytest.mark.parametrize('field_name', ['name', 'description'])
+    @pytest.mark.parametrize("field_name", ["name", "description"])
     def test_error_value_too_long(
         self,
         api_client: APIClient,
@@ -509,13 +560,13 @@ class TestIncomeCategoryApiCreate:
         api_client.force_authenticate(base_user)
         max_length = IncomeCategory._meta.get_field(field_name).max_length
         payload = self.PAYLOAD.copy()
-        payload[field_name] = (max_length + 1) * 'a'
+        payload[field_name] = (max_length + 1) * "a"
 
         response = api_client.post(income_category_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert field_name in response.data['detail']
-        assert response.data['detail'][field_name][0] == f'Ensure this field has no more than {max_length} characters.'
+        assert field_name in response.data["detail"]
+        assert response.data["detail"][field_name][0] == f"Ensure this field has no more than {max_length} characters."
         assert not IncomeCategory.objects.filter(budget=budget).exists()
 
     def test_error_create_category_for_not_accessible_budget(
@@ -536,7 +587,7 @@ class TestIncomeCategoryApiCreate:
         response = api_client.post(income_category_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data['detail'] == 'User does not have access to Budget.'
+        assert response.data["detail"] == "User does not have access to Budget."
         assert not IncomeCategory.objects.filter(budget=budget).exists()
 
     def test_error_owner_does_not_belong_to_budget(
@@ -556,15 +607,15 @@ class TestIncomeCategoryApiCreate:
         outer_user = user_factory()
         payload = self.PAYLOAD.copy()
 
-        payload['owner'] = outer_user.id
+        payload["owner"] = outer_user.id
         api_client.force_authenticate(base_user)
 
         api_client.post(income_category_url(budget.id), payload)
         response = api_client.post(income_category_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data['detail']
-        assert response.data['detail']['non_field_errors'][0] == 'Provided owner does not belong to Budget.'
+        assert "non_field_errors" in response.data["detail"]
+        assert response.data["detail"]["non_field_errors"][0] == "Provided owner does not belong to Budget."
         assert not IncomeCategory.objects.filter(budget=budget).exists()
 
     def test_error_personal_category_name_already_used(
@@ -581,17 +632,17 @@ class TestIncomeCategoryApiCreate:
         """
         budget = budget_factory(owner=base_user)
         payload = self.PAYLOAD.copy()
-        payload['owner'] = base_user.id
+        payload["owner"] = base_user.id
         api_client.force_authenticate(base_user)
         api_client.post(income_category_url(budget.id), payload)
 
         response = api_client.post(income_category_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data['detail']
+        assert "non_field_errors" in response.data["detail"]
         assert (
-            response.data['detail']['non_field_errors'][0]
-            == 'Personal IncomeCategory with given name already exists in Budget for provided owner.'
+            response.data["detail"]["non_field_errors"][0]
+            == "Personal IncomeCategory with given name already exists in Budget for provided owner."
         )
         assert IncomeCategory.objects.filter(budget=budget, owner__isnull=False).count() == 1
 
@@ -615,19 +666,49 @@ class TestIncomeCategoryApiCreate:
         response = api_client.post(income_category_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data['detail']
+        assert "non_field_errors" in response.data["detail"]
         assert (
-            response.data['detail']['non_field_errors'][0]
-            == 'Common IncomeCategory with given name already exists in Budget.'
+            response.data["detail"]["non_field_errors"][0]
+            == "Common IncomeCategory with given name already exists in Budget."
         )
         assert IncomeCategory.objects.filter(budget=budget, owner__isnull=True).count() == 1
 
 
 @pytest.mark.django_db
-class TestIncomeCategoryApiDetail:
+class TestIncomeCategoryViewSetDetail:
     """Tests for detail view on IncomeCategoryViewSet."""
 
-    @pytest.mark.parametrize('user_type', ['owner', 'member'])
+    def test_auth_required(self, api_client: APIClient, income_category: IncomeCategory):
+        """
+        GIVEN: IncomeCategory model instance in database.
+        WHEN: IncomeCategoryViewSet detail method called without authentication.
+        THEN: Unauthorized HTTP 401 returned.
+        """
+        response = api_client.get(income_category_detail_url(income_category.budget.id, income_category.id))
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_user_not_budget_member(
+        self,
+        api_client: APIClient,
+        user_factory: FactoryMetaClass,
+        income_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: IncomeCategory model instance in database.
+        WHEN: IncomeCategoryViewSet detail method called by User not belonging to given Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        budget_owner = user_factory()
+        other_user = user_factory()
+        income_category = income_category_factory(budget__owner=budget_owner)
+        api_client.force_authenticate(other_user)
+
+        response = api_client.get(income_category_detail_url(income_category.budget.id, income_category.id))
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data["detail"] == "User does not have access to Budget."
+
+    @pytest.mark.parametrize("user_type", ["owner", "member"])
     def test_get_category_details(
         self,
         api_client: APIClient,
@@ -641,7 +722,7 @@ class TestIncomeCategoryApiDetail:
         WHEN: IncomeCategoryViewSet detail view called by User belonging to Budget.
         THEN: HTTP 200, IncomeCategory details returned.
         """
-        if user_type == 'owner':
+        if user_type == "owner":
             budget = budget_factory(owner=base_user)
         else:
             budget = budget_factory(members=[base_user])
@@ -655,22 +736,34 @@ class TestIncomeCategoryApiDetail:
         assert response.status_code == status.HTTP_200_OK
         assert response.data == serializer.data
 
-    def test_error_get_category_details_unauthenticated(
+
+@pytest.mark.django_db
+class TestIncomeCategoryViewSetUpdate:
+    """Tests for update view on IncomeCategoryViewSet."""
+
+    PAYLOAD = {
+        "name": "Incomes for food",
+        "group": IncomeCategory.IncomeGroups.REGULAR,
+        "description": "All money spent for food.",
+        "is_active": True,
+    }
+
+    def test_auth_required(
         self, api_client: APIClient, base_user: AbstractUser, income_category_factory: FactoryMetaClass
     ):
         """
         GIVEN: IncomeCategory instance for Budget created in database.
-        WHEN: IncomeCategoryViewSet detail view called without authentication.
+        WHEN: IncomeCategoryViewSet detail view called with PATCH without authentication.
         THEN: Unauthorized HTTP 401.
         """
         category = income_category_factory()
         url = income_category_detail_url(category.budget.id, category.id)
 
-        response = api_client.get(url)
+        response = api_client.patch(url, {})
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_error_get_details_from_not_accessible_budget(
+    def test_user_not_budget_member(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -679,41 +772,29 @@ class TestIncomeCategoryApiDetail:
     ):
         """
         GIVEN: IncomeCategory instance for Budget created in database.
-        WHEN: IncomeCategoryViewSet detail view called by User not belonging to Budget.
+        WHEN: IncomeCategoryViewSet detail view called with PATCH by User not belonging to Budget.
         THEN: Forbidden HTTP 403 returned.
         """
         category = income_category_factory(budget=budget_factory())
         api_client.force_authenticate(base_user)
-
         url = income_category_detail_url(category.budget.id, category.id)
-        response = api_client.get(url)
+
+        response = api_client.patch(url, {})
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data['detail'] == 'User does not have access to Budget.'
-
-
-@pytest.mark.django_db
-class TestIncomeCategoryApiPartialUpdate:
-    """Tests for partial update view on IncomeCategoryViewSet."""
-
-    PAYLOAD = {
-        'name': 'Salary',
-        'group': IncomeCategory.IncomeGroups.REGULAR,
-        'description': 'Monthly salary.',
-        'is_active': True,
-    }
+        assert response.data["detail"] == "User does not have access to Budget."
 
     @pytest.mark.parametrize(
-        'param, value',
+        "param, value",
         [
-            ('name', 'New name'),
-            ('group', IncomeCategory.IncomeGroups.IRREGULAR),
-            ('description', 'New description'),
-            ('is_active', False),
+            ("name", "New name"),
+            ("group", IncomeCategory.IncomeGroups.IRREGULAR),
+            ("description", "New description"),
+            ("is_active", False),
         ],
     )
     @pytest.mark.django_db
-    def test_category_partial_update(
+    def test_category_update(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -740,7 +821,7 @@ class TestIncomeCategoryApiPartialUpdate:
         assert getattr(category, param) == update_payload[param]
         assert category.owner is None
 
-    def test_category_partial_update_owner(
+    def test_category_update_owner(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -750,13 +831,13 @@ class TestIncomeCategoryApiPartialUpdate:
     ):
         """
         GIVEN: IncomeCategory instance for Budget created in database. Update payload with "owner" value prepared.
-        WHEN: IncomeCategorySet detail view called with PATCH by User belonging to Budget with valid payload.
+        WHEN: IncomeCategoryViewSet detail view called with PATCH by User belonging to Budget with valid payload.
         THEN: HTTP 200, Deposit updated with "owner" value.
         """
         member = user_factory()
         budget = budget_factory(owner=base_user, members=[member])
         category = income_category_factory(budget=budget, owner=None, **self.PAYLOAD)
-        update_payload = {'owner': member.id}
+        update_payload = {"owner": member.id}
         api_client.force_authenticate(base_user)
         url = income_category_detail_url(budget.id, category.id)
 
@@ -766,43 +847,45 @@ class TestIncomeCategoryApiPartialUpdate:
         category.refresh_from_db()
         assert category.owner == member
 
-    def test_error_partial_update_unauthenticated(
-        self, api_client: APIClient, base_user: AbstractUser, income_category_factory: FactoryMetaClass
-    ):
-        """
-        GIVEN: IncomeCategory instance for Budget created in database.
-        WHEN: IncomeCategoryViewSet detail view called with PATCH without authentication.
-        THEN: Unauthorized HTTP 401.
-        """
-        category = income_category_factory()
-        url = income_category_detail_url(category.budget.id, category.id)
-
-        response = api_client.patch(url, {})
-
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
-
-    def test_error_partial_update_category_from_not_accessible_budget(
+    def test_category_update_many_fields(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
+        user_factory: FactoryMetaClass,
         budget_factory: FactoryMetaClass,
         income_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: IncomeCategory instance for Budget created in database.
-        WHEN: IncomeCategoryViewSet detail view called with PATCH by User not belonging to Budget.
-        THEN: Forbidden HTTP 403 returned.
+        GIVEN: Budget owner as request.user. Valid update params in payload.
+        WHEN: BudgetViewSet detail endpoint called with PATCH.
+        THEN: HTTP 200 returned. Budget updated in database.
         """
-        category = income_category_factory(budget=budget_factory())
+        user_1 = user_factory()
+        user_2 = user_factory()
+        budget = budget_factory(owner=base_user, members=[user_1, user_2])
         api_client.force_authenticate(base_user)
+        payload = {**self.PAYLOAD, "owner": user_1}
+        category = income_category_factory(budget=budget, **payload)
+        update_payload = {
+            "name": "Debts",
+            "group": IncomeCategory.IncomeGroups.IRREGULAR,
+            "description": "Some debts",
+            "is_active": False,
+            "owner": user_2.id,
+        }
         url = income_category_detail_url(category.budget.id, category.id)
 
-        response = api_client.patch(url, {})
+        response = api_client.patch(url, update_payload)
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data['detail'] == 'User does not have access to Budget.'
+        assert response.status_code == status.HTTP_200_OK
+        category.refresh_from_db()
+        for param, value in update_payload.items():
+            if param == "owner":
+                assert getattr(getattr(category, param, None), "id", None) == value
+            else:
+                assert getattr(category, param) == value
 
-    def test_error_partial_update_owner_does_not_belong_to_budget(
+    def test_error_update_owner_does_not_belong_to_budget(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -818,17 +901,17 @@ class TestIncomeCategoryApiPartialUpdate:
         """
         budget = budget_factory(owner=base_user)
         category = income_category_factory(budget=budget)
-        payload = {'owner': user_factory().id}
+        payload = {"owner": user_factory().id}
         api_client.force_authenticate(base_user)
         url = income_category_detail_url(category.budget.id, category.id)
 
         response = api_client.patch(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data['detail']
-        assert response.data['detail']['non_field_errors'][0] == 'Provided owner does not belong to Budget.'
+        assert "non_field_errors" in response.data["detail"]
+        assert response.data["detail"]["non_field_errors"][0] == "Provided owner does not belong to Budget."
 
-    def test_error_partial_update_personal_category_name_already_used(
+    def test_error_update_personal_category_name_already_used(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -844,20 +927,20 @@ class TestIncomeCategoryApiPartialUpdate:
         budget = budget_factory(owner=base_user)
         income_category_factory(budget=budget, owner=base_user, **self.PAYLOAD)
         category = income_category_factory(budget=budget, owner=base_user)
-        payload = {'name': self.PAYLOAD['name']}
+        payload = {"name": self.PAYLOAD["name"]}
         api_client.force_authenticate(base_user)
         url = income_category_detail_url(category.budget.id, category.id)
 
         response = api_client.patch(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data['detail']
+        assert "non_field_errors" in response.data["detail"]
         assert (
-            response.data['detail']['non_field_errors'][0]
-            == 'Personal IncomeCategory with given name already exists in Budget for provided owner.'
+            response.data["detail"]["non_field_errors"][0]
+            == "Personal IncomeCategory with given name already exists in Budget for provided owner."
         )
 
-    def test_error_partial_update_common_category_name_already_used(
+    def test_error_update_common_category_name_already_used(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -873,84 +956,40 @@ class TestIncomeCategoryApiPartialUpdate:
         budget = budget_factory(owner=base_user)
         income_category_factory(budget=budget, owner=None, **self.PAYLOAD)
         category = income_category_factory(budget=budget, owner=None)
-        payload = {'name': self.PAYLOAD['name']}
+        payload = {"name": self.PAYLOAD["name"]}
         api_client.force_authenticate(base_user)
         url = income_category_detail_url(category.budget.id, category.id)
 
         response = api_client.patch(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data['detail']
+        assert "non_field_errors" in response.data["detail"]
         assert (
-            response.data['detail']['non_field_errors'][0]
-            == 'Common IncomeCategory with given name already exists in Budget.'
+            response.data["detail"]["non_field_errors"][0]
+            == "Common IncomeCategory with given name already exists in Budget."
         )
 
 
 @pytest.mark.django_db
-class TestIncomeCategoryApiFullUpdate:
-    """Tests for full update view on IncomeCategoryViewSet."""
+class TestIncomeCategoryViewSetDelete:
+    """Tests for delete IncomeCategory on IncomeCategoryViewSet."""
 
-    INITIAL_PAYLOAD = {
-        'name': 'Salary',
-        'group': IncomeCategory.IncomeGroups.REGULAR,
-        'description': 'Monthly salary.',
-        'is_active': True,
-    }
-
-    UPDATE_PAYLOAD = {
-        'name': 'Additional',
-        'group': IncomeCategory.IncomeGroups.IRREGULAR,
-        'description': 'Extra cash.',
-        'is_active': False,
-    }
-
-    @pytest.mark.django_db
-    def test_category_full_update(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: IncomeCategory instance for Budget created in database.
-        WHEN: IncomeCategoryViewSet detail view called with PUT by User belonging to Budget.
-        THEN: HTTP 200, IncomeCategory updated.
-        """
-        budget = budget_factory(owner=base_user)
-        category = income_category_factory(budget=budget, owner=None, **self.INITIAL_PAYLOAD)
-        update_payload = self.UPDATE_PAYLOAD.copy()
-        update_payload['owner'] = base_user.id
-        api_client.force_authenticate(base_user)
-        url = income_category_detail_url(budget.id, category.id)
-
-        response = api_client.put(url, update_payload)
-
-        assert response.status_code == status.HTTP_200_OK
-        category.refresh_from_db()
-        for param in update_payload:
-            if param == 'owner':
-                assert getattr(category, param) == base_user
-                continue
-            assert getattr(category, param) == update_payload[param]
-
-    def test_error_full_update_unauthenticated(
+    def test_auth_required(
         self, api_client: APIClient, base_user: AbstractUser, income_category_factory: FactoryMetaClass
     ):
         """
         GIVEN: IncomeCategory instance for Budget created in database.
-        WHEN: IncomeCategoryViewSet detail view called with PUT without authentication.
+        WHEN: IncomeCategoryViewSet detail view called with DELETE without authentication.
         THEN: Unauthorized HTTP 401.
         """
         category = income_category_factory()
         url = income_category_detail_url(category.budget.id, category.id)
 
-        response = api_client.put(url, {})
+        response = api_client.delete(url)
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_error_full_update_category_from_not_accessible_budget(
+    def test_user_not_budget_member(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -959,109 +998,17 @@ class TestIncomeCategoryApiFullUpdate:
     ):
         """
         GIVEN: IncomeCategory instance for Budget created in database.
-        WHEN: IncomeCategoryViewSet detail view called with PUT by User not belonging to Budget.
+        WHEN: IncomeCategoryViewSet detail view called with DELETE by User not belonging to Budget.
         THEN: Forbidden HTTP 403 returned.
         """
         category = income_category_factory(budget=budget_factory())
         api_client.force_authenticate(base_user)
         url = income_category_detail_url(category.budget.id, category.id)
 
-        response = api_client.put(url, {})
+        response = api_client.delete(url)
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data['detail'] == 'User does not have access to Budget.'
-
-    def test_error_full_update_owner_does_not_belong_to_budget(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        user_factory: FactoryMetaClass,
-        budget_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Budget instance created in database. User not belonging to Budget as
-        'owner' in payload.
-        WHEN: IncomeCategoryViewSet called with PUT by User belonging to Budget with invalid payload.
-        THEN: Bad request HTTP 400 returned. IncomeCategory not updated.
-        """
-        budget = budget_factory(owner=base_user)
-        category = income_category_factory(budget=budget)
-        payload = self.UPDATE_PAYLOAD.copy()
-        payload['owner'] = user_factory().id
-        api_client.force_authenticate(base_user)
-        url = income_category_detail_url(category.budget.id, category.id)
-
-        response = api_client.put(url, payload)
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data['detail']
-        assert response.data['detail']['non_field_errors'][0] == 'Provided owner does not belong to Budget.'
-
-    def test_error_full_update_personal_category_name_already_used(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: IncomeCategory instance with owner created in database. Name of existing personal IncomeCategory
-        in payload.
-        WHEN: IncomeCategoryViewSet called with PUT by User belonging to Budget with invalid payload.
-        THEN: Bad request HTTP 400 returned. IncomeCategory not updated.
-        """
-        budget = budget_factory(owner=base_user)
-        income_category_factory(budget=budget, owner=base_user, **self.INITIAL_PAYLOAD)
-        category = income_category_factory(budget=budget, owner=base_user)
-        payload = self.UPDATE_PAYLOAD.copy()
-        payload['name'] = self.INITIAL_PAYLOAD['name']
-        api_client.force_authenticate(base_user)
-        url = income_category_detail_url(category.budget.id, category.id)
-
-        response = api_client.put(url, payload)
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data['detail']
-        assert (
-            response.data['detail']['non_field_errors'][0]
-            == 'Personal IncomeCategory with given name already exists in Budget for provided owner.'
-        )
-
-    def test_error_full_update_common_category_name_already_used(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: IncomeCategory instance with owner created in database. Name of existing personal IncomeCategory
-        and owner of existing IncomeCategory in payload.
-        WHEN: IncomeCategoryViewSet called with PUT by User belonging to Budget with invalid payload.
-        THEN: Bad request HTTP 400 returned. IncomeCategory not updated.
-        """
-        budget = budget_factory(owner=base_user)
-        income_category_factory(budget=budget, owner=None, **self.INITIAL_PAYLOAD)
-        category = income_category_factory(budget=budget, owner=None)
-        payload = self.UPDATE_PAYLOAD.copy()
-        payload['name'] = self.INITIAL_PAYLOAD['name']
-        api_client.force_authenticate(base_user)
-        url = income_category_detail_url(category.budget.id, category.id)
-
-        response = api_client.put(url, payload)
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data['detail']
-        assert (
-            response.data['detail']['non_field_errors'][0]
-            == 'Common IncomeCategory with given name already exists in Budget.'
-        )
-
-
-@pytest.mark.django_db
-class TestIncomeCategoryApiDelete:
-    """Tests for delete IncomeCategory on IncomeCategoryViewSet."""
+        assert response.data["detail"] == "User does not have access to Budget."
 
     def test_delete_category(
         self,
@@ -1086,39 +1033,3 @@ class TestIncomeCategoryApiDelete:
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
         assert not IncomeCategory.objects.filter(budget=budget).exists()
-
-    def test_error_delete_unauthenticated(
-        self, api_client: APIClient, base_user: AbstractUser, income_category_factory: FactoryMetaClass
-    ):
-        """
-        GIVEN: IncomeCategory instance for Budget created in database.
-        WHEN: IncomeCategoryViewSet detail view called with DELETE without authentication.
-        THEN: Unauthorized HTTP 401.
-        """
-        category = income_category_factory()
-        url = income_category_detail_url(category.budget.id, category.id)
-
-        response = api_client.delete(url)
-
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
-
-    def test_error_delete_category_from_not_accessible_budget(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: IncomeCategory instance for Budget created in database.
-        WHEN: IncomeCategoryViewSet detail view called with DELETE by User not belonging to Budget.
-        THEN: Forbidden HTTP 403 returned.
-        """
-        category = income_category_factory(budget=budget_factory())
-        api_client.force_authenticate(base_user)
-        url = income_category_detail_url(category.budget.id, category.id)
-
-        response = api_client.delete(url)
-
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data['detail'] == 'User does not have access to Budget.'
