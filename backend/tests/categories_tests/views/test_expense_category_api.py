@@ -856,9 +856,9 @@ class TestExpenseCategoryViewSetUpdate:
         expense_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget owner as request.user. Valid update params in payload.
-        WHEN: BudgetViewSet detail endpoint called with PATCH.
-        THEN: HTTP 200 returned. Budget updated in database.
+        GIVEN: ExpenseCategory instance for Budget created in database. Valid payload with many params.
+        WHEN: ExpenseCategoryViewSet detail endpoint called with PATCH.
+        THEN: HTTP 200 returned. ExpenseCategory updated in database.
         """
         user_1 = user_factory()
         user_2 = user_factory()
