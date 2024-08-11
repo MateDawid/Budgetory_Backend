@@ -28,18 +28,18 @@ class TestDepositManager:
         THEN: Manager creates object always with is_deposit set to True.
         """
         payload = {
-            'budget': budget,
-            'name': 'Test',
-            'description': 'Some description',
-            'is_deposit': False,  # intentionally set to False
-            'is_active': True,
+            "budget": budget,
+            "name": "Test",
+            "description": "Some description",
+            "is_deposit": False,  # intentionally set to False
+            "is_active": True,
         }
 
         entity = Entity.deposits.create(**payload)
 
         assert entity.is_deposit is True
         for param in payload:
-            if param == 'is_deposit':
+            if param == "is_deposit":
                 continue
             assert getattr(entity, param) == payload[param]
 
