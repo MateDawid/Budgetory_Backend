@@ -1,4 +1,4 @@
-from entities.managers import DepositManager
+from entities.managers.deposit_manager import DepositManager
 from entities.models.entity_model import Entity
 
 
@@ -9,7 +9,7 @@ class Deposit(Entity):
 
     class Meta:
         proxy = True
-        verbose_name_plural = 'deposits'
+        verbose_name_plural = "deposits"
 
     def save(self, *args, **kwargs) -> None:
         """

@@ -21,7 +21,7 @@ class DepositManager(models.Manager):
         Returns:
             Model: Deposit model instance.
         """
-        kwargs['is_deposit'] = True
+        kwargs["is_deposit"] = True
         return super().create(*args, **kwargs)
 
     def update(self, *args, **kwargs) -> int:
@@ -31,5 +31,5 @@ class DepositManager(models.Manager):
         Returns:
             int: Number of affected database rows.
         """
-        kwargs['is_deposit'] = True
+        kwargs["is_deposit"] = True
         return super().update(**kwargs)
