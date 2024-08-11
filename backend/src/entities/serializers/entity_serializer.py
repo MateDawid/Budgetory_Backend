@@ -8,8 +8,8 @@ class EntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Entity
-        fields = ['id', 'name', 'description', 'is_active', 'is_deposit']
-        read_only_fields = ['id']
+        fields = ["id", "name", "description", "is_active", "is_deposit"]
+        read_only_fields = ["id"]
 
     def validate_name(self, name: str):
         """
@@ -24,6 +24,8 @@ class EntitySerializer(serializers.ModelSerializer):
         Raises:
             ValidationError: Raised if Entity with given name exists in Budget already.
         """
-        if self.Meta.model.objects.filter(budget=self.context['view'].kwargs['budget_pk'], name__iexact=name).exists():
-            raise ValidationError('Entity with given name already exists in Budget.')
+        if self.Meta.model.objects.filter(budget=self.context["view"].kwargs["budget_pk"], name__iexact=name).exists():
+            raise ValidationError(
+                "{class_name} with given name already exists in Budget.".format(class_name=self.Meta.model.__name__)
+            )
         return name

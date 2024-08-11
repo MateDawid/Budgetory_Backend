@@ -1,12 +1,12 @@
 from django.db import models
-from entities.managers import DepositManager
+from entities.managers.deposit_manager import DepositManager
 
 
 class Entity(models.Model):
     """Entity model for Transfer actor (payer or receiver) representation."""
 
     budget = models.ForeignKey(
-        'budgets.Budget', on_delete=models.CASCADE, related_name='entities', null=False, blank=False
+        "budgets.Budget", on_delete=models.CASCADE, related_name="entities", null=False, blank=False
     )
     name = models.CharField(max_length=128)
     description = models.CharField(max_length=255, blank=True)
@@ -17,11 +17,17 @@ class Entity(models.Model):
     deposits = DepositManager()
 
     class Meta:
-        verbose_name_plural = 'entities'
+        verbose_name_plural = "entities"
         unique_together = (
-            'name',
-            'budget',
+            "name",
+            "budget",
         )
 
-    def __str__(self):
-        return f'{self.name} ({self.budget.name})'
+    def __str__(self) -> str:
+        """
+        Method for returning string representation of Entity model instance.
+
+        Returns:
+            str: String representation of Entity model instance.
+        """
+        return f"{self.name} ({self.budget.name})"
