@@ -18,7 +18,7 @@ class UserManager(BaseUserManager):
             User: Created User model instance.
         """
         if not email:
-            raise ValueError('Email address not provided for User.')
+            raise ValueError("Email address not provided for User.")
         user = self.model(email=self.normalize_email(email), **extra_fields)
         user.set_password(password)
         user.save(using=self._db)

@@ -23,12 +23,12 @@ from rest_framework.test import APIClient
 
 def periods_url(budget_id):
     """Creates and returns Budget BudgetingPeriods URL."""
-    return reverse('budgets:period-list', args=[budget_id])
+    return reverse("budgets:period-list", args=[budget_id])
 
 
 def period_detail_url(budget_id, period_id):
     """Creates and returns BudgetingPeriod detail URL."""
-    return reverse('budgets:period-detail', args=[budget_id, period_id])
+    return reverse("budgets:period-detail", args=[budget_id, period_id])
 
 
 @pytest.mark.django_db
@@ -69,11 +69,11 @@ class TestBudgetingPeriodViewSetList:
 
         response = api_client.get(url)
 
-        periods = BudgetingPeriod.objects.filter(budget=budget).order_by('-date_start')
+        periods = BudgetingPeriod.objects.filter(budget=budget).order_by("-date_start")
         serializer = BudgetingPeriodSerializer(periods, many=True)
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data['results']) == len(serializer.data) == periods.count() == 2
-        assert response.data['results'] == serializer.data
+        assert len(response.data["results"]) == len(serializer.data) == periods.count() == 2
+        assert response.data["results"] == serializer.data
 
     def test_retrieve_periods_list_by_member(
         self,
@@ -97,11 +97,11 @@ class TestBudgetingPeriodViewSetList:
 
         response = api_client.get(url)
 
-        periods = BudgetingPeriod.objects.filter(budget=budget).order_by('-date_start')
+        periods = BudgetingPeriod.objects.filter(budget=budget).order_by("-date_start")
         serializer = BudgetingPeriodSerializer(periods, many=True)
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data['results']) == len(serializer.data) == periods.count() == 2
-        assert response.data['results'] == serializer.data
+        assert len(response.data["results"]) == len(serializer.data) == periods.count() == 2
+        assert response.data["results"] == serializer.data
 
     def test_periods_list_limited_to_budget(
         self,
@@ -129,9 +129,9 @@ class TestBudgetingPeriodViewSetList:
         serializer = BudgetingPeriodSerializer(periods, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert BudgetingPeriod.objects.all().count() == 2
-        assert len(response.data['results']) == len(serializer.data) == periods.count() == 1
+        assert len(response.data["results"]) == len(serializer.data) == periods.count() == 1
         assert periods.first() == period
-        assert response.data['results'] == serializer.data
+        assert response.data["results"] == serializer.data
 
 
 @pytest.mark.django_db
@@ -164,14 +164,14 @@ class TestBudgetingPeriodViewSetCreate:
         """
         budget = budget_factory(owner=base_user)
         api_client.force_authenticate(base_user)
-        payload = {'name': '2023_01', 'date_start': date(2023, 1, 1), 'date_end': date(2023, 1, 31)}
+        payload = {"name": "2023_01", "date_start": date(2023, 1, 1), "date_end": date(2023, 1, 31)}
         url = periods_url(budget.id)
 
         response = api_client.post(url, payload)
 
         assert response.status_code == status.HTTP_201_CREATED
         assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
-        period = BudgetingPeriod.objects.get(id=response.data['id'])
+        period = BudgetingPeriod.objects.get(id=response.data["id"])
         for key in payload:
             assert getattr(period, key) == payload[key]
         serializer = BudgetingPeriodSerializer(period)
@@ -190,14 +190,14 @@ class TestBudgetingPeriodViewSetCreate:
         """
         budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
-        payload = {'name': '2023_01', 'date_start': date(2023, 1, 1), 'date_end': date(2023, 1, 31)}
+        payload = {"name": "2023_01", "date_start": date(2023, 1, 1), "date_end": date(2023, 1, 31)}
         url = periods_url(budget.id)
 
         response = api_client.post(url, payload)
 
         assert response.status_code == status.HTTP_201_CREATED
         assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
-        period = BudgetingPeriod.objects.get(id=response.data['id'])
+        period = BudgetingPeriod.objects.get(id=response.data["id"])
         for key in payload:
             assert getattr(period, key) == payload[key]
         serializer = BudgetingPeriodSerializer(period)
@@ -218,14 +218,14 @@ class TestBudgetingPeriodViewSetCreate:
         budget = budget_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         payload_1 = {
-            'name': '2023_01',
-            'date_start': date(2023, 1, 1),
-            'date_end': date(2023, 1, 31),
+            "name": "2023_01",
+            "date_start": date(2023, 1, 1),
+            "date_end": date(2023, 1, 31),
         }
         payload_2 = {
-            'name': '2023_02',
-            'date_start': date(2023, 2, 1),
-            'date_end': date(2023, 2, 28),
+            "name": "2023_02",
+            "date_start": date(2023, 2, 1),
+            "date_end": date(2023, 2, 28),
         }
         url = periods_url(budget.id)
 
@@ -236,7 +236,7 @@ class TestBudgetingPeriodViewSetCreate:
         assert response_2.status_code == status.HTTP_201_CREATED
         assert BudgetingPeriod.objects.filter(budget=budget).count() == 2
         for response, payload in [(response_1, payload_1), (response_2, payload_2)]:
-            period = BudgetingPeriod.objects.get(id=response.data['id'])
+            period = BudgetingPeriod.objects.get(id=response.data["id"])
             for key in payload:
                 assert getattr(period, key) == payload[key]
 
@@ -249,9 +249,9 @@ class TestBudgetingPeriodViewSetCreate:
         THEN: Two BudgetingPeriod, every for different Budget created in database.
         """
         payload = {
-            'name': '2023_01',
-            'date_start': date(2023, 1, 1),
-            'date_end': date(2023, 1, 31),
+            "name": "2023_01",
+            "date_start": date(2023, 1, 1),
+            "date_end": date(2023, 1, 31),
         }
         api_client.force_authenticate(base_user)
         budget_1 = budget_factory(owner=base_user)
@@ -278,19 +278,19 @@ class TestBudgetingPeriodViewSetCreate:
         """
         budget = budget_factory(owner=base_user)
         api_client.force_authenticate(base_user)
-        max_length = BudgetingPeriod._meta.get_field('name').max_length
+        max_length = BudgetingPeriod._meta.get_field("name").max_length
         payload = {
-            'name': (max_length + 1) * 'a',
-            'date_start': date(2023, 1, 1),
-            'date_end': date(2023, 1, 31),
+            "name": (max_length + 1) * "a",
+            "date_start": date(2023, 1, 1),
+            "date_end": date(2023, 1, 31),
         }
         url = periods_url(budget.id)
 
         response = api_client.post(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'name' in response.data['detail']
-        assert response.data['detail']['name'][0] == f'Ensure this field has no more than {max_length} characters.'
+        assert "name" in response.data["detail"]
+        assert response.data["detail"]["name"][0] == f"Ensure this field has no more than {max_length} characters."
         assert not BudgetingPeriod.objects.filter(budget=budget).exists()
 
     def test_error_name_already_used(
@@ -305,20 +305,20 @@ class TestBudgetingPeriodViewSetCreate:
         budget = budget_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         payload = {
-            'name': '2023_01',
-            'date_start': date(2023, 1, 1),
-            'date_end': date(2023, 1, 2),
+            "name": "2023_01",
+            "date_start": date(2023, 1, 1),
+            "date_end": date(2023, 1, 2),
         }
         BudgetingPeriod.objects.create(budget=budget, **payload)
-        payload['date_start'] = date(2023, 1, 3)
-        payload['date_end'] = date(2023, 1, 4)
+        payload["date_start"] = date(2023, 1, 3)
+        payload["date_end"] = date(2023, 1, 4)
         url = periods_url(budget.id)
 
         response = api_client.post(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'name' in response.data['detail']
-        assert response.data['detail']['name'][0] == f'Period with name "{payload["name"]}" already exists in Budget.'
+        assert "name" in response.data["detail"]
+        assert response.data["detail"]["name"][0] == f'Period with name "{payload["name"]}" already exists in Budget.'
         assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
 
     def test_create_active_period_successfully(
@@ -333,16 +333,16 @@ class TestBudgetingPeriodViewSetCreate:
         budget = budget_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         payload_inactive = {
-            'name': '2023_01',
-            'date_start': date(2023, 1, 1),
-            'date_end': date(2023, 1, 31),
-            'is_active': False,
+            "name": "2023_01",
+            "date_start": date(2023, 1, 1),
+            "date_end": date(2023, 1, 31),
+            "is_active": False,
         }
         payload_active = {
-            'name': '2023_02',
-            'date_start': date(2023, 2, 1),
-            'date_end': date(2023, 2, 28),
-            'is_active': True,
+            "name": "2023_02",
+            "date_start": date(2023, 2, 1),
+            "date_end": date(2023, 2, 28),
+            "is_active": True,
         }
         url = periods_url(budget.id)
 
@@ -354,8 +354,8 @@ class TestBudgetingPeriodViewSetCreate:
         assert budget_periods.count() == 2
         for response, payload in [(response_inactive, payload_inactive), (response_active, payload_active)]:
             assert response.status_code == status.HTTP_201_CREATED
-            period = budget_periods.get(id=response.data['id'])
-            assert period.is_active == payload['is_active']
+            period = budget_periods.get(id=response.data["id"])
+            assert period.is_active == payload["is_active"]
 
     def test_error_create_period_when_is_active_set_already(
         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
@@ -369,25 +369,25 @@ class TestBudgetingPeriodViewSetCreate:
         budget = budget_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         payload_1 = {
-            'name': '2023_01',
-            'date_start': date(2023, 1, 1),
-            'date_end': date(2023, 1, 31),
-            'is_active': True,
+            "name": "2023_01",
+            "date_start": date(2023, 1, 1),
+            "date_end": date(2023, 1, 31),
+            "is_active": True,
         }
         active_period = BudgetingPeriod.objects.create(budget=budget, **payload_1)
         payload_2 = {
-            'name': '2023_02',
-            'date_start': date(2023, 1, 1),
-            'date_end': date(2023, 1, 31),
-            'is_active': True,
+            "name": "2023_02",
+            "date_start": date(2023, 1, 1),
+            "date_end": date(2023, 1, 31),
+            "is_active": True,
         }
         url = periods_url(budget.id)
 
         response = api_client.post(url, payload_2)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'is_active' in response.data['detail']
-        assert response.data['detail']['is_active'][0] == 'Active period already exists in Budget.'
+        assert "is_active" in response.data["detail"]
+        assert response.data["detail"]["is_active"][0] == "Active period already exists in Budget."
         assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
         assert BudgetingPeriod.objects.filter(budget=budget).first() == active_period
 
@@ -403,10 +403,10 @@ class TestBudgetingPeriodViewSetCreate:
         budget = budget_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         payload = {
-            'name': '2023_02',
-            'date_start': date(2023, 1, 1),
-            'date_end': date(2023, 1, 31),
-            'is_active': '',
+            "name": "2023_02",
+            "date_start": date(2023, 1, 1),
+            "date_end": date(2023, 1, 31),
+            "is_active": "",
         }
         url = periods_url(budget.id)
 
@@ -415,9 +415,9 @@ class TestBudgetingPeriodViewSetCreate:
         assert response.status_code == status.HTTP_201_CREATED
         assert BudgetingPeriod.objects.all().count() == 1
         assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
-        assert response.data['is_active'] is False
+        assert response.data["is_active"] is False
 
-    @pytest.mark.parametrize('date_start, date_end', (('', date.today()), (date.today(), ''), ('', '')))
+    @pytest.mark.parametrize("date_start, date_end", (("", date.today()), (date.today(), ""), ("", "")))
     def test_error_date_blank(
         self,
         api_client: APIClient,
@@ -434,17 +434,17 @@ class TestBudgetingPeriodViewSetCreate:
         """
         budget = budget_factory(owner=base_user)
         api_client.force_authenticate(base_user)
-        payload = {'name': '2023_01', 'date_start': date_start, 'date_end': date_end, 'is_active': False}
+        payload = {"name": "2023_01", "date_start": date_start, "date_end": date_end, "is_active": False}
         url = periods_url(budget.id)
-        error_message = 'Date has wrong format. Use one of these formats instead: YYYY-MM-DD.'
+        error_message = "Date has wrong format. Use one of these formats instead: YYYY-MM-DD."
 
         response = api_client.post(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'date_start' in response.data['detail'] or 'date_end' in response.data['detail']
+        assert "date_start" in response.data["detail"] or "date_end" in response.data["detail"]
         assert (
-            response.data['detail'].get('date_start', [''])[0] == error_message
-            or response.data['detail'].get('date_end', [''])[0] == error_message
+            response.data["detail"].get("date_start", [""])[0] == error_message
+            or response.data["detail"].get("date_end", [""])[0] == error_message
         )
         assert not BudgetingPeriod.objects.filter(budget=budget).exists()
 
@@ -459,18 +459,18 @@ class TestBudgetingPeriodViewSetCreate:
         """
         budget = budget_factory(owner=base_user)
         api_client.force_authenticate(base_user)
-        payload = {'name': '2023_01', 'date_start': date(2023, 5, 1), 'date_end': date(2023, 4, 30), 'is_active': False}
+        payload = {"name": "2023_01", "date_start": date(2023, 5, 1), "date_end": date(2023, 4, 30), "is_active": False}
         url = periods_url(budget.id)
 
         response = api_client.post(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data['detail']
-        assert response.data['detail']['non_field_errors'][0] == 'Start date should be earlier than end date.'
+        assert "non_field_errors" in response.data["detail"]
+        assert response.data["detail"]["non_field_errors"][0] == "Start date should be earlier than end date."
         assert not BudgetingPeriod.objects.filter(budget=budget).exists()
 
     @pytest.mark.parametrize(
-        'date_start, date_end',
+        "date_start, date_end",
         (
             # Date start before first existing period
             (date(2023, 5, 1), date(2023, 6, 1)),
@@ -524,19 +524,19 @@ class TestBudgetingPeriodViewSetCreate:
         """
         budget = budget_factory(owner=base_user)
         payload_1 = {
-            'name': '2023_06',
-            'date_start': date(2023, 6, 1),
-            'date_end': date(2023, 6, 30),
+            "name": "2023_06",
+            "date_start": date(2023, 6, 1),
+            "date_end": date(2023, 6, 30),
         }
         payload_2 = {
-            'name': '2023_07',
-            'date_start': date(2023, 7, 1),
-            'date_end': date(2023, 7, 31),
+            "name": "2023_07",
+            "date_start": date(2023, 7, 1),
+            "date_end": date(2023, 7, 31),
         }
         payload_invalid = {
-            'name': 'invalid',
-            'date_start': date_start,
-            'date_end': date_end,
+            "name": "invalid",
+            "date_start": date_start,
+            "date_end": date_end,
         }
         BudgetingPeriod.objects.create(budget=budget, **payload_1)
         BudgetingPeriod.objects.create(budget=budget, **payload_2)
@@ -546,10 +546,10 @@ class TestBudgetingPeriodViewSetCreate:
         response = api_client.post(url, payload_invalid)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data['detail']
+        assert "non_field_errors" in response.data["detail"]
         assert (
-            response.data['detail']['non_field_errors'][0]
-            == 'Budgeting period date range collides with other period in Budget.'
+            response.data["detail"]["non_field_errors"][0]
+            == "Budgeting period date range collides with other period in Budget."
         )
         assert BudgetingPeriod.objects.filter(budget=budget).count() == 2
 
@@ -672,7 +672,7 @@ class TestBudgetingPeriodViewSetUpdate:
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
     @pytest.mark.parametrize(
-        'param, value', [('date_start', date(2024, 1, 2)), ('date_end', date(2024, 1, 30)), ('is_active', True)]
+        "param, value", [("date_start", date(2024, 1, 2)), ("date_end", date(2024, 1, 30)), ("is_active", True)]
     )
     def test_update_single_field_by_owner(
         self,
@@ -706,7 +706,7 @@ class TestBudgetingPeriodViewSetUpdate:
         assert getattr(period, param) == payload[param]
 
     @pytest.mark.parametrize(
-        'param, value', [('date_start', date(2024, 1, 2)), ('date_end', date(2024, 1, 30)), ('is_active', True)]
+        "param, value", [("date_start", date(2024, 1, 2)), ("date_end", date(2024, 1, 30)), ("is_active", True)]
     )
     def test_update_single_field_by_member(
         self,
@@ -760,10 +760,10 @@ class TestBudgetingPeriodViewSetUpdate:
             is_active=False,
         )
         payload = {
-            'name': '2023_07',
-            'date_start': date(2023, 7, 1),
-            'date_end': date(2023, 7, 31),
-            'is_active': True,
+            "name": "2023_07",
+            "date_start": date(2023, 7, 1),
+            "date_end": date(2023, 7, 31),
+            "is_active": True,
         }
         url = period_detail_url(period.budget.id, period.id)
 
@@ -775,7 +775,7 @@ class TestBudgetingPeriodViewSetUpdate:
             assert getattr(period, param) == value
 
     @pytest.mark.parametrize(
-        'param, value', [('date_start', date(2023, 12, 31)), ('date_end', date(2024, 2, 1)), ('is_active', True)]
+        "param, value", [("date_start", date(2023, 12, 31)), ("date_end", date(2024, 2, 1)), ("is_active", True)]
     )
     def test_error_on_period_update(
         self,

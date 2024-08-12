@@ -30,12 +30,12 @@ class BudgetViewSet(ModelViewSet):
         Returns:
             QuerySet: QuerySet containing Budgets containing authenticated User as member.
         """
-        user = getattr(self.request, 'user', None)
+        user = getattr(self.request, "user", None)
         if user and user.is_authenticated:
-            return self.queryset.filter(members=user).order_by('id').distinct()
+            return self.queryset.filter(members=user).order_by("id").distinct()
         return self.queryset.none()  # pragma: no cover
 
-    @action(detail=False, methods=['GET'])
+    @action(detail=False, methods=["GET"])
     def owned(self, request: Request, **kwargs: dict) -> Response:
         """
         Retrieves Budgets owned by authenticated User.
@@ -46,11 +46,11 @@ class BudgetViewSet(ModelViewSet):
         Returns:
             Response: Budgets owned by authenticated User.
         """
-        owned_budgets = self.queryset.filter(owner=self.request.user).order_by('id').distinct()
+        owned_budgets = self.queryset.filter(owner=self.request.user).order_by("id").distinct()
         serializer = self.get_serializer(owned_budgets, many=True)
-        return Response({'results': serializer.data})
+        return Response({"results": serializer.data})
 
-    @action(detail=False, methods=['GET'])
+    @action(detail=False, methods=["GET"])
     def membered(self, request: Request, **kwargs: dict) -> Response:
         """
         Retrieves Budgets in which authenticated User is a member.
@@ -61,9 +61,9 @@ class BudgetViewSet(ModelViewSet):
         Returns:
             Response: Budgets in which authenticated User is a member.
         """
-        membered_budgets = self.queryset.filter(members=self.request.user).order_by('id').distinct()
+        membered_budgets = self.queryset.filter(members=self.request.user).order_by("id").distinct()
         serializer = self.get_serializer(membered_budgets, many=True)
-        return Response({'results': serializer.data})
+        return Response({"results": serializer.data})
 
     def perform_create(self, serializer: BudgetSerializer) -> None:
         """

@@ -22,13 +22,13 @@ class BudgetingPeriodViewSet(ModelViewSet):
         Returns:
             QuerySet: Filtered BudgetingPeriod QuerySet.
         """
-        user = getattr(self.request, 'user', None)
+        user = getattr(self.request, "user", None)
         if user and user.is_authenticated:
-            budget_pk = self.kwargs.get('budget_pk')
+            budget_pk = self.kwargs.get("budget_pk")
             if budget_pk:
                 return (
                     self.queryset.filter(Q(budget__owner=user) | Q(budget__members=user), budget__pk=budget_pk)
-                    .order_by('-date_start')
+                    .order_by("-date_start")
                     .distinct()
                 )
         return self.queryset.none()  # pragma: no cover
@@ -40,4 +40,4 @@ class BudgetingPeriodViewSet(ModelViewSet):
         Args:
             serializer [BudgetingPeriodSerializer]: Serializer for BudgetingPeriod
         """
-        serializer.save(budget_id=self.kwargs.get('budget_pk'))
+        serializer.save(budget_id=self.kwargs.get("budget_pk"))

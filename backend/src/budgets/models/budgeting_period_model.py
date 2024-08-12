@@ -6,7 +6,7 @@ from django.db.models import Q
 class BudgetingPeriod(models.Model):
     """Model for period in which Budget data will be calculated and reported."""
 
-    budget = models.ForeignKey('budgets.Budget', on_delete=models.CASCADE, related_name='periods')
+    budget = models.ForeignKey("budgets.Budget", on_delete=models.CASCADE, related_name="periods")
     name = models.CharField(max_length=128)
     date_start = models.DateField(null=False, blank=False)
     date_end = models.DateField(null=False, blank=False)
@@ -14,8 +14,8 @@ class BudgetingPeriod(models.Model):
 
     class Meta:
         unique_together = (
-            'name',
-            'budget',
+            "name",
+            "budget",
         )
 
     def __str__(self) -> str:
@@ -25,7 +25,7 @@ class BudgetingPeriod(models.Model):
         Returns:
             str: String representation of BudgetingPeriod model instance.
         """
-        return f'{self.name} ({self.budget.name})'
+        return f"{self.name} ({self.budget.name})"
 
     def save(self, *args: list, **kwargs: dict) -> None:
         """
@@ -50,7 +50,7 @@ class BudgetingPeriod(models.Model):
             already exists for Budget.
         """
         if self.is_active and self.budget.periods.filter(is_active=True).exclude(pk=self.pk).exists():
-            raise ValidationError('is_active: Active period already exists.', code='active-invalid')
+            raise ValidationError("is_active: Active period already exists.", code="active-invalid")
 
     def clean_dates(self) -> None:
         """
@@ -62,7 +62,7 @@ class BudgetingPeriod(models.Model):
             BudgetingPeriod daterange.
         """
         if self.date_start >= self.date_end:
-            raise ValidationError('start_date: Start date should be earlier than end date.', code='date-invalid')
+            raise ValidationError("start_date: Start date should be earlier than end date.", code="date-invalid")
         if (
             self.budget.periods.filter(
                 Q(date_start__lte=self.date_start, date_end__gte=self.date_start)
@@ -73,6 +73,6 @@ class BudgetingPeriod(models.Model):
             .exists()
         ):
             raise ValidationError(
-                'date_start: Period date range collides with other period in Budget.',
-                code='period-range-invalid',
+                "date_start: Period date range collides with other period in Budget.",
+                code="period-range-invalid",
             )

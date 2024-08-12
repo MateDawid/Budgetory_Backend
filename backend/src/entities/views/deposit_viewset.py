@@ -22,7 +22,7 @@ class DepositViewSet(ModelViewSet):
         Returns:
             QuerySet: Filtered Deposit QuerySet.
         """
-        return self.queryset.filter(budget__pk=self.kwargs.get('budget_pk')).distinct()
+        return self.queryset.filter(budget__pk=self.kwargs.get("budget_pk")).distinct()
 
     def perform_create(self, serializer: DepositSerializer) -> None:
         """
@@ -32,4 +32,4 @@ class DepositViewSet(ModelViewSet):
         Args:
             serializer [DepositSerializer]: Serializer for Deposit model.
         """
-        serializer.save(budget_id=self.kwargs.get('budget_pk'), is_deposit=True)
+        serializer.save(budget_id=self.kwargs.get("budget_pk"), is_deposit=True)

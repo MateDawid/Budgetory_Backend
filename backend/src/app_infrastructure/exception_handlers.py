@@ -33,7 +33,7 @@ def default_exception_handler(exc: Exception, context: dict) -> Response | None:
     if response is None:
         return response
 
-    if isinstance(getattr(exc, 'detail', None), (list, dict)):
-        response.data = {'detail': response.data}
+    if isinstance(getattr(exc, "detail", None), (list, dict)):
+        response.data = {"detail": response.data}
 
     return response

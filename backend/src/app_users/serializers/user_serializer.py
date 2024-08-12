@@ -7,11 +7,11 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['email', 'password', 'name']
+        fields = ["email", "password", "name"]
         extra_kwargs = {
-            'password': {
-                'write_only': True,  # password will be able to save in POST request, but won't be returned in response
-                'min_length': 5,
+            "password": {
+                "write_only": True,  # password will be able to save in POST request, but won't be returned in response
+                "min_length": 5,
             }
         }
 
@@ -38,7 +38,7 @@ class UserSerializer(serializers.ModelSerializer):
         Returns:
             User: Updated User instance.
         """
-        password = validated_data.pop('password', None)
+        password = validated_data.pop("password", None)
         user = super().update(instance, validated_data)
 
         if password:

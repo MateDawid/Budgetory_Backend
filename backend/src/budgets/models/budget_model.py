@@ -7,14 +7,14 @@ class Budget(models.Model):
 
     name = models.CharField(max_length=128)
     description = models.TextField(null=True, blank=True, max_length=300)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='owned_budgets')
-    members = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='joined_budgets', blank=True)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="owned_budgets")
+    members = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="joined_budgets", blank=True)
     currency = models.CharField(max_length=3)
 
     class Meta:
         unique_together = (
-            'name',
-            'owner',
+            "name",
+            "owner",
         )
 
     def __str__(self) -> str:
@@ -24,7 +24,7 @@ class Budget(models.Model):
         Returns:
             str: String representation of Budget model instance.
         """
-        return f'{self.name} ({self.owner.email})'  # NOQA
+        return f"{self.name} ({self.owner.email})"  # NOQA
 
     def save(self, *args, **kwargs) -> None:
         """

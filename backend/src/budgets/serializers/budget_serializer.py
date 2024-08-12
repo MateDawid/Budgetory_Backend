@@ -8,8 +8,8 @@ class BudgetSerializer(ModelSerializer):
 
     class Meta:
         model = Budget
-        fields = ['id', 'name', 'description', 'currency', 'members']
-        read_only_fields = ['id']
+        fields = ["id", "name", "description", "currency", "members"]
+        read_only_fields = ["id"]
 
     def validate_name(self, value: str) -> str:
         """
@@ -22,7 +22,7 @@ class BudgetSerializer(ModelSerializer):
             ValidationError: Raised when Budget with given name and request.user as owner exists already.
         """
         try:
-            self.Meta.model.objects.get(owner=self.context['request'].user, name=value)
+            self.Meta.model.objects.get(owner=self.context["request"].user, name=value)
         except self.Meta.model.DoesNotExist:
             pass
         else:

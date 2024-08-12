@@ -8,7 +8,7 @@ class AppRouter(DefaultRouter):
     Custom router class that disables indicated methods.
     """
 
-    EXCLUDED_METHODS = ('put',)
+    EXCLUDED_METHODS = ("put",)
 
     def get_method_map(self, viewset: ViewSet, method_map: dict) -> dict:
         """
