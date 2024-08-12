@@ -11,8 +11,8 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BudgetingPeriod
-        fields = ['id', 'name', 'date_start', 'date_end', 'is_active']
-        read_only_fields = ['id']
+        fields = ["id", "name", "date_start", "date_end", "is_active"]
+        read_only_fields = ["id"]
 
     def validate_name(self, name: str) -> str:
         """
@@ -28,7 +28,7 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
             ValidationError: Raised when BudgetingPeriod for Budget with given name already exists in database.
         """
         try:
-            BudgetingPeriod.objects.get(budget=self.context['view'].kwargs['budget_pk'], name=name)
+            BudgetingPeriod.objects.get(budget=self.context["view"].kwargs["budget_pk"], name=name)
         except self.Meta.model.DoesNotExist:
             pass
         else:
@@ -50,10 +50,10 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
         """
         if is_active is True:
             active_periods = BudgetingPeriod.objects.filter(
-                budget__pk=self.context['view'].kwargs['budget_pk'], is_active=True
-            ).exclude(pk=getattr(self.instance, 'pk', None))
+                budget__pk=self.context["view"].kwargs["budget_pk"], is_active=True
+            ).exclude(pk=getattr(self.instance, "pk", None))
             if active_periods.exists():
-                raise ValidationError('Active period already exists in Budget.')
+                raise ValidationError("Active period already exists in Budget.")
         return is_active
 
     def validate(self, attrs: OrderedDict) -> OrderedDict:
@@ -70,18 +70,18 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
             ValidationError: Raised when date_end earlier than date start or some Budget periods
             dates collides with given dates.
         """
-        date_start = attrs.get('date_start', getattr(self.instance, 'date_start', None))
-        date_end = attrs.get('date_end', getattr(self.instance, 'date_end', None))
+        date_start = attrs.get("date_start", getattr(self.instance, "date_start", None))
+        date_end = attrs.get("date_end", getattr(self.instance, "date_end", None))
         if date_start >= date_end:
-            raise ValidationError('Start date should be earlier than end date.')
+            raise ValidationError("Start date should be earlier than end date.")
 
-        budget_pk = self.context['view'].kwargs['budget_pk']
+        budget_pk = self.context["view"].kwargs["budget_pk"]
         colliding_periods = BudgetingPeriod.objects.filter(
             Q(budget__pk=budget_pk, date_start__lte=date_start, date_end__gte=date_start)
             | Q(budget__pk=budget_pk, date_start__lte=date_end, date_end__gte=date_end)
             | Q(budget__pk=budget_pk, date_start__gte=date_start, date_end__lte=date_end)
-        ).exclude(pk=getattr(self.instance, 'pk', None))
+        ).exclude(pk=getattr(self.instance, "pk", None))
         if colliding_periods.exists():
-            raise ValidationError('Budgeting period date range collides with other period in Budget.')
+            raise ValidationError("Budgeting period date range collides with other period in Budget.")
 
         return super().validate(attrs)

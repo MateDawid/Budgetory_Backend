@@ -18,17 +18,17 @@ class TestBudgetModel:
         owner = user_factory()
         members = [user_factory() for _ in range(3)]
         payload = {
-            'name': 'Home budget',
-            'description': 'Budget with home expenses and incomes',
-            'owner': owner,
-            'currency': 'PLN',
+            "name": "Home budget",
+            "description": "Budget with home expenses and incomes",
+            "owner": owner,
+            "currency": "PLN",
         }
         budget = Budget.objects.create(**payload)
         budget.members.add(*members)
         for param, value in payload.items():
             assert getattr(budget, param) == value
         assert budget.members.all().count() == 4
-        assert str(budget) == f'{budget.name} ({budget.owner.email})'
+        assert str(budget) == f"{budget.name} ({budget.owner.email})"
 
     def test_owner_in_members(self, user_factory: FactoryMetaClass):
         """
@@ -39,10 +39,10 @@ class TestBudgetModel:
         owner = user_factory()
         members = [user_factory() for _ in range(3)]
         payload = {
-            'name': 'Home budget',
-            'description': 'Budget with home expenses and incomes',
-            'owner': owner,
-            'currency': 'PLN',
+            "name": "Home budget",
+            "description": "Budget with home expenses and incomes",
+            "owner": owner,
+            "currency": "PLN",
         }
         budget = Budget.objects.create(**payload)
         budget.members.add(*members)
@@ -59,9 +59,9 @@ class TestBudgetModel:
         THEN: Two Budget model instances exists in database with given data.
         """
         users = [user_factory(), user_factory()]
-        payload = {'name': 'Home budget', 'description': 'Budget with home expenses and incomes', 'currency': 'PLN'}
+        payload = {"name": "Home budget", "description": "Budget with home expenses and incomes", "currency": "PLN"}
         for user in users:
-            payload['owner'] = user
+            payload["owner"] = user
             Budget.objects.create(**payload)
 
         assert Budget.objects.all().count() == 2
@@ -75,17 +75,17 @@ class TestBudgetModel:
         WHEN: Budget instance create attempt with name too long.
         THEN: DataError raised. Object not created in database.
         """
-        max_length = Budget._meta.get_field('name').max_length
+        max_length = Budget._meta.get_field("name").max_length
         payload = {
-            'name': (max_length + 1) * 'a',
-            'description': 'Budget with home expenses and incomes',
-            'owner': user,
-            'currency': 'PLN',
+            "name": (max_length + 1) * "a",
+            "description": "Budget with home expenses and incomes",
+            "owner": user,
+            "currency": "PLN",
         }
 
         with pytest.raises(DataError) as exc:
             Budget.objects.create(**payload)
-        assert str(exc.value) == f'value too long for type character varying({max_length})\n'
+        assert str(exc.value) == f"value too long for type character varying({max_length})\n"
         assert not Budget.objects.filter(owner=user).exists()
 
     @pytest.mark.django_db(transaction=True)
@@ -96,10 +96,10 @@ class TestBudgetModel:
         THEN: IntegrityError raised. Object not created in database.
         """
         payload = {
-            'name': 'Home budget',
-            'description': 'Budget with home expenses and incomes',
-            'owner': user,
-            'currency': 'PLN',
+            "name": "Home budget",
+            "description": "Budget with home expenses and incomes",
+            "owner": user,
+            "currency": "PLN",
         }
         Budget.objects.create(**payload)
 
@@ -116,14 +116,14 @@ class TestBudgetModel:
         WHEN: Budget instance create attempt with currency too long.
         THEN: DataError raised. Object not created in database.
         """
-        max_length = Budget._meta.get_field('currency').max_length
+        max_length = Budget._meta.get_field("currency").max_length
         payload = {
-            'name': 'Home budget',
-            'description': 'Budget with home expenses and incomes',
-            'owner': user,
-            'currency': (max_length + 100) * 'a',
+            "name": "Home budget",
+            "description": "Budget with home expenses and incomes",
+            "owner": user,
+            "currency": (max_length + 100) * "a",
         }
         with pytest.raises(DataError) as exc:
             Budget.objects.create(**payload)
-        assert str(exc.value) == f'value too long for type character varying({max_length})\n'
+        assert str(exc.value) == f"value too long for type character varying({max_length})\n"
         assert not Budget.objects.filter(owner=user).exists()

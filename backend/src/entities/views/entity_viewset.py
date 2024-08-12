@@ -22,7 +22,7 @@ class EntityViewSet(ModelViewSet):
         Returns:
             QuerySet: Filtered Entity QuerySet.
         """
-        return self.queryset.filter(budget__pk=self.kwargs.get('budget_pk')).distinct()
+        return self.queryset.filter(budget__pk=self.kwargs.get("budget_pk")).distinct()
 
     def perform_create(self, serializer: EntitySerializer) -> None:
         """
@@ -31,4 +31,4 @@ class EntityViewSet(ModelViewSet):
         Args:
             serializer [EntitySerializer]: Serializer for Entity model.
         """
-        serializer.save(budget_id=self.kwargs.get('budget_pk'))
+        serializer.save(budget_id=self.kwargs.get("budget_pk"))

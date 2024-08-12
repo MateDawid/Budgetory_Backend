@@ -13,7 +13,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = UserManager()
 
-    USERNAME_FIELD = 'email'
+    USERNAME_FIELD = "email"
 
     def is_budget_member(self, budget_id: str) -> bool:
         """
@@ -25,4 +25,4 @@ class User(AbstractBaseUser, PermissionsMixin):
         Returns:
             bool: True if User is member of given Budget, False otherwise.
         """
-        return bool(self.joined_budgets.filter(pk=budget_id).values('pk'))  # NOQA
+        return bool(self.joined_budgets.filter(pk=budget_id).values("pk"))  # NOQA

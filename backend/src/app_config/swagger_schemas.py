@@ -17,10 +17,10 @@ class CustomAutoSchema(SwaggerAutoSchema):
         """
         operation_keys = operation_keys or self.operation_keys
 
-        tags = self.overrides.get('tags')
+        tags = self.overrides.get("tags")
         if not tags:
             if len(operation_keys) == 1:
                 tags = [operation_keys[0]]
             else:
-                tags = [' '.join(operation_keys[:-1])]
+                tags = [" ".join(operation_keys[:-1])]
         return tags

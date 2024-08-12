@@ -20,4 +20,4 @@ class ListUserView(generics.ListAPIView):
             QuerySet: QuerySet containing User model instances.
         """
         queryset = self.queryset
-        return queryset.order_by('id').distinct()
+        return queryset.order_by("id").distinct()

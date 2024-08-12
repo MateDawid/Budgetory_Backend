@@ -10,10 +10,10 @@ class TestEntityModel:
     """Tests for Entity model"""
 
     PAYLOAD: dict = {
-        'name': 'Supermarket',
-        'description': 'Supermarket in which I buy food.',
-        'is_active': True,
-        'is_deposit': False,
+        "name": "Supermarket",
+        "description": "Supermarket in which I buy food.",
+        "is_active": True,
+        "is_deposit": False,
     }
 
     def test_save_entity(self, budget: Budget):
@@ -23,7 +23,7 @@ class TestEntityModel:
         THEN: Deposit model instance exists in database with given data.
         """
         payload = self.PAYLOAD.copy()
-        payload['budget'] = budget
+        payload["budget"] = budget
 
         deposit = Entity(**payload)
         deposit.full_clean()
@@ -34,7 +34,7 @@ class TestEntityModel:
         assert Entity.objects.filter(budget=budget).count() == 1
         assert Entity.deposits.filter(budget=budget).count() == 0
         assert deposit.is_deposit is False
-        assert str(deposit) == f'{deposit.name} ({deposit.budget.name})'
+        assert str(deposit) == f"{deposit.name} ({deposit.budget.name})"
 
     def test_create_entity(self, budget: Budget):
         """
@@ -43,7 +43,7 @@ class TestEntityModel:
         THEN: Entity model instance exists in database with given data.
         """
         payload = self.PAYLOAD.copy()
-        payload['budget'] = budget
+        payload["budget"] = budget
 
         entity = Entity.objects.create(**payload)
 
@@ -52,7 +52,7 @@ class TestEntityModel:
         assert Entity.objects.filter(budget=budget).count() == 1
         assert Entity.deposits.filter(budget=budget).count() == 0
         assert entity.is_deposit is False
-        assert str(entity) == f'{entity.name} ({entity.budget.name})'
+        assert str(entity) == f"{entity.name} ({entity.budget.name})"
 
     def test_save_deposit(self, budget: Budget):
         """
@@ -61,8 +61,8 @@ class TestEntityModel:
         THEN: Entity model instance exists in database with given data.
         """
         payload = self.PAYLOAD.copy()
-        payload['budget'] = budget
-        payload['is_deposit'] = True
+        payload["budget"] = budget
+        payload["is_deposit"] = True
 
         entity = Entity(**payload)
         entity.full_clean()
@@ -73,7 +73,7 @@ class TestEntityModel:
         assert Entity.objects.filter(budget=budget).count() == 1
         assert Entity.deposits.filter(budget=budget).count() == 1
         assert entity.is_deposit is True
-        assert str(entity) == f'{entity.name} ({entity.budget.name})'
+        assert str(entity) == f"{entity.name} ({entity.budget.name})"
 
     def test_create_deposit(self, budget: Budget):
         """
@@ -82,8 +82,8 @@ class TestEntityModel:
         THEN: Entity model instance exists in database with given data.
         """
         payload = self.PAYLOAD.copy()
-        payload['budget'] = budget
-        payload['is_deposit'] = True
+        payload["budget"] = budget
+        payload["is_deposit"] = True
 
         entity = Entity.objects.create(**payload)
 
@@ -92,10 +92,10 @@ class TestEntityModel:
         assert Entity.objects.filter(budget=budget).count() == 1
         assert Entity.deposits.filter(budget=budget).count() == 1
         assert entity.is_deposit is True
-        assert str(entity) == f'{entity.name} ({entity.budget.name})'
+        assert str(entity) == f"{entity.name} ({entity.budget.name})"
 
     @pytest.mark.django_db(transaction=True)
-    @pytest.mark.parametrize('field_name', ['name', 'description'])
+    @pytest.mark.parametrize("field_name", ["name", "description"])
     def test_error_value_too_long(self, budget: Budget, field_name: str):
         """
         GIVEN: Budget model instances in database.
@@ -104,7 +104,7 @@ class TestEntityModel:
         """
         max_length = Entity._meta.get_field(field_name).max_length
         payload = self.PAYLOAD.copy()
-        payload[field_name] = (max_length + 1) * 'a'
+        payload[field_name] = (max_length + 1) * "a"
 
         # .full_clean() & .save() scenario
         with pytest.raises(ValidationError) as exc:
@@ -112,7 +112,7 @@ class TestEntityModel:
             deposit.full_clean()
 
         assert (
-            f'Ensure this value has at most {max_length} characters' in exc.value.error_dict[field_name][0].messages[0]
+            f"Ensure this value has at most {max_length} characters" in exc.value.error_dict[field_name][0].messages[0]
         )
         assert not Entity.objects.filter(budget=budget).exists()
 
@@ -120,7 +120,7 @@ class TestEntityModel:
         with pytest.raises(DataError) as exc:
             Entity.objects.create(**payload)
 
-        assert str(exc.value) == f'value too long for type character varying({max_length})\n'
+        assert str(exc.value) == f"value too long for type character varying({max_length})\n"
         assert not Entity.objects.filter(budget=budget).exists()
 
     @pytest.mark.django_db(transaction=True)
@@ -131,7 +131,7 @@ class TestEntityModel:
         THEN: DataError raised.
         """
         payload = self.PAYLOAD.copy()
-        payload['budget'] = budget
+        payload["budget"] = budget
         Entity.objects.create(**payload)
 
         # .full_clean() & .save() scenario
@@ -139,7 +139,7 @@ class TestEntityModel:
             deposit = Entity(**payload)
             deposit.full_clean()
 
-        assert 'Entity with this Name and Budget already exists.' in exc.value.error_dict['__all__'][0].messages[0]
+        assert "Entity with this Name and Budget already exists." in exc.value.error_dict["__all__"][0].messages[0]
         assert Entity.objects.filter(budget=budget).count() == 1
 
         # .create() scenario

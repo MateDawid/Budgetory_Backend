@@ -26,14 +26,14 @@ from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
 
-BUDGETS_URL = reverse('budgets:budget-list')
-OWNED_BUDGETS_URL = reverse('budgets:budget-owned')
-MEMBERED_BUDGETS_URL = reverse('budgets:budget-membered')
+BUDGETS_URL = reverse("budgets:budget-list")
+OWNED_BUDGETS_URL = reverse("budgets:budget-owned")
+MEMBERED_BUDGETS_URL = reverse("budgets:budget-membered")
 
 
 def budget_detail_url(budget_id):
     """Creates and returns Budget detail URL."""
-    return reverse('budgets:budget-detail', args=[budget_id])
+    return reverse("budgets:budget-detail", args=[budget_id])
 
 
 @pytest.mark.django_db
@@ -60,17 +60,17 @@ class TestBudgetViewSetList:
         """
         auth_user = user_factory()
         api_client.force_authenticate(auth_user)
-        budget_factory(owner=auth_user, name='Budget 1', description='Some budget', currency='PLN')
+        budget_factory(owner=auth_user, name="Budget 1", description="Some budget", currency="PLN")
         budget_factory(
-            owner=user_factory(), name='Budget 2', description='Other budget', currency='eur', members=[auth_user]
+            owner=user_factory(), name="Budget 2", description="Other budget", currency="eur", members=[auth_user]
         )
 
         response = api_client.get(BUDGETS_URL)
 
-        budgets = Budget.objects.filter(Q(owner=auth_user) | Q(members=auth_user)).order_by('id').distinct()
+        budgets = Budget.objects.filter(Q(owner=auth_user) | Q(members=auth_user)).order_by("id").distinct()
         serializer = BudgetSerializer(budgets, many=True)
         assert response.status_code == status.HTTP_200_OK
-        assert response.data['results'] == serializer.data
+        assert response.data["results"] == serializer.data
 
     def test_budgets_list_limited_to_user(
         self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
@@ -88,12 +88,12 @@ class TestBudgetViewSetList:
 
         response = api_client.get(BUDGETS_URL)
 
-        budgets = Budget.objects.filter(Q(owner=auth_user) | Q(members=auth_user)).order_by('id').distinct()
+        budgets = Budget.objects.filter(Q(owner=auth_user) | Q(members=auth_user)).order_by("id").distinct()
         serializer = BudgetSerializer(budgets, many=True)
         assert Budget.objects.all().count() == 3
         assert response.status_code == status.HTTP_200_OK
-        assert response.data['results'] == serializer.data
-        assert len(response.data['results']) == budgets.count() == 2
+        assert response.data["results"] == serializer.data
+        assert len(response.data["results"]) == budgets.count() == 2
 
 
 @pytest.mark.django_db
@@ -126,10 +126,10 @@ class TestBudgetViewSetOwnedList:
 
         response = api_client.get(OWNED_BUDGETS_URL)
 
-        owned_budgets = Budget.objects.filter(owner=auth_user).order_by('id').distinct()
+        owned_budgets = Budget.objects.filter(owner=auth_user).order_by("id").distinct()
         serializer = BudgetSerializer(owned_budgets, many=True)
         assert response.status_code == status.HTTP_200_OK
-        assert response.data['results'] == serializer.data
+        assert response.data["results"] == serializer.data
 
 
 @pytest.mark.django_db
@@ -162,10 +162,10 @@ class TestBudgetViewSetMemberedList:
 
         response = api_client.get(MEMBERED_BUDGETS_URL)
 
-        membered_budgets = Budget.objects.filter(members=auth_user).order_by('id').distinct()
+        membered_budgets = Budget.objects.filter(members=auth_user).order_by("id").distinct()
         serializer = BudgetSerializer(membered_budgets, many=True)
         assert response.status_code == status.HTTP_200_OK
-        assert response.data['results'] == serializer.data
+        assert response.data["results"] == serializer.data
 
 
 @pytest.mark.django_db
@@ -190,19 +190,19 @@ class TestBudgetViewSetCreate:
         """
         api_client.force_authenticate(base_user)
         payload = {
-            'name': 'Budget 1',
-            'description': 'Some budget',
-            'currency': 'PLN',
-            'members': [user_factory().id, user_factory().id],
+            "name": "Budget 1",
+            "description": "Some budget",
+            "currency": "PLN",
+            "members": [user_factory().id, user_factory().id],
         }
 
         response = api_client.post(BUDGETS_URL, payload)
 
         assert response.status_code == status.HTTP_201_CREATED
         assert Budget.objects.filter(owner=base_user).count() == 1
-        budget = Budget.objects.get(id=response.data['id'])
+        budget = Budget.objects.get(id=response.data["id"])
         for key in payload:
-            if key == 'members':
+            if key == "members":
                 members = getattr(budget, key)
                 assert members.count() == len(payload[key])
                 for member_id in payload[key]:
@@ -225,19 +225,19 @@ class TestBudgetViewSetCreate:
         THEN: HTTP 400 returned. Budget not created in database.
         """
         api_client.force_authenticate(base_user)
-        max_length = Budget._meta.get_field('name').max_length
+        max_length = Budget._meta.get_field("name").max_length
         payload = {
-            'name': (max_length + 1) * 'a',
-            'description': 'Some budget',
-            'currency': 'PLN',
-            'members': [user_factory().id, user_factory().id],
+            "name": (max_length + 1) * "a",
+            "description": "Some budget",
+            "currency": "PLN",
+            "members": [user_factory().id, user_factory().id],
         }
 
         response = api_client.post(BUDGETS_URL, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'name' in response.data['detail']
-        assert response.data['detail']['name'][0] == f'Ensure this field has no more than {max_length} characters.'
+        assert "name" in response.data["detail"]
+        assert response.data["detail"]["name"][0] == f"Ensure this field has no more than {max_length} characters."
         assert not Budget.objects.filter(owner=base_user).exists()
 
     def test_error_name_already_used(self, api_client: APIClient, base_user: AbstractUser):
@@ -247,14 +247,14 @@ class TestBudgetViewSetCreate:
         THEN: HTTP 400 returned. Budget not created in database.
         """
         api_client.force_authenticate(base_user)
-        payload = {'name': 'Budget', 'description': 'Some budget', 'currency': 'eur'}
+        payload = {"name": "Budget", "description": "Some budget", "currency": "eur"}
         Budget.objects.create(owner=base_user, **payload)
 
         response = api_client.post(BUDGETS_URL, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'name' in response.data['detail']
-        assert response.data['detail']['name'][0] == f'User already owns Budget with name "{payload["name"]}".'
+        assert "name" in response.data["detail"]
+        assert response.data["detail"]["name"][0] == f'User already owns Budget with name "{payload["name"]}".'
         assert Budget.objects.filter(owner=base_user).count() == 1
 
 
@@ -342,8 +342,8 @@ class TestBudgetViewSetUpdate:
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     @pytest.mark.parametrize(
-        'param, value',
-        [('name', 'New name'), ('description', 'New description'), ('currency', 'PLN')],
+        "param, value",
+        [("name", "New name"), ("description", "New description"), ("currency", "PLN")],
     )
     def test_budget_update_single_field(
         self,
@@ -359,7 +359,7 @@ class TestBudgetViewSetUpdate:
         THEN: HTTP 200 returned. Budget updated in database.
         """
         api_client.force_authenticate(base_user)
-        payload = {'name': 'Budget', 'description': 'Some budget', 'currency': 'eur'}
+        payload = {"name": "Budget", "description": "Some budget", "currency": "eur"}
         budget = budget_factory(owner=base_user, **payload)
         update_payload = {param: value}
         url = budget_detail_url(budget.id)
@@ -385,16 +385,16 @@ class TestBudgetViewSetUpdate:
         user_1 = user_factory()
         user_2 = user_factory()
         api_client.force_authenticate(base_user)
-        payload = {'name': 'Budget', 'description': 'Some budget', 'currency': 'eur', 'members': [user_1.id]}
+        payload = {"name": "Budget", "description": "Some budget", "currency": "eur", "members": [user_1.id]}
         budget = budget_factory(owner=base_user, **payload)
-        update_payload = {'members': [user_1.id, user_2.id]}
+        update_payload = {"members": [user_1.id, user_2.id]}
         url = budget_detail_url(budget.id)
 
         response = api_client.patch(url, update_payload)
 
         assert response.status_code == status.HTTP_200_OK
         budget.refresh_from_db()
-        assert list(budget.members.all().values_list('id', flat=True)) == update_payload['members']
+        assert list(budget.members.all().values_list("id", flat=True)) == update_payload["members"]
 
     def test_budget_update_many_fields(
         self,
@@ -411,9 +411,9 @@ class TestBudgetViewSetUpdate:
         user_1 = user_factory()
         user_2 = user_factory()
         api_client.force_authenticate(base_user)
-        payload = {'name': 'Budget', 'description': 'Some budget', 'currency': 'eur', 'members': [user_1.id]}
+        payload = {"name": "Budget", "description": "Some budget", "currency": "eur", "members": [user_1.id]}
         budget = budget_factory(owner=base_user, **payload)
-        update_payload = {'name': 'UPDATE', 'description': 'Updated budget', 'currency': 'pln', 'members': [user_2.id]}
+        update_payload = {"name": "UPDATE", "description": "Updated budget", "currency": "pln", "members": [user_2.id]}
         url = budget_detail_url(budget.id)
 
         response = api_client.patch(url, update_payload)
@@ -421,17 +421,17 @@ class TestBudgetViewSetUpdate:
         assert response.status_code == status.HTTP_200_OK
         budget.refresh_from_db()
         for param, value in update_payload.items():
-            if param == 'members':
-                assert list(budget.members.all().values_list('id', flat=True)) == update_payload['members']
+            if param == "members":
+                assert list(budget.members.all().values_list("id", flat=True)) == update_payload["members"]
             else:
                 assert getattr(budget, param) == value
 
     @pytest.mark.parametrize(
-        'param, value',
+        "param, value",
         [
-            ('name', (Budget._meta.get_field('name').max_length + 1) * 'A'),
-            ('name', 'Old budget'),
-            ('currency', (Budget._meta.get_field('currency').max_length + 1) * 'A'),
+            ("name", (Budget._meta.get_field("name").max_length + 1) * "A"),
+            ("name", "Old budget"),
+            ("currency", (Budget._meta.get_field("currency").max_length + 1) * "A"),
         ],
     )
     def test_error_on_budget_update(
@@ -450,9 +450,9 @@ class TestBudgetViewSetUpdate:
         """
         user_factory()
         api_client.force_authenticate(base_user)
-        old_payload = {'name': 'Old budget', 'description': 'Some budget', 'currency': 'eur'}
+        old_payload = {"name": "Old budget", "description": "Some budget", "currency": "eur"}
         budget_factory(owner=base_user, **old_payload)
-        new_payload = {'name': 'New budget', 'description': 'Some budget', 'currency': 'eur'}
+        new_payload = {"name": "New budget", "description": "Some budget", "currency": "eur"}
         budget = budget_factory(owner=base_user, **new_payload)
         old_value = getattr(budget, param)
         payload = {param: value}
@@ -480,7 +480,7 @@ class TestBudgetViewSetUpdate:
         api_client.force_authenticate(base_user)
         budget = budget_factory(owner=base_user)
 
-        payload = {'owner': other_user.id}
+        payload = {"owner": other_user.id}
         url = budget_detail_url(budget.id)
 
         response = api_client.patch(url, payload)

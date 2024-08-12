@@ -7,5 +7,5 @@ class DepositSerializer(EntitySerializer):
 
     class Meta:
         model = Deposit
-        fields = ['id', 'name', 'description', 'is_active']
-        read_only_fields = ['id']
+        fields = ["id", "name", "description", "is_active"]
+        read_only_fields = ["id"]
