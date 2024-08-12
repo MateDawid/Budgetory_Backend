@@ -1,11 +1,11 @@
 from decimal import Decimal
 
 import pytest
-from budgets.models import Budget
+from budgets.models.budget_model import Budget
 from django.core.exceptions import ValidationError
 from django.db import DataError, IntegrityError
 from factory.base import FactoryMetaClass
-from predictions.models import ExpensePrediction
+from predictions.models.expense_prediction_model import ExpensePrediction
 
 
 @pytest.mark.django_db
@@ -13,8 +13,8 @@ class TestExpensePredictionModel:
     """Tests for ExpensePrediction model"""
 
     PAYLOAD = {
-        'value': Decimal('100.00'),
-        'description': '50.00 for X, 50.00 for Y',
+        "value": Decimal("100.00"),
+        "description": "50.00 for X, 50.00 for Y",
     }
 
     def test_create_expense_prediction(
@@ -36,7 +36,7 @@ class TestExpensePredictionModel:
         assert prediction.period == period
         assert prediction.category == category
         assert ExpensePrediction.objects.all().count() == 1
-        assert str(prediction) == f'[{prediction.period.name}] {prediction.category.name}'
+        assert str(prediction) == f"[{prediction.period.name}] {prediction.category.name}"
 
     @pytest.mark.django_db(transaction=True)
     def test_error_description_too_long(
@@ -47,15 +47,15 @@ class TestExpensePredictionModel:
         WHEN: ExpensePrediction instance create attempt with description value too long.
         THEN: DataError raised.
         """
-        max_length = ExpensePrediction._meta.get_field('description').max_length
+        max_length = ExpensePrediction._meta.get_field("description").max_length
         payload = self.PAYLOAD.copy()
-        payload['description'] = (max_length + 1) * 'a'
-        payload['period'] = budgeting_period_factory(budget=budget)
-        payload['category'] = expense_category_factory(budget=budget)
+        payload["description"] = (max_length + 1) * "a"
+        payload["period"] = budgeting_period_factory(budget=budget)
+        payload["category"] = expense_category_factory(budget=budget)
 
         with pytest.raises(DataError) as exc:
             ExpensePrediction.objects.create(**payload)
-        assert str(exc.value) == f'value too long for type character varying({max_length})\n'
+        assert str(exc.value) == f"value too long for type character varying({max_length})\n"
         assert not ExpensePrediction.objects.all().exists()
 
     @pytest.mark.django_db(transaction=True)
@@ -68,21 +68,21 @@ class TestExpensePredictionModel:
         THEN: DataError raised.
         """
         max_length = (
-            ExpensePrediction._meta.get_field('value').max_digits
-            - ExpensePrediction._meta.get_field('value').decimal_places
+            ExpensePrediction._meta.get_field("value").max_digits
+            - ExpensePrediction._meta.get_field("value").decimal_places
         )
         payload = self.PAYLOAD.copy()
-        payload['value'] = '1' + '0' * max_length
-        payload['period'] = budgeting_period_factory(budget=budget)
-        payload['category'] = expense_category_factory(budget=budget)
+        payload["value"] = "1" + "0" * max_length
+        payload["period"] = budgeting_period_factory(budget=budget)
+        payload["category"] = expense_category_factory(budget=budget)
 
         with pytest.raises(DataError) as exc:
             ExpensePrediction.objects.create(**payload)
-        assert 'numeric field overflow' in str(exc.value)
+        assert "numeric field overflow" in str(exc.value)
         assert not ExpensePrediction.objects.all().exists()
 
     @pytest.mark.django_db(transaction=True)
-    @pytest.mark.parametrize('value', [Decimal('0.00'), Decimal('-0.01')])
+    @pytest.mark.parametrize("value", [Decimal("0.00"), Decimal("-0.01")])
     def test_error_value_too_low(
         self,
         budget: Budget,
@@ -96,9 +96,9 @@ class TestExpensePredictionModel:
         THEN: DataError raised.
         """
         payload = self.PAYLOAD.copy()
-        payload['value'] = value
-        payload['period'] = budgeting_period_factory(budget=budget)
-        payload['category'] = expense_category_factory(budget=budget)
+        payload["value"] = value
+        payload["period"] = budgeting_period_factory(budget=budget)
+        payload["category"] = expense_category_factory(budget=budget)
 
         with pytest.raises(IntegrityError) as exc:
             ExpensePrediction.objects.create(**payload)
@@ -121,7 +121,7 @@ class TestExpensePredictionModel:
         with pytest.raises(IntegrityError) as exc:
             ExpensePrediction.objects.create(period=period, category=category, **self.PAYLOAD)
 
-        assert 'duplicate key value violates unique constraint' in str(exc.value)
+        assert "duplicate key value violates unique constraint" in str(exc.value)
         assert ExpensePrediction.objects.all().count() == 1
 
     @pytest.mark.django_db(transaction=True)
@@ -144,5 +144,5 @@ class TestExpensePredictionModel:
         with pytest.raises(ValidationError) as exc:
             ExpensePrediction.objects.create(period=period, category=category, **self.PAYLOAD)
 
-        assert str(exc.value.args[0]) == 'Budget for period and category fields is not the same.'
+        assert str(exc.value.args[0]) == "Budget for period and category fields is not the same."
         assert not ExpensePrediction.objects.all().exists()
