@@ -6,7 +6,7 @@ from categories.views.income_category_viewset import IncomeCategoryViewSet
 from django.urls import include, path
 from entities.views.deposit_viewset import DepositViewSet
 from entities.views.entity_viewset import EntityViewSet
-from predictions.views import ExpensePredictionViewSet
+from predictions.views.expense_prediction_viewset import ExpensePredictionViewSet
 
 app_name = "budgets"
 
