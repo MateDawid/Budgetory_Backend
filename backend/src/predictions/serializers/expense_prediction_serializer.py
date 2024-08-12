@@ -2,7 +2,7 @@ from collections import OrderedDict
 from decimal import Decimal
 
 from django.db.models import Model
-from predictions.models import ExpensePrediction
+from predictions.models.expense_prediction_model import ExpensePrediction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -12,8 +12,8 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model: Model = ExpensePrediction
-        fields = ('id', 'period', 'category', 'value', 'description')
-        read_only_fields = ['id']
+        fields = ("id", "period", "category", "value", "description")
+        read_only_fields = ["id"]
 
     @staticmethod
     def validate_value(value: Decimal) -> Decimal:
@@ -26,8 +26,8 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
         Returns:
             Decimal: Validated value of ExpensePrediction.
         """
-        if value <= Decimal('0.00'):
-            raise ValidationError('Value should be higher than 0.00.')
+        if value <= Decimal("0.00"):
+            raise ValidationError("Value should be higher than 0.00.")
         return value
 
     def to_representation(self, instance: ExpensePrediction) -> OrderedDict:
@@ -41,6 +41,6 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
             OrderedDict: Dictionary containing readable ExpensePrediction period and category.
         """
         representation = super().to_representation(instance)
-        representation['period'] = instance.period.name
-        representation['category'] = instance.category.name
+        representation["period"] = instance.period.name
+        representation["category"] = instance.category.name
         return representation
