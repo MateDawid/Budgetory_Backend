@@ -1,16 +1,16 @@
 from app_users.models import User
 from app_users.serializers.user_serializer import UserSerializer
-from requests import Request
 from rest_framework import authentication, generics, permissions
 from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.request import Request
 
 
 class AuthenticatedUserView(generics.RetrieveUpdateAPIView):
     """View for managing authenticated User."""
 
     serializer_class = UserSerializer
-    authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = (authentication.TokenAuthentication,)
+    permission_classes = (permissions.IsAuthenticated,)
 
     def get_object(self) -> User | None:
         """

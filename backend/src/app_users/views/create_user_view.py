@@ -6,3 +6,4 @@ class CreateUserView(generics.CreateAPIView):
     """View to create a new User."""
 
     serializer_class = UserSerializer
+    permission_classes = ()
