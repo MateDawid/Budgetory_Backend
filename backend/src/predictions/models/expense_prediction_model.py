@@ -4,8 +4,6 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import CheckConstraint, Q
 
-# REFACTOR
-
 
 class ExpensePrediction(models.Model):
     """ExpensePrediction model for planned expenses in particular BudgetingPeriod"""
