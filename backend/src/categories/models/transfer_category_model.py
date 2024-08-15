@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-from django.db.models import CheckConstraint, Q
+from django.db.models import CheckConstraint, Q, UniqueConstraint
 
 
 class CategoryType(models.IntegerChoices):
@@ -48,9 +48,19 @@ class TransferCategory(models.Model):
             CheckConstraint(
                 name="%(app_label)s_%(class)s_correct_priority_for_type",
                 check=(
-                    models.Q(category_type=CategoryType.INCOME, priority=CategoryPriority.INCOMES)
-                    | (models.Q(category_type=CategoryType.EXPENSE) & ~Q(priority=CategoryPriority.INCOMES))
+                    Q(category_type=CategoryType.INCOME, priority=CategoryPriority.INCOMES)
+                    | (Q(category_type=CategoryType.EXPENSE) & ~Q(priority=CategoryPriority.INCOMES))
                 ),
+            ),
+            UniqueConstraint(
+                name="%(app_label)s_%(class)s_name_unique_for_owner",
+                fields=("budget", "category_type", "name", "owner"),
+                condition=Q(owner__isnull=False),
+            ),
+            UniqueConstraint(
+                name="%(app_label)s_%(class)s_name_unique_when_no_owner",
+                fields=("budget", "category_type", "name"),
+                condition=Q(owner__isnull=True),
             ),
         )
 
