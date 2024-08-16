@@ -143,6 +143,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "app_users.User"
 
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
     "DEFAULT_PAGINATION_CLASS": "app_infrastructure.paginations.DefaultPagination",
     "EXCEPTION_HANDLER": "app_infrastructure.exception_handlers.default_exception_handler",
     "DEFAULT_PERMISSION_CLASSES": [
