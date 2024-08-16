@@ -1,28 +1,10 @@
+from categories.managers.expense_category_manager import ExpenseCategoryManager
+from categories.managers.income_category_manager import IncomeCategoryManager
+from categories.models.category_priority_choices import CategoryPriority
+from categories.models.category_type_choices import CategoryType
 from django.conf import settings
 from django.db import models
 from django.db.models import CheckConstraint, Q, UniqueConstraint
-
-
-class CategoryType(models.IntegerChoices):
-    """Choices for TransferCategory type value."""
-
-    INCOME = 0, "Income"
-    EXPENSE = 1, "Expense"
-
-
-class CategoryPriority(models.IntegerChoices):
-    """
-    Choices for TransferCategory priority value.
-
-    Value 0 (INCOMES) dedicated for CategoryType.INCOME.
-    Values 1-4 dedicated for CategoryType.EXPENSE.
-    """
-
-    INCOMES = 0, "Incomes"
-    MOST_IMPORTANT = 1, "Most important"
-    DEBTS = 2, "Debts"
-    SAVINGS = 3, "Savings"
-    OTHERS = 4, "Others"
 
 
 class TransferCategory(models.Model):
@@ -41,6 +23,10 @@ class TransferCategory(models.Model):
     is_active = models.BooleanField(default=True)
     category_type = models.PositiveSmallIntegerField(choices=CategoryType.choices, null=False, blank=False)
     priority = models.PositiveSmallIntegerField(choices=CategoryPriority.choices, null=False, blank=False)
+
+    objects = models.Manager()
+    income_categories = IncomeCategoryManager()
+    expense_categories = ExpenseCategoryManager()
 
     class Meta:
         verbose_name_plural = "transfer categories"
