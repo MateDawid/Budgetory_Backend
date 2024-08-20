@@ -57,4 +57,9 @@ class TransferCategory(models.Model):
         Returns:
             str: Custom string representation of instance.
         """
-        return f"({self.category_type}) {self.name}"
+        label = ""
+        for category_type in CategoryType:
+            if category_type.value == self.category_type:
+                label = category_type.label
+                break
+        return f"({label}) {self.name}"
