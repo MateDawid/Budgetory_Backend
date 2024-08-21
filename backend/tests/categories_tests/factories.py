@@ -3,7 +3,6 @@ import random
 import factory.fuzzy
 from app_users_tests.factories import UserFactory
 from budgets_tests.factories import BudgetFactory
-from categories.models import ExpenseCategory, IncomeCategory
 from categories.models.category_priority_choices import CategoryPriority
 from categories.models.category_type_choices import CategoryType
 
@@ -62,39 +61,21 @@ class TransferCategoryFactory(factory.django.DjangoModelFactory):
         return priority
 
 
-class IncomeCategoryFactory(factory.django.DjangoModelFactory):
-    """Factory for IncomeCategory model."""
+class IncomeCategoryFactory(TransferCategoryFactory):
+    """Factory for IncomeCategory proxy model."""
+
+    category_type = factory.LazyAttribute(lambda _: CategoryType.INCOME)
+    priority = factory.LazyAttribute(lambda _: CategoryPriority.INCOMES)
 
     class Meta:
-        model = "categories.IncomeCategory"
-
-    budget = factory.SubFactory(BudgetFactory)
-    name = factory.Faker("text", max_nb_chars=128)
-    description = factory.Faker("text", max_nb_chars=255)
-    is_active = factory.Faker("boolean")
-    group = factory.fuzzy.FuzzyChoice([x[0] for x in IncomeCategory.IncomeGroups.choices])
-
-    @factory.lazy_attribute
-    def owner(self) -> str:
-        """Generates user field value - User model instance or None."""
-        options = [UserFactory(), None]
-        return random.choice(options)
+        model = "categories.TransferCategory"
 
 
-class ExpenseCategoryFactory(factory.django.DjangoModelFactory):
-    """Factory for ExpenseCategory model."""
+class ExpenseCategoryFactory(TransferCategoryFactory):
+    """Factory for IncomeCategory proxy model."""
+
+    category_type = factory.LazyAttribute(lambda _: CategoryType.EXPENSE)
+    priority = factory.fuzzy.FuzzyChoice([choice for choice in CategoryPriority if choice != CategoryPriority.INCOMES])
 
     class Meta:
-        model = "categories.ExpenseCategory"
-
-    budget = factory.SubFactory(BudgetFactory)
-    name = factory.Faker("text", max_nb_chars=128)
-    description = factory.Faker("text", max_nb_chars=255)
-    is_active = factory.Faker("boolean")
-    group = factory.fuzzy.FuzzyChoice([x[0] for x in ExpenseCategory.ExpenseGroups.choices])
-
-    @factory.lazy_attribute
-    def owner(self) -> str:
-        """Generates user field value - User model instance or None."""
-        options = [UserFactory(), None]
-        return random.choice(options)
+        model = "categories.TransferCategory"
