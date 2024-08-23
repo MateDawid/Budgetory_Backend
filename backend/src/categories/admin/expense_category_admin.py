@@ -6,5 +6,5 @@ from django.contrib import admin
 class ExpenseCategoryAdmin(admin.ModelAdmin):
     """Custom admin view for ExpenseCategory model."""
 
-    list_display = ("name", "group", "budget", "owner", "is_active")
-    list_filter = ("budget", "budget__owner__email", "group")
+    list_display = ("name", "priority", "budget", "owner", "is_active")
+    list_filter = ("budget", "budget__owner__email", "priority", "is_active")
