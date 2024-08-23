@@ -1,39 +1,20 @@
-from django.conf import settings
-from django.db import models
+from categories.managers.expense_category_manager import ExpenseCategoryManager
+from categories.models.category_type_choices import CategoryType
+from categories.models.transfer_category_model import TransferCategory
 
 
-class ExpenseCategory(models.Model):
-    """ExpenseCategory model for grouping Income model instances."""
+class ExpenseCategory(TransferCategory):
+    """ExpenseCategory proxy model for TransferCategory with type EXPENSE."""
 
-    class ExpenseGroups(models.IntegerChoices):
-        """Choices for group value."""
-
-        MOST_IMPORTANT = 1, "Most important"
-        DEBTS = 2, "Debts"
-        SAVINGS = 3, "Savings"
-        OTHERS = 4, "Others"
-
-    budget = models.ForeignKey("budgets.Budget", on_delete=models.CASCADE, related_name="expense_categories")
-    name = models.CharField(max_length=128)
-    description = models.CharField(max_length=255, blank=True, null=True)
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        blank=True,
-        null=True,
-        on_delete=models.CASCADE,
-        related_name="personal_expense_categories",
-    )
-    is_active = models.BooleanField(default=True)
-    group = models.PositiveSmallIntegerField(choices=ExpenseGroups.choices, null=False, blank=False)
+    objects = ExpenseCategoryManager()
 
     class Meta:
+        proxy = True
         verbose_name_plural = "expense categories"
 
-    def __str__(self) -> str:
+    def save(self, *args, **kwargs) -> None:
         """
-        Returns string representation of ExpenseCategory model instance.
-
-        Returns:
-            str: Custom string representation of instance.
+        Overridden save method to make sure, that category_type is always CategoryType.INCOME.
         """
-        return f"{self.name} ({self.budget.name})"
+        self.category_type = CategoryType.EXPENSE
+        super().save(*args, **kwargs)

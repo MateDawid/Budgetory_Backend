@@ -1,37 +1,20 @@
-from django.conf import settings
-from django.db import models
+from categories.managers.income_category_manager import IncomeCategoryManager
+from categories.models.category_type_choices import CategoryType
+from categories.models.transfer_category_model import TransferCategory
 
 
-class IncomeCategory(models.Model):
-    """IncomeCategory model for grouping Income model instances."""
+class IncomeCategory(TransferCategory):
+    """IncomeCategory proxy model for TransferCategory with type INCOME."""
 
-    class IncomeGroups(models.IntegerChoices):
-        """Choices for group value."""
-
-        REGULAR = 1, "Regular"
-        IRREGULAR = 2, "Irregular"
-
-    budget = models.ForeignKey("budgets.Budget", on_delete=models.CASCADE, related_name="income_categories")
-    name = models.CharField(max_length=128)
-    description = models.CharField(max_length=255, blank=True, null=True)
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        blank=True,
-        null=True,
-        on_delete=models.CASCADE,
-        related_name="personal_income_categories",
-    )
-    is_active = models.BooleanField(default=True)
-    group = models.PositiveSmallIntegerField(choices=IncomeGroups.choices, null=False, blank=False)
+    objects = IncomeCategoryManager()
 
     class Meta:
+        proxy = True
         verbose_name_plural = "income categories"
 
-    def __str__(self) -> str:
+    def save(self, *args, **kwargs) -> None:
         """
-        Returns string representation of IncomeCategory model instance.
-
-        Returns:
-            str: Custom string representation of instance.
+        Overridden save method to make sure, that category_type is always CategoryType.INCOME.
         """
-        return f"{self.name} ({self.budget.name})"
+        self.category_type = CategoryType.INCOME
+        super().save(*args, **kwargs)
