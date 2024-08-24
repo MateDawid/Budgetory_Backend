@@ -12,9 +12,9 @@ class ExpenseCategory(TransferCategory):
         proxy = True
         verbose_name_plural = "expense categories"
 
-    def save(self, *args, **kwargs) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         """
-        Overridden save method to make sure, that category_type is always CategoryType.INCOME.
+        Magic __init__ method extended with setting EXPENSE value for category_type value.
         """
-        self.category_type = CategoryType.EXPENSE
-        super().save(*args, **kwargs)
+        super().__init__(*args, **kwargs)
+        setattr(self, "category_type", CategoryType.EXPENSE)
