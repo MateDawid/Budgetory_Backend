@@ -6,15 +6,16 @@ from categories.models.transfer_category_model import TransferCategory
 class IncomeCategory(TransferCategory):
     """IncomeCategory proxy model for TransferCategory with type INCOME."""
 
+    category_type = CategoryType.INCOME
     objects = IncomeCategoryManager()
 
     class Meta:
         proxy = True
         verbose_name_plural = "income categories"
 
-    def save(self, *args, **kwargs) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         """
-        Overridden save method to make sure, that category_type is always CategoryType.INCOME.
+        Magic __init__ method extended with setting INCOME value for category_type value.
         """
-        self.category_type = CategoryType.INCOME
-        super().save(*args, **kwargs)
+        super().__init__(*args, **kwargs)
+        setattr(self, "category_type", CategoryType.INCOME)
