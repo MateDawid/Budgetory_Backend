@@ -16,6 +16,7 @@ jobs:
         run: docker compose -f docker-compose-tests.yaml build backend
   tests:
     name: Tests
+    needs: build_image
     runs-on: ubuntu-20.04
     env:
       SECRET_KEY: test_secret_key
@@ -31,6 +32,7 @@ jobs:
   code-quality:
     # Tool settings should be the same as defined in backend/code_quality.ps1 file.
     name: Code quality
+    needs: build_image
     runs-on: ubuntu-20.04
     env:
       DEV: true
