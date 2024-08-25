@@ -1,8 +1,9 @@
-from app_users.models import User
-from app_users.serializers.user_serializer import UserSerializer
 from rest_framework import authentication, generics, permissions
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.request import Request
+
+from app_users.models import User
+from app_users.serializers.user_serializer import UserSerializer
 
 
 class AuthenticatedUserView(generics.RetrieveUpdateAPIView):

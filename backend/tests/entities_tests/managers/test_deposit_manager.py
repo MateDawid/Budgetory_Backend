@@ -1,8 +1,9 @@
 import pytest
-from budgets.models.budget_model import Budget
-from entities.models.entity_model import Entity
 from entities_tests.factories import EntityFactory
 from factory.base import FactoryMetaClass
+
+from budgets.models.budget_model import Budget
+from entities.models.entity_model import Entity
 
 
 @pytest.mark.django_db

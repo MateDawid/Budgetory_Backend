@@ -1,10 +1,11 @@
 from collections import OrderedDict
 
+from django.db.models import Model
+from rest_framework import serializers
+
 from app_users.models import User
 from categories.models.expense_category_model import ExpenseCategory
 from categories.models.income_category_model import IncomeCategory
-from django.db.models import Model
-from rest_framework import serializers
 
 CATEGORY_NAME_ERRORS = {
     "PERSONAL": "Personal {class_name} with given name already exists in Budget for provided owner.",

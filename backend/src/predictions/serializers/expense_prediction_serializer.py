@@ -2,9 +2,10 @@ from collections import OrderedDict
 from decimal import Decimal
 
 from django.db.models import Model
-from predictions.models.expense_prediction_model import ExpensePrediction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+
+from predictions.models.expense_prediction_model import ExpensePrediction
 
 
 class ExpensePredictionSerializer(serializers.ModelSerializer):

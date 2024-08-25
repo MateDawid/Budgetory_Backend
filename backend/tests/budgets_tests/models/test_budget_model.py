@@ -1,8 +1,9 @@
 import pytest
-from budgets.models.budget_model import Budget
 from django.contrib.auth.models import AbstractUser
 from django.db import DataError, IntegrityError
 from factory.base import FactoryMetaClass
+
+from budgets.models.budget_model import Budget
 
 
 @pytest.mark.django_db

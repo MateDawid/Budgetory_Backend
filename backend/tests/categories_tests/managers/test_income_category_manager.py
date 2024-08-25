@@ -1,9 +1,10 @@
 import pytest
+from factory.base import FactoryMetaClass
+
 from budgets.models.budget_model import Budget
 from categories.models import TransferCategory
 from categories.models.category_priority_choices import CategoryPriority
 from categories.models.category_type_choices import CategoryType
-from factory.base import FactoryMetaClass
 
 
 @pytest.mark.django_db
