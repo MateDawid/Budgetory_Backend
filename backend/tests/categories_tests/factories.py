@@ -3,6 +3,7 @@ import random
 import factory.fuzzy
 from app_users_tests.factories import UserFactory
 from budgets_tests.factories import BudgetFactory
+
 from categories.models.category_priority_choices import CategoryPriority
 from categories.models.category_type_choices import CategoryType
 

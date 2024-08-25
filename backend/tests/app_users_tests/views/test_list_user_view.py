@@ -1,11 +1,12 @@
 from typing import Any
 
 import pytest
-from app_users.serializers.user_serializer import UserSerializer
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
+
+from app_users.serializers.user_serializer import UserSerializer
 
 LIST_USER_URL = reverse("app_users:list")
 

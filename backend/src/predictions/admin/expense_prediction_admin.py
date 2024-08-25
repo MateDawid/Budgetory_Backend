@@ -1,4 +1,5 @@
 from django.contrib import admin
+
 from predictions.models.expense_prediction_model import ExpensePrediction
 
 

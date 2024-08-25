@@ -1,4 +1,5 @@
 from django.db import models
+
 from entities.managers.deposit_manager import DepositManager
 
 

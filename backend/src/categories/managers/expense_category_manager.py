@@ -1,6 +1,7 @@
-from categories.models.category_type_choices import CategoryType
 from django.db import models
 from django.db.models import Model, QuerySet
+
+from categories.models.category_type_choices import CategoryType
 
 
 class ExpenseCategoryManager(models.Manager):

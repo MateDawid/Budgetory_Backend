@@ -1,5 +1,6 @@
 from django.db.models import QuerySet
 from django_filters import rest_framework as filters
+
 from predictions.models.expense_prediction_model import ExpensePrediction
 
 

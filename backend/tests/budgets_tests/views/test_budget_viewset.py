@@ -12,6 +12,13 @@ Tests for BudgetViewSet:
 from typing import Any
 
 import pytest
+from django.contrib.auth.models import AbstractUser
+from django.db.models import Q
+from django.urls import reverse
+from factory.base import FactoryMetaClass
+from rest_framework import status
+from rest_framework.test import APIClient
+
 from budgets.models.budget_model import Budget
 from budgets.serializers.budget_serializer import BudgetSerializer
 from categories.budget_defaults import (
@@ -19,12 +26,6 @@ from categories.budget_defaults import (
     DEFAULT_INCOME_CATEGORIES,
 )
 from categories.models import ExpenseCategory, IncomeCategory
-from django.contrib.auth.models import AbstractUser
-from django.db.models import Q
-from django.urls import reverse
-from factory.base import FactoryMetaClass
-from rest_framework import status
-from rest_framework.test import APIClient
 
 BUDGETS_URL = reverse("budgets:budget-list")
 OWNED_BUDGETS_URL = reverse("budgets:budget-owned")

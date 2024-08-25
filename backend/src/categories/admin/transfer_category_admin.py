@@ -1,5 +1,6 @@
-from categories.models.transfer_category_model import TransferCategory
 from django.contrib import admin
+
+from categories.models.transfer_category_model import TransferCategory
 
 
 @admin.register(TransferCategory)

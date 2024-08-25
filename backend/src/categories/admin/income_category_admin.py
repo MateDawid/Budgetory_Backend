@@ -1,5 +1,6 @@
-from categories.models.income_category_model import IncomeCategory
 from django.contrib import admin
+
+from categories.models.income_category_model import IncomeCategory
 
 
 @admin.register(IncomeCategory)

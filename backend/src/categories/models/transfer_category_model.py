@@ -1,10 +1,11 @@
+from django.conf import settings
+from django.db import models
+from django.db.models import CheckConstraint, Q, UniqueConstraint
+
 from categories.managers.expense_category_manager import ExpenseCategoryManager
 from categories.managers.income_category_manager import IncomeCategoryManager
 from categories.models.category_priority_choices import CategoryPriority
 from categories.models.category_type_choices import CategoryType
-from django.conf import settings
-from django.db import models
-from django.db.models import CheckConstraint, Q, UniqueConstraint
 
 
 class TransferCategory(models.Model):

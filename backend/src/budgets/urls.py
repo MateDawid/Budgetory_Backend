@@ -1,9 +1,10 @@
+from django.urls import include, path
+
 from app_infrastructure.routers import AppNestedRouter, AppRouter
 from budgets.views.budget_viewset import BudgetViewSet
 from budgets.views.budgeting_period_viewset import BudgetingPeriodViewSet
 from categories.views.expense_category_viewset import ExpenseCategoryViewSet
 from categories.views.income_category_viewset import IncomeCategoryViewSet
-from django.urls import include, path
 from entities.views.deposit_viewset import DepositViewSet
 from entities.views.entity_viewset import EntityViewSet
 from predictions.views.expense_prediction_viewset import ExpensePredictionViewSet

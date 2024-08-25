@@ -1,14 +1,15 @@
 from typing import Any
 
 import pytest
-from budgets.models.budget_model import Budget
-from categories.models import ExpenseCategory
-from categories.serializers.expense_category_serializer import ExpenseCategorySerializer
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
 from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
+
+from budgets.models.budget_model import Budget
+from categories.models import ExpenseCategory
+from categories.serializers.expense_category_serializer import ExpenseCategorySerializer
 
 
 def expense_category_url(budget_id: int):
