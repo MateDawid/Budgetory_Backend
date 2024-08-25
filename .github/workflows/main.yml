@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       DEV: true
+      SECRET_KEY: test_secret_key
+      DB_USER: budget_api
+      DB_PASSWORD: budget_api
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,10 +35,6 @@ jobs:
     name: Tests
     needs: code_quality
     runs-on: ubuntu-20.04
-    env:
-      SECRET_KEY: test_secret_key
-      DB_USER: budget_api
-      DB_PASSWORD: budget_api
     steps:
       - name: Checkout
         uses: actions/checkout@v4
