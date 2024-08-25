@@ -12,11 +12,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Build image
-        run: docker compose -f docker-compose-tests.yaml build backend
+      - name: Start image
+        run: docker compose -f docker-compose-tests.yaml up backend
+  code_quality:
+    # Tool settings should be the same as defined in backend/code_quality.ps1 file.
+    name: Code quality
+    needs: build_image
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run black
+        run: docker compose -f docker-compose-tests.yaml run backend sh -c "black . --line-length=120 --check"
+      - name: Run isort
+        run: docker compose -f docker-compose-tests.yaml run backend sh -c "isort . --check-only --profile black"
+      - name: Run flake8
+        run: docker compose -f docker-compose-tests.yaml run backend sh -c "flake8 ."
   tests:
     name: Tests
-    needs: build_image
+    needs: code_quality
     runs-on: ubuntu-20.04
     env:
       SECRET_KEY: test_secret_key
@@ -26,27 +40,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Test
-        run: docker compose -f docker-compose-tests.yaml run --rm backend sh -c "python src/manage.py wait_for_db && pytest"
-      - name: Cleanup
-        run: docker compose down
-  code-quality:
-    # Tool settings should be the same as defined in backend/code_quality.ps1 file.
-    name: Code quality
-    needs: build_image
-    runs-on: ubuntu-20.04
-    env:
-      DEV: true
-      SECRET_KEY: test_secret_key
-      DB_USER: budget_api
-      DB_PASSWORD: budget_api
+        run: docker compose -f docker-compose-tests.yaml run backend sh -c "python src/manage.py wait_for_db && pytest"
+  cleanup:
+    name: Tests
+    needs:
+      - code_quality
+      - tests
+    if: always()
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Run black
-        run: docker compose -f docker-compose-tests.yaml run --rm backend sh -c "black . --line-length=120 --check"
-      - name: Run isort
-        run: docker compose -f docker-compose-tests.yaml run --rm backend sh -c "isort . --check-only --profile black"
-      - name: Run flake8
-        run: docker compose -f docker-compose-tests.yaml run --rm backend sh -c "flake8 ."
-      - name: Cleanup
-        run: docker compose down
+      - name: Test
+        run: docker compose rm -s -f -v
