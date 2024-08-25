@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: "Checkout"
         uses: actions/checkout@v4
+      - name: "Build image"
+        run: docker compose -f docker-compose-tests.yaml build backend
       - name: "[Code quality] black"
         run: docker compose -f docker-compose-tests.yaml run backend sh -c "black . --line-length=120 --check"
       - name: "[Code quality] isort"
