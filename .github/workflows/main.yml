@@ -12,8 +12,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Start image
-        run: docker compose -f docker-compose-tests.yaml up backend
+      - name: Build image
+        run: docker compose -f docker-compose-tests.yaml build backend
   code_quality:
     # Tool settings should be the same as defined in backend/code_quality.ps1 file.
     name: Code quality
