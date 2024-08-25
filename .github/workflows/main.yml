@@ -19,12 +19,13 @@ jobs:
       - name: "Build image"
         run: docker compose -f docker-compose-tests.yaml build backend
       - name: "[Code quality] black"
-        run: docker compose -f docker-compose-tests.yaml run backend sh -c "black . --line-length=120 --check"
+        run: docker compose -f docker-compose-tests.yaml run backend -rm sh -c "black . --line-length=120 --check"
       - name: "[Code quality] isort"
-        run: docker compose -f docker-compose-tests.yaml run backend sh -c "isort . --check-only --profile black"
+        run: docker compose -f docker-compose-tests.yaml run backend -rm sh -c "isort . --check-only --profile black"
       - name: "[Code quality] flake8"
-        run: docker compose -f docker-compose-tests.yaml run backend sh -c "flake8 ."
+        run: docker compose -f docker-compose-tests.yaml run backend -rm sh -c "flake8 ."
       - name: "[Tests] pytest"
-        run: docker compose -f docker-compose-tests.yaml run backend sh -c "python src/manage.py wait_for_db && pytest"
+        run: docker compose -f docker-compose-tests.yaml run backend -rm sh -c "python src/manage.py wait_for_db && pytest"
       - name: "Cleanup"
+        if: always()
         run: docker compose rm -s -f -v
