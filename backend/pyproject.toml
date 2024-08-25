@@ -24,6 +24,9 @@ pytest = "^7.4.0"
 pytest-cov = "^4.1.0"
 pytest-django = "^4.5.2"
 pytest-factoryboy = "^2.5.1"
+black = "^24.8.0"
+flake8 = "^7.1.1"
+isort = "^5.13.2"
 
 [tool.pytest.ini_options]
 minversion = "7.4.0"
