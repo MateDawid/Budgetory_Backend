@@ -1,86 +1,174 @@
 import pytest
-from budgets.models.budget_model import Budget
-from categories.models import IncomeCategory
-from django.db import DataError
-from factory.base import FactoryMetaClass
+from django.core.exceptions import ValidationError
+from django.db import DataError, IntegrityError
+
+from budgets.models import Budget
+from categories.models.category_priority_choices import CategoryPriority
+from categories.models.category_type_choices import CategoryType
+from categories.models.income_category_model import IncomeCategory
 
 
 @pytest.mark.django_db
 class TestIncomeCategoryModel:
-    """Tests for IncomeCategory model"""
+    """Tests for IncomeCategory proxy model"""
 
     PAYLOAD = {
         "name": "Salary",
-        "description": "Category for salaries.",
+        "description": "Category for salary.",
         "is_active": True,
-        "group": IncomeCategory.IncomeGroups.REGULAR,
+        "priority": CategoryPriority.INCOMES,
     }
 
-    def test_create_income_category_without_owner(self, budget: Budget):
+    def test_save_income_category(self, budget: Budget):
         """
-        GIVEN: Budget model instance in database. Valid payload for IncomeCategory without owner provided.
-        WHEN: IncomeCategory instance create attempt with valid data.
-        THEN: IncomeCategory model instance exists in database with given data.
-        """
-        category = IncomeCategory.objects.create(budget=budget, **self.PAYLOAD)
-
-        for key in self.PAYLOAD:
-            assert getattr(category, key) == self.PAYLOAD[key]
-        assert category.owner is None
-        assert IncomeCategory.objects.filter(budget=budget).count() == 1
-        assert str(category) == f"{category.name} ({category.budget.name})"
-
-    def test_create_category_with_owner(self, user_factory: FactoryMetaClass, budget: Budget):
-        """
-        GIVEN: Budget model instance in database. Valid payload for IncomeCategory with owner provided.
-        WHEN: IncomeCategory instance create attempt with valid data.
+        GIVEN: Budget model instance in database.
+        WHEN: IncomeCategory instance save attempt with valid data.
         THEN: IncomeCategory model instance exists in database with given data.
         """
         payload = self.PAYLOAD.copy()
-        category_owner = user_factory()
-        budget.members.add(category_owner)
-        payload["owner"] = category_owner
 
-        category = IncomeCategory.objects.create(budget=budget, **payload)
+        income_category = IncomeCategory(budget=budget, **payload)
+        income_category.full_clean()
+        income_category.save()
+        income_category.refresh_from_db()
 
         for key in payload:
-            if key == "owner":
-                continue
-            assert getattr(category, key) == self.PAYLOAD[key]
-        assert category.owner == category_owner
+            assert getattr(income_category, key) == payload[key]
         assert IncomeCategory.objects.filter(budget=budget).count() == 1
-        assert str(category) == f"{category.name} ({category.budget.name})"
+        assert income_category.category_type == CategoryType.INCOME
+        assert str(income_category) == f"({income_category.category_type.label}) {income_category.name}"
 
-    def test_creating_same_category_for_two_budgets(self, budget_factory: FactoryMetaClass):
+    def test_create_income_category(self, budget: Budget):
         """
-        GIVEN: Two Budget model instances in database.
-        WHEN: Same IncomeCategory instance for different Budgets create attempt with valid data.
-        THEN: Two IncomeCategory model instances existing in database with given data.
+        GIVEN: Budget model instance in database.
+        WHEN: IncomeCategory instance create attempt with valid data.
+        THEN: IncomeCategory model instance exists in database with given data.
         """
-        budget_1 = budget_factory()
-        budget_2 = budget_factory()
         payload = self.PAYLOAD.copy()
-        for budget in (budget_1, budget_2):
-            payload["budget"] = budget
-            IncomeCategory.objects.create(**payload)
 
-        assert IncomeCategory.objects.all().count() == 2
-        assert IncomeCategory.objects.filter(budget=budget_1).count() == 1
-        assert IncomeCategory.objects.filter(budget=budget_2).count() == 1
+        income_category = IncomeCategory.objects.create(budget=budget, **payload)
+
+        for key in payload:
+            assert getattr(income_category, key) == payload[key]
+        assert IncomeCategory.objects.filter(budget=budget).count() == 1
+        assert income_category.category_type == CategoryType.INCOME
+        assert str(income_category) == f"({income_category.category_type.label}) {income_category.name}"
+
+    def test_proper_category_type_on_income_category_save(self, budget: Budget):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: IncomeCategory instance save attempt with category_type=CategoryType.EXPENSE in payload.
+        THEN: IncomeCategory model instance exists in database with category_type=CategoryType.INCOME.
+        """
+        payload = self.PAYLOAD.copy()
+        payload["category_type"] = CategoryType.EXPENSE.value
+
+        income_category = IncomeCategory(budget=budget, **payload)
+        income_category.full_clean()
+        income_category.save()
+
+        assert IncomeCategory.objects.filter(budget=budget).count() == 1
+        assert income_category.category_type == CategoryType.INCOME
+
+    def test_proper_category_type_on_income_category_create(self, budget: Budget):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: IncomeCategory instance create attempt with category_type=CategoryType.EXPENSE in payload.
+        THEN: IncomeCategory model instance exists in database category_type=CategoryType.INCOME.
+        """
+        payload = self.PAYLOAD.copy()
+        payload["category_type"] = CategoryType.EXPENSE.value
+
+        income_category = IncomeCategory.objects.create(budget=budget, **payload)
+
+        assert IncomeCategory.objects.filter(budget=budget).count() == 1
+        assert income_category.category_type == CategoryType.INCOME
 
     @pytest.mark.django_db(transaction=True)
     @pytest.mark.parametrize("field_name", ["name", "description"])
     def test_error_value_too_long(self, budget: Budget, field_name: str):
         """
-        GIVEN: Budget model instance in database.
-        WHEN: IncomeCategory instance create attempt with field value too long.
-        THEN: DataError raised.
+        GIVEN: Budget model instances in database.
+        WHEN: IncomeCategory instance for different Budgets create attempt with field value too long.
+        THEN: ValidationError on .full_clean() or DataError on .create() raised.
         """
         max_length = IncomeCategory._meta.get_field(field_name).max_length
         payload = self.PAYLOAD.copy()
         payload[field_name] = (max_length + 1) * "a"
 
+        # .full_clean() & .save() scenario
+        with pytest.raises(ValidationError) as exc:
+            income_category = IncomeCategory(budget=budget, **payload)
+            income_category.full_clean()
+
+        assert (
+            f"Ensure this value has at most {max_length} characters" in exc.value.error_dict[field_name][0].messages[0]
+        )
+        assert not IncomeCategory.objects.filter(budget=budget).exists()
+
+        # .create() scenario
         with pytest.raises(DataError) as exc:
-            IncomeCategory.objects.create(**payload)
+            IncomeCategory.objects.create(budget=budget, **payload)
+
         assert str(exc.value) == f"value too long for type character varying({max_length})\n"
         assert not IncomeCategory.objects.filter(budget=budget).exists()
+
+    @pytest.mark.django_db(transaction=True)
+    def test_error_not_unique_common_category(self, budget: Budget):
+        """
+        GIVEN: IncomeCategory model instance without owner created in database.
+        WHEN: IncomeCategory instance create attempt without owner violating unique constraint.
+        THEN: ValidationError on .full_clean() or IntegrityError on .create() raised.
+        """
+        payload = self.PAYLOAD.copy()
+        IncomeCategory.objects.create(budget=budget, **payload)
+
+        # .full_clean() & .save() scenario
+        with pytest.raises(ValidationError) as exc:
+            income_category = IncomeCategory(budget=budget, **payload)
+            income_category.full_clean()
+
+        assert (
+            "Constraint “categories_transfercategory_name_unique_when_no_owner” is violated."
+            in exc.value.error_dict["__all__"][0].messages[0]
+        )
+        assert IncomeCategory.objects.filter(budget=budget).count() == 1
+
+        # .create() scenario
+        with pytest.raises(IntegrityError) as exc:
+            IncomeCategory.objects.create(budget=budget, **payload)
+        assert (
+            'duplicate key value violates unique constraint "categories_transfercategory_name_unique_when_no_owner"'
+            in str(exc.value)
+        )
+        assert IncomeCategory.objects.filter(budget=budget).count() == 1
+
+    @pytest.mark.django_db(transaction=True)
+    def test_error_not_unique_personal_category(self, budget: Budget):
+        """
+        GIVEN: IncomeCategory model instance with owner created in database.
+        WHEN: IncomeCategory instance create attempt with owner violating unique constraint.
+        THEN: ValidationError on .full_clean() or IntegrityError on .create() raised.
+        """
+        payload = self.PAYLOAD.copy()
+        IncomeCategory.objects.create(budget=budget, owner=budget.owner, **payload)
+
+        # .full_clean() & .save() scenario
+        with pytest.raises(ValidationError) as exc:
+            income_category = IncomeCategory(budget=budget, owner=budget.owner, **payload)
+            income_category.full_clean()
+
+        assert (
+            "Constraint “categories_transfercategory_name_unique_for_owner” is violated."
+            in exc.value.error_dict["__all__"][0].messages[0]
+        )
+        assert IncomeCategory.objects.filter(budget=budget).count() == 1
+
+        # .create() scenario
+        with pytest.raises(IntegrityError) as exc:
+            IncomeCategory.objects.create(budget=budget, owner=budget.owner, **payload)
+        assert (
+            'duplicate key value violates unique constraint "categories_transfercategory_name_unique_for_owner"'
+            in str(exc.value)
+        )
+        assert IncomeCategory.objects.filter(budget=budget).count() == 1
