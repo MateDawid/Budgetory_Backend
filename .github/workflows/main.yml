@@ -20,6 +20,7 @@ jobs:
       - name: Cleanup
         run: docker compose down
   code-quality:
+    # Tool settings should be the same as defined in backend/code_quality.ps1 file.
     name: Code quality
     runs-on: ubuntu-20.04
     env:
@@ -31,7 +32,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Run black
-        run: docker compose -f docker-compose-tests.yaml run --rm backend sh -c "black . --check"
+        run: docker compose -f docker-compose-tests.yaml run --rm backend sh -c "black . --line-length=120 --check"
       - name: Run isort
         run: docker compose -f docker-compose-tests.yaml run --rm backend sh -c "isort . --check-only --profile black"
       - name: Run flake8
