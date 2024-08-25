@@ -13,6 +13,7 @@ services:
     volumes:
       - ./backend/tests:/backend/tests
       - ./backend/.secrets.yaml:/backend/.secrets.yaml
+      - ./backend/.flake8:/backend/.flake8
     ports:
       - 8000:8000
     environment:
