@@ -4,8 +4,9 @@ name: Main
 on: [push]
 
 jobs:
-  build_image:
-    name: Build image
+  quality_and_tests:
+    # Code quality tools settings should be the same as defined in backend/code_quality.ps1 file.
+    name: Code quality and tests
     runs-on: ubuntu-20.04
     env:
       DEV: true
@@ -15,40 +16,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Build image
-        run: docker compose -f docker-compose-tests.yaml build backend
-  code_quality:
-    # Tool settings should be the same as defined in backend/code_quality.ps1 file.
-    name: Code quality
-    needs: build_image
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Run black
+      - name: [Code quality] black
         run: docker compose -f docker-compose-tests.yaml run backend sh -c "black . --line-length=120 --check"
-      - name: Run isort
+      - name: [Code quality] isort
         run: docker compose -f docker-compose-tests.yaml run backend sh -c "isort . --check-only --profile black"
-      - name: Run flake8
+      - name: [Code quality] flake8
         run: docker compose -f docker-compose-tests.yaml run backend sh -c "flake8 ."
-  tests:
-    name: Tests
-    needs: code_quality
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Test
+      - name: [Tests] pytest
         run: docker compose -f docker-compose-tests.yaml run backend sh -c "python src/manage.py wait_for_db && pytest"
-  cleanup:
-    name: Cleanup
-    needs:
-      - code_quality
-      - tests
-    if: always()
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
       - name: Cleanup
         run: docker compose rm -s -f -v
