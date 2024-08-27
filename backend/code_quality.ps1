@@ -1,9 +1,11 @@
-Write-Output "[Quality check - started]";
+param([String]$path=".")
+
+Write-Output "[Quality check - started in '$path' path]";
 .\venv\Scripts\activate;
 Write-Output "* [black]";
-black . --line-length=120;
+black $path --line-length=120;
 Write-Output "* [isort]";
-isort . --profile black;
+isort $path --profile black;
 Write-Output "* [flake8]";
-flake8 .;
+flake8 $path;
 Write-Output "[Quality check - finished]";
