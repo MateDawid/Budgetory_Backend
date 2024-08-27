@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
+from categories.models import TransferCategory
 from categories.serializers.transfer_category_serializer import (
     TransferCategorySerializer,
 )
@@ -14,10 +15,11 @@ from categories.serializers.transfer_category_serializer import (
 class TransferCategoryViewSet(ModelViewSet):
     """Base view for managing TransferCategories."""
 
-    authentication_classes = [TokenAuthentication]
+    serializer_class = TransferCategorySerializer
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, UserBelongsToBudgetPermission)
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
-    ordering = ("id", "group", "name")
+    ordering = ("id", "category_type", "priority")
 
     def get_queryset(self) -> QuerySet:
         """
@@ -25,7 +27,7 @@ class TransferCategoryViewSet(ModelViewSet):
         Returns:
             QuerySet: Filtered TransferCategory QuerySet.
         """
-        return self.queryset.prefetch_related("owner").filter(budget__pk=self.kwargs.get("budget_pk")).distinct()
+        return TransferCategory.objects.prefetch_related("budget", "owner").filter(budget__pk=self.kwargs.get("budget_pk")).distinct()
 
     def perform_create(self, serializer: TransferCategorySerializer) -> None:
         """
