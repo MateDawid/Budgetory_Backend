@@ -1,11 +1,12 @@
 [flake8]
-max-line-length = 120
 exclude =
-    .git,
-    __pycache__,
-    .pytest_cache
-    htmlcov
-    venv
-    migrations
-    docker
-    wiki
+    .git
+    venv/*
+    */__pycache__/*
+    */.pytest_cache/*
+    */htmlcov/*
+    */migrations/*
+    */docs/*
+    */wiki/*
+    manage.py
+max-line-length = 120
