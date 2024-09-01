@@ -3,11 +3,7 @@ from django.db import DataError, IntegrityError
 from factory.base import FactoryMetaClass
 
 from budgets.models.budget_model import Budget
-from categories.models.transfer_category_model import (
-    CategoryPriority,
-    CategoryType,
-    TransferCategory,
-)
+from categories.models.transfer_category_model import CategoryPriority, CategoryType, TransferCategory
 
 
 @pytest.mark.django_db
