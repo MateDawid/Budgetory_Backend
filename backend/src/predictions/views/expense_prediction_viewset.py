@@ -8,9 +8,7 @@ from rest_framework.viewsets import ModelViewSet
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
 from predictions.filters.expense_prediction_filterset import ExpensePredictionFilterSet
 from predictions.models.expense_prediction_model import ExpensePrediction
-from predictions.serializers.expense_prediction_serializer import (
-    ExpensePredictionSerializer,
-)
+from predictions.serializers.expense_prediction_serializer import ExpensePredictionSerializer
 
 
 class ExpensePredictionViewSet(ModelViewSet):

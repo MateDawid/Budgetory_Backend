@@ -6,9 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
-from categories.serializers.transfer_category_serializer import (
-    TransferCategorySerializer,
-)
+from categories.serializers.transfer_category_serializer import TransferCategorySerializer
 
 
 class TransferCategoryViewSet(ModelViewSet):

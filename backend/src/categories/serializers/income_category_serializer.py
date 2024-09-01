@@ -1,7 +1,5 @@
 from categories.models.income_category_model import IncomeCategory
-from categories.serializers.transfer_category_serializer import (
-    TransferCategorySerializer,
-)
+from categories.serializers.transfer_category_serializer import TransferCategorySerializer
 
 
 class IncomeCategorySerializer(TransferCategorySerializer):

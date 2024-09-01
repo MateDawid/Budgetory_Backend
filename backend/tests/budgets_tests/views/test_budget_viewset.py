@@ -21,10 +21,7 @@ from rest_framework.test import APIClient
 
 from budgets.models.budget_model import Budget
 from budgets.serializers.budget_serializer import BudgetSerializer
-from categories.budget_defaults import (
-    DEFAULT_EXPENSE_CATEGORIES,
-    DEFAULT_INCOME_CATEGORIES,
-)
+from categories.budget_defaults import DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES
 from categories.models import ExpenseCategory, IncomeCategory
 
 BUDGETS_URL = reverse("budgets:budget-list")
