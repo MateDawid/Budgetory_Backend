@@ -26,6 +26,8 @@ jobs:
         run: docker compose -f docker-compose-tests.yaml run backend sh -c "flake8 ."
       - name: "[Code quality] bandit"
         run: docker compose -f docker-compose-tests.yaml run backend sh -c "bandit -c pyproject.toml -r ."
+      - name: "[Code quality] safety"
+        run: docker compose -f docker-compose-tests.yaml run backend sh -c "safety check"
       - name: "[Tests] pytest"
         run: docker compose -f docker-compose-tests.yaml run backend sh -c "python src/manage.py wait_for_db && pytest"
       - name: "Cleanup"
