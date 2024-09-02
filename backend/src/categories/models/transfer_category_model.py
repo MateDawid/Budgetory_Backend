@@ -4,8 +4,7 @@ from django.db.models import CheckConstraint, Q, UniqueConstraint
 
 from categories.managers.expense_category_manager import ExpenseCategoryManager
 from categories.managers.income_category_manager import IncomeCategoryManager
-from categories.models.category_priority_choices import CategoryPriority
-from categories.models.category_type_choices import CategoryType
+from categories.models.transfer_category_choices import CategoryType, ExpenseCategoryPriority, IncomeCategoryPriority
 
 
 class TransferCategory(models.Model):
@@ -23,7 +22,9 @@ class TransferCategory(models.Model):
     )
     is_active = models.BooleanField(default=True)
     category_type = models.PositiveSmallIntegerField(choices=CategoryType.choices, null=False, blank=False)
-    priority = models.PositiveSmallIntegerField(choices=CategoryPriority.choices, null=False, blank=False)
+    priority = models.PositiveSmallIntegerField(
+        choices=ExpenseCategoryPriority.choices + IncomeCategoryPriority.choices, null=False, blank=False
+    )
 
     objects = models.Manager()
     income_categories = IncomeCategoryManager()
@@ -35,8 +36,8 @@ class TransferCategory(models.Model):
             CheckConstraint(
                 name="%(app_label)s_%(class)s_correct_priority_for_type",
                 check=(
-                    Q(category_type=CategoryType.INCOME, priority=CategoryPriority.INCOMES)
-                    | (Q(category_type=CategoryType.EXPENSE) & ~Q(priority=CategoryPriority.INCOMES))
+                    Q(category_type=CategoryType.INCOME, priority__in=IncomeCategoryPriority.values)
+                    | Q(category_type=CategoryType.EXPENSE, priority__in=ExpenseCategoryPriority.values)
                 ),
             ),
             UniqueConstraint(

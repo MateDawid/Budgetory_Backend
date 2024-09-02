@@ -1,5 +1,5 @@
 from categories.managers.income_category_manager import IncomeCategoryManager
-from categories.models.category_type_choices import CategoryType
+from categories.models.transfer_category_choices import CategoryType
 from categories.models.transfer_category_model import TransferCategory
 
 
