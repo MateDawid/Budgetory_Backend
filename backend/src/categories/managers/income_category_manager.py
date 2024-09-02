@@ -1,8 +1,7 @@
 from django.db import models
 from django.db.models import Model, QuerySet
 
-from categories.models.category_priority_choices import CategoryPriority
-from categories.models.category_type_choices import CategoryType
+from categories.models.transfer_category_choices import CategoryType
 
 
 class IncomeCategoryManager(models.Manager):
@@ -19,22 +18,20 @@ class IncomeCategoryManager(models.Manager):
 
     def create(self, *args, **kwargs) -> Model:
         """
-        Sets category_type value to INCOME and priority value to INCOMES before instance creation.
+        Sets category_type value to INCOME before instance creation.
 
         Returns:
             Model: Deposit model instance.
         """
         kwargs["category_type"] = CategoryType.INCOME
-        kwargs["priority"] = CategoryPriority.INCOMES
         return super().create(*args, **kwargs)
 
     def update(self, *args, **kwargs) -> int:
         """
-        Sets category_type value to INCOME and priority value to INCOMES before instance update.
+        Sets category_type value to INCOME before instance update.
 
         Returns:
             int: Number of affected database rows.
         """
         kwargs["category_type"] = CategoryType.INCOME
-        kwargs["priority"] = CategoryPriority.INCOMES
-        return super().update(**kwargs)
+        return super().update(*args, **kwargs)
