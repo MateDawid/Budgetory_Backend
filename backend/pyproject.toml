@@ -16,6 +16,7 @@ psycopg2-binary = "2.9.6"
 drf-nested-routers = "^0.93.5"
 django-filter = "^24.2"
 django-debug-toolbar = "^4.4.2"
+pip = "^24.2"
 
 
 [tool.poetry.group.dev.dependencies]
