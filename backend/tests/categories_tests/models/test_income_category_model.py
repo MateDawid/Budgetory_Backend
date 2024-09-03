@@ -3,9 +3,8 @@ from django.core.exceptions import ValidationError
 from django.db import DataError, IntegrityError
 
 from budgets.models import Budget
-from categories.models.category_priority_choices import CategoryPriority
-from categories.models.category_type_choices import CategoryType
 from categories.models.income_category_model import IncomeCategory
+from categories.models.transfer_category_choices import CategoryType, IncomeCategoryPriority
 
 
 @pytest.mark.django_db
@@ -16,7 +15,7 @@ class TestIncomeCategoryModel:
         "name": "Salary",
         "description": "Category for salary.",
         "is_active": True,
-        "priority": CategoryPriority.INCOMES,
+        "priority": IncomeCategoryPriority.REGULAR,
     }
 
     def test_save_income_category(self, budget: Budget):

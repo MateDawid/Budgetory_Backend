@@ -4,8 +4,8 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError as DRFValidationError
 
-from categories.models import TransferCategory
 from categories.models.income_category_model import IncomeCategory
+from categories.models.transfer_category_model import TransferCategory
 
 ERROR_MESSAGES = {
     "Constraint “categories_transfercategory_name_unique_when_no_owner” is violated.": "Common category with given "
