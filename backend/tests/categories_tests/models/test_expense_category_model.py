@@ -3,9 +3,8 @@ from django.core.exceptions import ValidationError
 from django.db import DataError, IntegrityError
 
 from budgets.models import Budget
-from categories.models.category_priority_choices import CategoryPriority
-from categories.models.category_type_choices import CategoryType
 from categories.models.expense_category_model import ExpenseCategory
+from categories.models.transfer_category_choices import CategoryType, ExpenseCategoryPriority
 
 
 @pytest.mark.django_db
@@ -16,7 +15,7 @@ class TestExpenseCategoryModel:
         "name": "Bills",
         "description": "Category for bills.",
         "is_active": True,
-        "priority": CategoryPriority.MOST_IMPORTANT,
+        "priority": ExpenseCategoryPriority.MOST_IMPORTANT,
     }
 
     def test_save_expense_category(self, budget: Budget):

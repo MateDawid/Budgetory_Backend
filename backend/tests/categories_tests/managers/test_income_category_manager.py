@@ -2,9 +2,8 @@ import pytest
 from factory.base import FactoryMetaClass
 
 from budgets.models.budget_model import Budget
-from categories.models import TransferCategory
-from categories.models.category_priority_choices import CategoryPriority
-from categories.models.category_type_choices import CategoryType
+from categories.models.transfer_category_choices import CategoryType, IncomeCategoryPriority
+from categories.models.transfer_category_model import TransferCategory
 
 
 @pytest.mark.django_db
@@ -42,7 +41,7 @@ class TestIncomeCategoryManager:
             "description": "Category for income.",
             "is_active": True,
             "category_type": CategoryType.EXPENSE,  # intentionally set to CategoryType.EXPENSE
-            "priority": CategoryPriority.INCOMES,
+            "priority": IncomeCategoryPriority.REGULAR,
         }
 
         category = TransferCategory.income_categories.create(**payload)

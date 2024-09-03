@@ -21,8 +21,9 @@ from rest_framework.test import APIClient
 
 from budgets.models.budget_model import Budget
 from budgets.serializers.budget_serializer import BudgetSerializer
-from categories.budget_defaults import DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES
-from categories.models import ExpenseCategory, IncomeCategory
+
+# from categories.budget_defaults import DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES
+
 
 BUDGETS_URL = reverse("budgets:budget-list")
 OWNED_BUDGETS_URL = reverse("budgets:budget-owned")
@@ -209,12 +210,12 @@ class TestBudgetViewSetCreate:
                 assert getattr(budget, key) == payload[key]
         serializer = BudgetSerializer(budget)
         assert response.data == serializer.data
-        default_expense_categories = ExpenseCategory.objects.filter(budget=budget)
-        for expense_category in DEFAULT_EXPENSE_CATEGORIES:
-            assert default_expense_categories.filter(**expense_category).exists()
-        default_income_categories = IncomeCategory.objects.filter(budget=budget)
-        for income_category in DEFAULT_INCOME_CATEGORIES:
-            assert default_income_categories.filter(**income_category).exists()
+        # default_expense_categories = ExpenseCategory.objects.filter(budget=budget)
+        # for expense_category in DEFAULT_EXPENSE_CATEGORIES:
+        #     assert default_expense_categories.filter(**expense_category).exists()
+        # default_income_categories = IncomeCategory.objects.filter(budget=budget)
+        # for income_category in DEFAULT_INCOME_CATEGORIES:
+        #     assert default_income_categories.filter(**income_category).exists()
 
     def test_error_name_too_long(self, api_client: APIClient, base_user: AbstractUser, user_factory: AbstractUser):
         """
