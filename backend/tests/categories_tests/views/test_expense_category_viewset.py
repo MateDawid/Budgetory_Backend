@@ -273,68 +273,69 @@ class TestExpenseCategoryViewSetCreate:
         assert ExpenseCategory.objects.filter(budget=budget).count() == 1
 
 
-# @pytest.mark.django_db
-# class TestExpenseCategoryViewSetDetail:
-#     """Tests for detail view on ExpenseCategoryViewSet."""
-#
-#     def test_auth_required(self, api_client: APIClient, category: ExpenseCategory):
-#         """
-#         GIVEN: Budget model instance in database.
-#         WHEN: ExpenseCategoryViewSet detail view called with GET without authentication.
-#         THEN: Unauthorized HTTP 401 returned.
-#         """
-#         res = api_client.get(category_detail_url(category.budget.id, category.id), data={})
-#
-#         assert res.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_user_not_budget_member(
-#         self,
-#         api_client: APIClient,
-#         user_factory: FactoryMetaClass,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Budget model instance in database.
-#         WHEN: ExpenseCategoryViewSet detail view called with GET by User not belonging to given Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         budget_owner = user_factory()
-#         other_user = user_factory()
-#         budget = budget_factory(owner=budget_owner)
-#         category = expense_category_factory(budget=budget)
-#         api_client.force_authenticate(other_user)
-#         url = category_detail_url(category.budget.id, category.id)
-#
-#         response = api_client.get(url)
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data["detail"] == "User does not have access to Budget."
-#
-#     def test_get_category_details(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: ExpenseCategory instance for Budget created in database.
-#         WHEN: ExpenseCategoryViewSet detail view called by User belonging to Budget.
-#         THEN: HTTP 200, ExpenseCategory details returned.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         category = expense_category_factory(budget=budget)
-#         api_client.force_authenticate(base_user)
-#         url = category_detail_url(budget.id, category.id)
-#
-#         response = api_client.get(url)
-#         serializer = ExpenseCategorySerializer(category)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data == serializer.data
-#
-#
+@pytest.mark.django_db
+class TestExpenseCategoryViewSetDetail:
+    """Tests for detail view on ExpenseCategoryViewSet."""
+
+    def test_auth_required(self, api_client: APIClient, expense_category_factory: FactoryMetaClass):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: ExpenseCategoryViewSet detail view called with GET without authentication.
+        THEN: Unauthorized HTTP 401 returned.
+        """
+        category = expense_category_factory()
+        res = api_client.get(category_detail_url(category.budget.id, category.id))
+
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_user_not_budget_member(
+        self,
+        api_client: APIClient,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: ExpenseCategoryViewSet detail view called with GET by User not belonging to given Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        budget_owner = user_factory()
+        other_user = user_factory()
+        budget = budget_factory(owner=budget_owner)
+        category = expense_category_factory(budget=budget)
+        api_client.force_authenticate(other_user)
+        url = category_detail_url(category.budget.id, category.id)
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data["detail"] == "User does not have access to Budget."
+
+    def test_get_category_details(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: ExpenseCategory instance for Budget created in database.
+        WHEN: ExpenseCategoryViewSet detail view called by User belonging to Budget.
+        THEN: HTTP 200, ExpenseCategory details returned.
+        """
+        budget = budget_factory(owner=base_user)
+        category = expense_category_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        url = category_detail_url(budget.id, category.id)
+
+        response = api_client.get(url)
+        serializer = ExpenseCategorySerializer(category)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == serializer.data
+
+
 # @pytest.mark.django_db
 # class TestExpenseCategoryViewSetUpdate:
 #     """Tests for update view on ExpenseCategoryViewSet."""
