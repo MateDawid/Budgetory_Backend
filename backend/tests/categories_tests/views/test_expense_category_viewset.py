@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
@@ -7,6 +9,7 @@ from rest_framework.test import APIClient
 
 from budgets.models.budget_model import Budget
 from categories.models.expense_category_model import ExpenseCategory
+from categories.models.transfer_category_choices import ExpenseCategoryPriority
 from categories.models.transfer_category_model import TransferCategory
 from categories.serializers.expense_category_serializer import ExpenseCategorySerializer
 
@@ -132,137 +135,144 @@ class TestExpenseCategoryViewSetList:
         assert income_category.id not in [category["id"] for category in response.data["results"]]
 
 
-# @pytest.mark.django_db
-# class TestExpenseCategoryViewSetCreate:
-#     """Tests for create ExpenseCategory on ExpenseCategoryViewSet."""
-#
-#     PAYLOAD = {
-#         "name": "Supermarket",
-#         "description": "Supermarket in which I buy food.",
-#         "is_active": True,
-#         "is_deposit": False,
-#     }
-#
-#     def test_auth_required(self, api_client: APIClient, budget: Budget):
-#         """
-#         GIVEN: Budget model instance in database.
-#         WHEN: ExpenseCategoryViewSet list view called with POST without authentication.
-#         THEN: Unauthorized HTTP 401 returned.
-#         """
-#         res = api_client.post(categories_url(budget.id), data={})
-#
-#         assert res.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_user_not_budget_member(
-#         self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Budget model instance in database.
-#         WHEN: ExpenseCategoryViewSet list view called with POST by User not belonging to given Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         budget_owner = user_factory()
-#         other_user = user_factory()
-#         budget = budget_factory(owner=budget_owner)
-#         api_client.force_authenticate(other_user)
-#
-#         response = api_client.post(categories_url(budget.id), data={})
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data["detail"] == "User does not have access to Budget."
-#
-#     def test_create_single_category(
-#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Valid payload prepared for ExpenseCategory.
-#         WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with valid payload.
-#         THEN: ExpenseCategory object created in database with given payload
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#
-#         response = api_client.post(categories_url(budget.id), self.PAYLOAD)
-#
-#         assert response.status_code == status.HTTP_201_CREATED
-#         assert ExpenseCategory.objects.filter(budget=budget).count() == 1
-#         assert ExpenseCategory.deposits.filter(budget=budget).count() == 0
-#         category = ExpenseCategory.objects.get(id=response.data["id"])
-#         assert category.budget == budget
-#         for key in self.PAYLOAD:
-#             assert getattr(category, key) == self.PAYLOAD[key]
-#         serializer = ExpenseCategorySerializer(category)
-#         assert response.data == serializer.data
-#
-#     def test_create_single_deposit(
-#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Valid payload with is_deposit=True prepared for ExpenseCategory.
-#         WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with valid payload.
-#         THEN: ExpenseCategory object with is_deposit=True created in database with given payload
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#         payload = self.PAYLOAD.copy()
-#         payload["is_deposit"] = True
-#
-#         response = api_client.post(categories_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_201_CREATED
-#         assert ExpenseCategory.objects.filter(budget=budget).count() == 1
-#         assert ExpenseCategory.deposits.filter(budget=budget).count() == 1
-#         category = ExpenseCategory.objects.get(id=response.data["id"])
-#         assert category.budget == budget
-#         for key in payload:
-#             assert getattr(category, key) == payload[key]
-#         serializer = ExpenseCategorySerializer(category)
-#         assert response.data == serializer.data
-#
-#     @pytest.mark.parametrize("field_name", ["name", "description"])
-#     def test_error_value_too_long(
-#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass, field_name: str
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Payload for ExpenseCategory with field value too long.
-#         WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with invalid payload.
-#         THEN: Bad request HTTP 400 returned. ExpenseCategory not created in database.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#         max_length = ExpenseCategory._meta.get_field(field_name).max_length
-#         payload = self.PAYLOAD.copy()
-#         payload[field_name] = (max_length + 1) * "a"
-#
-#         response = api_client.post(categories_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert field_name in response.data["detail"]
-#         assert response.data["detail"][field_name][0] == f"Ensure this field has no more
-#         than {max_length} characters."
-#         assert not ExpenseCategory.objects.filter(budget=budget).exists()
-#
-#     def test_error_name_already_used(
-#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Valid payload for ExpenseCategory.
-#         WHEN: ExpenseCategoryViewSet called twice with POST by User belonging to Budget with the same payload.
-#         THEN: Bad request HTTP 400 returned. Only one ExpenseCategory created in database.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#         payload = self.PAYLOAD.copy()
-#
-#         api_client.post(categories_url(budget.id), payload)
-#         response = api_client.post(categories_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert "name" in response.data["detail"]
-#         assert response.data["detail"]["name"][0] == "ExpenseCategory with given name already exists in Budget."
-#         assert ExpenseCategory.objects.filter(budget=budget).count() == 1
-#
-#
+@pytest.mark.django_db
+class TestExpenseCategoryViewSetCreate:
+    """Tests for create ExpenseCategory on ExpenseCategoryViewSet."""
+
+    PAYLOAD: dict[str, Any] = {
+        "name": "Bills",
+        "description": "Expenses for bills.",
+        "is_active": True,
+        "priority": ExpenseCategoryPriority.MOST_IMPORTANT,
+    }
+
+    def test_auth_required(self, api_client: APIClient, budget: Budget):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: ExpenseCategoryViewSet list view called with POST without authentication.
+        THEN: Unauthorized HTTP 401 returned.
+        """
+        res = api_client.post(categories_url(budget.id), data={})
+
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_user_not_budget_member(
+        self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: ExpenseCategoryViewSet list view called with POST by User not belonging to given Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        budget_owner = user_factory()
+        other_user = user_factory()
+        budget = budget_factory(owner=budget_owner)
+        api_client.force_authenticate(other_user)
+
+        response = api_client.post(categories_url(budget.id), data={})
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data["detail"] == "User does not have access to Budget."
+
+    def test_create_single_category_without_owner(
+        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Budget instance created in database. Valid payload prepared for ExpenseCategory.
+        WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with valid payload.
+        THEN: ExpenseCategory object created in database with given payload
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.post(categories_url(budget.id), data=self.PAYLOAD)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert ExpenseCategory.objects.filter(budget=budget).count() == 1
+        assert TransferCategory.expense_categories.filter(budget=budget).count() == 1
+        assert TransferCategory.income_categories.filter(budget=budget).count() == 0
+        category = ExpenseCategory.objects.get(id=response.data["id"])
+        assert category.budget == budget
+        for key in self.PAYLOAD:
+            assert getattr(category, key) == self.PAYLOAD[key]
+        serializer = ExpenseCategorySerializer(category)
+        assert response.data == serializer.data
+
+    def test_create_single_category_with_owner(
+        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Budget instance created in database. Valid payload prepared for ExpenseCategory.
+        WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with valid payload.
+        THEN: ExpenseCategory object created in database with given payload
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["owner"] = base_user.id
+
+        response = api_client.post(categories_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert ExpenseCategory.objects.filter(budget=budget).count() == 1
+        assert TransferCategory.expense_categories.filter(budget=budget).count() == 1
+        assert TransferCategory.income_categories.filter(budget=budget).count() == 0
+        category = ExpenseCategory.objects.get(id=response.data["id"])
+        assert category.budget == budget
+        for key in payload:
+            if key == "owner":
+                continue
+            assert getattr(category, key) == self.PAYLOAD[key]
+        assert category.owner == base_user
+        serializer = ExpenseCategorySerializer(category)
+        assert response.data == serializer.data
+
+    @pytest.mark.parametrize("field_name", ["name", "description"])
+    def test_error_value_too_long(
+        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass, field_name: str
+    ):
+        """
+        GIVEN: Budget instance created in database. Payload for ExpenseCategory with field value too long.
+        WHEN: ExpenseCategoryViewSet called with POST by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. ExpenseCategory not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        max_length = ExpenseCategory._meta.get_field(field_name).max_length
+        payload = self.PAYLOAD.copy()
+        payload[field_name] = (max_length + 1) * "a"
+
+        response = api_client.post(categories_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert field_name in response.data["detail"]
+        assert response.data["detail"][field_name][0] == f"Ensure this field has no more than {max_length} characters."
+        assert not ExpenseCategory.objects.filter(budget=budget).exists()
+
+    def test_error_name_already_used(
+        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Budget instance created in database. Valid payload for ExpenseCategory.
+        WHEN: ExpenseCategoryViewSet called twice with POST by User belonging to Budget with the same payload.
+        THEN: Bad request HTTP 400 returned. Only one ExpenseCategory created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+
+        api_client.post(categories_url(budget.id), payload)
+        response = api_client.post(categories_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "non_field_errors" in response.data["detail"]
+        assert (
+            response.data["detail"]["non_field_errors"][0]
+            == "Common Expense Category with given name already exists in Budget."
+        )
+        assert ExpenseCategory.objects.filter(budget=budget).count() == 1
+
+
 # @pytest.mark.django_db
 # class TestExpenseCategoryViewSetDetail:
 #     """Tests for detail view on ExpenseCategoryViewSet."""
