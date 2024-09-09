@@ -12,6 +12,7 @@ from categories.models.expense_category_model import ExpenseCategory
 from categories.models.transfer_category_choices import ExpenseCategoryPriority
 from categories.models.transfer_category_model import TransferCategory
 from categories.serializers.expense_category_serializer import ExpenseCategorySerializer
+from categories.serializers.transfer_category_serializer import PRIORITY_CHOICES_MAPPING
 
 
 def categories_url(budget_id):
@@ -249,7 +250,7 @@ class TestExpenseCategoryViewSetCreate:
         assert response.data["detail"][field_name][0] == f"Ensure this field has no more than {max_length} characters."
         assert not ExpenseCategory.objects.filter(budget=budget).exists()
 
-    def test_error_name_already_used(
+    def test_error_name_already_used_for_common_category(
         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
     ):
         """
@@ -265,12 +266,54 @@ class TestExpenseCategoryViewSetCreate:
         response = api_client.post(categories_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "non_field_errors" in response.data["detail"]
+        assert "name" in response.data["detail"]
+        assert response.data["detail"]["name"][0] == "Common ExpenseCategory with given name already exists in Budget."
+        assert ExpenseCategory.objects.filter(budget=budget).count() == 1
+
+    def test_error_name_already_used_for_personal_category(
+        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Budget instance created in database. Valid payload for ExpenseCategory.
+        WHEN: ExpenseCategoryViewSet called twice with POST by User belonging to Budget with the same payload.
+        THEN: Bad request HTTP 400 returned. Only one ExpenseCategory created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["owner"] = base_user.id
+
+        api_client.post(categories_url(budget.id), payload)
+        response = api_client.post(categories_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "name" in response.data["detail"]
         assert (
-            response.data["detail"]["non_field_errors"][0]
-            == "Common Expense Category with given name already exists in Budget."
+            response.data["detail"]["name"][0] == "Personal ExpenseCategory with given name already exists in Budget."
         )
         assert ExpenseCategory.objects.filter(budget=budget).count() == 1
+
+    def test_error_invalid_priority(
+        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Budget instance created in database. Valid payload for ExpenseCategory.
+        WHEN: ExpenseCategoryViewSet called twice with POST by User belonging to Budget with the same payload.
+        THEN: Bad request HTTP 400 returned. Only one ExpenseCategory created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        valid_choices = PRIORITY_CHOICES_MAPPING[ExpenseCategory]
+        payload["priority"] = valid_choices[-1] + 1
+
+        api_client.post(categories_url(budget.id), payload)
+        response = api_client.post(categories_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "priority" in response.data["detail"]
+        assert response.data["detail"]["priority"][0] == f"\"{payload['priority']}\" is not a valid choice."
+        assert not ExpenseCategory.objects.filter(budget=budget).exists()
 
 
 @pytest.mark.django_db
@@ -336,87 +379,89 @@ class TestExpenseCategoryViewSetDetail:
         assert response.data == serializer.data
 
 
-# @pytest.mark.django_db
-# class TestExpenseCategoryViewSetUpdate:
-#     """Tests for update view on ExpenseCategoryViewSet."""
-#
-#     PAYLOAD = {
-#         "name": "Supermarket",
-#         "description": "Supermarket in which I buy food.",
-#         "is_active": True,
-#         "is_deposit": False,
-#     }
-#
-#     def test_auth_required(self, api_client: APIClient, category: ExpenseCategory):
-#         """
-#         GIVEN: Budget model instance in database.
-#         WHEN: ExpenseCategoryViewSet detail view called with PATCH without authentication.
-#         THEN: Unauthorized HTTP 401 returned.
-#         """
-#         res = api_client.patch(category_detail_url(category.budget.id, category.id), data={})
-#
-#         assert res.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_user_not_budget_member(
-#         self,
-#         api_client: APIClient,
-#         user_factory: FactoryMetaClass,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Budget model instance in database.
-#         WHEN: ExpenseCategoryViewSet detail view called with PATCH by User not belonging to given Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         budget_owner = user_factory()
-#         other_user = user_factory()
-#         budget = budget_factory(owner=budget_owner)
-#         category = expense_category_factory(budget=budget)
-#         api_client.force_authenticate(other_user)
-#         url = category_detail_url(category.budget.id, category.id)
-#
-#         response = api_client.patch(url)
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data["detail"] == "User does not have access to Budget."
-#
-#     @pytest.mark.parametrize(
-#         "param, value",
-#         [
-#             ("name", "New name"),
-#             ("description", "New description"),
-#             ("is_active", not PAYLOAD["is_active"]),
-#             ("is_deposit", not PAYLOAD["is_deposit"]),
-#         ],
-#     )
-#     @pytest.mark.django_db
-#     def test_category_update(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_factory: FactoryMetaClass,
-#         param: str,
-#         value: Any,
-#     ):
-#         """
-#         GIVEN: ExpenseCategory instance for Budget created in database.
-#         WHEN: ExpenseCategoryViewSet detail view called with PATCH by User belonging to Budget.
-#         THEN: HTTP 200, ExpenseCategory updated.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         category = expense_category_factory(budget=budget, **self.PAYLOAD)
-#         update_payload = {param: value}
-#         api_client.force_authenticate(base_user)
-#         url = category_detail_url(budget.id, category.id)
-#
-#         response = api_client.patch(url, update_payload)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         category.refresh_from_db()
-#         assert getattr(category, param) == update_payload[param]
-#
+@pytest.mark.django_db
+class TestExpenseCategoryViewSetUpdate:
+    """Tests for update view on ExpenseCategoryViewSet."""
+
+    PAYLOAD: dict[str, Any] = {
+        "name": "Bills",
+        "description": "Expenses for bills.",
+        "is_active": True,
+        "priority": ExpenseCategoryPriority.MOST_IMPORTANT,
+    }
+
+    def test_auth_required(self, api_client: APIClient, expense_category_factory: FactoryMetaClass):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: ExpenseCategoryViewSet detail view called with PATCH without authentication.
+        THEN: Unauthorized HTTP 401 returned.
+        """
+        category = expense_category_factory()
+        res = api_client.patch(category_detail_url(category.budget.id, category.id), data={})
+
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_user_not_budget_member(
+        self,
+        api_client: APIClient,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: ExpenseCategoryViewSet detail view called with PATCH by User not belonging to given Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        budget_owner = user_factory()
+        other_user = user_factory()
+        budget = budget_factory(owner=budget_owner)
+        category = expense_category_factory(budget=budget)
+        api_client.force_authenticate(other_user)
+        url = category_detail_url(category.budget.id, category.id)
+
+        response = api_client.patch(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data["detail"] == "User does not have access to Budget."
+
+    @pytest.mark.parametrize(
+        "param, value",
+        [
+            ("name", "New name"),
+            ("description", "New description"),
+            ("is_active", not PAYLOAD["is_active"]),
+            ("priority", ExpenseCategoryPriority.DEBTS),
+        ],
+    )
+    @pytest.mark.django_db
+    def test_category_update(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+        param: str,
+        value: Any,
+    ):
+        """
+        GIVEN: ExpenseCategory instance for Budget created in database.
+        WHEN: ExpenseCategoryViewSet detail view called with PATCH by User belonging to Budget.
+        THEN: HTTP 200, ExpenseCategory updated.
+        """
+        budget = budget_factory(owner=base_user)
+        category = expense_category_factory(budget=budget, **self.PAYLOAD)
+        update_payload = {param: value}
+        api_client.force_authenticate(base_user)
+        url = category_detail_url(budget.id, category.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        category.refresh_from_db()
+        assert getattr(category, param) == update_payload[param]
+
+
 #     @pytest.mark.parametrize("param, value", [("name", PAYLOAD["name"])])
 #     def test_error_on_category_update(
 #         self,
