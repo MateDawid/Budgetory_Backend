@@ -14,6 +14,15 @@ class TransferCategorySerializer(serializers.ModelSerializer):
         read_only_fields: tuple[str] = ("id",)
 
     def validate_name(self, name: str):
+        """
+        Validates "name" param.
+
+        Args:
+            name [str]: Input param.
+
+        Returns:
+            str: Validated param.
+        """
         payload = {"budget_id": getattr(self.context.get("view"), "kwargs", {}).get("budget_pk"), "name": name}
         if owner_id := (self.initial_data.get("owner") or getattr(self.instance, "owner", None)):
             payload["owner"] = owner_id
@@ -23,6 +32,3 @@ class TransferCategorySerializer(serializers.ModelSerializer):
                 f"name already exists in Budget."
             )
         return name
-
-    # def validate_priority(self, priority: str):
-    #     return priority
