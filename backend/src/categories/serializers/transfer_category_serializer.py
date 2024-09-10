@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from django.db.models import Model
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -13,22 +15,25 @@ class TransferCategorySerializer(serializers.ModelSerializer):
         fields: tuple[str] = ("id", "name", "description", "is_active", "owner", "priority")
         read_only_fields: tuple[str] = ("id",)
 
-    def validate_name(self, name: str):
+    def validate(self, attrs: OrderedDict) -> OrderedDict:
         """
-        Validates "name" param.
+        Validates input parameters.
 
         Args:
-            name [str]: Input param.
+            attrs [OrderedDict]: Input parameters.
 
         Returns:
-            str: Validated param.
+            attrs: Validated parameters.
         """
-        payload = {"budget_id": getattr(self.context.get("view"), "kwargs", {}).get("budget_pk"), "name": name}
-        if owner_id := (self.initial_data.get("owner") or getattr(self.instance, "owner", None)):
+        payload = {
+            "budget_id": getattr(self.context.get("view"), "kwargs", {}).get("budget_pk"),
+            "name": attrs.get("name") or getattr(self.instance, "name", None),
+        }
+        if owner_id := (attrs.get("owner") or getattr(self.instance, "owner", None)):
             payload["owner"] = owner_id
-        if self.Meta.model.objects.filter(**payload).exists():
+        if self.Meta.model.objects.filter(**payload).exclude(id=getattr(self.instance, "id", None)).exists():
             raise ValidationError(
                 f"{'Personal' if owner_id else 'Common'} {self.Meta.model.__name__} with given "
                 f"name already exists in Budget."
             )
-        return name
+        return attrs
