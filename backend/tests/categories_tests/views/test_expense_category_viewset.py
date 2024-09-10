@@ -9,7 +9,7 @@ from rest_framework.test import APIClient
 
 from budgets.models.budget_model import Budget
 from categories.models.expense_category_model import ExpenseCategory
-from categories.models.transfer_category_choices import ExpenseCategoryPriority
+from categories.models.transfer_category_choices import CategoryType, ExpenseCategoryPriority
 from categories.models.transfer_category_model import TransferCategory
 from categories.serializers.expense_category_serializer import ExpenseCategorySerializer
 
@@ -579,65 +579,66 @@ class TestExpenseCategoryViewSetUpdate:
         assert category.owner == base_user
 
 
-# @pytest.mark.django_db
-# class TestExpenseCategoryViewSetDelete:
-#     """Tests for delete ExpenseCategory on ExpenseCategoryViewSet."""
-#
-#     def test_auth_required(self, api_client: APIClient, base_user: AbstractUser,
-#     expense_category_factory: FactoryMetaClass):
-#         """
-#         GIVEN: ExpenseCategory instance for Budget created in database.
-#         WHEN: ExpenseCategoryViewSet detail view called with PUT without authentication.
-#         THEN: Unauthorized HTTP 401.
-#         """
-#         category = expense_category_factory()
-#         url = category_detail_url(category.budget.id, category.id)
-#
-#         response = api_client.delete(url)
-#
-#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_user_not_budget_member(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: ExpenseCategory instance for Budget created in database.
-#         WHEN: ExpenseCategoryViewSet detail view called with DELETE by User not belonging to Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         category = expense_category_factory(budget=budget_factory())
-#         api_client.force_authenticate(base_user)
-#         url = category_detail_url(category.budget.id, category.id)
-#
-#         response = api_client.delete(url)
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data["detail"] == "User does not have access to Budget."
-#
-#     def test_delete_category(
-#         self,
-#         api_client: APIClient,
-#         base_user: Any,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: ExpenseCategory instance for Budget created in database.
-#         WHEN: ExpenseCategoryViewSet detail view called with DELETE by User belonging to Budget.
-#         THEN: No content HTTP 204, ExpenseCategory deleted.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         category = expense_category_factory(budget=budget)
-#         api_client.force_authenticate(base_user)
-#         url = category_detail_url(budget.id, category.id)
-#
-#         assert budget.categories.all().count() == 1
-#
-#         response = api_client.delete(url)
-#
-#         assert response.status_code == status.HTTP_204_NO_CONTENT
-#         assert not budget.categories.all().exists()
+@pytest.mark.django_db
+class TestExpenseCategoryViewSetDelete:
+    """Tests for delete ExpenseCategory on ExpenseCategoryViewSet."""
+
+    def test_auth_required(
+        self, api_client: APIClient, base_user: AbstractUser, expense_category_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: ExpenseCategory instance for Budget created in database.
+        WHEN: ExpenseCategoryViewSet detail view called with PUT without authentication.
+        THEN: Unauthorized HTTP 401.
+        """
+        category = expense_category_factory()
+        url = category_detail_url(category.budget.id, category.id)
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_user_not_budget_member(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: ExpenseCategory instance for Budget created in database.
+        WHEN: ExpenseCategoryViewSet detail view called with DELETE by User not belonging to Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        category = expense_category_factory(budget=budget_factory())
+        api_client.force_authenticate(base_user)
+        url = category_detail_url(category.budget.id, category.id)
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data["detail"] == "User does not have access to Budget."
+
+    def test_delete_category(
+        self,
+        api_client: APIClient,
+        base_user: Any,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: ExpenseCategory instance for Budget created in database.
+        WHEN: ExpenseCategoryViewSet detail view called with DELETE by User belonging to Budget.
+        THEN: No content HTTP 204, ExpenseCategory deleted.
+        """
+        budget = budget_factory(owner=base_user)
+        category = expense_category_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        url = category_detail_url(budget.id, category.id)
+
+        assert budget.transfer_categories.filter(category_type=CategoryType.EXPENSE).count() == 1
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not budget.transfer_categories.filter(category_type=CategoryType.EXPENSE).exists()
