@@ -12,7 +12,6 @@ from categories.models.expense_category_model import ExpenseCategory
 from categories.models.transfer_category_choices import ExpenseCategoryPriority
 from categories.models.transfer_category_model import TransferCategory
 from categories.serializers.expense_category_serializer import ExpenseCategorySerializer
-from categories.serializers.transfer_category_serializer import PRIORITY_CHOICES_MAPPING
 
 
 def categories_url(budget_id):
@@ -266,8 +265,11 @@ class TestExpenseCategoryViewSetCreate:
         response = api_client.post(categories_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "name" in response.data["detail"]
-        assert response.data["detail"]["name"][0] == "Common ExpenseCategory with given name already exists in Budget."
+        assert "non_field_errors" in response.data["detail"]
+        assert (
+            response.data["detail"]["non_field_errors"][0]
+            == "Common ExpenseCategory with given name already exists in Budget."
+        )
         assert ExpenseCategory.objects.filter(budget=budget).count() == 1
 
     def test_error_name_already_used_for_personal_category(
@@ -287,9 +289,10 @@ class TestExpenseCategoryViewSetCreate:
         response = api_client.post(categories_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "name" in response.data["detail"]
+        assert "non_field_errors" in response.data["detail"]
         assert (
-            response.data["detail"]["name"][0] == "Personal ExpenseCategory with given name already exists in Budget."
+            response.data["detail"]["non_field_errors"][0]
+            == "Personal ExpenseCategory with given name already exists in Budget."
         )
         assert ExpenseCategory.objects.filter(budget=budget).count() == 1
 
@@ -304,8 +307,7 @@ class TestExpenseCategoryViewSetCreate:
         budget = budget_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
-        valid_choices = PRIORITY_CHOICES_MAPPING[ExpenseCategory]
-        payload["priority"] = valid_choices[-1] + 1
+        payload["priority"] = ExpenseCategoryPriority.values[-1] + 1
 
         api_client.post(categories_url(budget.id), payload)
         response = api_client.post(categories_url(budget.id), payload)
@@ -461,69 +463,122 @@ class TestExpenseCategoryViewSetUpdate:
         category.refresh_from_db()
         assert getattr(category, param) == update_payload[param]
 
+    def test_error_on_category_name_update(
+        self,
+        api_client: APIClient,
+        base_user: Any,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two ExpenseCategory instances for Budget created in database. Update payload with invalid "name" value.
+        WHEN: ExpenseCategoryViewSet detail view called with PATCH by User belonging to Budget
+        with invalid payload.
+        THEN: Bad request HTTP 400, ExpenseCategory not updated.
+        """
+        budget = budget_factory(owner=base_user)
+        category_1 = expense_category_factory(budget=budget, **self.PAYLOAD, owner=None)
+        category_2 = expense_category_factory(budget=budget, owner=None)
+        old_value = getattr(category_2, "name")
+        update_payload = {"name": category_1.name}
+        api_client.force_authenticate(base_user)
+        url = category_detail_url(budget.id, category_2.id)
 
-#     @pytest.mark.parametrize("param, value", [("name", PAYLOAD["name"])])
-#     def test_error_on_category_update(
-#         self,
-#         api_client: APIClient,
-#         base_user: Any,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_factory: FactoryMetaClass,
-#         param: str,
-#         value: Any,
-#     ):
-#         """
-#         GIVEN: ExpenseCategory instance for Budget created in database. Update payload with invalid value.
-#         WHEN: ExpenseCategoryViewSet detail view called with PATCH by User belonging to Budget
-#         with invalid payload.
-#         THEN: Bad request HTTP 400, ExpenseCategory not updated.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         expense_category_factory(budget=budget, **self.PAYLOAD)
-#         category = expense_category_factory(budget=budget)
-#         old_value = getattr(category, param)
-#         update_payload = {param: value}
-#         api_client.force_authenticate(base_user)
-#         url = category_detail_url(budget.id, category.id)
-#
-#         response = api_client.patch(url, update_payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         category.refresh_from_db()
-#         assert getattr(category, param) == old_value
-#
-#     def test_category_update_many_fields(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         expense_category_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: ExpenseCategory instance for Budget created in database. Valid payload with many params.
-#         WHEN: ExpenseCategoryViewSet detail endpoint called with PATCH.
-#         THEN: HTTP 200 returned. ExpenseCategory updated in database.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#         payload = self.PAYLOAD.copy()
-#         category = expense_category_factory(budget=budget, **payload)
-#         update_payload = {
-#             "name": "Some market",
-#             "description": "Updated supermarket description.",
-#             "is_active": False,
-#             "is_deposit": True,
-#         }
-#         url = category_detail_url(category.budget.id, category.id)
-#
-#         response = api_client.patch(url, update_payload)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         category.refresh_from_db()
-#         for param, value in update_payload.items():
-#             assert getattr(category, param) == value
-#
-#
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        category_2.refresh_from_db()
+        assert getattr(category_2, "name") == old_value
+
+    def test_error_on_category_priority_update(
+        self,
+        api_client: APIClient,
+        base_user: Any,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two ExpenseCategory instances for Budget created in database. Update payload with invalid "priority"
+        value.
+        WHEN: ExpenseCategoryViewSet detail view called with PATCH by User belonging to Budget
+        with invalid payload.
+        THEN: Bad request HTTP 400, ExpenseCategory not updated.
+        """
+        budget = budget_factory(owner=base_user)
+        category = expense_category_factory(budget=budget, owner=None)
+        old_value = getattr(category, "priority")
+        update_payload = {"priority": ExpenseCategoryPriority.values[-1] + 1}
+        api_client.force_authenticate(base_user)
+        url = category_detail_url(budget.id, category.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        category.refresh_from_db()
+        assert getattr(category, "priority") == old_value
+
+    def test_error_on_category_owner_update(
+        self,
+        api_client: APIClient,
+        base_user: Any,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two ExpenseCategory instances for Budget created in database with the same names but different owners.
+        WHEN: ExpenseCategoryViewSet detail view called with PATCH by User belonging to Budget
+        with "owner" in payload, ending up with two the same ExpenseCategory name for single owner.
+        THEN: Bad request HTTP 400, ExpenseCategory not updated.
+        """
+        budget = budget_factory(owner=base_user)
+        category_1 = expense_category_factory(budget=budget, **self.PAYLOAD, owner=base_user)
+        category_2 = expense_category_factory(budget=budget, **self.PAYLOAD, owner=None)
+        update_payload = {"owner": category_1.owner.id}
+        api_client.force_authenticate(base_user)
+        url = category_detail_url(budget.id, category_2.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_category_update_many_fields(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: ExpenseCategory instance for Budget created in database. Valid payload with many params.
+        WHEN: ExpenseCategoryViewSet detail endpoint called with PATCH.
+        THEN: HTTP 200 returned. ExpenseCategory updated in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["owner"] = None
+        category = expense_category_factory(budget=budget, **payload)
+        update_payload = {
+            "name": "Some expense",
+            "description": "Updated expense description.",
+            "is_active": True,
+            "priority": ExpenseCategoryPriority.DEBTS,
+            "owner": base_user.pk,
+        }
+
+        url = category_detail_url(category.budget.id, category.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        category.refresh_from_db()
+        for param, value in update_payload.items():
+            if param == "owner":
+                continue
+            assert getattr(category, param) == value
+        assert category.owner == base_user
+
+
 # @pytest.mark.django_db
 # class TestExpenseCategoryViewSetDelete:
 #     """Tests for delete ExpenseCategory on ExpenseCategoryViewSet."""
