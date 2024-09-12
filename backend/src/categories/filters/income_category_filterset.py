@@ -1,9 +1,10 @@
+from django_filters import rest_framework as filters
+
 from categories.filters.transfer_category_filterset import TransferCategoryFilterSet
-from categories.models.income_category_model import IncomeCategory
+from categories.models.transfer_category_choices import IncomeCategoryPriority
 
 
 class IncomeCategoryFilterSet(TransferCategoryFilterSet):
     """FilterSet for /income_categories endpoint."""
 
-    class Meta(TransferCategoryFilterSet.Meta):
-        model = IncomeCategory
+    priority = filters.ChoiceFilter(choices=IncomeCategoryPriority.choices)
