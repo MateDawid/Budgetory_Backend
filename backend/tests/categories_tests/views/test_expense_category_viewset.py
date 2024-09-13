@@ -173,39 +173,69 @@ class TestExpenseCategoryViewSetList:
         assert len(response.data["results"]) == len(serializer.data) == len(categories) == 5
         assert response.data["results"] == serializer.data
 
-    # def test_get_predictions_list_filtered_by_period_id(
-    #         self,
-    #         api_client: APIClient,
-    #         base_user: AbstractUser,
-    #         budget_factory: FactoryMetaClass,
-    #         budgeting_period_factory: FactoryMetaClass,
-    #         expense_prediction_factory: FactoryMetaClass,
-    # ):
-    #     """
-    #     GIVEN: Two ExpenseCategory objects for single Budget.
-    #     WHEN: The ExpenseCategoryViewSet list view is called with period_id filter.
-    #     THEN: Response must contain all ExpenseCategory existing in database assigned to Budget matching given
-    #     period_id value.
-    #     """
-    #     budget = budget_factory(owner=base_user)
-    #     period = budgeting_period_factory(budget=budget, name="Test name")
-    #     prediction = expense_prediction_factory(budget=budget, period=period)
-    #     expense_prediction_factory(budget=budget, period=budgeting_period_factory(budget=budget, name="Other period"))
-    #     api_client.force_authenticate(base_user)
-    #
-    #     response = api_client.get(expense_prediction_url(budget.id), data={"period_id": period.id})
-    #
-    #     assert response.status_code == status.HTTP_200_OK
-    #     assert ExpensePrediction.objects.all().count() == 2
-    #     predictions = ExpensePrediction.objects.filter(period__budget=budget, period__id=period.id)
-    #     serializer = ExpensePredictionSerializer(
-    #         predictions,
-    #         many=True,
-    #     )
-    #     assert response.data["results"] and serializer.data
-    #     assert len(response.data["results"]) == len(serializer.data) == predictions.count() == 1
-    #     assert response.data["results"] == serializer.data
-    #     assert response.data["results"][0]["id"] == prediction.id
+    @pytest.mark.parametrize(
+        "filter_value",
+        (
+            "Some category",
+            "SOME CATEGORY",
+            "some category",
+            "SoMe CaTeGoRy",
+            "Some",
+            "some",
+            "SOME",
+            "Category",
+            "category",
+            "CATEGORY",
+        ),
+    )
+    def test_get_categories_list_filtered_by_name(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+        filter_value: str,
+    ):
+        """
+        GIVEN: Two ExpenseCategory objects for single Budget.
+        WHEN: The ExpenseCategoryViewSet list view is called with period_id filter.
+        THEN: Response must contain all ExpenseCategory existing in database assigned to Budget matching given
+        period_id value.
+        """
+        budget = budget_factory(owner=base_user)
+        matching_category = expense_category_factory(budget=budget, name="Some category")
+        expense_category_factory(budget=budget, name="Other one")
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(categories_url(budget.id), data={"name": filter_value})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert ExpenseCategory.objects.all().count() == 2
+        categories = ExpenseCategory.objects.filter(budget=budget, id=matching_category.id)
+        serializer = ExpenseCategorySerializer(
+            categories,
+            many=True,
+        )
+        assert response.data["results"] and serializer.data
+        assert len(response.data["results"]) == len(serializer.data) == categories.count() == 1
+        assert response.data["results"] == serializer.data
+        assert response.data["results"][0]["id"] == matching_category.id
+
+    def test_get_categories_list_filtered_by_common_only(self):
+        # TODO
+        assert False
+
+    def test_get_categories_list_filtered_by_owner(self):
+        # TODO
+        assert False
+
+    def test_get_categories_list_filtered_by_is_active(self):
+        # TODO
+        assert False
+
+    def test_get_categories_list_filtered_by_priority(self):
+        # TODO
+        assert False
 
 
 @pytest.mark.django_db
