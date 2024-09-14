@@ -1,4 +1,5 @@
 from django.contrib import admin
+
 from entities.models.deposit_model import Deposit
 
 

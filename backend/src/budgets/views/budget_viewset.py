@@ -1,10 +1,3 @@
-from budgets.models import Budget
-from budgets.serializers.budget_serializer import BudgetSerializer
-from categories.budget_defaults import (
-    DEFAULT_EXPENSE_CATEGORIES,
-    DEFAULT_INCOME_CATEGORIES,
-)
-from categories.models import ExpenseCategory, IncomeCategory
 from django.db import transaction
 from django.db.models import QuerySet
 from rest_framework.authentication import TokenAuthentication
@@ -13,6 +6,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+
+from budgets.models import Budget
+from budgets.serializers.budget_serializer import BudgetSerializer
 
 
 class BudgetViewSet(ModelViewSet):
@@ -73,8 +69,8 @@ class BudgetViewSet(ModelViewSet):
             serializer [BudgetSerializer]: Budget data serializer.
         """
         with transaction.atomic():
-            budget = serializer.save(owner=self.request.user)
-            for expense_category in DEFAULT_EXPENSE_CATEGORIES:
-                ExpenseCategory.objects.create(budget=budget, **expense_category)
-            for income_category in DEFAULT_INCOME_CATEGORIES:
-                IncomeCategory.objects.create(budget=budget, **income_category)
+            serializer.save(owner=self.request.user)
+            # for expense_category in DEFAULT_EXPENSE_CATEGORIES:
+            #     ExpenseCategory.objects.create(budget=budget, **expense_category)
+            # for income_category in DEFAULT_INCOME_CATEGORIES:
+            #     IncomeCategory.objects.create(budget=budget, **income_category)

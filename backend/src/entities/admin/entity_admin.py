@@ -1,4 +1,5 @@
 from django.contrib import admin
+
 from entities.models.entity_model import Entity
 
 

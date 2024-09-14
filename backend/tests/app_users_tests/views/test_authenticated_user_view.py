@@ -1,8 +1,9 @@
 import pytest
-from app_users.models import User
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
+
+from app_users.models import User
 
 ME_URL = reverse("app_users:me")
 

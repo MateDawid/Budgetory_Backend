@@ -5,12 +5,11 @@ import pytest
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
 from factory.base import FactoryMetaClass
-from predictions.models.expense_prediction_model import ExpensePrediction
-from predictions.serializers.expense_prediction_serializer import (
-    ExpensePredictionSerializer,
-)
 from rest_framework import status
 from rest_framework.test import APIClient
+
+from predictions.models.expense_prediction_model import ExpensePrediction
+from predictions.serializers.expense_prediction_serializer import ExpensePredictionSerializer
 
 
 def expense_prediction_url(budget_id: int):

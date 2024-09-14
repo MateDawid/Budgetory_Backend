@@ -1,6 +1,7 @@
-from app_users.serializers.auth_token_serializer import AuthTokenSerializer
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.settings import api_settings
+
+from app_users.serializers.auth_token_serializer import AuthTokenSerializer
 
 
 class CreateTokenView(ObtainAuthToken):

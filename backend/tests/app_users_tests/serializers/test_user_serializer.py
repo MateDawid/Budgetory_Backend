@@ -1,8 +1,9 @@
 import pytest
-from app_users.serializers.user_serializer import UserSerializer
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from rest_framework.exceptions import ValidationError
+
+from app_users.serializers.user_serializer import UserSerializer
 
 
 @pytest.mark.django_db
