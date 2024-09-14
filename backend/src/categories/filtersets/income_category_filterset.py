@@ -1,6 +1,6 @@
 from django_filters import rest_framework as filters
 
-from categories.filters.transfer_category_filterset import TransferCategoryFilterSet
+from categories.filtersets.transfer_category_filterset import TransferCategoryFilterSet
 from categories.models.transfer_category_choices import IncomeCategoryPriority
 
 
