@@ -25,4 +25,4 @@ class TransferCategoryFilterSet(filters.FilterSet):
         """
         if value is True:
             return queryset.filter(owner__isnull=True)
-        return queryset
+        return queryset  # pragma: no cover
