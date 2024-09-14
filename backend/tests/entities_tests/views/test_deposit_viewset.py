@@ -1,14 +1,15 @@
 from typing import Any
 
 import pytest
-from budgets.models.budget_model import Budget
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
-from entities.models.deposit_model import Deposit
-from entities.serializers.deposit_serializer import DepositSerializer
 from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
+
+from budgets.models.budget_model import Budget
+from entities.models.deposit_model import Deposit
+from entities.serializers.deposit_serializer import DepositSerializer
 
 
 def deposits_url(budget_id):

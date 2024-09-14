@@ -1,10 +1,11 @@
 from decimal import Decimal
 
 import pytest
-from budgets.models.budget_model import Budget
 from django.core.exceptions import ValidationError
 from django.db import DataError, IntegrityError
 from factory.base import FactoryMetaClass
+
+from budgets.models.budget_model import Budget
 from predictions.models.expense_prediction_model import ExpensePrediction
 
 

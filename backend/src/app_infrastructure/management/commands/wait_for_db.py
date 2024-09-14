@@ -1,6 +1,7 @@
 """
 Django command to wait for the database to be available
 """
+
 import time
 
 from django.core.management.base import BaseCommand
