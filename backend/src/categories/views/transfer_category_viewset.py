@@ -16,7 +16,7 @@ class TransferCategoryViewSet(ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, UserBelongsToBudgetPermission)
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
-    ordering = ("id", "name", "owner__name", "priority")
+    ordering_fields = ("id", "name", "owner__name", "priority")
 
     def get_queryset(self) -> QuerySet:
         """

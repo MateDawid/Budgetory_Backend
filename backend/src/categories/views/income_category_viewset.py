@@ -8,5 +8,3 @@ class IncomeCategoryViewSet(TransferCategoryViewSet):
 
     serializer_class = IncomeCategorySerializer
     filterset_class = IncomeCategoryFilterSet
-    ordering = ("id", "name", "owner", "priority")
-    ordering_fields = ("id", "name", "owner__name", "priority")
