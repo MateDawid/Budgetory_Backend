@@ -8,5 +8,3 @@ class ExpenseCategoryViewSet(TransferCategoryViewSet):
 
     serializer_class = ExpenseCategorySerializer
     filterset_class = ExpenseCategoryFilterSet
-    ordering = ("id", "name", "owner", "priority")
-    ordering_fields = ("id", "name", "owner__name", "priority")
