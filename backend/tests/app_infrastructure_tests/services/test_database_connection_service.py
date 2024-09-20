@@ -14,8 +14,8 @@ class TestDatabaseConnectionService:
         patched_check_connection: MagicMock,
     ):
         """
-        GIVEN: Database account with password created.
-        WHEN: Calling  DbConnector.check_connection() when connection is healthy.
+        GIVEN: Mocked side effect from DatabaseConnectionService.check_connection method for connection ensured.
+        WHEN: Calling  DatabaseConnectionService.is_connection_alive() when connection is healthy.
         THEN: Method returns True.
         """
         patched_check_connection.side_effect = [None]
@@ -30,9 +30,9 @@ class TestDatabaseConnectionService:
         patched_check_connection: MagicMock,
     ):
         """
-        GIVEN: Database account with password created.
-        WHEN: Calling  DbConnector.check_connection() with not healthy connection and error not
-        handled by .handle_db_error() method.
+        GIVEN: Mocked DatabaseError as side effect from DatabaseConnectionService.check_connection method for
+        violated connection.
+        WHEN: Calling  DatabaseConnectionService.is_connection_alive() when connection is violated.
         THEN: Method returns False.
         """
         patched_check_connection.side_effect = [DatabaseError]
