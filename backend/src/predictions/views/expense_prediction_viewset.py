@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
-from predictions.filters.expense_prediction_filterset import ExpensePredictionFilterSet
+from predictions.filtersets.expense_prediction_filterset import ExpensePredictionFilterSet
 from predictions.models.expense_prediction_model import ExpensePrediction
 from predictions.serializers.expense_prediction_serializer import ExpensePredictionSerializer
 
@@ -23,8 +23,7 @@ class ExpensePredictionViewSet(ModelViewSet):
     serializer_class = ExpensePredictionSerializer
 
     filterset_class = ExpensePredictionFilterSet
-    ordering = ("period__name", "category__name")
-    ordering_fields = ("id", "period", "category", "period__name", "category__name")
+    ordering_fields = ("id", "period__name", "category__priority", "category__name", "value")
 
     def get_queryset(self) -> QuerySet:
         """

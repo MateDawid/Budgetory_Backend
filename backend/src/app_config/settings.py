@@ -73,9 +73,11 @@ WSGI_APPLICATION = "app_config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+DATABASE_CONNECTION_ALIAS = "default"
+
 if "DATABASE" in settings:
     DATABASES = {
-        "default": {
+        DATABASE_CONNECTION_ALIAS: {
             "ENGINE": settings.DATABASE.ENGINE,
             "NAME": settings.DATABASE.NAME,
             "USER": settings.DATABASE.USER,
@@ -86,7 +88,7 @@ if "DATABASE" in settings:
     }
 else:
     DATABASES = {  # pragma: no cover
-        "default": {
+        DATABASE_CONNECTION_ALIAS: {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": BASE_DIR / "db.sqlite3",
         }
@@ -162,18 +164,34 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "default_formatter": {"format": '[%(asctime)s] "%(levelname)s: %(message)s"', "datefmt": "%d/%b/%Y %H:%M:%S"},
+        "standard_formatter": {
+            "format": "%(asctime)s [%(process)d] [%(levelname)s] [API]: %(message)s",
+            "datefmt": "[%Y-%m-%d %H:%M:%S %z]",
+        },
+        "db_connection_formatter": {
+            "format": "%(asctime)s [%(process)d] [%(levelname)s] [DATABASE]: %(message)s",
+            "datefmt": "[%Y-%m-%d %H:%M:%S %z]",
+        },
     },
     "handlers": {
-        "default_stream_handler": {
+        "default": {
             "level": "INFO",
             "class": "logging.StreamHandler",
-            "formatter": "default_formatter",
+            "formatter": "standard_formatter",
+        },
+        "db_connection_handler": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "db_connection_formatter",
         },
     },
     "loggers": {
-        "default_logger": {
-            "handlers": ["default_stream_handler"],
+        "default": {
+            "handlers": ["default"],
+            "level": "INFO",
+        },
+        "db_connection_logger": {
+            "handlers": ["db_connection_handler"],
             "level": "INFO",
         },
     },
