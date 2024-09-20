@@ -24,10 +24,19 @@ class DatabaseConnectionService:
             bool: True if database connection is fine. False in case of DatabaseError raised during ensuring connection.
         """
         try:
-            db_connection = connections[self.database_alias]
-            db_connection.ensure_connection()
+            self.check_connection()
         except DatabaseError as e:
             logger.error(f'Database error raised for alias "{self.database_alias}".')
             logger.error(str(e))
             return False
         return True
+
+    def check_connection(self) -> None:
+        """
+        Method ensuring connection with specified database alias.
+
+        Raises:
+            DatabaseError: Raised when database connection violated.
+        """
+        db_connection = connections[self.database_alias]
+        db_connection.ensure_connection()
