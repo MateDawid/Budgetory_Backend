@@ -2,6 +2,9 @@ from decimal import Decimal
 
 from django.db import models
 
+from transfers.managers.expense_manager import ExpenseManager
+from transfers.managers.income_manager import IncomeManager
+
 
 class Transfer(models.Model):
     """Transfer model for representing cash flow between Entities"""
@@ -16,8 +19,8 @@ class Transfer(models.Model):
     category = models.ForeignKey("categories.TransferCategory", on_delete=models.PROTECT, related_name="transfers")
 
     objects = models.Manager()
-    # incomes = IncomeManager()
-    # expenses = ExpenseManager()
+    incomes = IncomeManager()
+    expenses = ExpenseManager()
 
     class Meta:
         verbose_name_plural = "transfers"
