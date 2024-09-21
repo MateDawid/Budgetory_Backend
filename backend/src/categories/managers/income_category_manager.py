@@ -21,7 +21,7 @@ class IncomeCategoryManager(models.Manager):
         Sets category_type value to INCOME before instance creation.
 
         Returns:
-            Model: Deposit model instance.
+            Model: IncomeCategory model instance.
         """
         kwargs["category_type"] = CategoryType.INCOME
         return super().create(*args, **kwargs)

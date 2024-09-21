@@ -21,7 +21,7 @@ class ExpenseCategoryManager(models.Manager):
         Sets category_type value to EXPENSE before instance creation.
 
         Returns:
-            Model: Deposit model instance.
+            Model: Expense model instance.
         """
         kwargs["category_type"] = CategoryType.EXPENSE
         return super().create(*args, **kwargs)
