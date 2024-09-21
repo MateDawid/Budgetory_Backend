@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.db import models
 
 
-class TransferCategory(models.Model):
+class Transfer(models.Model):
     """Transfer model for representing cash flow between Entities"""
 
     name = models.CharField(max_length=255, blank=False, null=False)
