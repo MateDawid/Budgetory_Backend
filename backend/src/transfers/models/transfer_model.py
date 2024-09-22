@@ -45,13 +45,15 @@ class Transfer(models.Model):
 
     def validate_budget(self) -> None:
         """
-        Checks if category Budget and period Budget are the same.
+        Checks if budget fields for period, category, entity and deposit are the same.
 
         Raises:
-            ValidationError: Raised when category Budget and period Budget are not the same.
+            ValidationError: Raised when different budget for one of period, category, entity and deposit fields.
         """
-        if self.period.budget != self.category.budget:
-            raise ValidationError("Budget for period and category fields is not the same.", code="budget-invalid")
+        if not (self.period.budget == self.category.budget == self.entity.budget == self.deposit.budget):
+            raise ValidationError(
+                "Budget for period, category, entity and deposit fields is not the same.", code="budget-invalid"
+            )
 
     def __str__(self) -> str:
         """
