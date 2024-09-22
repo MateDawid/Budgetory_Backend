@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from transfers.managers.expense_manager import ExpenseManager
@@ -31,9 +32,26 @@ class Transfer(models.Model):
             ),
             models.CheckConstraint(
                 name="%(app_label)s_%(class)s_deposit_and_entity_not_the_same",
-                check=models.Q(_negated=True, entity__pk=models.F("deposit__pk")),
+                check=models.Q(_negated=True, entity=models.F("deposit")),
             ),
         )
+
+    def save(self, *args, **kwargs) -> None:
+        """
+        Override save method to execute validation before saving model in database.
+        """
+        self.validate_budget()
+        super().save(*args, **kwargs)
+
+    def validate_budget(self) -> None:
+        """
+        Checks if category Budget and period Budget are the same.
+
+        Raises:
+            ValidationError: Raised when category Budget and period Budget are not the same.
+        """
+        if self.period.budget != self.category.budget:
+            raise ValidationError("Budget for period and category fields is not the same.", code="budget-invalid")
 
     def __str__(self) -> str:
         """
