@@ -10,6 +10,7 @@ from predictions_tests.factories import ExpensePredictionFactory
 from pytest_django.lazy_django import skip_if_no_django
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
+from transfers_tests.factories import TransferFactory
 
 register(UserFactory)
 register(BudgetFactory)
@@ -20,6 +21,7 @@ register(TransferCategoryFactory)
 register(IncomeCategoryFactory)
 register(ExpenseCategoryFactory)
 register(ExpensePredictionFactory)
+register(TransferFactory)
 
 
 @pytest.fixture
