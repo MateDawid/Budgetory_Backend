@@ -16,12 +16,12 @@ class ExpensePredictionFactory(factory.django.DjangoModelFactory):
     description = factory.Faker("text", max_nb_chars=255)
 
     @factory.lazy_attribute
-    def period(self, *args) -> ExpenseCategory:
+    def period(self, *args) -> BudgetingPeriod:
         """
-        Returns ExpenseCategory with the same Budget as prediction period.
+        Returns BudgetingPeriod with the same Budget as prediction category.
 
         Returns:
-            ExpenseCategory: ExpenseCategory with the same Budget as period.
+            BudgetingPeriod: BudgetingPeriod with the same Budget as category.
         """
         budget = self._Resolver__step.builder.extras.get("budget")
         if not budget:
@@ -29,12 +29,12 @@ class ExpensePredictionFactory(factory.django.DjangoModelFactory):
         return BudgetingPeriodFactory(budget=budget)
 
     @factory.lazy_attribute
-    def category(self, *args) -> BudgetingPeriod:
+    def category(self, *args) -> ExpenseCategory:
         """
-        Returns BudgetingPeriod with the same Budget as prediction category.
+        Returns ExpenseCategory with the same Budget as prediction period.
 
         Returns:
-            BudgetingPeriod: BudgetingPeriod with the same Budget as category.
+            ExpenseCategory: ExpenseCategory with the same Budget as period.
         """
         budget = self._Resolver__step.builder.extras.get("budget")
         if not budget:
