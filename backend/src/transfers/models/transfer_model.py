@@ -41,6 +41,8 @@ class Transfer(models.Model):
         Override save method to execute validation before saving model in database.
         """
         self.validate_budget()
+        self.validate_period()
+        self.validate_deposit()
         super().save(*args, **kwargs)
 
     def validate_budget(self) -> None:
@@ -54,6 +56,26 @@ class Transfer(models.Model):
             raise ValidationError(
                 "Budget for period, category, entity and deposit fields is not the same.", code="budget-invalid"
             )
+
+    def validate_period(self) -> None:
+        """
+        Checks if Transfer "date" field value is between given "period" date range.
+
+        Raises:
+            ValidationError: Raised when "date" field is out of given "period" date range.
+        """
+        if not (self.period.date_start <= self.date <= self.period.date_end):
+            raise ValidationError("Transfer date not in period date range.", code="date-invalid")
+
+    def validate_deposit(self) -> None:
+        """
+        Checks if Entity instance from "deposit" field is marked as Deposit proxy.
+
+        Raises:
+            ValidationError: Raised when is_deposit value is False for "deposit" field object.
+        """
+        if not self.deposit.is_deposit:
+            raise ValidationError('Value of "deposit" field has to be Deposit model instance.', code="deposit-invalid")
 
     def __str__(self) -> str:
         """
