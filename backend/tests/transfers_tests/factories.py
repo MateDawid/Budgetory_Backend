@@ -3,11 +3,11 @@ from datetime import date
 
 import factory.fuzzy
 from budgets_tests.factories import BudgetFactory, BudgetingPeriodFactory
-from categories_tests.factories import ExpenseCategoryFactory
+from categories_tests.factories import ExpenseCategoryFactory, IncomeCategoryFactory
 from entities_tests.factories import DepositFactory, EntityFactory
 
 from budgets.models import Budget, BudgetingPeriod
-from categories.models import ExpenseCategory
+from categories.models import ExpenseCategory, IncomeCategory, TransferCategory
 from entities.models import Deposit, Entity
 
 
@@ -73,17 +73,18 @@ class TransferFactory(factory.django.DjangoModelFactory):
         return DepositFactory(budget=budget)
 
     @factory.lazy_attribute
-    def category(self, *args) -> ExpenseCategory:
+    def category(self, *args) -> TransferCategory:
         """
-        Returns ExpenseCategory with the same Budget as prediction period.
+        Returns TransferCategory with the same Budget as prediction period.
 
         Returns:
-            ExpenseCategory: ExpenseCategory with the same Budget as period.
+            TransferCategory: TransferCategory with the same Budget as period.
         """
         budget = self._Resolver__step.builder.extras.get("budget")
         if not budget:
             budget = self.period.budget
-        return ExpenseCategoryFactory(budget=budget)
+        category_factory = random.choice([ExpenseCategoryFactory, IncomeCategoryFactory])
+        return category_factory(budget=budget)
 
     @factory.lazy_attribute
     def date(self) -> date:
@@ -97,21 +98,41 @@ class TransferFactory(factory.django.DjangoModelFactory):
         return date(year=self.period.date_start.year, month=self.period.date_start.month, day=day)
 
 
-# class IncomeFactory(TransferFactory):
-#     """Factory for Income proxy model."""
-#
-#     category_type = factory.LazyAttribute(lambda _: CategoryType.INCOME)
-#     priority = factory.fuzzy.FuzzyChoice([choice for choice in IncomeCategoryPriority])
-#
-#     class Meta:
-#         model = "categories.Transfer"
-#
-#
-# class ExpenseCategoryFactory(TransferFactory):
-#     """Factory for Expense proxy model."""
-#
-#     category_type = factory.LazyAttribute(lambda _: CategoryType.EXPENSE)
-#     priority = factory.fuzzy.FuzzyChoice([choice for choice in ExpenseCategoryPriority])
-#
-#     class Meta:
-#         model = "categories.Transfer"
+class IncomeFactory(TransferFactory):
+    """Factory for Income proxy model."""
+
+    class Meta:
+        model = "transfers.Income"
+
+    @factory.lazy_attribute
+    def category(self, *args) -> IncomeCategory:
+        """
+        Returns IncomeCategory with the same Budget as prediction period.
+
+        Returns:
+            IncomeCategory: IncomeCategory with the same Budget as period.
+        """
+        budget = self._Resolver__step.builder.extras.get("budget")
+        if not budget:
+            budget = self.period.budget
+        return IncomeCategoryFactory(budget=budget)
+
+
+class ExpenseFactory(TransferFactory):
+    """Factory for Expense proxy model."""
+
+    class Meta:
+        model = "transfers.Expense"
+
+    @factory.lazy_attribute
+    def category(self, *args) -> ExpenseCategory:
+        """
+        Returns ExpenseCategory with the same Budget as prediction period.
+
+        Returns:
+            ExpenseCategory: ExpenseCategory with the same Budget as period.
+        """
+        budget = self._Resolver__step.builder.extras.get("budget")
+        if not budget:
+            budget = self.period.budget
+        return ExpenseCategoryFactory(budget=budget)
