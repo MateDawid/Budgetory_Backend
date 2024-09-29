@@ -6,6 +6,8 @@ from categories.models.transfer_category_choices import CategoryType
 
 
 class ExpenseQuerySet(QuerySet):
+    """Custom ExpenseQuerySet for validating input data for Expense instances create and update."""
+
     def create(self, **kwargs) -> Model:
         """
         Method extended with additional check of "category" field.
