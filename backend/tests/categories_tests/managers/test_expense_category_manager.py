@@ -6,6 +6,7 @@ from categories.models.transfer_category_choices import CategoryType, ExpenseCat
 from categories.models.transfer_category_model import TransferCategory
 
 
+# TODO: Review it like in ExpenseManager
 @pytest.mark.django_db
 class TestExpenseCategoryManager:
     """Tests for ExpenseCategoryManager."""
@@ -58,11 +59,11 @@ class TestExpenseCategoryManager:
         WHEN: Calling ExpenseCategoryManager for update.
         THEN: Manager updates object always with category_type set to CategoryType.EXPENSE.
         """
-        entity = transfer_category_factory(category_type=CategoryType.EXPENSE)
+        category = transfer_category_factory(category_type=CategoryType.EXPENSE)
         assert TransferCategory.expense_categories.all().count() == 1
 
-        TransferCategory.expense_categories.update(category_type=CategoryType.INCOME)
+        TransferCategory.expense_categories.filter(pk=category.pk).update(category_type=CategoryType.INCOME)
 
-        entity.refresh_from_db()
+        category.refresh_from_db()
         assert TransferCategory.expense_categories.all().count() == 1
-        assert entity.category_type == CategoryType.EXPENSE
+        assert category.category_type == CategoryType.EXPENSE
