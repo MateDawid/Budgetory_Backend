@@ -15,18 +15,16 @@ from transfers.models.transfer_model import Transfer
 class TestTransferModel:
     """Tests for Transfer model"""
 
-    INCOME_PAYLOAD = {
+    INCOME_PAYLOAD: dict = {
         "name": "Salary",
         "description": "Salary for this month.",
         "value": Decimal(1000),
-        "date": datetime.date(year=2024, month=9, day=1),
     }
 
-    EXPENSE_PAYLOAD = {
+    EXPENSE_PAYLOAD: dict = {
         "name": "Flat rent",
         "description": "Payment for flat rent.",
         "value": Decimal(900),
-        "date": datetime.date(year=2024, month=9, day=10),
     }
 
     def test_create_income(
@@ -43,6 +41,7 @@ class TestTransferModel:
         THEN: Transfer model instance created in database with given data.
         """
         payload = self.INCOME_PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
             budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
         )
@@ -72,6 +71,7 @@ class TestTransferModel:
         THEN: Transfer model instance exists in database with given data.
         """
         payload = self.INCOME_PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
             budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
         )
@@ -105,6 +105,7 @@ class TestTransferModel:
         THEN: Transfer model instance created in database with given data.
         """
         payload = self.EXPENSE_PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
             budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
         )
@@ -135,6 +136,7 @@ class TestTransferModel:
         THEN: Transfer model instance exists in database with given data.
         """
         payload = self.EXPENSE_PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
             budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
         )
