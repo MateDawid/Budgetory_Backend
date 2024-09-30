@@ -58,7 +58,40 @@ class TestTransferModel:
         assert Transfer.expenses.filter(period__budget=budget).count() == 0
         assert str(transfer) == f"{transfer.date} | {transfer.category} | {transfer.value}"
 
-    def test_create_expense_category(
+    def test_save_income(
+        self,
+        budget: Budget,
+        budgeting_period_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        income_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget model instance in database. Valid payload for Income proxy of Transfer model.
+        WHEN: Transfer instance save attempt with valid data.
+        THEN: Transfer model instance exists in database with given data.
+        """
+        payload = self.INCOME_PAYLOAD.copy()
+        payload["period"] = budgeting_period_factory(
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+        )
+        payload["entity"] = entity_factory(budget=budget)
+        payload["deposit"] = deposit_factory(budget=budget)
+        payload["category"] = income_category_factory(budget=budget, priority=IncomeCategoryPriority.REGULAR)
+
+        transfer = Transfer(**payload)
+        transfer.full_clean()
+        transfer.save()
+        transfer.refresh_from_db()
+
+        for key in payload:
+            assert getattr(transfer, key) == payload[key]
+        assert Transfer.objects.filter(period__budget=budget).count() == 1
+        assert Transfer.incomes.filter(period__budget=budget).count() == 1
+        assert Transfer.expenses.filter(period__budget=budget).count() == 0
+        assert str(transfer) == f"{transfer.date} | {transfer.category} | {transfer.value}"
+
+    def test_create_expense(
         self,
         budget: Budget,
         budgeting_period_factory: FactoryMetaClass,
@@ -78,12 +111,47 @@ class TestTransferModel:
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
         payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+
         transfer = Transfer.objects.create(**payload)
+
         for key in payload:
             assert getattr(transfer, key) == payload[key]
         assert Transfer.objects.filter(period__budget=budget).count() == 1
         assert Transfer.expenses.filter(period__budget=budget).count() == 1
         assert Transfer.incomes.filter(period__budget=budget).count() == 0
+        assert str(transfer) == f"{transfer.date} | {transfer.category} | {transfer.value}"
+
+    def test_save_expense(
+        self,
+        budget: Budget,
+        budgeting_period_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget model instance in database. Valid payload for Expense proxy of Transfer model.
+        WHEN: Transfer instance save attempt with valid data.
+        THEN: Transfer model instance exists in database with given data.
+        """
+        payload = self.EXPENSE_PAYLOAD.copy()
+        payload["period"] = budgeting_period_factory(
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+        )
+        payload["entity"] = entity_factory(budget=budget)
+        payload["deposit"] = deposit_factory(budget=budget)
+        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+
+        transfer = Transfer(**payload)
+        transfer.full_clean()
+        transfer.save()
+        transfer.refresh_from_db()
+
+        for key in payload:
+            assert getattr(transfer, key) == payload[key]
+        assert Transfer.objects.filter(period__budget=budget).count() == 1
+        assert Transfer.incomes.filter(period__budget=budget).count() == 0
+        assert Transfer.expenses.filter(period__budget=budget).count() == 1
         assert str(transfer) == f"{transfer.date} | {transfer.category} | {transfer.value}"
 
     @pytest.mark.django_db(transaction=True)
