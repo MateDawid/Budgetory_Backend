@@ -5,6 +5,8 @@ from budgets.models.budget_model import Budget
 from categories.models.transfer_category_choices import CategoryType, IncomeCategoryPriority
 from categories.models.transfer_category_model import TransferCategory
 
+# TODO: Review it like in ExpenseManager
+
 
 @pytest.mark.django_db
 class TestIncomeCategoryManager:
@@ -58,11 +60,11 @@ class TestIncomeCategoryManager:
         WHEN: Calling IncomeCategoryManager for update.
         THEN: Manager updates object always with category_type set to CategoryType.INCOME.
         """
-        entity = transfer_category_factory(category_type=CategoryType.INCOME)
+        category = transfer_category_factory(category_type=CategoryType.INCOME)
         assert TransferCategory.income_categories.all().count() == 1
 
-        TransferCategory.income_categories.update(category_type=CategoryType.EXPENSE)
+        TransferCategory.income_categories.filter(pk=category.pk).update(category_type=CategoryType.EXPENSE)
 
-        entity.refresh_from_db()
+        category.refresh_from_db()
         assert TransferCategory.income_categories.all().count() == 1
-        assert entity.category_type == CategoryType.INCOME
+        assert category.category_type == CategoryType.INCOME
