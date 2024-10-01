@@ -31,7 +31,7 @@ class DatabaseConnectionService:
             return False
         return True
 
-    def check_connection(self) -> None:
+    def check_connection(self) -> None:  # pragma: no cover
         """
         Method ensuring connection with specified database alias.
 
