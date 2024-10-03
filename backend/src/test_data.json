@@ -1630,5 +1630,300 @@
       "deposit": 4,
       "category": 9
     }
+  },
+    {
+    "model": "budgets.budgetingperiod",
+    "pk": 3,
+    "fields": {
+      "budget": 2,
+      "name": "2024_10",
+      "date_start": "2024-10-01",
+      "date_end": "2024-10-31",
+      "is_active": true
+    }
+  },
+  {
+    "model": "budgets.budgetingperiod",
+    "pk": 4,
+    "fields": {
+      "budget": 2,
+      "name": "2024_09",
+      "date_start": "2024-09-01",
+      "date_end": "2024-09-30",
+      "is_active": false
+    }
+  },
+  {
+    "model": "entities.entity",
+    "pk": 6,
+    "fields": {
+      "budget": 2,
+      "name": "Common deposit",
+      "description": "",
+      "is_active": true,
+      "is_deposit": true
+    }
+  },
+  {
+    "model": "entities.entity",
+    "pk": 7,
+    "fields": {
+      "budget": 2,
+      "name": "Seller",
+      "description": "",
+      "is_active": true,
+      "is_deposit": false
+    }
+  },
+  {
+    "model": "entities.entity",
+    "pk": 8,
+    "fields": {
+      "budget": 2,
+      "name": "Employer",
+      "description": "",
+      "is_active": true,
+      "is_deposit": false
+    }
+  },
+  {
+    "model": "entities.entity",
+    "pk": 9,
+    "fields": {
+      "budget": 2,
+      "name": "Personal deposit",
+      "description": "",
+      "is_active": true,
+      "is_deposit": true
+    }
+  },
+  {
+    "model": "entities.entity",
+    "pk": 10,
+    "fields": {
+      "budget": 2,
+      "name": "Flat owner",
+      "description": "",
+      "is_active": true,
+      "is_deposit": false
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 13,
+    "fields": {
+      "budget": 2,
+      "name": "Personal most important",
+      "description": null,
+      "owner": 2,
+      "is_active": true,
+      "category_type": 1,
+      "priority": 101
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 14,
+    "fields": {
+      "budget": 2,
+      "name": "Common most important",
+      "description": null,
+      "owner": null,
+      "is_active": true,
+      "category_type": 1,
+      "priority": 101
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 15,
+    "fields": {
+      "budget": 2,
+      "name": "Common debts",
+      "description": null,
+      "owner": null,
+      "is_active": true,
+      "category_type": 1,
+      "priority": 102
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 16,
+    "fields": {
+      "budget": 2,
+      "name": "Personal debts",
+      "description": null,
+      "owner": 2,
+      "is_active": true,
+      "category_type": 1,
+      "priority": 102
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 17,
+    "fields": {
+      "budget": 2,
+      "name": "Common savings",
+      "description": null,
+      "owner": null,
+      "is_active": true,
+      "category_type": 1,
+      "priority": 103
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 18,
+    "fields": {
+      "budget": 2,
+      "name": "Personal savings",
+      "description": null,
+      "owner": 2,
+      "is_active": true,
+      "category_type": 1,
+      "priority": 103
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 19,
+    "fields": {
+      "budget": 2,
+      "name": "Common others",
+      "description": null,
+      "owner": null,
+      "is_active": true,
+      "category_type": 1,
+      "priority": 104
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 20,
+    "fields": {
+      "budget": 2,
+      "name": "Personal others",
+      "description": null,
+      "owner": 2,
+      "is_active": true,
+      "category_type": 1,
+      "priority": 104
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 21,
+    "fields": {
+      "budget": 2,
+      "name": "Personal regular",
+      "description": null,
+      "owner": 2,
+      "is_active": true,
+      "category_type": 2,
+      "priority": 201
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 22,
+    "fields": {
+      "budget": 2,
+      "name": "Common regular",
+      "description": null,
+      "owner": null,
+      "is_active": true,
+      "category_type": 2,
+      "priority": 201
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 23,
+    "fields": {
+      "budget": 2,
+      "name": "Personal irregular",
+      "description": null,
+      "owner": 2,
+      "is_active": true,
+      "category_type": 2,
+      "priority": 202
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 24,
+    "fields": {
+      "budget": 2,
+      "name": "Common irregular",
+      "description": null,
+      "owner": null,
+      "is_active": true,
+      "category_type": 2,
+      "priority": 202
+    }
+  },
+  {
+    "model": "predictions.expenseprediction",
+    "pk": 3,
+    "fields": {
+      "period": 3,
+      "category": 13,
+      "value": "100.00",
+      "description": null
+    }
+  },
+  {
+    "model": "predictions.expenseprediction",
+    "pk": 4,
+    "fields": {
+      "period": 3,
+      "category": 14,
+      "value": "100.00",
+      "description": null
+    }
+  },
+  {
+    "model": "transfers.transfer",
+    "pk": 4,
+    "fields": {
+      "name": "Food",
+      "description": null,
+      "value": "10.00",
+      "date": "2024-10-01",
+      "period": 3,
+      "entity": 7,
+      "deposit": 9,
+      "category": 13
+    }
+  },
+  {
+    "model": "transfers.transfer",
+    "pk": 5,
+    "fields": {
+      "name": "Rent",
+      "description": null,
+      "value": "100.00",
+      "date": "2024-10-01",
+      "period": 3,
+      "entity": 10,
+      "deposit": 6,
+      "category": 14
+    }
+  },
+  {
+    "model": "transfers.transfer",
+    "pk": 6,
+    "fields": {
+      "name": "Salary",
+      "description": null,
+      "value": "1000.00",
+      "date": "2024-10-01",
+      "period": 3,
+      "entity": 8,
+      "deposit": 9,
+      "category": 21
+    }
   }
 ]
