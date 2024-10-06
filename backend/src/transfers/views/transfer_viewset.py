@@ -26,7 +26,7 @@ class TransferViewSet(ModelViewSet):
             QuerySet: Filtered TransferCategory QuerySet.
         """
         return (
-            self.serializer_class.Meta.model.objects.prefetch_related("period")
+            self.serializer_class.Meta.model.objects.prefetch_related("period", "category")
             .filter(period__budget__pk=self.kwargs.get("budget_pk"))
             .distinct()
         )
