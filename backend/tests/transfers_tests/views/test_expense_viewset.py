@@ -352,69 +352,69 @@ class TestExpenseViewSetCreate:
         assert not Expense.objects.filter(period__budget=budget).exists()
 
 
-# @pytest.mark.django_db
-# class TestExpenseViewSetDetail:
-#     """Tests for detail view on ExpenseViewSet."""
-#
-#     def test_auth_required(self, api_client: APIClient, expense_factory: FactoryMetaClass):
-#         """
-#         GIVEN: Budget model instance in database.
-#         WHEN: ExpenseViewSet detail view called with GET without authentication.
-#         THEN: Unauthorized HTTP 401 returned.
-#         """
-#         transfer = expense_factory()
-#         res = api_client.get(transfer_detail_url(transfer.budget.id, transfer.id))
-#
-#         assert res.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_user_not_budget_member(
-#         self,
-#         api_client: APIClient,
-#         user_factory: FactoryMetaClass,
-#         budget_factory: FactoryMetaClass,
-#         expense_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Budget model instance in database.
-#         WHEN: ExpenseViewSet detail view called with GET by User not belonging to given Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         budget_owner = user_factory()
-#         other_user = user_factory()
-#         budget = budget_factory(owner=budget_owner)
-#         transfer = expense_factory(budget=budget)
-#         api_client.force_authenticate(other_user)
-#         url = transfer_detail_url(transfer.budget.id, transfer.id)
-#
-#         response = api_client.get(url)
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data["detail"] == "User does not have access to Budget."
-#
-#     def test_get_transfer_details(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         expense_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Expense instance for Budget created in database.
-#         WHEN: ExpenseViewSet detail view called by User belonging to Budget.
-#         THEN: HTTP 200, Expense details returned.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         transfer = expense_factory(budget=budget)
-#         api_client.force_authenticate(base_user)
-#         url = transfer_detail_url(budget.id, transfer.id)
-#
-#         response = api_client.get(url)
-#         serializer = ExpenseSerializer(transfer)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data == serializer.data
-#
-#
+@pytest.mark.django_db
+class TestExpenseViewSetDetail:
+    """Tests for detail view on ExpenseViewSet."""
+
+    def test_auth_required(self, api_client: APIClient, expense_factory: FactoryMetaClass):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: ExpenseViewSet detail view called with GET without authentication.
+        THEN: Unauthorized HTTP 401 returned.
+        """
+        transfer = expense_factory()
+        res = api_client.get(transfer_detail_url(transfer.period.budget.id, transfer.id))
+
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_user_not_budget_member(
+        self,
+        api_client: APIClient,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: ExpenseViewSet detail view called with GET by User not belonging to given Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        budget_owner = user_factory()
+        other_user = user_factory()
+        budget = budget_factory(owner=budget_owner)
+        transfer = expense_factory(budget=budget)
+        api_client.force_authenticate(other_user)
+        url = transfer_detail_url(budget.id, transfer.id)
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data["detail"] == "User does not have access to Budget."
+
+    def test_get_transfer_details(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Expense instance for Budget created in database.
+        WHEN: ExpenseViewSet detail view called by User belonging to Budget.
+        THEN: HTTP 200, Expense details returned.
+        """
+        budget = budget_factory(owner=base_user)
+        transfer = expense_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        url = transfer_detail_url(budget.id, transfer.id)
+
+        response = api_client.get(url)
+        serializer = ExpenseSerializer(transfer)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == serializer.data
+
+
 # @pytest.mark.django_db
 # class TestExpenseViewSetUpdate:
 #     """Tests for update view on ExpenseViewSet."""
