@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db.models import Model
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -25,6 +27,21 @@ class TransferSerializer(serializers.ModelSerializer):
             int: Budget model instance PK.
         """
         return int(getattr(self.context.get("view"), "kwargs", {}).get("budget_pk", 0))
+
+    @staticmethod
+    def validate_value(value: Decimal) -> Decimal:
+        """
+        Checks if provided value is higher than zero.
+
+        Args:
+            value [Decimal]: Value of given Transfer.
+
+        Returns:
+            Decimal: Validated value of Transfer.
+        """
+        if value <= Decimal("0.00"):
+            raise ValidationError("Value should be higher than 0.00.")
+        return value
 
     def validate_period(self, period: BudgetingPeriod) -> BudgetingPeriod:
         """
