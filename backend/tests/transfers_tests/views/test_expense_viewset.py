@@ -1,3 +1,6 @@
+import datetime
+from decimal import Decimal
+
 import pytest
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
@@ -6,6 +9,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from budgets.models.budget_model import Budget
+from categories.models.transfer_category_choices import ExpenseCategoryPriority, IncomeCategoryPriority
 from transfers.models.expense_model import Expense
 from transfers.models.transfer_model import Transfer
 from transfers.serializers.expense_serializer import ExpenseSerializer
@@ -132,190 +136,222 @@ class TestExpenseViewSetList:
         assert income_transfer.id not in [transfer["id"] for transfer in response.data["results"]]
 
 
-# @pytest.mark.django_db
-# class TestExpenseViewSetCreate:
-#     """Tests for create Expense on ExpenseViewSet."""
-#
-#     PAYLOAD: dict[str, Any] = {
-#         "name": "Bills",
-#         "description": "Expenses for bills.",
-#         "is_active": True,
-#         "priority": ExpensePriority.MOST_IMPORTANT,
-#     }
-#
-#     def test_auth_required(self, api_client: APIClient, budget: Budget):
-#         """
-#         GIVEN: Budget model instance in database.
-#         WHEN: ExpenseViewSet list view called with POST without authentication.
-#         THEN: Unauthorized HTTP 401 returned.
-#         """
-#         res = api_client.post(transfers_url(budget.id), data={})
-#
-#         assert res.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_user_not_budget_member(
-#         self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Budget model instance in database.
-#         WHEN: ExpenseViewSet list view called with POST by User not belonging to given Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         budget_owner = user_factory()
-#         other_user = user_factory()
-#         budget = budget_factory(owner=budget_owner)
-#         api_client.force_authenticate(other_user)
-#
-#         response = api_client.post(transfers_url(budget.id), data={})
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data["detail"] == "User does not have access to Budget."
-#
-#     def test_create_single_transfer_without_owner(
-#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Valid payload prepared for Expense.
-#         WHEN: ExpenseViewSet called with POST by User belonging to Budget with valid payload.
-#         THEN: Expense object created in database with given payload
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#
-#         response = api_client.post(transfers_url(budget.id), data=self.PAYLOAD)
-#
-#         assert response.status_code == status.HTTP_201_CREATED
-#         assert Expense.objects.filter(period__budget=budget).count() == 1
-#         assert TransferCategory.expense_transfers.filter(period__budget=budget).count() == 1
-#         assert TransferCategory.income_transfers.filter(period__budget=budget).count() == 0
-#         transfer = Expense.objects.get(id=response.data["id"])
-#         assert transfer.budget == budget
-#         for key in self.PAYLOAD:
-#             assert getattr(transfer, key) == self.PAYLOAD[key]
-#         serializer = ExpenseSerializer(transfer)
-#         assert response.data == serializer.data
-#
-#     def test_create_single_transfer_with_owner(
-#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Valid payload prepared for Expense.
-#         WHEN: ExpenseViewSet called with POST by User belonging to Budget with valid payload.
-#         THEN: Expense object created in database with given payload
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#         payload = self.PAYLOAD.copy()
-#         payload["owner"] = base_user.id
-#
-#         response = api_client.post(transfers_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_201_CREATED
-#         assert Expense.objects.filter(period__budget=budget).count() == 1
-#         assert TransferCategory.expense_transfers.filter(period__budget=budget).count() == 1
-#         assert TransferCategory.income_transfers.filter(period__budget=budget).count() == 0
-#         transfer = Expense.objects.get(id=response.data["id"])
-#         assert transfer.budget == budget
-#         for key in payload:
-#             if key == "owner":
-#                 continue
-#             assert getattr(transfer, key) == self.PAYLOAD[key]
-#         assert transfer.owner == base_user
-#         serializer = ExpenseSerializer(transfer)
-#         assert response.data == serializer.data
-#
-#     @pytest.mark.parametrize("field_name", ["name", "description"])
-#     def test_error_value_too_long(
-#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass, field_name: str
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Payload for Expense with field value too long.
-#         WHEN: ExpenseViewSet called with POST by User belonging to Budget with invalid payload.
-#         THEN: Bad request HTTP 400 returned. Expense not created in database.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#         max_length = Expense._meta.get_field(field_name).max_length
-#         payload = self.PAYLOAD.copy()
-#         payload[field_name] = (max_length + 1) * "a"
-#
-#         response = api_client.post(transfers_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert field_name in response.data["detail"]
-#         assert response.data["detail"][field_name][0] == f"Ensure this field has no more than
-#         {max_length} characters."
-#         assert not Expense.objects.filter(period__budget=budget).exists()
-#
-#     def test_error_name_already_used_for_common_transfer(
-#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Valid payload for Expense.
-#         WHEN: ExpenseViewSet called twice with POST by User belonging to Budget with the same payload.
-#         THEN: Bad request HTTP 400 returned. Only one Expense created in database.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#         payload = self.PAYLOAD.copy()
-#
-#         api_client.post(transfers_url(budget.id), payload)
-#         response = api_client.post(transfers_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert "non_field_errors" in response.data["detail"]
-#         assert (
-#             response.data["detail"]["non_field_errors"][0]
-#             == "Common Expense with given name already exists in Budget."
-#         )
-#         assert Expense.objects.filter(period__budget=budget).count() == 1
-#
-#     def test_error_name_already_used_for_personal_transfer(
-#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Valid payload for Expense.
-#         WHEN: ExpenseViewSet called twice with POST by User belonging to Budget with the same payload.
-#         THEN: Bad request HTTP 400 returned. Only one Expense created in database.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#         payload = self.PAYLOAD.copy()
-#         payload["owner"] = base_user.id
-#
-#         api_client.post(transfers_url(budget.id), payload)
-#         response = api_client.post(transfers_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert "non_field_errors" in response.data["detail"]
-#         assert (
-#             response.data["detail"]["non_field_errors"][0]
-#             == "Personal Expense with given name already exists in Budget."
-#         )
-#         assert Expense.objects.filter(period__budget=budget).count() == 1
-#
-#     def test_error_invalid_priority(
-#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Valid payload for Expense.
-#         WHEN: ExpenseViewSet called twice with POST by User belonging to Budget with the same payload.
-#         THEN: Bad request HTTP 400 returned. Only one Expense created in database.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#         payload = self.PAYLOAD.copy()
-#         payload["priority"] = ExpensePriority.values[-1] + 1
-#
-#         api_client.post(transfers_url(budget.id), payload)
-#         response = api_client.post(transfers_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert "priority" in response.data["detail"]
-#         assert response.data["detail"]["priority"][0] == f"\"{payload['priority']}\" is not a valid choice."
-#         assert not Expense.objects.filter(period__budget=budget).exists()
-#
-#
+@pytest.mark.django_db
+class TestExpenseViewSetCreate:
+    """Tests for create Expense on ExpenseViewSet."""
+
+    PAYLOAD: dict = {
+        "name": "Salary",
+        "description": "Salary for this month.",
+        "value": Decimal(1000),
+    }
+
+    def test_auth_required(self, api_client: APIClient, budget: Budget):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: ExpenseViewSet list view called with POST without authentication.
+        THEN: Unauthorized HTTP 401 returned.
+        """
+        res = api_client.post(transfers_url(budget.id), data={})
+
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_user_not_budget_member(
+        self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: ExpenseViewSet list view called with POST by User not belonging to given Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        budget_owner = user_factory()
+        other_user = user_factory()
+        budget = budget_factory(owner=budget_owner)
+        api_client.force_authenticate(other_user)
+
+        response = api_client.post(transfers_url(budget.id), data={})
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data["detail"] == "User does not have access to Budget."
+
+    @pytest.mark.parametrize("value", [Decimal("0.01"), Decimal("99999999.99")])
+    def test_create_single_transfer_successfully(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+        value: Decimal,
+    ):
+        """
+        GIVEN: Budget instance created in database. Valid payload prepared for Expense.
+        WHEN: ExpenseViewSet called with POST by User belonging to Budget with valid payload.
+        THEN: Expense object created in database with given payload.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
+        payload["period"] = budgeting_period_factory(
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+        ).pk
+        payload["entity"] = entity_factory(budget=budget).pk
+        payload["deposit"] = deposit_factory(budget=budget).pk
+        payload["category"] = expense_category_factory(
+            budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT
+        ).pk
+        payload["value"] = value
+
+        response = api_client.post(transfers_url(budget.id), data=payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert Expense.objects.filter(period__budget=budget).count() == 1
+        assert Transfer.expenses.filter(period__budget=budget).count() == 1
+        assert Transfer.incomes.filter(period__budget=budget).count() == 0
+        transfer = Expense.objects.get(id=response.data["id"])
+        for key in payload:
+            try:
+                assert getattr(transfer, key) == payload[key]
+            except AssertionError:
+                assert getattr(getattr(transfer, key, None), "pk") == payload[key]
+        serializer = ExpenseSerializer(transfer)
+        assert response.data == serializer.data
+
+    @pytest.mark.parametrize("field_name", ["name", "description"])
+    def test_error_value_too_long(
+        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass, field_name: str
+    ):
+        """
+        GIVEN: Budget instance created in database. Payload for Expense with field value too long.
+        WHEN: ExpenseViewSet called with POST by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. Expense not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        max_length = Expense._meta.get_field(field_name).max_length
+        payload = self.PAYLOAD.copy()
+        payload[field_name] = (max_length + 1) * "a"
+
+        response = api_client.post(transfers_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert field_name in response.data["detail"]
+        assert response.data["detail"][field_name][0] == f"Ensure this field has no more than {max_length} characters."
+        assert not Expense.objects.filter(period__budget=budget).exists()
+
+    @pytest.mark.parametrize("value", [Decimal("0.00"), Decimal("-0.01")])
+    def test_error_value_lower_than_min(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        value: Decimal,
+    ):
+        """
+        GIVEN: Budget instance created in database. Payload for Expense with "value" too low.
+        WHEN: ExpenseViewSet called with POST by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. Expense not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
+        payload["period"] = budgeting_period_factory(
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+        ).pk
+        payload["entity"] = entity_factory(budget=budget).pk
+        payload["deposit"] = deposit_factory(budget=budget).pk
+        payload["category"] = expense_category_factory(
+            budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT
+        ).pk
+
+        payload["value"] = value
+
+        response = api_client.post(transfers_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "value" in response.data["detail"]
+        assert response.data["detail"]["value"][0] == "Value should be higher than 0.00."
+        assert not Expense.objects.filter(period__budget=budget).exists()
+
+    def test_error_value_higher_than_max(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget instance created in database. Payload for Expense with value too big.
+        WHEN: ExpenseViewSet called with POST by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. Expense not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
+        payload["period"] = budgeting_period_factory(
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+        ).pk
+        payload["entity"] = entity_factory(budget=budget).pk
+        payload["deposit"] = deposit_factory(budget=budget).pk
+        payload["category"] = expense_category_factory(
+            budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT
+        ).pk
+
+        payload["value"] = Decimal("100000000.00")
+
+        response = api_client.post(transfers_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "value" in response.data["detail"]
+        assert not Expense.objects.filter(period__budget=budget).exists()
+
+    def test_error_invalid_category(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        income_category_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget instance created in database. IncomeCategory in payload for Expense.
+        WHEN: ExpenseViewSet called with POST by User belonging to Budget.
+        THEN: Bad request HTTP 400 returned. Expense not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
+        payload["period"] = budgeting_period_factory(
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+        ).pk
+        payload["entity"] = entity_factory(budget=budget).pk
+        payload["deposit"] = deposit_factory(budget=budget).pk
+        payload["category"] = income_category_factory(budget=budget, priority=IncomeCategoryPriority.REGULAR).pk
+
+        api_client.post(transfers_url(budget.id), payload)
+        response = api_client.post(transfers_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "category" in response.data["detail"]
+        assert response.data["detail"]["category"][0] == "Invalid TransferCategory for Expense provided."
+        assert not Expense.objects.filter(period__budget=budget).exists()
+
+
 # @pytest.mark.django_db
 # class TestExpenseViewSetDetail:
 #     """Tests for detail view on ExpenseViewSet."""
