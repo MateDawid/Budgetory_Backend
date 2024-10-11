@@ -702,6 +702,10 @@ class TestExpenseViewSetUpdate:
         response = api_client.patch(url, update_payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert (
+            response.data["detail"]["non_field_errors"][0]
+            == "'deposit' and 'entity' fields cannot contain the same value."
+        )
         transfer.refresh_from_db()
         assert getattr(transfer, "entity") == payload["entity"]
 
@@ -739,6 +743,10 @@ class TestExpenseViewSetUpdate:
         response = api_client.patch(url, update_payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert (
+            response.data["detail"]["non_field_errors"][0]
+            == "'deposit' and 'entity' fields cannot contain the same value."
+        )
         transfer.refresh_from_db()
         assert getattr(transfer, "deposit") == payload["deposit"]
 

@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from decimal import Decimal
 
 from django.db.models import Model
@@ -110,3 +111,19 @@ class TransferSerializer(serializers.ModelSerializer):
         if category.budget.pk != self._budget_pk:
             raise ValidationError("TransferCategory from different Budget.")
         return category
+
+    def validate(self, attrs: OrderedDict) -> OrderedDict:
+        """
+        Additional validation of "deposit" and "entity" fields, that cannot contain the same value.
+
+        Args:
+            attrs (OrderedDict): Dictionary containing all given params.
+
+        Returns:
+            OrderedDict: Validated dictionary containing all given params.
+        """
+        deposit = attrs.get("deposit") or getattr(self.instance, "deposit", None)
+        entity = attrs.get("entity") or getattr(self.instance, "entity", None)
+        if any([deposit, entity]) and deposit == entity:
+            raise ValidationError("'deposit' and 'entity' fields cannot contain the same value.")
+        return attrs
