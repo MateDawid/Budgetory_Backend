@@ -348,6 +348,145 @@ class TestIncomeViewSetCreate:
         assert response.data["detail"]["category"][0] == "Invalid TransferCategory for Income provided."
         assert not Income.objects.filter(period__budget=budget).exists()
 
+    def test_error_category_from_outer_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        income_category_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: IncomeCategory from outer Budget in payload for Income.
+        WHEN: IncomeViewSet called with POST by User belonging to Budget.
+        THEN: Bad request HTTP 400 returned. Income not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
+        payload["period"] = budgeting_period_factory(
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+        ).pk
+        payload["entity"] = entity_factory(budget=budget).pk
+        payload["deposit"] = deposit_factory(budget=budget).pk
+        payload["category"] = income_category_factory(budget=budget_factory()).pk
+
+        api_client.post(transfers_url(budget.id), payload)
+        response = api_client.post(transfers_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "category" in response.data["detail"]
+        assert response.data["detail"]["category"][0] == "TransferCategory from different Budget."
+        assert not Income.objects.filter(period__budget=budget).exists()
+
+    def test_error_period_from_outer_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        income_category_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: BudgetingPeriod from outer Budget in payload for Income.
+        WHEN: IncomeViewSet called with POST by User belonging to Budget.
+        THEN: Bad request HTTP 400 returned. Income not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
+        payload["period"] = budgeting_period_factory(
+            budget=budget_factory(),
+            date_start=datetime.date(2024, 9, 1),
+            date_end=datetime.date(2024, 9, 30),
+            is_active=True,
+        ).pk
+        payload["entity"] = entity_factory(budget=budget).pk
+        payload["deposit"] = deposit_factory(budget=budget).pk
+        payload["category"] = income_category_factory(budget=budget).pk
+
+        api_client.post(transfers_url(budget.id), payload)
+        response = api_client.post(transfers_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "period" in response.data["detail"]
+        assert response.data["detail"]["period"][0] == "BudgetingPeriod from different Budget."
+        assert not Income.objects.filter(period__budget=budget).exists()
+
+    def test_error_deposit_from_outer_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        income_category_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Deposit from outer Budget in payload for Income.
+        WHEN: IncomeViewSet called with POST by User belonging to Budget.
+        THEN: Bad request HTTP 400 returned. Income not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
+        payload["period"] = budgeting_period_factory(
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+        ).pk
+        payload["entity"] = entity_factory(budget=budget).pk
+        payload["deposit"] = deposit_factory(budget=budget_factory()).pk
+        payload["category"] = income_category_factory(budget=budget).pk
+
+        api_client.post(transfers_url(budget.id), payload)
+        response = api_client.post(transfers_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "deposit" in response.data["detail"]
+        assert response.data["detail"]["deposit"][0] == "Deposit from different Budget."
+        assert not Income.objects.filter(period__budget=budget).exists()
+
+    def test_error_entity_from_outer_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        income_category_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Entity from outer Budget in payload for Income.
+        WHEN: IncomeViewSet called with POST by User belonging to Budget.
+        THEN: Bad request HTTP 400 returned. Income not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
+        payload["period"] = budgeting_period_factory(
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+        ).pk
+        payload["entity"] = entity_factory(budget=budget_factory()).pk
+        payload["deposit"] = deposit_factory(budget=budget).pk
+        payload["category"] = income_category_factory(budget=budget).pk
+
+        api_client.post(transfers_url(budget.id), payload)
+        response = api_client.post(transfers_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "entity" in response.data["detail"]
+        assert response.data["detail"]["entity"][0] == "Entity from different Budget."
+        assert not Income.objects.filter(period__budget=budget).exists()
+
 
 @pytest.mark.django_db
 class TestIncomeViewSetDetail:
@@ -917,6 +1056,162 @@ class TestIncomeViewSetUpdate:
                 assert getattr(getattr(transfer, key, None), "pk") == update_payload[key]
         serializer = IncomeSerializer(transfer)
         assert response.data == serializer.data
+
+    def test_error_period_from_outer_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        income_category_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: BudgetingPeriod from outer Budget in upload payload for Income.
+        WHEN: IncomeViewSet called with PATCH by User belonging to Budget.
+        THEN: Bad request HTTP 400 returned. Income not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
+        payload["period"] = budgeting_period_factory(
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+        )
+        payload["entity"] = entity_factory(budget=budget)
+        payload["deposit"] = deposit_factory(budget=budget)
+        payload["category"] = income_category_factory(budget=budget)
+        transfer = income_factory(budget=budget, **payload)
+        new_period = budgeting_period_factory(budget=budget_factory())
+        update_payload = {"period": new_period.pk}
+        api_client.force_authenticate(base_user)
+        url = transfer_detail_url(budget.id, transfer.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data["detail"]["period"][0] == "BudgetingPeriod from different Budget."
+        transfer.refresh_from_db()
+        assert getattr(transfer, "period") == payload["period"]
+
+    def test_error_category_from_outer_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        income_category_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: TransferCategory from outer Budget in upload payload for Income.
+        WHEN: IncomeViewSet called with PATCH by User belonging to Budget.
+        THEN: Bad request HTTP 400 returned. Income not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
+        payload["period"] = budgeting_period_factory(
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+        )
+        payload["entity"] = entity_factory(budget=budget)
+        payload["deposit"] = deposit_factory(budget=budget)
+        payload["category"] = income_category_factory(budget=budget)
+        transfer = income_factory(budget=budget, **payload)
+        new_category = income_category_factory(budget=budget_factory())
+        update_payload = {"category": new_category.pk}
+        api_client.force_authenticate(base_user)
+        url = transfer_detail_url(budget.id, transfer.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data["detail"]["category"][0] == "TransferCategory from different Budget."
+        transfer.refresh_from_db()
+        assert getattr(transfer, "category") == payload["category"]
+
+    def test_error_deposit_from_outer_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        income_category_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Deposit from outer Budget in upload payload for Income.
+        WHEN: IncomeViewSet called with PATCH by User belonging to Budget.
+        THEN: Bad request HTTP 400 returned. Income not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
+        payload["period"] = budgeting_period_factory(
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+        )
+        payload["entity"] = entity_factory(budget=budget)
+        payload["deposit"] = deposit_factory(budget=budget)
+        payload["category"] = income_category_factory(budget=budget)
+        transfer = income_factory(budget=budget, **payload)
+        new_deposit = deposit_factory(budget=budget_factory())
+        update_payload = {"deposit": new_deposit.pk}
+        api_client.force_authenticate(base_user)
+        url = transfer_detail_url(budget.id, transfer.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data["detail"]["deposit"][0] == "Deposit from different Budget."
+        transfer.refresh_from_db()
+        assert getattr(transfer, "deposit") == payload["deposit"]
+
+    def test_error_entity_from_outer_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        income_category_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Entity from outer Budget in upload payload for Income.
+        WHEN: IncomeViewSet called with PATCH by User belonging to Budget.
+        THEN: Bad request HTTP 400 returned. Income not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
+        payload["period"] = budgeting_period_factory(
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+        )
+        payload["entity"] = entity_factory(budget=budget)
+        payload["deposit"] = deposit_factory(budget=budget)
+        payload["category"] = income_category_factory(budget=budget)
+        transfer = income_factory(budget=budget, **payload)
+        new_entity = entity_factory(budget=budget_factory())
+        update_payload = {"entity": new_entity.pk}
+        api_client.force_authenticate(base_user)
+        url = transfer_detail_url(budget.id, transfer.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data["detail"]["entity"][0] == "Entity from different Budget."
+        transfer.refresh_from_db()
+        assert getattr(transfer, "entity") == payload["entity"]
 
 
 @pytest.mark.django_db
