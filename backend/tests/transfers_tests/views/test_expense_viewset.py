@@ -915,66 +915,64 @@ class TestExpenseViewSetUpdate:
         assert response.data == serializer.data
 
 
-# @pytest.mark.django_db
-# class TestExpenseViewSetDelete:
-#     """Tests for delete Expense on ExpenseViewSet."""
-#
-#     def test_auth_required(
-#         self, api_client: APIClient, base_user: AbstractUser, expense_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Expense instance for Budget created in database.
-#         WHEN: ExpenseViewSet detail view called with PUT without authentication.
-#         THEN: Unauthorized HTTP 401.
-#         """
-#         transfer = expense_factory()
-#         url = transfer_detail_url(transfer.budget.id, transfer.id)
-#
-#         response = api_client.delete(url)
-#
-#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_user_not_budget_member(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         expense_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Expense instance for Budget created in database.
-#         WHEN: ExpenseViewSet detail view called with DELETE by User not belonging to Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         transfer = expense_factory(budget=budget_factory())
-#         api_client.force_authenticate(base_user)
-#         url = transfer_detail_url(transfer.budget.id, transfer.id)
-#
-#         response = api_client.delete(url)
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data["detail"] == "User does not have access to Budget."
-#
-#     def test_delete_transfer(
-#         self,
-#         api_client: APIClient,
-#         base_user: Any,
-#         budget_factory: FactoryMetaClass,
-#         expense_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Expense instance for Budget created in database.
-#         WHEN: ExpenseViewSet detail view called with DELETE by User belonging to Budget.
-#         THEN: No content HTTP 204, Expense deleted.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         transfer = expense_factory(budget=budget)
-#         api_client.force_authenticate(base_user)
-#         url = transfer_detail_url(budget.id, transfer.id)
-#
-#         assert budget.transfer_transfers.filter(transfer_type=CategoryType.EXPENSE).count() == 1
-#
-#         response = api_client.delete(url)
-#
-#         assert response.status_code == status.HTTP_204_NO_CONTENT
-#         assert not budget.transfer_transfers.filter(transfer_type=CategoryType.EXPENSE).exists()
+@pytest.mark.django_db
+class TestExpenseViewSetDelete:
+    """Tests for delete Expense on ExpenseViewSet."""
+
+    def test_auth_required(self, api_client: APIClient, base_user: AbstractUser, expense_factory: FactoryMetaClass):
+        """
+        GIVEN: Expense instance for Budget created in database.
+        WHEN: ExpenseViewSet detail view called with PUT without authentication.
+        THEN: Unauthorized HTTP 401.
+        """
+        transfer = expense_factory()
+        url = transfer_detail_url(transfer.period.budget.id, transfer.id)
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_user_not_budget_member(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Expense instance for Budget created in database.
+        WHEN: ExpenseViewSet detail view called with DELETE by User not belonging to Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        transfer = expense_factory(budget=budget_factory())
+        api_client.force_authenticate(base_user)
+        url = transfer_detail_url(transfer.period.budget.id, transfer.id)
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data["detail"] == "User does not have access to Budget."
+
+    def test_delete_transfer(
+        self,
+        api_client: APIClient,
+        base_user: Any,
+        budget_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Expense instance for Budget created in database.
+        WHEN: ExpenseViewSet detail view called with DELETE by User belonging to Budget.
+        THEN: No content HTTP 204, Expense deleted.
+        """
+        budget = budget_factory(owner=base_user)
+        transfer = expense_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        url = transfer_detail_url(budget.id, transfer.id)
+
+        assert Expense.objects.all().count() == 1
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not Expense.objects.all().exists()
