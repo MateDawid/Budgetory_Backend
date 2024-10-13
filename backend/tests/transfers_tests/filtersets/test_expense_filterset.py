@@ -1,3 +1,5 @@
+from datetime import date
+
 import pytest
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
@@ -196,73 +198,152 @@ class TestExpenseFilterSetFiltering:
         assert response.data["results"] == serializer.data
         assert response.data["results"][0]["id"] == matching_transfer.id
 
+    def test_get_transfers_list_filtered_by_period(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two Expense model objects for single Budget with different BudgetingPeriods assigned.
+        WHEN: The ExpenseViewSet list view is called with "period" filter.
+        THEN: Response contains all Expenses existing in database assigned to Budget matching given
+        "period" value.
+        """
+        budget = budget_factory(owner=base_user)
+        other_period = budgeting_period_factory(
+            budget=budget, date_start=date(2024, 9, 1), date_end=date(2024, 9, 30), is_active=False
+        )
+        matching_period = budgeting_period_factory(
+            budget=budget, date_start=date(2024, 10, 1), date_end=date(2024, 10, 31), is_active=True
+        )
+        expense_factory(budget=budget, period=other_period)
+        transfer = expense_factory(budget=budget, period=matching_period)
+        api_client.force_authenticate(base_user)
 
-#     @pytest.mark.parametrize("filter_value", (True, False))
-#     def test_get_transfers_list_filtered_by_is_active(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         expense_factory: FactoryMetaClass,
-#         filter_value: bool,
-#     ):
-#         """
-#         GIVEN: Two Expense objects for single Budget.
-#         WHEN: The ExpenseViewSet list view is called with "is_active" filter.
-#         THEN: Response must contain all Expense existing in database assigned to Budget with
-#         matching "is_active" value.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         matching_transfer = expense_factory(budget=budget, name="Some transfer", is_active=filter_value)
-#         expense_factory(budget=budget, name="Other one", is_active=not filter_value)
-#         api_client.force_authenticate(base_user)
-#
-#         response = api_client.get(transfers_url(budget.id), data={"is_active": filter_value})
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         assert Expense.objects.all().count() == 2
-#         transfers = Expense.objects.filter(budget=budget, id=matching_transfer.id)
-#         serializer = ExpenseSerializer(
-#             transfers,
-#             many=True,
-#         )
-#         assert response.data["results"] and serializer.data
-#         assert len(response.data["results"]) == len(serializer.data) == transfers.count() == 1
-#         assert response.data["results"] == serializer.data
-#         assert response.data["results"][0]["id"] == matching_transfer.id
-#
-#     def test_get_transfers_list_filtered_by_priority(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         expense_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Two Expense objects for single Budget.
-#         WHEN: The ExpenseViewSet list view is called with "priority" filter.
-#         THEN: Response must contain all Expense existing in database assigned to Budget with
-#         matching "priority" value.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         matching_transfer = expense_factory(
-#             budget=budget, name="Some transfer", priority=ExpensePriority.MOST_IMPORTANT
-#         )
-#         expense_factory(budget=budget, name="Other one", priority=ExpensePriority.DEBTS)
-#         api_client.force_authenticate(base_user)
-#
-#         response = api_client.get(
-#             transfers_url(budget.id), data={"priority": ExpensePriority.MOST_IMPORTANT.value}
-#         )
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         assert Expense.objects.all().count() == 2
-#         transfers = Expense.objects.filter(budget=budget, id=matching_transfer.id)
-#         serializer = ExpenseSerializer(
-#             transfers,
-#             many=True,
-#         )
-#         assert response.data["results"] and serializer.data
-#         assert len(response.data["results"]) == len(serializer.data) == transfers.count() == 1
-#         assert response.data["results"] == serializer.data
-#         assert response.data["results"][0]["id"] == matching_transfer.id
+        response = api_client.get(transfers_url(budget.id), data={"period": matching_period.id})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert Expense.objects.all().count() == 2
+        transfers = Expense.objects.filter(period__budget=budget, period=matching_period)
+        serializer = ExpenseSerializer(
+            transfers,
+            many=True,
+        )
+        assert response.data["results"] and serializer.data
+        assert len(response.data["results"]) == len(serializer.data) == transfers.count() == 1
+        assert response.data["results"] == serializer.data
+        assert response.data["results"][0]["id"] == transfer.id
+
+    def test_get_transfers_list_filtered_by_entity(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two Expense model objects for single Budget with different Entities assigned.
+        WHEN: The ExpenseViewSet list view is called with "entity" filter.
+        THEN: Response contains all Expenses existing in database assigned to Budget matching given
+        "entity" value.
+        """
+        budget = budget_factory(owner=base_user)
+        other_entity = entity_factory(budget=budget)
+        matching_entity = entity_factory(budget=budget)
+        expense_factory(budget=budget, entity=other_entity)
+        transfer = expense_factory(budget=budget, entity=matching_entity)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(transfers_url(budget.id), data={"entity": matching_entity.id})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert Expense.objects.all().count() == 2
+        transfers = Expense.objects.filter(period__budget=budget, entity=matching_entity)
+        serializer = ExpenseSerializer(
+            transfers,
+            many=True,
+        )
+        assert response.data["results"] and serializer.data
+        assert len(response.data["results"]) == len(serializer.data) == transfers.count() == 1
+        assert response.data["results"] == serializer.data
+        assert response.data["results"][0]["id"] == transfer.id
+
+    def test_get_transfers_list_filtered_by_deposit(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two Expense model objects for single Budget with different Deposits assigned.
+        WHEN: The ExpenseViewSet list view is called with "deposit" filter.
+        THEN: Response contains all Expenses existing in database assigned to Budget matching given
+        "deposit" value.
+        """
+        budget = budget_factory(owner=base_user)
+        other_deposit = deposit_factory(budget=budget)
+        matching_deposit = deposit_factory(budget=budget)
+        expense_factory(budget=budget, deposit=other_deposit)
+        transfer = expense_factory(budget=budget, deposit=matching_deposit)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(transfers_url(budget.id), data={"deposit": matching_deposit.id})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert Expense.objects.all().count() == 2
+        transfers = Expense.objects.filter(period__budget=budget, deposit=matching_deposit)
+        serializer = ExpenseSerializer(
+            transfers,
+            many=True,
+        )
+        assert response.data["results"] and serializer.data
+        assert len(response.data["results"]) == len(serializer.data) == transfers.count() == 1
+        assert response.data["results"] == serializer.data
+        assert response.data["results"][0]["id"] == transfer.id
+
+    def test_get_transfers_list_filtered_by_category(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two Expense model objects for single Budget with different ExpenseCategories assigned.
+        WHEN: The ExpenseViewSet list view is called with "category" filter.
+        THEN: Response contains all Expenses existing in database assigned to Budget matching given
+        "category" value.
+        """
+        budget = budget_factory(owner=base_user)
+        other_category = expense_category_factory(budget=budget)
+        matching_category = expense_category_factory(budget=budget)
+        expense_factory(budget=budget, category=other_category)
+        transfer = expense_factory(budget=budget, category=matching_category)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(transfers_url(budget.id), data={"category": matching_category.id})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert Expense.objects.all().count() == 2
+        transfers = Expense.objects.filter(period__budget=budget, category=matching_category)
+        serializer = ExpenseSerializer(
+            transfers,
+            many=True,
+        )
+        assert response.data["results"] and serializer.data
+        assert len(response.data["results"]) == len(serializer.data) == transfers.count() == 1
+        assert response.data["results"] == serializer.data
+        assert response.data["results"][0]["id"] == transfer.id
+
+    # def test_get_transfers_list_filtered_by_date(self):
+    #     assert False
+    #
+    # def test_get_transfers_list_filtered_by_value(self):
+    #     assert False
