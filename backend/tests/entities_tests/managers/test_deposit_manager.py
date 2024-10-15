@@ -6,6 +6,7 @@ from budgets.models.budget_model import Budget
 from entities.models.entity_model import Entity
 
 
+# TODO: Review it like in ExpenseManager
 @pytest.mark.django_db
 class TestDepositManager:
     def test_get_queryset(self, budget: Budget, entity_factory: FactoryMetaClass, deposit_factory: FactoryMetaClass):
@@ -53,7 +54,7 @@ class TestDepositManager:
         entity = EntityFactory.create(is_deposit=True)
         assert Entity.deposits.all().count() == 1
 
-        Entity.deposits.update(is_deposit=False)
+        Entity.deposits.filter(pk=entity.pk).update(is_deposit=False)
 
         entity.refresh_from_db()
         assert Entity.deposits.all().count() == 1

@@ -4,6 +4,30 @@ from django.db.models import Model, QuerySet
 from categories.models.transfer_category_choices import CategoryType
 
 
+class ExpenseCategoryQuerySet(QuerySet):
+    """Custom ExpenseCategoryQuerySet for handling ExpenseCategory model QuerySets."""
+
+    def create(self, **kwargs) -> Model:
+        """
+        Sets category_type value to EXPENSE before instance creation.
+
+        Returns:
+            Model: Expense model instance.
+        """
+        kwargs["category_type"] = CategoryType.EXPENSE
+        return super().create(**kwargs)
+
+    def update(self, **kwargs) -> int:
+        """
+        Sets category_type value to EXPENSE before instance update.
+
+        Returns:
+            int: Number of affected database rows.
+        """
+        kwargs["category_type"] = CategoryType.EXPENSE
+        return super().update(**kwargs)
+
+
 class ExpenseCategoryManager(models.Manager):
     """Manager for EXPENSE type TransferCategories."""
 
@@ -14,24 +38,4 @@ class ExpenseCategoryManager(models.Manager):
         Returns:
             QuerySet: QuerySet containing only TransferCategories with EXPENSE category_type.
         """
-        return super().get_queryset().filter(category_type=CategoryType.EXPENSE)
-
-    def create(self, *args, **kwargs) -> Model:
-        """
-        Sets category_type value to EXPENSE before instance creation.
-
-        Returns:
-            Model: Deposit model instance.
-        """
-        kwargs["category_type"] = CategoryType.EXPENSE
-        return super().create(*args, **kwargs)
-
-    def update(self, *args, **kwargs) -> int:
-        """
-        Sets category_type value to EXPENSE before instance update.
-
-        Returns:
-            int: Number of affected database rows.
-        """
-        kwargs["category_type"] = CategoryType.EXPENSE
-        return super().update(**kwargs)
+        return ExpenseCategoryQuerySet(self.model, using=self._db).filter(category_type=CategoryType.EXPENSE)
