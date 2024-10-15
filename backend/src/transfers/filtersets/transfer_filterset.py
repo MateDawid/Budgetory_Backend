@@ -29,11 +29,12 @@ class TransferFilterSet(filters.FilterSet):
     owner = filters.NumberFilter(method="get_owner_transfers")
     common_only = filters.BooleanFilter(method="get_common_transfers")
     date = filters.DateFromToRangeFilter()
-    value = filters.NumericRangeFilter()
+    value_min = filters.NumberFilter(method="get_transfers_with_min_value")
+    value_max = filters.NumberFilter(method="get_transfers_with_max_value")
 
     @staticmethod
     def get_budget_pk(request):
-        return request.parser_context.get("kwargs", {}).get("budget_pk")
+        return request.parser_context.get("kwargs", {}).get("budget_pk")  # pragma: no cover
 
     @staticmethod
     def get_owner_transfers(queryset: QuerySet, name: str, value: str) -> QuerySet:
@@ -66,3 +67,33 @@ class TransferFilterSet(filters.FilterSet):
         if value is True:
             return queryset.filter(category__owner__isnull=True)
         return queryset  # pragma: no cover
+
+    @staticmethod
+    def get_transfers_with_min_value(queryset: QuerySet, name: str, value: str) -> QuerySet:
+        """
+        Filtering QuerySet Transfer with category with min value.
+
+        Args:
+            queryset [QuerySet]: Input QuerySet
+            name [str]: Name of filtered param
+            value [str]: Value of filtered param
+
+        Returns:
+            QuerySet: Filtered QuerySet.
+        """
+        return queryset.filter(value__gte=value)
+
+    @staticmethod
+    def get_transfers_with_max_value(queryset: QuerySet, name: str, value: str) -> QuerySet:
+        """
+        Filtering QuerySet Transfer with category with max value.
+
+        Args:
+            queryset [QuerySet]: Input QuerySet
+            name [str]: Name of filtered param
+            value [str]: Value of filtered param
+
+        Returns:
+            QuerySet: Filtered QuerySet.
+        """
+        return queryset.filter(value__lte=value)

@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 
 import pytest
 from django.contrib.auth.models import AbstractUser
@@ -342,8 +343,78 @@ class TestExpenseFilterSetFiltering:
         assert response.data["results"] == serializer.data
         assert response.data["results"][0]["id"] == transfer.id
 
-    # def test_get_transfers_list_filtered_by_date(self):
-    #     assert False
-    #
-    # def test_get_transfers_list_filtered_by_value(self):
-    #     assert False
+    def test_get_transfers_list_filtered_by_date(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two Expense model objects for single Budget with different dates assigned.
+        WHEN: The ExpenseViewSet list view is called with "date" filter.
+        THEN: Response contains all Expenses existing in database assigned to Budget matching given
+        "date" value.
+        """
+        budget = budget_factory(owner=base_user)
+        period = budgeting_period_factory(
+            budget=budget, date_start=date(2024, 10, 1), date_end=date(2024, 10, 30), is_active=True
+        )
+        other_date = date(year=2024, month=10, day=11)
+        matching_date = date(year=2024, month=10, day=10)
+
+        expense_factory(budget=budget, period=period, date=other_date)
+        transfer = expense_factory(budget=budget, period=period, date=matching_date)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(
+            transfers_url(budget.id), data={"date_after": "2024-10-01", "date_before": "2024-10-10"}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert Expense.objects.all().count() == 2
+        transfers = Expense.objects.filter(period__budget=budget, date=matching_date)
+        serializer = ExpenseSerializer(
+            transfers,
+            many=True,
+        )
+        assert response.data["results"] and serializer.data
+        assert len(response.data["results"]) == len(serializer.data) == transfers.count() == 1
+        assert response.data["results"] == serializer.data
+        assert response.data["results"][0]["id"] == transfer.id
+
+    def test_get_transfers_list_filtered_by_value(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Three Expense model objects for single Budget with different values assigned.
+        WHEN: The ExpenseViewSet list view is called with invalid "value" filters.
+        THEN: Response contains all Expenses existing in database assigned to Budget matching given
+        "value" value.
+        """
+        budget = budget_factory(owner=base_user)
+        matching_value = Decimal("100.00")
+
+        expense_factory(budget=budget, value=Decimal("1.0"))
+        expense_factory(budget=budget, value=Decimal("1000.0"))
+        transfer = expense_factory(budget=budget, value=matching_value)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(transfers_url(budget.id), data={"value_min": 100, "value_max": 900})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert Expense.objects.all().count() == 3
+        transfers = Expense.objects.filter(period__budget=budget, value=matching_value)
+        serializer = ExpenseSerializer(
+            transfers,
+            many=True,
+        )
+        assert response.data["results"] and serializer.data
+        assert len(response.data["results"]) == len(serializer.data) == transfers.count() == 1
+        assert response.data["results"] == serializer.data
+        assert response.data["results"][0]["id"] == transfer.id
