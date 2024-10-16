@@ -2,16 +2,16 @@ services:
   backend:
     build:
       context: .
-      dockerfile: ./backend/docker/Dockerfile
+      dockerfile: ./docker/Dockerfile
       target: test-image
       args:
         - DEV=${DEV}
     image: backend:test-image
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - ./backend/tests:/backend/tests
-      - ./backend/.secrets.yaml:/backend/.secrets.yaml
-      - ./backend/.flake8:/backend/.flake8
+      - ./tests:/tests
+      - ./.secrets.yaml:/.secrets.yaml
+      - ./.flake8:/.flake8
     ports:
       - 8000:8000
     environment:
