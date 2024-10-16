@@ -28,7 +28,7 @@ jobs:
       - name: "[Code quality] safety"
         run: docker compose -f docker-compose-tests.yaml run backend sh -c "safety check -i 70612"
       - name: "[Tests] pytest"
-        run: docker compose -f docker-compose-tests.yaml run backend sh -c "python src/manage.py wait_for_db && pytest"
+        run: docker compose -f docker-compose-tests.yaml run backend sh -c "python src/manage.py wait_for_db && python src/manage.py migrate && pytest"
       - name: "Cleanup"
         if: always()
         run: docker compose rm -s -f -v
