@@ -7,7 +7,7 @@ exclude =
     */htmlcov/*
     */migrations/*
     */docs/*
-    */wiki/*
+    */docs/*
     manage.py
     */docker/*
     */.github/*
