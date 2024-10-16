@@ -9,4 +9,6 @@ exclude =
     */docs/*
     */wiki/*
     manage.py
+    */docker/*
+    */.github/*
 max-line-length = 120

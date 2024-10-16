@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /backend
+WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1 \
     POETRY_HOME="/usr/local/bin/poetry" \
@@ -17,7 +17,7 @@ ENV PYTHONUNBUFFERED=1 \
     PATH="$PATH:$POETRY_HOME/bin"
 
 # Copy settings
-COPY ./poetry.lock ./pyproject.toml ./settings.yaml /backend/
+COPY ./poetry.lock ./pyproject.toml ./settings.yaml /app/
 
 # Install poetry
 RUN pip install "poetry==$POETRY_VERSION"
@@ -30,11 +30,11 @@ RUN poetry config virtualenvs.create false && \
     fi
 
 # Copy app
-COPY ./src /src
+COPY ./src /app/src
 
 FROM base-image as test-image
 
-COPY ./tests /backend/tests
+COPY ./tests /app/tests
 
 FROM base-image as release-image
 
@@ -46,7 +46,7 @@ COPY ./docker/entrypoint.sh /entrypoint.sh
 RUN sed -i 's/\r$//g' /entrypoint.sh  \
     && chmod +x /entrypoint.sh
 
-WORKDIR /backend/src
+WORKDIR /app/src
 
 USER app
 
