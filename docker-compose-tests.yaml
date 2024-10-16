@@ -1,3 +1,5 @@
+name: budget_manager_tests
+
 services:
   backend:
     build:
@@ -7,11 +9,11 @@ services:
       args:
         - DEV=${DEV}
     image: backend:test-image
-    command: python manage.py runserver 0.0.0.0:8000
+    command: python src/manage.py runserver 0.0.0.0:8000
     volumes:
-      - ./tests:/tests
-      - ./.secrets.yaml:/.secrets.yaml
-      - ./.flake8:/.flake8
+      - ./tests:/app/tests
+      - ./.secrets.yaml:/app/.secrets.yaml
+      - ./.flake8:/app/.flake8
     ports:
       - 8000:8000
     environment:

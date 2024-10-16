@@ -55,6 +55,8 @@ extend-exclude = '''
   |./docs/*
   |./wiki/*
   |./manage.py
+  |./docker/*
+  |./.github/*"
 )
 '''
 
@@ -70,11 +72,13 @@ skip_glob = [
     "*/migrations/*",
     "*/docs/*",
     "*/wiki/*",
-    "manage.py"
+    "manage.py",
+    "*/docker/*",
+    "*/.github/*"
 ]
 
 [tool.bandit]
-exclude_dirs = ["tests", "venv", "__pycache__", ".pytest_cache", "htmlcov"]
+exclude_dirs = ["tests", "venv", "__pycache__", ".pytest_cache", "htmlcov", "docker", ".github"]
 
 
 [build-system]

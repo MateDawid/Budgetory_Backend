@@ -1,3 +1,5 @@
+name: budget_manager_app
+
 services:
   backend:
     build:
@@ -9,8 +11,8 @@ services:
     image: backend:release-image
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - ./src:/src
-      - ./.secrets.yaml:/.secrets.yaml
+      - ./src:/app/src
+      - ./.secrets.yaml:/app/.secrets.yaml
     ports:
       - 8000:8000
     environment:
