@@ -25,4 +25,4 @@
 **/.mypy_cache
 
 # Other
-**/wiki
+**/docs

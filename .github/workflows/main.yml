@@ -16,7 +16,7 @@ jobs:
       - name: "Checkout"
         uses: actions/checkout@v4
       - name: "Build image"
-        run: docker compose -f docker-compose-tests.yaml up backend
+        run: docker compose -f docker-compose-tests.yaml up backend -d
       - name: "Perform database migrations"
         run: docker compose -f docker-compose-tests.yaml run backend sh -c "python src/manage.py wait_for_db && python src/manage.py migrate"
       - name: "[Code quality] black"
