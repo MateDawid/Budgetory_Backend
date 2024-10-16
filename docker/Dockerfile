@@ -17,7 +17,7 @@ ENV PYTHONUNBUFFERED=1 \
     PATH="$PATH:$POETRY_HOME/bin"
 
 # Copy settings
-COPY ./backend/poetry.lock ./backend/pyproject.toml ./backend/settings.yaml /backend/
+COPY ./poetry.lock ./pyproject.toml ./settings.yaml /backend/
 
 # Install poetry
 RUN pip install "poetry==$POETRY_VERSION"
@@ -30,11 +30,11 @@ RUN poetry config virtualenvs.create false && \
     fi
 
 # Copy app
-COPY ./backend/src /backend/src
+COPY ./src /src
 
 FROM base-image as test-image
 
-COPY ./backend/tests /backend/tests
+COPY ./tests /backend/tests
 
 FROM base-image as release-image
 
@@ -42,7 +42,7 @@ RUN addgroup --gid 1001 --system app && \
     adduser --no-create-home --shell /bin/false --disabled-password --uid 1001 --system --group app
 
 # Prepare entrypoint.sh
-COPY ./backend/docker/entrypoint.sh /entrypoint.sh
+COPY ./docker/entrypoint.sh /entrypoint.sh
 RUN sed -i 's/\r$//g' /entrypoint.sh  \
     && chmod +x /entrypoint.sh
 
