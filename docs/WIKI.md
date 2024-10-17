@@ -1,4 +1,5 @@
 # 1. Application run locally
+
 1. Setup and activate venv
 ```commandline
 $ python -m venv venv
@@ -12,7 +13,11 @@ $(venv) pip install poetry
 ```commandline
 $(venv) poetry install
 ```
-4. Run API
+4. Load data
+```commandline
+$(venv) python src/manage.py loaddata src/test_data.json
+```
+5. Run API
 ```commandline
 $(venv) python src/manage.py runserver
 ```
@@ -26,6 +31,11 @@ docker compose -f docker-compose.yaml build
 docker stop $(docker ps -q)
 docker compose -f docker-compose.yaml up -d
 ```
+Additionally load data:
+```commandline
+docker compose exec backend "python manage.py loaddata test_data.json"
+```
+
 # 3. Tests run in Docker
 ## Build images
 ```commandline
