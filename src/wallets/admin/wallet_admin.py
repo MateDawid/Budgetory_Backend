@@ -1,15 +1,15 @@
 from django.contrib import admin
 
-from entities.models import Deposit
 from wallets.models import Wallet
+from wallets.models.wallet_deposit_model import WalletDeposit
 
 
-class DepositInline(admin.TabularInline):
+class WalletDepositInline(admin.TabularInline):
     """Inline for Deposit model assigned to Wallet."""
 
-    model = Deposit
-    fields = ("name",)
-    readonly_fields = ("name",)
+    model = WalletDeposit
+    fields = ("deposit", "planned_weight")
+    readonly_fields = ("deposit", "planned_weight")
     can_delete = False
     show_change_link = True
 
@@ -39,4 +39,4 @@ class WalletAdmin(admin.ModelAdmin):
     list_display = ("name", "budget")
     fields = ("name", "budget")
     list_filter = ("budget",)
-    inlines = (DepositInline,)
+    inlines = (WalletDepositInline,)
