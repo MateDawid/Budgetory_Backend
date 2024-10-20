@@ -429,6 +429,253 @@
     }
   },
   {
+    "model": "admin.logentry",
+    "pk": 34,
+    "fields": {
+      "action_time": "2024-10-19T09:46:41.259Z",
+      "user": 1,
+      "content_type": 20,
+      "object_id": "1",
+      "object_repr": "Long term",
+      "action_flag": 1,
+      "change_message": "[{\"added\": {}}]"
+    }
+  },
+  {
+    "model": "admin.logentry",
+    "pk": 35,
+    "fields": {
+      "action_time": "2024-10-19T09:46:52.416Z",
+      "user": 1,
+      "content_type": 20,
+      "object_id": "2",
+      "object_repr": "Short term",
+      "action_flag": 1,
+      "change_message": "[{\"added\": {}}]"
+    }
+  },
+  {
+    "model": "admin.logentry",
+    "pk": 36,
+    "fields": {
+      "action_time": "2024-10-19T09:46:59.768Z",
+      "user": 1,
+      "content_type": 20,
+      "object_id": "3",
+      "object_repr": "Long term",
+      "action_flag": 1,
+      "change_message": "[{\"added\": {}}]"
+    }
+  },
+  {
+    "model": "admin.logentry",
+    "pk": 37,
+    "fields": {
+      "action_time": "2024-10-19T09:47:06.543Z",
+      "user": 1,
+      "content_type": 20,
+      "object_id": "4",
+      "object_repr": "Short term",
+      "action_flag": 1,
+      "change_message": "[{\"added\": {}}]"
+    }
+  },
+  {
+    "model": "admin.logentry",
+    "pk": 38,
+    "fields": {
+      "action_time": "2024-10-19T09:48:31.493Z",
+      "user": 1,
+      "content_type": 21,
+      "object_id": "1",
+      "object_repr": "Common deposit (Long term)",
+      "action_flag": 1,
+      "change_message": "[{\"added\": {}}]"
+    }
+  },
+  {
+    "model": "admin.logentry",
+    "pk": 39,
+    "fields": {
+      "action_time": "2024-10-20T07:23:22.574Z",
+      "user": 1,
+      "content_type": 21,
+      "object_id": "2",
+      "object_repr": "Personal deposit (Long term)",
+      "action_flag": 1,
+      "change_message": "[{\"added\": {}}]"
+    }
+  },
+  {
+    "model": "admin.logentry",
+    "pk": 40,
+    "fields": {
+      "action_time": "2024-10-20T07:23:39.105Z",
+      "user": 1,
+      "content_type": 21,
+      "object_id": "2",
+      "object_repr": "Personal deposit (Long term)",
+      "action_flag": 3,
+      "change_message": ""
+    }
+  },
+  {
+    "model": "admin.logentry",
+    "pk": 41,
+    "fields": {
+      "action_time": "2024-10-20T07:27:11.053Z",
+      "user": 1,
+      "content_type": 21,
+      "object_id": "3",
+      "object_repr": "Personal deposit (Long term)",
+      "action_flag": 1,
+      "change_message": "[{\"added\": {}}]"
+    }
+  },
+  {
+    "model": "admin.logentry",
+    "pk": 42,
+    "fields": {
+      "action_time": "2024-10-20T07:29:21.416Z",
+      "user": 1,
+      "content_type": 12,
+      "object_id": "11",
+      "object_repr": "Savings deposit (Admin budget)",
+      "action_flag": 1,
+      "change_message": "[{\"added\": {}}]"
+    }
+  },
+  {
+    "model": "admin.logentry",
+    "pk": 43,
+    "fields": {
+      "action_time": "2024-10-20T07:29:33.158Z",
+      "user": 1,
+      "content_type": 12,
+      "object_id": "12",
+      "object_repr": "Retirement savings depoisit (Admin budget)",
+      "action_flag": 1,
+      "change_message": "[{\"added\": {}}]"
+    }
+  },
+  {
+    "model": "admin.logentry",
+    "pk": 44,
+    "fields": {
+      "action_time": "2024-10-20T07:29:41.742Z",
+      "user": 1,
+      "content_type": 12,
+      "object_id": "11",
+      "object_repr": "General savings deposit (Admin budget)",
+      "action_flag": 2,
+      "change_message": "[{\"changed\": {\"fields\": [\"Name\"]}}]"
+    }
+  },
+  {
+    "model": "admin.logentry",
+    "pk": 45,
+    "fields": {
+      "action_time": "2024-10-20T07:29:52.709Z",
+      "user": 1,
+      "content_type": 21,
+      "object_id": "3",
+      "object_repr": "Personal deposit (Long term)",
+      "action_flag": 3,
+      "change_message": ""
+    }
+  },
+  {
+    "model": "admin.logentry",
+    "pk": 46,
+    "fields": {
+      "action_time": "2024-10-20T07:29:52.715Z",
+      "user": 1,
+      "content_type": 21,
+      "object_id": "1",
+      "object_repr": "Common deposit (Long term)",
+      "action_flag": 3,
+      "change_message": ""
+    }
+  },
+  {
+    "model": "admin.logentry",
+    "pk": 47,
+    "fields": {
+      "action_time": "2024-10-20T07:30:01.784Z",
+      "user": 1,
+      "content_type": 21,
+      "object_id": "4",
+      "object_repr": "Retirement savings depoisit (Long term)",
+      "action_flag": 1,
+      "change_message": "[{\"added\": {}}]"
+    }
+  },
+  {
+    "model": "admin.logentry",
+    "pk": 48,
+    "fields": {
+      "action_time": "2024-10-20T07:30:08.502Z",
+      "user": 1,
+      "content_type": 21,
+      "object_id": "5",
+      "object_repr": "General savings deposit (Long term)",
+      "action_flag": 1,
+      "change_message": "[{\"added\": {}}]"
+    }
+  },
+  {
+    "model": "admin.logentry",
+    "pk": 49,
+    "fields": {
+      "action_time": "2024-10-20T07:30:18.710Z",
+      "user": 1,
+      "content_type": 21,
+      "object_id": "6",
+      "object_repr": "Common deposit (Short term)",
+      "action_flag": 1,
+      "change_message": "[{\"added\": {}}]"
+    }
+  },
+  {
+    "model": "admin.logentry",
+    "pk": 50,
+    "fields": {
+      "action_time": "2024-10-20T07:30:37.174Z",
+      "user": 1,
+      "content_type": 21,
+      "object_id": "7",
+      "object_repr": "Personal deposit (Short term)",
+      "action_flag": 1,
+      "change_message": "[{\"added\": {}}]"
+    }
+  },
+  {
+    "model": "admin.logentry",
+    "pk": 51,
+    "fields": {
+      "action_time": "2024-10-20T07:30:56.113Z",
+      "user": 1,
+      "content_type": 21,
+      "object_id": "8",
+      "object_repr": "Common deposit (Short term)",
+      "action_flag": 1,
+      "change_message": "[{\"added\": {}}]"
+    }
+  },
+  {
+    "model": "admin.logentry",
+    "pk": 52,
+    "fields": {
+      "action_time": "2024-10-20T07:31:10.995Z",
+      "user": 1,
+      "content_type": 21,
+      "object_id": "9",
+      "object_repr": "Personal deposit (Long term)",
+      "action_flag": 1,
+      "change_message": "[{\"added\": {}}]"
+    }
+  },
+  {
     "model": "auth.permission",
     "pk": 1,
     "fields": {
@@ -1113,6 +1360,78 @@
     }
   },
   {
+    "model": "auth.permission",
+    "pk": 77,
+    "fields": {
+      "name": "Can add wallet",
+      "content_type": 20,
+      "codename": "add_wallet"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 78,
+    "fields": {
+      "name": "Can change wallet",
+      "content_type": 20,
+      "codename": "change_wallet"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 79,
+    "fields": {
+      "name": "Can delete wallet",
+      "content_type": 20,
+      "codename": "delete_wallet"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 80,
+    "fields": {
+      "name": "Can view wallet",
+      "content_type": 20,
+      "codename": "view_wallet"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 81,
+    "fields": {
+      "name": "Can add wallet deposit",
+      "content_type": 21,
+      "codename": "add_walletdeposit"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 82,
+    "fields": {
+      "name": "Can change wallet deposit",
+      "content_type": 21,
+      "codename": "change_walletdeposit"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 83,
+    "fields": {
+      "name": "Can delete wallet deposit",
+      "content_type": 21,
+      "codename": "delete_walletdeposit"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 84,
+    "fields": {
+      "name": "Can view wallet deposit",
+      "content_type": 21,
+      "codename": "view_walletdeposit"
+    }
+  },
+  {
     "model": "contenttypes.contenttype",
     "pk": 1,
     "fields": {
@@ -1265,6 +1584,30 @@
     }
   },
   {
+    "model": "contenttypes.contenttype",
+    "pk": 20,
+    "fields": {
+      "app_label": "wallets",
+      "model": "wallet"
+    }
+  },
+  {
+    "model": "contenttypes.contenttype",
+    "pk": 21,
+    "fields": {
+      "app_label": "wallets",
+      "model": "walletdeposit"
+    }
+  },
+  {
+    "model": "sessions.session",
+    "pk": "607vwla0h1s4zwc78zte98qad4yji4m5",
+    "fields": {
+      "session_data": ".eJxVjDsOwjAQBe_iGlneDfHalPQ5g7X-4QCypTipEHeHSCmgfTPzXsLxtha39bS4OYqLAHH63TyHR6o7iHeutyZDq-sye7kr8qBdTi2m5_Vw_w4K9_KtEZnJemQVR5UABgSK3p5J5ZjAoLHa4zgEZUAB5UETZYAc2GROmkm8P8c1N2E:1t1eSe:RwlkqOyKuo8xK1ZFsFLQGZmaezZoPFJJ7UjrXikWFkQ",
+      "expire_date": "2024-11-01T04:19:36.813Z"
+    }
+  },
+  {
     "model": "sessions.session",
     "pk": "lyecugvonc91y2dd44t6pkfkad46vwh4",
     "fields": {
@@ -1359,6 +1702,28 @@
     }
   },
   {
+    "model": "budgets.budgetingperiod",
+    "pk": 3,
+    "fields": {
+      "budget": 2,
+      "name": "2024_10",
+      "date_start": "2024-10-01",
+      "date_end": "2024-10-31",
+      "is_active": true
+    }
+  },
+  {
+    "model": "budgets.budgetingperiod",
+    "pk": 4,
+    "fields": {
+      "budget": 2,
+      "name": "2024_09",
+      "date_start": "2024-09-01",
+      "date_end": "2024-09-30",
+      "is_active": false
+    }
+  },
+  {
     "model": "entities.entity",
     "pk": 1,
     "fields": {
@@ -1411,6 +1776,83 @@
       "description": "",
       "is_active": true,
       "is_deposit": false
+    }
+  },
+  {
+    "model": "entities.entity",
+    "pk": 6,
+    "fields": {
+      "budget": 2,
+      "name": "Common deposit",
+      "description": "",
+      "is_active": true,
+      "is_deposit": true
+    }
+  },
+  {
+    "model": "entities.entity",
+    "pk": 7,
+    "fields": {
+      "budget": 2,
+      "name": "Seller",
+      "description": "",
+      "is_active": true,
+      "is_deposit": false
+    }
+  },
+  {
+    "model": "entities.entity",
+    "pk": 8,
+    "fields": {
+      "budget": 2,
+      "name": "Employer",
+      "description": "",
+      "is_active": true,
+      "is_deposit": false
+    }
+  },
+  {
+    "model": "entities.entity",
+    "pk": 9,
+    "fields": {
+      "budget": 2,
+      "name": "Personal deposit",
+      "description": "",
+      "is_active": true,
+      "is_deposit": true
+    }
+  },
+  {
+    "model": "entities.entity",
+    "pk": 10,
+    "fields": {
+      "budget": 2,
+      "name": "Flat owner",
+      "description": "",
+      "is_active": true,
+      "is_deposit": false
+    }
+  },
+  {
+    "model": "entities.entity",
+    "pk": 11,
+    "fields": {
+      "budget": 1,
+      "name": "General savings deposit",
+      "description": "",
+      "is_active": true,
+      "is_deposit": true
+    }
+  },
+  {
+    "model": "entities.entity",
+    "pk": 12,
+    "fields": {
+      "budget": 1,
+      "name": "Retirement savings depoisit",
+      "description": "",
+      "is_active": true,
+      "is_deposit": true
     }
   },
   {
@@ -1567,145 +2009,6 @@
       "is_active": true,
       "category_type": 2,
       "priority": 202
-    }
-  },
-  {
-    "model": "predictions.expenseprediction",
-    "pk": 1,
-    "fields": {
-      "period": 1,
-      "category": 1,
-      "value": "100.00",
-      "description": null
-    }
-  },
-  {
-    "model": "predictions.expenseprediction",
-    "pk": 2,
-    "fields": {
-      "period": 1,
-      "category": 2,
-      "value": "100.00",
-      "description": null
-    }
-  },
-  {
-    "model": "transfers.transfer",
-    "pk": 1,
-    "fields": {
-      "name": "Food",
-      "description": null,
-      "value": "10.00",
-      "date": "2024-10-01",
-      "period": 1,
-      "entity": 2,
-      "deposit": 4,
-      "category": 1
-    }
-  },
-  {
-    "model": "transfers.transfer",
-    "pk": 2,
-    "fields": {
-      "name": "Rent",
-      "description": null,
-      "value": "100.00",
-      "date": "2024-10-01",
-      "period": 1,
-      "entity": 5,
-      "deposit": 1,
-      "category": 2
-    }
-  },
-  {
-    "model": "transfers.transfer",
-    "pk": 3,
-    "fields": {
-      "name": "Salary",
-      "description": null,
-      "value": "1000.00",
-      "date": "2024-10-01",
-      "period": 1,
-      "entity": 3,
-      "deposit": 4,
-      "category": 9
-    }
-  },
-    {
-    "model": "budgets.budgetingperiod",
-    "pk": 3,
-    "fields": {
-      "budget": 2,
-      "name": "2024_10",
-      "date_start": "2024-10-01",
-      "date_end": "2024-10-31",
-      "is_active": true
-    }
-  },
-  {
-    "model": "budgets.budgetingperiod",
-    "pk": 4,
-    "fields": {
-      "budget": 2,
-      "name": "2024_09",
-      "date_start": "2024-09-01",
-      "date_end": "2024-09-30",
-      "is_active": false
-    }
-  },
-  {
-    "model": "entities.entity",
-    "pk": 6,
-    "fields": {
-      "budget": 2,
-      "name": "Common deposit",
-      "description": "",
-      "is_active": true,
-      "is_deposit": true
-    }
-  },
-  {
-    "model": "entities.entity",
-    "pk": 7,
-    "fields": {
-      "budget": 2,
-      "name": "Seller",
-      "description": "",
-      "is_active": true,
-      "is_deposit": false
-    }
-  },
-  {
-    "model": "entities.entity",
-    "pk": 8,
-    "fields": {
-      "budget": 2,
-      "name": "Employer",
-      "description": "",
-      "is_active": true,
-      "is_deposit": false
-    }
-  },
-  {
-    "model": "entities.entity",
-    "pk": 9,
-    "fields": {
-      "budget": 2,
-      "name": "Personal deposit",
-      "description": "",
-      "is_active": true,
-      "is_deposit": true
-    }
-  },
-  {
-    "model": "entities.entity",
-    "pk": 10,
-    "fields": {
-      "budget": 2,
-      "name": "Flat owner",
-      "description": "",
-      "is_active": true,
-      "is_deposit": false
     }
   },
   {
@@ -1866,6 +2169,26 @@
   },
   {
     "model": "predictions.expenseprediction",
+    "pk": 1,
+    "fields": {
+      "period": 1,
+      "category": 1,
+      "value": "100.00",
+      "description": null
+    }
+  },
+  {
+    "model": "predictions.expenseprediction",
+    "pk": 2,
+    "fields": {
+      "period": 1,
+      "category": 2,
+      "value": "100.00",
+      "description": null
+    }
+  },
+  {
+    "model": "predictions.expenseprediction",
     "pk": 3,
     "fields": {
       "period": 3,
@@ -1882,6 +2205,48 @@
       "category": 14,
       "value": "100.00",
       "description": null
+    }
+  },
+  {
+    "model": "transfers.transfer",
+    "pk": 1,
+    "fields": {
+      "name": "Food",
+      "description": null,
+      "value": "10.00",
+      "date": "2024-10-01",
+      "period": 1,
+      "entity": 2,
+      "deposit": 4,
+      "category": 1
+    }
+  },
+  {
+    "model": "transfers.transfer",
+    "pk": 2,
+    "fields": {
+      "name": "Rent",
+      "description": null,
+      "value": "100.00",
+      "date": "2024-10-01",
+      "period": 1,
+      "entity": 5,
+      "deposit": 1,
+      "category": 2
+    }
+  },
+  {
+    "model": "transfers.transfer",
+    "pk": 3,
+    "fields": {
+      "name": "Salary",
+      "description": null,
+      "value": "1000.00",
+      "date": "2024-10-01",
+      "period": 1,
+      "entity": 3,
+      "deposit": 4,
+      "category": 9
     }
   },
   {
@@ -1924,6 +2289,92 @@
       "entity": 8,
       "deposit": 9,
       "category": 21
+    }
+  },
+  {
+    "model": "wallets.wallet",
+    "pk": 1,
+    "fields": {
+      "budget": 1,
+      "name": "Long term"
+    }
+  },
+  {
+    "model": "wallets.wallet",
+    "pk": 2,
+    "fields": {
+      "budget": 1,
+      "name": "Short term"
+    }
+  },
+  {
+    "model": "wallets.wallet",
+    "pk": 3,
+    "fields": {
+      "budget": 2,
+      "name": "Long term"
+    }
+  },
+  {
+    "model": "wallets.wallet",
+    "pk": 4,
+    "fields": {
+      "budget": 2,
+      "name": "Short term"
+    }
+  },
+  {
+    "model": "wallets.walletdeposit",
+    "pk": 4,
+    "fields": {
+      "wallet": 1,
+      "deposit": 12,
+      "planned_weight": "20"
+    }
+  },
+  {
+    "model": "wallets.walletdeposit",
+    "pk": 5,
+    "fields": {
+      "wallet": 1,
+      "deposit": 11,
+      "planned_weight": "80"
+    }
+  },
+  {
+    "model": "wallets.walletdeposit",
+    "pk": 6,
+    "fields": {
+      "wallet": 2,
+      "deposit": 1,
+      "planned_weight": "70"
+    }
+  },
+  {
+    "model": "wallets.walletdeposit",
+    "pk": 7,
+    "fields": {
+      "wallet": 2,
+      "deposit": 4,
+      "planned_weight": "30"
+    }
+  },
+  {
+    "model": "wallets.walletdeposit",
+    "pk": 8,
+    "fields": {
+      "wallet": 4,
+      "deposit": 6,
+      "planned_weight": "100"
+    }
+  },
+  {
+    "model": "wallets.walletdeposit",
+    "pk": 9,
+    "fields": {
+      "wallet": 3,
+      "deposit": 9,
+      "planned_weight": "100"
     }
   }
 ]
