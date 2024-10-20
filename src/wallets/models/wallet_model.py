@@ -14,5 +14,11 @@ class Wallet(models.Model):
             "budget",
         )
 
-    def __str__(self):
-        return self.name
+    def __str__(self) -> str:
+        """
+        Returns string representation of model instance.
+
+        Returns:
+            str: String representation of model instance.
+        """
+        return f"{self.name} ({self.budget.name})"
