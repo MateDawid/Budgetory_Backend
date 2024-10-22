@@ -20,6 +20,12 @@ class WalletDeposit(models.Model):
             "wallet",
             "deposit",
         )
+        constraints = (
+            models.CheckConstraint(
+                name="%(app_label)s_%(class)s_planned_weight_gte_0",
+                check=models.Q(planned_weight__gte=Decimal("0.00")),
+            ),
+        )
 
     def __str__(self):
         """
