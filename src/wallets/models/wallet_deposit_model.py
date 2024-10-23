@@ -1,7 +1,6 @@
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
-from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
@@ -10,9 +9,7 @@ class WalletDeposit(models.Model):
 
     wallet = models.ForeignKey("wallets.Wallet", on_delete=models.CASCADE, related_name="deposits")
     deposit = models.OneToOneField("entities.Deposit", on_delete=models.CASCADE, related_name="wallets")
-    planned_weight = models.DecimalField(
-        max_digits=3, decimal_places=0, default=Decimal(0), validators=[MinValueValidator(0), MaxValueValidator(100)]
-    )
+    planned_weight = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("0.00"))
 
     class Meta:
         verbose_name_plural = "wallet_deposits"
@@ -24,6 +21,10 @@ class WalletDeposit(models.Model):
             models.CheckConstraint(
                 name="%(app_label)s_%(class)s_planned_weight_gte_0",
                 check=models.Q(planned_weight__gte=Decimal("0.00")),
+            ),
+            models.CheckConstraint(
+                name="%(app_label)s_%(class)s_planned_weight_lte_100",
+                check=models.Q(planned_weight__lte=Decimal("100.00")),
             ),
         )
 
