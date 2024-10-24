@@ -10,6 +10,7 @@ from entities.views.entity_viewset import EntityViewSet
 from predictions.views.expense_prediction_viewset import ExpensePredictionViewSet
 from transfers.views.expense_viewset import ExpenseViewSet
 from transfers.views.income_viewset import IncomeViewSet
+from wallets.views.wallet_viewset import WalletViewSet
 
 app_name = "budgets"
 
@@ -25,7 +26,7 @@ budget_router.register(r"expense_categories", ExpenseCategoryViewSet, basename="
 budget_router.register(r"expense_predictions", ExpensePredictionViewSet, basename="expense_prediction")
 budget_router.register(r"incomes", IncomeViewSet, basename="income")
 budget_router.register(r"expenses", ExpenseViewSet, basename="expense")
-
+budget_router.register(r"wallets", WalletViewSet, basename="wallet")
 
 urlpatterns = [
     path("", include(router.urls)),
