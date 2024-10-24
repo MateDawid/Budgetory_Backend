@@ -1,26 +1,30 @@
 # 1. Application run locally
 
 1. Setup and activate venv
-```commandline
-$ python -m venv venv
-$ venv\Scripts\activate
-```
+    ```commandline
+    $ python -m venv venv
+    $ venv\Scripts\activate
+    ```
 2. Install poetry
-```commandline
-$(venv) pip install poetry
-```
+    ```commandline
+    $(venv) pip install poetry
+    ```
 3. Install dependencies
-```commandline
-$(venv) poetry install
-```
-4. Load data
-```commandline
-$(venv) python src/manage.py loaddata src/test_data.json
-```
-5. Run API
-```commandline
-$(venv) python src/manage.py runserver
-```
+    ```commandline
+    $(venv) poetry install
+    ```
+4. Install pre-commit
+   ```commandline
+   $(venv) pre-commit install
+   ```
+5. Load data
+    ```commandline
+    $(venv) python src/manage.py loaddata src/test_data.json
+    ```
+6. Run API
+    ```commandline
+    $(venv) python src/manage.py runserver
+    ```
 # 2. Application run in Docker
 ## Build images
 ```commandline
