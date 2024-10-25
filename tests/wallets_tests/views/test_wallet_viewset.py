@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
@@ -264,149 +266,112 @@ class TestWalletViewSetDetail:
         assert response.data == serializer.data
 
 
-# @pytest.mark.django_db
-# class TestWalletViewSetUpdate:
-#     """Tests for update view on WalletViewSet."""
-#
-#     PAYLOAD = {
-#         "name": "Supermarket",
-#         "description": "Supermarket in which I buy food.",
-#         "is_active": True,
-#         "is_deposit": False,
-#     }
-#
-#     def test_auth_required(self, api_client: APIClient, wallet: Wallet):
-#         """
-#         GIVEN: Budget model instance in database.
-#         WHEN: WalletViewSet detail view called with PATCH without authentication.
-#         THEN: Unauthorized HTTP 401 returned.
-#         """
-#         res = api_client.patch(wallet_detail_url(wallet.budget.id, wallet.id), data={})
-#
-#         assert res.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_user_not_budget_member(
-#         self,
-#         api_client: APIClient,
-#         user_factory: FactoryMetaClass,
-#         budget_factory: FactoryMetaClass,
-#         wallet_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Budget model instance in database.
-#         WHEN: WalletViewSet detail view called with PATCH by User not belonging to given Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         budget_owner = user_factory()
-#         other_user = user_factory()
-#         budget = budget_factory(owner=budget_owner)
-#         wallet = wallet_factory(budget=budget)
-#         api_client.force_authenticate(other_user)
-#         url = wallet_detail_url(wallet.budget.id, wallet.id)
-#
-#         response = api_client.patch(url)
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data["detail"] == "User does not have access to Budget."
-#
-#     @pytest.mark.parametrize(
-#         "param, value",
-#         [
-#             ("name", "New name"),
-#             ("description", "New description"),
-#             ("is_active", not PAYLOAD["is_active"]),
-#             ("is_deposit", not PAYLOAD["is_deposit"]),
-#         ],
-#     )
-#     @pytest.mark.django_db
-#     def test_wallet_update(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         wallet_factory: FactoryMetaClass,
-#         param: str,
-#         value: Any,
-#     ):
-#         """
-#         GIVEN: Wallet instance for Budget created in database.
-#         WHEN: WalletViewSet detail view called with PATCH by User belonging to Budget.
-#         THEN: HTTP 200, Wallet updated.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         wallet = wallet_factory(budget=budget, **self.PAYLOAD)
-#         update_payload = {param: value}
-#         api_client.force_authenticate(base_user)
-#         url = wallet_detail_url(budget.id, wallet.id)
-#
-#         response = api_client.patch(url, update_payload)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         wallet.refresh_from_db()
-#         assert getattr(wallet, param) == update_payload[param]
-#
-#     @pytest.mark.parametrize("param, value", [("name", PAYLOAD["name"])])
-#     def test_error_on_wallet_update(
-#         self,
-#         api_client: APIClient,
-#         base_user: Any,
-#         budget_factory: FactoryMetaClass,
-#         wallet_factory: FactoryMetaClass,
-#         param: str,
-#         value: Any,
-#     ):
-#         """
-#         GIVEN: Wallet instance for Budget created in database. Update payload with invalid value.
-#         WHEN: WalletViewSet detail view called with PATCH by User belonging to Budget
-#         with invalid payload.
-#         THEN: Bad request HTTP 400, Wallet not updated.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         wallet_factory(budget=budget, **self.PAYLOAD)
-#         wallet = wallet_factory(budget=budget)
-#         old_value = getattr(wallet, param)
-#         update_payload = {param: value}
-#         api_client.force_authenticate(base_user)
-#         url = wallet_detail_url(budget.id, wallet.id)
-#
-#         response = api_client.patch(url, update_payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         wallet.refresh_from_db()
-#         assert getattr(wallet, param) == old_value
-#
-#     def test_wallet_update_many_fields(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         wallet_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Wallet instance for Budget created in database. Valid payload with many params.
-#         WHEN: WalletViewSet detail endpoint called with PATCH.
-#         THEN: HTTP 200 returned. Wallet updated in database.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#         payload = self.PAYLOAD.copy()
-#         wallet = wallet_factory(budget=budget, **payload)
-#         update_payload = {
-#             "name": "Some market",
-#             "description": "Updated supermarket description.",
-#             "is_active": False,
-#             "is_deposit": True,
-#         }
-#         url = wallet_detail_url(wallet.budget.id, wallet.id)
-#
-#         response = api_client.patch(url, update_payload)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         wallet.refresh_from_db()
-#         for param, value in update_payload.items():
-#             assert getattr(wallet, param) == value
-#
-#
+@pytest.mark.django_db
+class TestWalletViewSetUpdate:
+    """Tests for update view on WalletViewSet."""
+
+    PAYLOAD = {
+        "name": "Long term wallet",
+    }
+
+    def test_auth_required(self, api_client: APIClient, wallet: Wallet):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: WalletViewSet detail view called with PATCH without authentication.
+        THEN: Unauthorized HTTP 401 returned.
+        """
+        res = api_client.patch(wallet_detail_url(wallet.budget.id, wallet.id), data={})
+
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_user_not_budget_member(
+        self,
+        api_client: APIClient,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: WalletViewSet detail view called with PATCH by User not belonging to given Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        budget_owner = user_factory()
+        other_user = user_factory()
+        budget = budget_factory(owner=budget_owner)
+        wallet = wallet_factory(budget=budget)
+        api_client.force_authenticate(other_user)
+        url = wallet_detail_url(wallet.budget.id, wallet.id)
+
+        response = api_client.patch(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data["detail"] == "User does not have access to Budget."
+
+    @pytest.mark.parametrize(
+        "param, value",
+        [
+            ("name", "New name"),
+        ],
+    )
+    @pytest.mark.django_db
+    def test_wallet_update(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        param: str,
+        value: Any,
+    ):
+        """
+        GIVEN: Wallet instance for Budget created in database.
+        WHEN: WalletViewSet detail view called with PATCH by User belonging to Budget.
+        THEN: HTTP 200, Wallet updated.
+        """
+        budget = budget_factory(owner=base_user)
+        wallet = wallet_factory(budget=budget, **self.PAYLOAD)
+        update_payload = {param: value}
+        api_client.force_authenticate(base_user)
+        url = wallet_detail_url(budget.id, wallet.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        wallet.refresh_from_db()
+        assert getattr(wallet, param) == update_payload[param]
+
+    @pytest.mark.parametrize("param, value", [("name", PAYLOAD["name"])])
+    def test_error_on_wallet_update(
+        self,
+        api_client: APIClient,
+        base_user: Any,
+        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        param: str,
+        value: Any,
+    ):
+        """
+        GIVEN: Wallet instance for Budget created in database. Update payload with invalid value.
+        WHEN: WalletViewSet detail view called with PATCH by User belonging to Budget
+        with invalid payload.
+        THEN: Bad request HTTP 400, Wallet not updated.
+        """
+        budget = budget_factory(owner=base_user)
+        wallet_factory(budget=budget, **self.PAYLOAD)
+        wallet = wallet_factory(budget=budget)
+        old_value = getattr(wallet, param)
+        update_payload = {param: value}
+        api_client.force_authenticate(base_user)
+        url = wallet_detail_url(budget.id, wallet.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        wallet.refresh_from_db()
+        assert getattr(wallet, param) == old_value
+
+
 # @pytest.mark.django_db
 # class TestWalletViewSetDelete:
 #     """Tests for delete Wallet on WalletViewSet."""
