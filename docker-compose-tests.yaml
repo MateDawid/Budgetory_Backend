@@ -1,4 +1,4 @@
-name: budget_manager_tests
+name: budgetory_tests
 
 services:
   backend:
