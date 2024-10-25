@@ -103,137 +103,105 @@ class TestWalletViewSetList:
         assert response.data["results"][0]["id"] == wallet.id
 
 
-# @pytest.mark.django_db
-# class TestWalletViewSetCreate:
-#     """Tests for create Wallet on WalletViewSet."""
-#
-#     PAYLOAD = {
-#         "name": "Supermarket",
-#         "description": "Supermarket in which I buy food.",
-#         "is_active": True,
-#         "is_deposit": False,
-#     }
-#
-#     def test_auth_required(self, api_client: APIClient, budget: Budget):
-#         """
-#         GIVEN: Budget model instance in database.
-#         WHEN: WalletViewSet list view called with POST without authentication.
-#         THEN: Unauthorized HTTP 401 returned.
-#         """
-#         res = api_client.post(wallets_url(budget.id), data={})
-#
-#         assert res.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_user_not_budget_member(
-#         self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Budget model instance in database.
-#         WHEN: WalletViewSet list view called with POST by User not belonging to given Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         budget_owner = user_factory()
-#         other_user = user_factory()
-#         budget = budget_factory(owner=budget_owner)
-#         api_client.force_authenticate(other_user)
-#
-#         response = api_client.post(wallets_url(budget.id), data={})
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data["detail"] == "User does not have access to Budget."
-#
-#     def test_create_single_wallet(
-#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Valid payload prepared for Wallet.
-#         WHEN: WalletViewSet called with POST by User belonging to Budget with valid payload.
-#         THEN: Wallet object created in database with given payload
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#
-#         response = api_client.post(wallets_url(budget.id), self.PAYLOAD)
-#
-#         assert response.status_code == status.HTTP_201_CREATED
-#         assert Wallet.objects.filter(budget=budget).count() == 1
-#         assert Wallet.deposits.filter(budget=budget).count() == 0
-#         wallet = Wallet.objects.get(id=response.data["id"])
-#         assert wallet.budget == budget
-#         for key in self.PAYLOAD:
-#             assert getattr(wallet, key) == self.PAYLOAD[key]
-#         serializer = WalletSerializer(wallet)
-#         assert response.data == serializer.data
-#
-#     def test_create_single_deposit(
-#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Valid payload with is_deposit=True prepared for Wallet.
-#         WHEN: WalletViewSet called with POST by User belonging to Budget with valid payload.
-#         THEN: Wallet object with is_deposit=True created in database with given payload
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#         payload = self.PAYLOAD.copy()
-#         payload["is_deposit"] = True
-#
-#         response = api_client.post(wallets_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_201_CREATED
-#         assert Wallet.objects.filter(budget=budget).count() == 1
-#         assert Wallet.deposits.filter(budget=budget).count() == 1
-#         wallet = Wallet.objects.get(id=response.data["id"])
-#         assert wallet.budget == budget
-#         for key in payload:
-#             assert getattr(wallet, key) == payload[key]
-#         serializer = WalletSerializer(wallet)
-#         assert response.data == serializer.data
-#
-#     @pytest.mark.parametrize("field_name", ["name", "description"])
-#     def test_error_value_too_long(
-#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass, field_name: str
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Payload for Wallet with field value too long.
-#         WHEN: WalletViewSet called with POST by User belonging to Budget with invalid payload.
-#         THEN: Bad request HTTP 400 returned. Wallet not created in database.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#         max_length = Wallet._meta.get_field(field_name).max_length
-#         payload = self.PAYLOAD.copy()
-#         payload[field_name] = (max_length + 1) * "a"
-#
-#         response = api_client.post(wallets_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert field_name in response.data["detail"]
-#         assert response.data["detail"][field_name][0] == f"Ensure this field has no more
-#         than {max_length} characters."
-#         assert not Wallet.objects.filter(budget=budget).exists()
-#
-#     def test_error_name_already_used(
-#         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. Valid payload for Wallet.
-#         WHEN: WalletViewSet called twice with POST by User belonging to Budget with the same payload.
-#         THEN: Bad request HTTP 400 returned. Only one Wallet created in database.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         api_client.force_authenticate(base_user)
-#         payload = self.PAYLOAD.copy()
-#
-#         api_client.post(wallets_url(budget.id), payload)
-#         response = api_client.post(wallets_url(budget.id), payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert "name" in response.data["detail"]
-#         assert response.data["detail"]["name"][0] == "Wallet with given name already exists in Budget."
-#         assert Wallet.objects.filter(budget=budget).count() == 1
-#
-#
+@pytest.mark.django_db
+class TestWalletViewSetCreate:
+    """Tests for create Wallet on WalletViewSet."""
+
+    PAYLOAD: dict = {"name": "Long term wallet"}
+
+    def test_auth_required(self, api_client: APIClient, budget: Budget):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: WalletViewSet list view called with POST without authentication.
+        THEN: Unauthorized HTTP 401 returned.
+        """
+        res = api_client.post(wallets_url(budget.id), data={})
+
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_user_not_budget_member(
+        self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: WalletViewSet list view called with POST by User not belonging to given Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        budget_owner = user_factory()
+        other_user = user_factory()
+        budget = budget_factory(owner=budget_owner)
+        api_client.force_authenticate(other_user)
+
+        response = api_client.post(wallets_url(budget.id), data={})
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data["detail"] == "User does not have access to Budget."
+
+    def test_create_single_wallet(
+        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Budget instance created in database. Valid payload prepared for Wallet.
+        WHEN: WalletViewSet called with POST by User belonging to Budget with valid payload.
+        THEN: Wallet object created in database with given payload
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.post(wallets_url(budget.id), self.PAYLOAD)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert Wallet.objects.filter(budget=budget).count() == 1
+        wallet = Wallet.objects.get(id=response.data["id"])
+        assert wallet.budget == budget
+        for key in self.PAYLOAD:
+            assert getattr(wallet, key) == self.PAYLOAD[key]
+        serializer = WalletSerializer(wallet)
+        assert response.data == serializer.data
+
+    @pytest.mark.parametrize("field_name", ["name"])
+    def test_error_value_too_long(
+        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass, field_name: str
+    ):
+        """
+        GIVEN: Budget instance created in database. Payload for Wallet with field value too long.
+        WHEN: WalletViewSet called with POST by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. Wallet not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        max_length = Wallet._meta.get_field(field_name).max_length
+        payload = self.PAYLOAD.copy()
+        payload[field_name] = (max_length + 1) * "a"
+
+        response = api_client.post(wallets_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert field_name in response.data["detail"]
+        assert response.data["detail"][field_name][0] == f"Ensure this field has no more than {max_length} characters."
+        assert not Wallet.objects.filter(budget=budget).exists()
+
+    def test_error_name_already_used(
+        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Budget instance created in database. Valid payload for Wallet.
+        WHEN: WalletViewSet called twice with POST by User belonging to Budget with the same payload.
+        THEN: Bad request HTTP 400 returned. Only one Wallet created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+
+        api_client.post(wallets_url(budget.id), payload)
+        response = api_client.post(wallets_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "name" in response.data["detail"]
+        assert response.data["detail"]["name"][0] == "Wallet name used already in Budget."
+        assert Wallet.objects.filter(budget=budget).count() == 1
+
+
 # @pytest.mark.django_db
 # class TestWalletViewSetDetail:
 #     """Tests for detail view on WalletViewSet."""

@@ -26,3 +26,12 @@ class WalletViewSet(ModelViewSet):
             QuerySet: Filtered Wallet QuerySet.
         """
         return Wallet.objects.filter(budget__pk=self.kwargs.get("budget_pk"))
+
+    def perform_create(self, serializer: WalletSerializer) -> None:
+        """
+        Additionally save Budget from URL on Wallet instance during saving serializer.
+
+        Args:
+            serializer [WalletSerializer]: Serializer for Wallet model.
+        """
+        serializer.save(budget_id=self.kwargs.get("budget_pk"))
