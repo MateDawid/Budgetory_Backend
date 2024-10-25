@@ -202,68 +202,68 @@ class TestWalletViewSetCreate:
         assert Wallet.objects.filter(budget=budget).count() == 1
 
 
-# @pytest.mark.django_db
-# class TestWalletViewSetDetail:
-#     """Tests for detail view on WalletViewSet."""
-#
-#     def test_auth_required(self, api_client: APIClient, wallet: Wallet):
-#         """
-#         GIVEN: Budget model instance in database.
-#         WHEN: WalletViewSet detail view called with GET without authentication.
-#         THEN: Unauthorized HTTP 401 returned.
-#         """
-#         res = api_client.get(wallet_detail_url(wallet.budget.id, wallet.id), data={})
-#
-#         assert res.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_user_not_budget_member(
-#         self,
-#         api_client: APIClient,
-#         user_factory: FactoryMetaClass,
-#         budget_factory: FactoryMetaClass,
-#         wallet_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Budget model instance in database.
-#         WHEN: WalletViewSet detail view called with GET by User not belonging to given Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         budget_owner = user_factory()
-#         other_user = user_factory()
-#         budget = budget_factory(owner=budget_owner)
-#         wallet = wallet_factory(budget=budget)
-#         api_client.force_authenticate(other_user)
-#         url = wallet_detail_url(wallet.budget.id, wallet.id)
-#
-#         response = api_client.get(url)
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data["detail"] == "User does not have access to Budget."
-#
-#     def test_get_wallet_details(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         wallet_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Wallet instance for Budget created in database.
-#         WHEN: WalletViewSet detail view called by User belonging to Budget.
-#         THEN: HTTP 200, Wallet details returned.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         wallet = wallet_factory(budget=budget)
-#         api_client.force_authenticate(base_user)
-#         url = wallet_detail_url(budget.id, wallet.id)
-#
-#         response = api_client.get(url)
-#         serializer = WalletSerializer(wallet)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data == serializer.data
-#
-#
+@pytest.mark.django_db
+class TestWalletViewSetDetail:
+    """Tests for detail view on WalletViewSet."""
+
+    def test_auth_required(self, api_client: APIClient, wallet: Wallet):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: WalletViewSet detail view called with GET without authentication.
+        THEN: Unauthorized HTTP 401 returned.
+        """
+        res = api_client.get(wallet_detail_url(wallet.budget.id, wallet.id), data={})
+
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_user_not_budget_member(
+        self,
+        api_client: APIClient,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget model instance in database.
+        WHEN: WalletViewSet detail view called with GET by User not belonging to given Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        budget_owner = user_factory()
+        other_user = user_factory()
+        budget = budget_factory(owner=budget_owner)
+        wallet = wallet_factory(budget=budget)
+        api_client.force_authenticate(other_user)
+        url = wallet_detail_url(wallet.budget.id, wallet.id)
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data["detail"] == "User does not have access to Budget."
+
+    def test_get_wallet_details(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Wallet instance for Budget created in database.
+        WHEN: WalletViewSet detail view called by User belonging to Budget.
+        THEN: HTTP 200, Wallet details returned.
+        """
+        budget = budget_factory(owner=base_user)
+        wallet = wallet_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        url = wallet_detail_url(budget.id, wallet.id)
+
+        response = api_client.get(url)
+        serializer = WalletSerializer(wallet)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == serializer.data
+
+
 # @pytest.mark.django_db
 # class TestWalletViewSetUpdate:
 #     """Tests for update view on WalletViewSet."""
