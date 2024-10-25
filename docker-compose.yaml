@@ -1,4 +1,4 @@
-name: budget_manager_app
+name: budgetory_app
 
 services:
   backend:
