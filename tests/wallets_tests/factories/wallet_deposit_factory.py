@@ -1,3 +1,6 @@
+import random
+from decimal import Decimal
+
 import factory.fuzzy
 from budgets_tests.factories import BudgetFactory
 from entities_tests.factories import DepositFactory
@@ -16,15 +19,15 @@ class WalletDepositFactory(factory.django.DjangoModelFactory):
 
     wallet = factory.SubFactory(WalletFactory)
     deposit = factory.SubFactory(DepositFactory)
-    planned_weight = factory.Faker("pyint", min_value=0, max_value=100)
+    # planned_weight = factory.Faker("pyint", min_value=0, max_value=100)
 
     @factory.lazy_attribute
     def wallet(self, *args) -> Wallet:
         """
-        Returns BudgetingPeriod with the same Budget as prediction category.
+        Returns Wallet with the same Budget as deposit.
 
         Returns:
-            BudgetingPeriod: BudgetingPeriod with the same Budget as category.
+            Wallet: Wallet with the same Budget as deposit.
         """
         budget = self._Resolver__step.builder.extras.get("budget")
         if not budget:
@@ -34,15 +37,28 @@ class WalletDepositFactory(factory.django.DjangoModelFactory):
     @factory.lazy_attribute
     def deposit(self, *args) -> Deposit:
         """
-        Returns ExpenseCategory with the same Budget as prediction period.
+        Returns Deposit with the same Budget as wallet.
 
         Returns:
-            ExpenseCategory: ExpenseCategory with the same Budget as period.
+            Deposit: Deposit with the same Budget as wallet.
         """
         budget = self._Resolver__step.builder.extras.get("budget")
         if not budget:
             budget = self.wallet.budget
         return DepositFactory(budget=budget)
+
+    @factory.lazy_attribute
+    def planned_weight(self, *args) -> Decimal:
+        """
+        Returns calculated planned_weight for WalletDeposit.
+
+        Returns:
+            Decimal: Calculated planned_weight for WalletDeposit.
+        """
+        wallet_weights_sum = Decimal(sum(self.wallet.deposits.values_list("planned_weight", flat=True)))
+        available_range_max = int(Decimal("100.00") - wallet_weights_sum)
+        choice = random.randrange(0, int(available_range_max))
+        return Decimal(choice).quantize(Decimal(".01"))
 
     @factory.post_generation
     def budget(self, create: bool, budget: Budget, **kwargs) -> None:
