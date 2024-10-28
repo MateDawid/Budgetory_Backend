@@ -62,5 +62,6 @@ class WalletDeposit(models.Model):
         Raises:
             ValidationError: Raised when sum of planned_weight assigned to Wallet is greater than 100.
         """
-        if sum([self.planned_weight, *self.wallet.deposits.values_list("planned_weight", flat=True)]) > Decimal("100"):
-            raise ValidationError("Sum of planned weights for single Wallet has to be lower than 100.")
+        wallet_weights = self.wallet.deposits.exclude(pk=self.pk).values_list("planned_weight", flat=True)
+        if sum([self.planned_weight, *wallet_weights]) > Decimal("100.00"):
+            raise ValidationError("Sum of planned weights for single Wallet cannot be greater than 100.")
