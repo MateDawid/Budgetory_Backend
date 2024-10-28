@@ -57,7 +57,8 @@ class TestWalletDepositModel:
         with pytest.raises(ValidationError) as exc:
             WalletDeposit.objects.create(**payload)
         assert (
-            exc.value.error_list[0].messages[0] == "Sum of planned weights for single Wallet has to be lower than 100."
+            exc.value.error_list[0].messages[0]
+            == "Sum of planned weights for single Wallet cannot be greater than 100."
         )
         assert not WalletDeposit.objects.all().exists()
 
@@ -145,5 +146,5 @@ class TestWalletDepositModel:
                 deposit=deposit_factory(budget=budget), wallet=wallet, planned_weight=Decimal("20.01")
             )
 
-        assert str(exc.value.args[0]) == "Sum of planned weights for single Wallet has to be lower than 100."
+        assert str(exc.value.args[0]) == "Sum of planned weights for single Wallet cannot be greater than 100."
         assert WalletDeposit.objects.filter(wallet=wallet).count() == 2
