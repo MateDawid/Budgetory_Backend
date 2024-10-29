@@ -26,7 +26,7 @@ class WalletDepositViewSet(ModelViewSet):
             QuerySet: Filtered Wallet QuerySet.
         """
         return WalletDeposit.objects.filter(
-            budget__pk=self.kwargs.get("budget_pk"), wallet__pk=self.kwargs.get("wallet_pk")
+            wallet__budget__pk=self.kwargs.get("budget_pk"), wallet__pk=self.kwargs.get("wallet_pk")
         )
 
     def perform_create(self, serializer: WalletDepositSerializer) -> None:
