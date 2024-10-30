@@ -4,7 +4,6 @@ from django.db.models import Model
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from entities.models import Deposit
 from wallets.models.wallet_deposit_model import WalletDeposit
 
 
@@ -16,20 +15,17 @@ class WalletDepositSerializer(serializers.ModelSerializer):
         fields = ("id", "deposit", "planned_weight")
         read_only_fields = ("id",)
 
-    def validate_deposit(self, deposit: Deposit) -> Deposit:
-        # if deposit.budget.pk != self.context["view"].kwargs["wallet_pk"]:
-        #     raise ValidationError("Budget not the same for Wallet and Deposit.")
-        if WalletDeposit.objects.filter(
-            wallet__budget__pk=self.context["view"].kwargs["budget_pk"], deposit=deposit
-        ).exists():
-            raise ValidationError("Deposit already assigned to another Wallet.")
-        return deposit
+    @staticmethod
+    def validate_planned_weight(planned_weight: Decimal) -> Decimal:
+        """
+        Checks if planned_weight value is in acceptable range.
 
-    def validate_planned_weight(self, planned_weight: Decimal) -> Decimal:
+        Args:
+            planned_weight (Decimal): Input planned_weight value.
+
+        Returns:
+            Decimal: Validated planned_weight value.
+        """
         if not (Decimal("0.00") < planned_weight < Decimal("100.00")):
-            raise ValidationError()
-        # wallet_values = Wallet.objects.get(
-        # wallet__pk=self.context["view"].kwargs["wallet_pk"]
-        # ).deposits.values_list("planned_weight", flat=True)
-        # if sum([planned_weight, *wallet_values])> Decimal("100"):
-        #     raise ValidationError("Sum of planned weights for single Wallet has to be lower than 100.")
+            raise ValidationError("Invalid value for planned_weight.")
+        return planned_weight
