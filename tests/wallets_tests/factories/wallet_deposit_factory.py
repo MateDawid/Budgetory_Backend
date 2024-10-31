@@ -17,10 +17,6 @@ class WalletDepositFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "wallets.WalletDeposit"
 
-    wallet = factory.SubFactory(WalletFactory)
-    deposit = factory.SubFactory(DepositFactory)
-    # planned_weight = factory.Faker("pyint", min_value=0, max_value=100)
-
     @factory.lazy_attribute
     def wallet(self, *args) -> Wallet:
         """
