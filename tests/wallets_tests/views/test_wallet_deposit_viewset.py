@@ -277,7 +277,7 @@ class TestWalletDepositViewSetCreate:
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["deposit"] = deposit.id
-        payload["planned_weight"] = Decimal("-0.01")
+        payload["planned_weight"] = planned_weight
 
         response = api_client.post(wallet_deposit_url(budget.id, wallet.id), payload)
 
@@ -388,234 +388,256 @@ class TestWalletDepositViewSetDetail:
         assert response.data == serializer.data
 
 
-# @pytest.mark.django_db
-# class TestWalletDepositViewSetUpdate:
-#     """Tests for update view on WalletDepositViewSet."""
-#
-#     PAYLOAD = {
-#         "value": Decimal("100.00"),
-#         "description": "Expense wallet_deposit.",
-#     }
-#
-#     def test_auth_required(
-#         self, api_client: APIClient, base_user: AbstractUser, wallet_deposit_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: WalletDeposit instance for Budget created in database.
-#         WHEN: WalletDepositViewSet detail view called with PATCH without authentication.
-#         THEN: Unauthorized HTTP 401.
-#         """
-#         wallet_deposit = wallet_deposit_factory()
-#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
-#
-#         response = api_client.patch(url, {})
-#
-#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_user_not_budget_member(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         wallet_deposit_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: WalletDeposit instance for Budget created in database.
-#         WHEN: WalletDepositViewSet detail view called with PATCH by User not belonging to Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         wallet_deposit = wallet_deposit_factory(budget=budget_factory())
-#         api_client.force_authenticate(base_user)
-#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
-#
-#         response = api_client.patch(url, {})
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data["detail"] == "User does not have access to Budget."
-#
-#     @pytest.mark.parametrize(
-#         "param, value",
-#         [
-#             ("value", Decimal("200.00")),
-#             ("description", "New description"),
-#         ],
-#     )
-#     @pytest.mark.django_db
-#     def test_wallet_deposit_update(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         wallet_deposit_factory: FactoryMetaClass,
-#         param: str,
-#         value: Any,
-#     ):
-#         """
-#         GIVEN: WalletDeposit instance for Budget created in database.
-#         WHEN: WalletDepositViewSet detail view called with PATCH by User belonging to Budget.
-#         THEN: HTTP 200, WalletDeposit updated.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         wallet_deposit = wallet_deposit_factory(budget=budget, **self.PAYLOAD)
-#         update_payload = {param: value}
-#         api_client.force_authenticate(base_user)
-#         url = wallet_deposit_detail_url(budget.id, wallet_deposit.id)
-#
-#         response = api_client.patch(url, update_payload)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         wallet_deposit.refresh_from_db()
-#         assert getattr(wallet_deposit, param) == update_payload[param]
-#
-#     def test_wallet_deposit_update_wallet(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         wallet_factory: FactoryMetaClass,
-#         wallet_deposit_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: WalletDeposit instance for Budget created in database. Update payload with "wallet" value prepared.
-#         WHEN: WalletDepositViewSet detail view called with PATCH by User belonging to Budget with valid payload.
-#         THEN: HTTP 200, Deposit updated with "wallet" value.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         wallet = wallet_factory(budget=budget)
-#         wallet_deposit = wallet_deposit_factory(budget=budget, **self.PAYLOAD)
-#         update_payload = {"wallet": wallet.id}
-#         api_client.force_authenticate(base_user)
-#         url = wallet_deposit_detail_url(budget.id, wallet_deposit.id)
-#
-#         response = api_client.patch(url, update_payload)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         wallet_deposit.refresh_from_db()
-#         assert wallet_deposit.wallet == wallet
-#
-#     def test_wallet_deposit_update_deposit(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         deposit_factory: FactoryMetaClass,
-#         wallet_deposit_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: WalletDeposit instance for Budget created in database. Update payload with "deposit" value prepared.
-#         WHEN: WalletDepositViewSet detail view called with PATCH by User belonging to Budget with valid payload.
-#         THEN: HTTP 200, Deposit updated with "deposit" value.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         deposit = deposit_factory(budget=budget)
-#         wallet_deposit = wallet_deposit_factory(budget=budget, **self.PAYLOAD)
-#         update_payload = {"deposit": deposit.id}
-#         api_client.force_authenticate(base_user)
-#         url = wallet_deposit_detail_url(budget.id, wallet_deposit.id)
-#
-#         response = api_client.patch(url, update_payload)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         wallet_deposit.refresh_from_db()
-#         assert wallet_deposit.deposit == deposit
-#
-#     def test_wallet_deposit_update_many_fields(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         wallet_factory: FactoryMetaClass,
-#         deposit_factory: FactoryMetaClass,
-#         wallet_deposit_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: WalletDeposit instance for Budget created in database. Valid payload with many params.
-#         WHEN: WalletDepositViewSet detail endpoint called with PATCH.
-#         THEN: HTTP 200 returned. WalletDeposit updated in database.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         wallet_1 = wallet_factory(budget=budget)
-#         wallet_2 = wallet_factory(budget=budget)
-#         deposit_1 = deposit_factory(budget=budget)
-#         deposit_2 = deposit_factory(budget=budget)
-#         api_client.force_authenticate(base_user)
-#         payload = {"wallet": wallet_1, "deposit": deposit_1, **self.PAYLOAD}
-#         wallet_deposit = wallet_deposit_factory(budget=budget, **payload)
-#         update_payload = {
-#             "value": Decimal("200.00"),
-#             "description": "Updated wallet_deposit.",
-#             "wallet": wallet_2.id,
-#             "deposit": deposit_2.id,
-#         }
-#         url = wallet_deposit_detail_url(budget.id, wallet_deposit.id)
-#
-#         response = api_client.patch(url, update_payload)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         wallet_deposit.refresh_from_db()
-#         for param, value in update_payload.items():
-#             if param in ("wallet", "deposit"):
-#                 assert getattr(wallet_deposit, param).id == value
-#             else:
-#                 assert getattr(wallet_deposit, param) == value
-#
-#     def test_error_update_wallet_does_not_belong_to_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         wallet_factory: FactoryMetaClass,
-#         wallet_deposit_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. User not belonging to Budget as
-#         'wallet' in payload.
-#         WHEN: WalletDepositViewSet called with PATCH by User belonging to Budget with invalid payload.
-#         THEN: Bad request HTTP 400 returned. WalletDeposit not updated.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         wallet_deposit = wallet_deposit_factory(budget=budget)
-#         payload = {"wallet": wallet_factory().id}
-#         api_client.force_authenticate(base_user)
-#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
-#
-#         response = api_client.patch(url, payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert "non_field_errors" in response.data["detail"]
-#         assert (
-#             response.data["detail"]["non_field_errors"][0] == "Budget for wallet and deposit fields is not the same."
-#         )
-#
-#     def test_error_update_deposit_does_not_belong_to_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         deposit_factory: FactoryMetaClass,
-#         wallet_deposit_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: Budget instance created in database. User not belonging to Budget as
-#         'deposit' in payload.
-#         WHEN: WalletDepositViewSet called with PATCH by User belonging to Budget with invalid payload.
-#         THEN: Bad request HTTP 400 returned. WalletDeposit not updated.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         wallet_deposit = wallet_deposit_factory(budget=budget)
-#         payload = {"deposit": deposit_factory().id}
-#         api_client.force_authenticate(base_user)
-#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
-#
-#         response = api_client.patch(url, payload)
-#
-#         assert response.status_code == status.HTTP_400_BAD_REQUEST
-#         assert "non_field_errors" in response.data["detail"]
-#         assert (
-#             response.data["detail"]["non_field_errors"][0] == "Budget for wallet and deposit fields is not the same."
-#         )
-#
-#
+@pytest.mark.django_db
+class TestWalletDepositViewSetUpdate:
+    """Tests for update view on WalletDepositViewSet."""
+
+    def test_auth_required(
+        self, api_client: APIClient, base_user: AbstractUser, wallet_deposit_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: WalletDeposit instance for Budget created in database.
+        WHEN: WalletDepositViewSet detail view called with PATCH without authentication.
+        THEN: Unauthorized HTTP 401.
+        """
+        wallet_deposit = wallet_deposit_factory()
+        url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
+
+        response = api_client.patch(url, {})
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_user_not_budget_member(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        wallet_deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: WalletDeposit instance for Budget created in database.
+        WHEN: WalletDepositViewSet detail view called with PATCH by User not belonging to Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        wallet_deposit = wallet_deposit_factory(budget=budget_factory())
+        api_client.force_authenticate(base_user)
+        url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
+
+        response = api_client.patch(url, {})
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data["detail"] == "User does not have access to Budget."
+
+    @pytest.mark.django_db
+    def test_wallet_deposit_update_planned_weight(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        wallet_deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: WalletDeposit instance for Budget created in database.
+        WHEN: WalletDepositViewSet detail view called with PATCH by User belonging to Budget to update planned_weight.
+        THEN: HTTP 200, WalletDeposit updated.
+        """
+        budget = budget_factory(owner=base_user)
+        wallet_deposit = wallet_deposit_factory(budget=budget, planned_weight=Decimal("10.00"))
+        update_payload = {"planned_weight": Decimal("20.00")}
+        api_client.force_authenticate(base_user)
+        url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        wallet_deposit.refresh_from_db()
+        assert getattr(wallet_deposit, "planned_weight") == update_payload["planned_weight"]
+
+    def test_wallet_deposit_update_deposit(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        wallet_deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: WalletDeposit instance for Budget created in database. Update payload with "deposit" value prepared.
+        WHEN: WalletDepositViewSet detail view called with PATCH by User belonging to Budget with valid payload to
+        update deposit.
+        THEN: HTTP 200, Deposit updated with "deposit" value.
+        """
+        budget = budget_factory(owner=base_user)
+        deposit = deposit_factory(budget=budget)
+        wallet_deposit = wallet_deposit_factory(budget=budget)
+        update_payload = {"deposit": deposit.id}
+        api_client.force_authenticate(base_user)
+        url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        wallet_deposit.refresh_from_db()
+        assert wallet_deposit.deposit == deposit
+
+    def test_wallet_deposit_update_many_fields(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        wallet_deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: WalletDeposit instance for Budget created in database. Valid payload with many params.
+        WHEN: WalletDepositViewSet detail endpoint called with PATCH.
+        THEN: HTTP 200 returned. WalletDeposit updated in database.
+        """
+        budget = budget_factory(owner=base_user)
+        deposit_1 = deposit_factory(budget=budget)
+        deposit_2 = deposit_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        payload = {"deposit": deposit_1, "planned_weight": Decimal("10.00")}
+        wallet_deposit = wallet_deposit_factory(budget=budget, **payload)
+        update_payload = {
+            "planned_weight": Decimal("20.00"),
+            "deposit": deposit_2.id,
+        }
+        url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        wallet_deposit.refresh_from_db()
+        for param, value in update_payload.items():
+            if param == "deposit":
+                assert getattr(wallet_deposit, param).id == value
+            else:
+                assert getattr(wallet_deposit, param) == value
+
+    def test_error_update_deposit_does_not_belong_to_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        wallet_deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget instance created in database. User not belonging to Budget as
+        'deposit' in payload.
+        WHEN: WalletDepositViewSet called with PATCH by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. WalletDeposit not updated.
+        """
+        budget = budget_factory(owner=base_user)
+        wallet_deposit = wallet_deposit_factory(budget=budget)
+        payload = {"deposit": deposit_factory().id}
+        api_client.force_authenticate(base_user)
+        url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "non_field_errors" in response.data["detail"]
+        assert response.data["detail"]["non_field_errors"][0] == "Budget not the same for Wallet and Deposit."
+
+    def test_error_second_deposit_usage(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        wallet_deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two Wallets for single Budget in database. One Wallet has Deposit already assigned in WalletDeposit.
+        Payload for new WalletDeposit with Deposit already assigned to other Wallet in payload.
+        WHEN: WalletDepositViewSet called with POST by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. WalletDeposit not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        wallet_1 = wallet_factory(budget=budget)
+        wallet_2 = wallet_factory(budget=budget)
+        deposit = deposit_factory(budget=budget)
+        wallet_deposit = wallet_deposit_factory(wallet=wallet_1)
+        wallet_deposit_factory(wallet=wallet_2, deposit=deposit)
+        api_client.force_authenticate(base_user)
+        payload = {"deposit": deposit.id}
+        url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "deposit" in response.data["detail"]
+        assert response.data["detail"]["deposit"][0] == "wallet deposit with this deposit already exists."
+        wallet_deposit.refresh_from_db()
+        assert wallet_deposit.deposit != deposit
+
+    @pytest.mark.parametrize("planned_weight", [Decimal("-0.01"), Decimal("100.01")])
+    def test_error_invalid_planned_weight_value(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        wallet_deposit_factory: FactoryMetaClass,
+        planned_weight: Decimal,
+    ):
+        """
+        GIVEN: Budget and Wallet instances created in database. Payload for WalletDeposit
+        with field value too long.
+        WHEN: WalletDepositViewSet called with POST by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. WalletDeposit not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        wallet_deposit = wallet_deposit_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        payload = {"planned_weight": planned_weight}
+        url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "planned_weight" in response.data["detail"]
+        assert response.data["detail"]["planned_weight"][0] == "Invalid value for planned_weight."
+        wallet_deposit.refresh_from_db()
+        assert wallet_deposit.planned_weight != planned_weight
+
+    def test_error_invalid_planned_weight_sum_for_wallet(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        wallet_deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two WalletDeposits created for Wallet. Payload for third WalletDeposit with planned_weight overflowing
+        acceptable Wallet planned_weight sum.
+        WHEN: WalletDepositViewSet called with POST by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. WalletDeposit not created in database.
+        """
+        budget = budget_factory(owner=base_user)
+        wallet = wallet_factory(budget=budget)
+        for _ in range(2):
+            wallet_deposit_factory(wallet=wallet, planned_weight=Decimal("40.00"))
+        wallet_deposit = wallet_deposit_factory(wallet=wallet, planned_weight=Decimal("20.00"))
+        api_client.force_authenticate(base_user)
+        payload = {"planned_weight": Decimal("20.01")}
+        url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "non_field_errors" in response.data["detail"]
+        assert (
+            response.data["detail"]["non_field_errors"][0]
+            == "Sum of planned weights for single Wallet cannot be greater than 100."
+        )
+        wallet_deposit.refresh_from_db()
+        assert wallet_deposit.planned_weight != payload["planned_weight"]
+
+
 # @pytest.mark.django_db
 # class TestWalletDepositViewSetDelete:
 #     """Tests for delete WalletDeposit on WalletDepositViewSet."""
@@ -671,7 +693,7 @@ class TestWalletDepositViewSetDetail:
 #         budget = budget_factory(owner=base_user)
 #         wallet_deposit = wallet_deposit_factory(budget=budget)
 #         api_client.force_authenticate(base_user)
-#         url = wallet_deposit_detail_url(budget.id, wallet_deposit.id)
+#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
 #
 #         assert WalletDeposit.objects.filter(wallet__budget=budget).count() == 1
 #
