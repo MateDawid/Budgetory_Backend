@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import Any
 
 import pytest
 from django.contrib.auth.models import AbstractUser
@@ -638,66 +639,66 @@ class TestWalletDepositViewSetUpdate:
         assert wallet_deposit.planned_weight != payload["planned_weight"]
 
 
-# @pytest.mark.django_db
-# class TestWalletDepositViewSetDelete:
-#     """Tests for delete WalletDeposit on WalletDepositViewSet."""
-#
-#     def test_auth_required(
-#         self, api_client: APIClient, base_user: AbstractUser, wallet_deposit_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: WalletDeposit instance for Budget created in database.
-#         WHEN: WalletDepositViewSet detail view called with DELETE without authentication.
-#         THEN: Unauthorized HTTP 401.
-#         """
-#         wallet_deposit = wallet_deposit_factory()
-#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
-#
-#         response = api_client.delete(url)
-#
-#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_user_not_budget_member(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         wallet_deposit_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: WalletDeposit instance for Budget created in database.
-#         WHEN: WalletDepositViewSet detail view called with DELETE by User not belonging to Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         wallet_deposit = wallet_deposit_factory(budget=budget_factory())
-#         api_client.force_authenticate(base_user)
-#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
-#
-#         response = api_client.delete(url)
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data["detail"] == "User does not have access to Budget."
-#
-#     def test_delete_wallet_deposit(
-#         self,
-#         api_client: APIClient,
-#         base_user: Any,
-#         budget_factory: FactoryMetaClass,
-#         wallet_deposit_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: WalletDeposit instance for Budget created in database.
-#         WHEN: WalletDepositViewSet detail view called with DELETE by User belonging to Budget.
-#         THEN: No content HTTP 204, WalletDeposit deleted.
-#         """
-#         budget = budget_factory(owner=base_user)
-#         wallet_deposit = wallet_deposit_factory(budget=budget)
-#         api_client.force_authenticate(base_user)
-#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
-#
-#         assert WalletDeposit.objects.filter(wallet__budget=budget).count() == 1
-#
-#         response = api_client.delete(url)
-#
-#         assert response.status_code == status.HTTP_204_NO_CONTENT
-#         assert not WalletDeposit.objects.filter(wallet__budget=budget).exists()
+@pytest.mark.django_db
+class TestWalletDepositViewSetDelete:
+    """Tests for delete WalletDeposit on WalletDepositViewSet."""
+
+    def test_auth_required(
+        self, api_client: APIClient, base_user: AbstractUser, wallet_deposit_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: WalletDeposit instance for Budget created in database.
+        WHEN: WalletDepositViewSet detail view called with DELETE without authentication.
+        THEN: Unauthorized HTTP 401.
+        """
+        wallet_deposit = wallet_deposit_factory()
+        url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_user_not_budget_member(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        wallet_deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: WalletDeposit instance for Budget created in database.
+        WHEN: WalletDepositViewSet detail view called with DELETE by User not belonging to Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        wallet_deposit = wallet_deposit_factory(budget=budget_factory())
+        api_client.force_authenticate(base_user)
+        url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data["detail"] == "User does not have access to Budget."
+
+    def test_delete_wallet_deposit(
+        self,
+        api_client: APIClient,
+        base_user: Any,
+        budget_factory: FactoryMetaClass,
+        wallet_deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: WalletDeposit instance for Budget created in database.
+        WHEN: WalletDepositViewSet detail view called with DELETE by User belonging to Budget.
+        THEN: No content HTTP 204, WalletDeposit deleted.
+        """
+        budget = budget_factory(owner=base_user)
+        wallet_deposit = wallet_deposit_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
+
+        assert WalletDeposit.objects.filter(wallet__budget=budget).count() == 1
+
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not WalletDeposit.objects.filter(wallet__budget=budget).exists()
