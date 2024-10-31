@@ -322,108 +322,72 @@ class TestWalletDepositViewSetCreate:
         assert WalletDeposit.objects.filter(wallet=wallet).count() == 2
 
 
-# @pytest.mark.django_db
-# class TestWalletDepositViewSetDetail:
-#     """Tests for detail view on WalletDepositViewSet."""
-#
-#     def test_auth_required(self, api_client: APIClient, wallet_deposit: WalletDeposit):
-#         """
-#         GIVEN: WalletDeposit model instance in database.
-#         WHEN: WalletDepositViewSet detail method called with GET without authentication.
-#         THEN: Unauthorized HTTP 401 returned.
-#         """
-#         response = api_client.get(
-#             wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.id)
-#         )
-#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_user_not_budget_member(
-#         self,
-#         api_client: APIClient,
-#         user_factory: FactoryMetaClass,
-#         wallet_deposit_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: WalletDeposit model instance in database.
-#         WHEN: WalletDepositViewSet detail method called with GET by User not belonging to given Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         other_user = user_factory()
-#         wallet_deposit = wallet_deposit_factory()
-#         api_client.force_authenticate(other_user)
-#
-#         response = api_client.get(
-#             wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.id)
-#         )
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data["detail"] == "User does not have access to Budget."
-#
-#     @pytest.mark.parametrize("user_type", ["owner", "member"])
-#     def test_get_wallet_deposit_details(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         wallet_deposit_factory: FactoryMetaClass,
-#         user_type: str,
-#     ):
-#         """
-#         GIVEN: WalletDeposit instance for Budget created in database.
-#         WHEN: WalletDepositViewSet detail view called by User belonging to Budget.
-#         THEN: HTTP 200, WalletDeposit details returned.
-#         """
-#         if user_type == "owner":
-#             budget = budget_factory(owner=base_user)
-#         else:
-#             budget = budget_factory(members=[base_user])
-#         wallet_deposit = wallet_deposit_factory(budget=budget)
-#         api_client.force_authenticate(base_user)
-#         url = wallet_deposit_detail_url(budget.id, wallet_deposit.id)
-#
-#         response = api_client.get(url)
-#         serializer = WalletDepositSerializer(wallet_deposit)
-#
-#         assert response.status_code == status.HTTP_200_OK
-#         assert response.data == serializer.data
-#
-#     def test_error_get_wallet_deposit_details_unauthenticated(
-#         self, api_client: APIClient, base_user: AbstractUser, wallet_deposit_factory: FactoryMetaClass
-#     ):
-#         """
-#         GIVEN: WalletDeposit instance for Budget created in database.
-#         WHEN: WalletDepositViewSet detail view called without authentication.
-#         THEN: Unauthorized HTTP 401.
-#         """
-#         wallet_deposit = wallet_deposit_factory()
-#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.id)
-#
-#         response = api_client.get(url)
-#
-#         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-#
-#     def test_error_get_details_from_not_accessible_budget(
-#         self,
-#         api_client: APIClient,
-#         base_user: AbstractUser,
-#         budget_factory: FactoryMetaClass,
-#         wallet_deposit_factory: FactoryMetaClass,
-#     ):
-#         """
-#         GIVEN: WalletDeposit instance for Budget created in database.
-#         WHEN: WalletDepositViewSet detail view called by User not belonging to Budget.
-#         THEN: Forbidden HTTP 403 returned.
-#         """
-#         wallet_deposit = wallet_deposit_factory(budget=budget_factory())
-#         api_client.force_authenticate(base_user)
-#
-#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.id)
-#         response = api_client.get(url)
-#
-#         assert response.status_code == status.HTTP_403_FORBIDDEN
-#         assert response.data["detail"] == "User does not have access to Budget."
-#
-#
+@pytest.mark.django_db
+class TestWalletDepositViewSetDetail:
+    """Tests for detail view on WalletDepositViewSet."""
+
+    def test_auth_required(self, api_client: APIClient, wallet_deposit: WalletDeposit):
+        """
+        GIVEN: WalletDeposit model instance in database.
+        WHEN: WalletDepositViewSet detail method called with GET without authentication.
+        THEN: Unauthorized HTTP 401 returned.
+        """
+        response = api_client.get(
+            wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_user_not_budget_member(
+        self,
+        api_client: APIClient,
+        user_factory: FactoryMetaClass,
+        wallet_deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: WalletDeposit model instance in database.
+        WHEN: WalletDepositViewSet detail method called with GET by User not belonging to given Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        other_user = user_factory()
+        wallet_deposit = wallet_deposit_factory()
+        api_client.force_authenticate(other_user)
+
+        response = api_client.get(
+            wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data["detail"] == "User does not have access to Budget."
+
+    @pytest.mark.parametrize("user_type", ["owner", "member"])
+    def test_get_wallet_deposit_details(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        wallet_deposit_factory: FactoryMetaClass,
+        user_type: str,
+    ):
+        """
+        GIVEN: WalletDeposit instance for Budget created in database.
+        WHEN: WalletDepositViewSet detail view called by User belonging to Budget.
+        THEN: HTTP 200, WalletDeposit details returned.
+        """
+        if user_type == "owner":
+            budget = budget_factory(owner=base_user)
+        else:
+            budget = budget_factory(members=[base_user])
+        wallet_deposit = wallet_deposit_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        url = wallet_deposit_detail_url(budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
+
+        response = api_client.get(url)
+        serializer = WalletDepositSerializer(wallet_deposit)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == serializer.data
+
+
 # @pytest.mark.django_db
 # class TestWalletDepositViewSetUpdate:
 #     """Tests for update view on WalletDepositViewSet."""
@@ -442,7 +406,7 @@ class TestWalletDepositViewSetCreate:
 #         THEN: Unauthorized HTTP 401.
 #         """
 #         wallet_deposit = wallet_deposit_factory()
-#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.id)
+#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
 #
 #         response = api_client.patch(url, {})
 #
@@ -462,7 +426,7 @@ class TestWalletDepositViewSetCreate:
 #         """
 #         wallet_deposit = wallet_deposit_factory(budget=budget_factory())
 #         api_client.force_authenticate(base_user)
-#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.id)
+#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
 #
 #         response = api_client.patch(url, {})
 #
@@ -613,7 +577,7 @@ class TestWalletDepositViewSetCreate:
 #         wallet_deposit = wallet_deposit_factory(budget=budget)
 #         payload = {"wallet": wallet_factory().id}
 #         api_client.force_authenticate(base_user)
-#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.id)
+#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
 #
 #         response = api_client.patch(url, payload)
 #
@@ -641,7 +605,7 @@ class TestWalletDepositViewSetCreate:
 #         wallet_deposit = wallet_deposit_factory(budget=budget)
 #         payload = {"deposit": deposit_factory().id}
 #         api_client.force_authenticate(base_user)
-#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.id)
+#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
 #
 #         response = api_client.patch(url, payload)
 #
@@ -665,7 +629,7 @@ class TestWalletDepositViewSetCreate:
 #         THEN: Unauthorized HTTP 401.
 #         """
 #         wallet_deposit = wallet_deposit_factory()
-#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.id)
+#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
 #
 #         response = api_client.delete(url)
 #
@@ -685,7 +649,7 @@ class TestWalletDepositViewSetCreate:
 #         """
 #         wallet_deposit = wallet_deposit_factory(budget=budget_factory())
 #         api_client.force_authenticate(base_user)
-#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.id)
+#         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
 #
 #         response = api_client.delete(url)
 #
