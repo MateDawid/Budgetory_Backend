@@ -22,6 +22,7 @@ services:
       - DYNACONF_ENVIRONMENT__SECRET_KEY=${SECRET_KEY}
       - DYNACONF_DATABASE__USER=${DB_USER}
       - DYNACONF_DATABASE__PASSWORD=${DB_PASSWORD}
+      - CHOKIDAR_USEPOLLING=true
     depends_on:
       - db
     healthcheck:
@@ -48,13 +49,15 @@ services:
     depends_on:
       - backend
     environment:
+      - WATCHPACK_POOLING=true
       - CHOKIDAR_USEPOLLING=true
       - REACT_APP_BASE_URL=http://localhost:8000
     ports:
       - 3000:3000
     stdin_open: true
-    volumes: # new
-      - ./client:/usr/src/app
+    volumes:
+      - ../Budgetory_Frontend:/app
+      - /app/node_modules
 
 
 volumes:
