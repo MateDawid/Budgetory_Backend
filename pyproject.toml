@@ -18,6 +18,7 @@ django-filter = "^24.2"
 django-debug-toolbar = "^4.4.2"
 pip = "^24.2"
 django-cors-headers = "^4.6.0"
+djangorestframework-simplejwt = "^5.3.1"
 
 
 [tool.poetry.group.dev.dependencies]
