@@ -155,7 +155,6 @@ AUTH_USER_MODEL = "app_users.User"
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-        "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PAGINATION_CLASS": "app_infrastructure.paginations.DefaultPagination",
     "EXCEPTION_HANDLER": "app_infrastructure.exception_handlers.default_exception_handler",
@@ -174,7 +173,12 @@ SWAGGER_SETTINGS = {
     "USE_SESSION_AUTH": False,
     "DEFAULT_AUTO_SCHEMA_CLASS": "app_config.swagger_schemas.CustomAutoSchema",
     "SECURITY_DEFINITIONS": {
-        "token": {"type": "apiKey", "description": "User token", "name": "Authorization", "in": "header"}
+        "JWT": {
+            "type": "apiKey",
+            "description": "JSON Web Token => Authorization: Bearer {token_value}",
+            "name": "Authorization",
+            "in": "header",
+        },
     },
 }
 
