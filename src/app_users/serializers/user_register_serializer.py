@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
-from django.contrib.auth.base_user import AbstractBaseUser
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+
+from app_users.models import User
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -32,7 +33,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             raise ValidationError("Provided passwords are not the same.")
         return attrs
 
-    def create(self, validated_data: dict) -> AbstractBaseUser:
+    def create(self, validated_data: dict) -> User:
         """
         Creates User database object after input data validation.
 
@@ -40,7 +41,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             validated_data [dict]: Validated input data.
 
         Returns:
-            AbstractBaseUser: Newly created User model instance.
+            User: Newly created User model instance.
         """
         data = {key: value for key, value in validated_data.items() if key not in ("password_1", "password_2")}
         data["password"] = validated_data["password_1"]
