@@ -12,18 +12,16 @@ Tests for BudgetViewSet:
 from typing import Any
 
 import pytest
-from django.contrib.auth.models import AbstractUser
+from conftest import get_jwt_access_token
 from django.db.models import Q
 from django.urls import reverse
 from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from app_users.models import User
 from budgets.models.budget_model import Budget
 from budgets.serializers.budget_serializer import BudgetSerializer
-
-# from categories.budget_defaults import DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES
-
 
 BUDGETS_URL = reverse("budgets:budget-list")
 OWNED_BUDGETS_URL = reverse("budgets:budget-owned")
@@ -48,6 +46,16 @@ class TestBudgetViewSetList:
         res = api_client.get(BUDGETS_URL)
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_auth_with_jwt(self, api_client: APIClient):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: BudgetViewSet list endpoint called.
+        THEN: HTTP 200 returned.
+        """
+        jwt_access_token = get_jwt_access_token()
+        response = api_client.get(BUDGETS_URL, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_200_OK
 
     def test_retrieve_budgets_list(
         self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
@@ -109,6 +117,16 @@ class TestBudgetViewSetOwnedList:
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
+    def test_auth_with_jwt(self, api_client: APIClient):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: BudgetViewSet owned endpoint called.
+        THEN: HTTP 200 returned.
+        """
+        jwt_access_token = get_jwt_access_token()
+        response = api_client.get(OWNED_BUDGETS_URL, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_200_OK
+
     def test_retrieve_owned_list(
         self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
     ):
@@ -145,6 +163,16 @@ class TestBudgetViewSetMemberedList:
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
+    def test_auth_with_jwt(self, api_client: APIClient):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: BudgetViewSet membered endpoint called.
+        THEN: HTTP 200 returned.
+        """
+        jwt_access_token = get_jwt_access_token()
+        response = api_client.get(MEMBERED_BUDGETS_URL, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_200_OK
+
     def test_retrieve_membered_list(
         self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
     ):
@@ -171,7 +199,7 @@ class TestBudgetViewSetMemberedList:
 class TestBudgetViewSetCreate:
     """Tests for create view on BudgetViewSet."""
 
-    def test_auth_required(self, api_client: APIClient, base_user: AbstractUser):
+    def test_auth_required(self, api_client: APIClient, base_user: User):
         """
         GIVEN: AnonymousUser as request.user.
         WHEN: BudgetViewSet list endpoint called with POST without authentication.
@@ -181,7 +209,17 @@ class TestBudgetViewSetCreate:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_create_budget(self, api_client: APIClient, base_user: AbstractUser, user_factory: FactoryMetaClass):
+    def test_auth_with_jwt(self, api_client: APIClient):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: BudgetViewSet list endpoint called with POST.
+        THEN: HTTP 400 returned - invalid data, but access granted.
+        """
+        jwt_access_token = get_jwt_access_token()
+        response = api_client.post(BUDGETS_URL, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_create_budget(self, api_client: APIClient, base_user: User, user_factory: FactoryMetaClass):
         """
         GIVEN: Authenticated User as request.user. Valid payload.
         WHEN: BudgetViewSet list endpoint called with POST.
@@ -210,14 +248,8 @@ class TestBudgetViewSetCreate:
                 assert getattr(budget, key) == payload[key]
         serializer = BudgetSerializer(budget)
         assert response.data == serializer.data
-        # default_expense_categories = ExpenseCategory.objects.filter(budget=budget)
-        # for expense_category in DEFAULT_EXPENSE_CATEGORIES:
-        #     assert default_expense_categories.filter(**expense_category).exists()
-        # default_income_categories = IncomeCategory.objects.filter(budget=budget)
-        # for income_category in DEFAULT_INCOME_CATEGORIES:
-        #     assert default_income_categories.filter(**income_category).exists()
 
-    def test_error_name_too_long(self, api_client: APIClient, base_user: AbstractUser, user_factory: AbstractUser):
+    def test_error_name_too_long(self, api_client: APIClient, base_user: User, user_factory: User):
         """
         GIVEN: Authenticated User as request.user. Too long name in payload.
         WHEN: BudgetViewSet list endpoint called with POST.
@@ -239,7 +271,7 @@ class TestBudgetViewSetCreate:
         assert response.data["detail"]["name"][0] == f"Ensure this field has no more than {max_length} characters."
         assert not Budget.objects.filter(owner=base_user).exists()
 
-    def test_error_name_already_used(self, api_client: APIClient, base_user: AbstractUser):
+    def test_error_name_already_used(self, api_client: APIClient, base_user: User):
         """
         GIVEN: Authenticated User as request.user. Name of Budget already owned by User in payload.
         WHEN: BudgetViewSet list endpoint called with POST.
@@ -261,7 +293,7 @@ class TestBudgetViewSetCreate:
 class TestBudgetViewSetDetail:
     """Tests for detail view on BudgetViewSet."""
 
-    def test_auth_required(self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass):
+    def test_auth_required(self, api_client: APIClient, base_user: User, budget_factory: FactoryMetaClass):
         """
         GIVEN: AnonymousUser as request.user.
         WHEN: BudgetViewSet detail endpoint called without authentication.
@@ -274,7 +306,19 @@ class TestBudgetViewSetDetail:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_get_budget_details(self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass):
+    def test_auth_with_jwt(self, api_client: APIClient, base_user: User, budget_factory: FactoryMetaClass):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: BudgetViewSet detail endpoint called with GET.
+        THEN: HTTP 200 returned.
+        """
+        budget = budget_factory(owner=base_user)
+        url = budget_detail_url(budget.id)
+        jwt_access_token = get_jwt_access_token(user=base_user)
+        response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_get_budget_details(self, api_client: APIClient, base_user: User, budget_factory: FactoryMetaClass):
         """
         GIVEN: Budget owned by authenticated User created in database.
         WHEN: BudgetViewSet detail endpoint called by authenticated User.
@@ -313,7 +357,7 @@ class TestBudgetViewSetDetail:
 class TestBudgetViewSetUpdate:
     """Tests for update view on BudgetViewSet."""
 
-    def test_put_not_allowed(self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass):
+    def test_put_not_allowed(self, api_client: APIClient, base_user: User, budget_factory: FactoryMetaClass):
         """
         GIVEN: Budget owner as a request.user.
         WHEN: BudgetViewSet detail endpoint called with PUT.
@@ -327,7 +371,7 @@ class TestBudgetViewSetUpdate:
 
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
-    def test_auth_required(self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass):
+    def test_auth_required(self, api_client: APIClient, base_user: User, budget_factory: FactoryMetaClass):
         """
         GIVEN: AnonymousUser as request.user. Budget created in database.
         WHEN: BudgetViewSet detail endpoint called with PATCH without authentication.
@@ -340,6 +384,18 @@ class TestBudgetViewSetUpdate:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
+    def test_auth_with_jwt(self, api_client: APIClient, base_user: User, budget_factory: FactoryMetaClass):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: BudgetViewSet detail endpoint called with PATCH.
+        THEN: HTTP 200 returned.
+        """
+        budget = budget_factory(owner=base_user)
+        url = budget_detail_url(budget.id)
+        jwt_access_token = get_jwt_access_token(user=base_user)
+        response = api_client.patch(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_200_OK
+
     @pytest.mark.parametrize(
         "param, value",
         [("name", "New name"), ("description", "New description"), ("currency", "PLN")],
@@ -347,7 +403,7 @@ class TestBudgetViewSetUpdate:
     def test_budget_update_single_field(
         self,
         api_client: APIClient,
-        base_user: AbstractUser,
+        base_user: User,
         budget_factory: FactoryMetaClass,
         param: str,
         value: Any,
@@ -372,7 +428,7 @@ class TestBudgetViewSetUpdate:
     def test_update_with_members(
         self,
         api_client: APIClient,
-        base_user: AbstractUser,
+        base_user: User,
         user_factory: FactoryMetaClass,
         budget_factory: FactoryMetaClass,
     ):
@@ -398,7 +454,7 @@ class TestBudgetViewSetUpdate:
     def test_budget_update_many_fields(
         self,
         api_client: APIClient,
-        base_user: AbstractUser,
+        base_user: User,
         user_factory: FactoryMetaClass,
         budget_factory: FactoryMetaClass,
     ):
@@ -436,7 +492,7 @@ class TestBudgetViewSetUpdate:
     def test_error_on_budget_update(
         self,
         api_client: APIClient,
-        base_user: AbstractUser,
+        base_user: User,
         user_factory: FactoryMetaClass,
         budget_factory: FactoryMetaClass,
         param: str,
@@ -466,7 +522,7 @@ class TestBudgetViewSetUpdate:
     def test_owner_unchangeable(
         self,
         api_client: APIClient,
-        base_user: AbstractUser,
+        base_user: User,
         user_factory: FactoryMetaClass,
         budget_factory: FactoryMetaClass,
     ):
@@ -493,7 +549,7 @@ class TestBudgetViewSetUpdate:
 class TestBudgetViewSetDelete:
     """Tests for delete view on BudgetViewSet."""
 
-    def test_auth_required(self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass):
+    def test_auth_required(self, api_client: APIClient, base_user: User, budget_factory: FactoryMetaClass):
         """
         GIVEN: AnonymousUser as request.user. Budget created in database.
         WHEN: BudgetViewSet detail endpoint called with DELETE without authentication.
@@ -506,7 +562,19 @@ class TestBudgetViewSetDelete:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_delete_budget(self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass):
+    def test_auth_with_jwt(self, api_client: APIClient, base_user: User, budget_factory: FactoryMetaClass):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: BudgetViewSet detail endpoint called with DELETE.
+        THEN: HTTP 204 returned.
+        """
+        budget = budget_factory(owner=base_user)
+        url = budget_detail_url(budget.id)
+        jwt_access_token = get_jwt_access_token(user=base_user)
+        response = api_client.delete(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    def test_delete_budget(self, api_client: APIClient, base_user: User, budget_factory: FactoryMetaClass):
         """
         GIVEN: Budget owner as request.user. Budget created in database.
         WHEN: BudgetViewSet detail endpoint called with DELETE.
