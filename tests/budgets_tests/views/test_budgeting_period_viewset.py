@@ -11,12 +11,14 @@ from datetime import date
 from typing import Any
 
 import pytest
+from conftest import get_jwt_access_token
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
 from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from app_users.models import User
 from budgets.models.budget_model import Budget
 from budgets.models.budgeting_period_model import BudgetingPeriod
 from budgets.serializers.budgeting_period_serializer import BudgetingPeriodSerializer
@@ -47,6 +49,23 @@ class TestBudgetingPeriodViewSetList:
         res = api_client.get(url)
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_auth_with_jwt(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        budget_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: BudgetingPeriodViewSet list endpoint called with GET.
+        THEN: HTTP 200 returned.
+        """
+        budget = budget_factory(owner=base_user)
+        url = periods_url(budget.id)
+        jwt_access_token = get_jwt_access_token(user=base_user)
+        response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_200_OK
 
     def test_retrieve_periods_list_by_owner(
         self,
@@ -150,6 +169,23 @@ class TestBudgetingPeriodViewSetCreate:
         res = api_client.post(url, data={})
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_auth_with_jwt(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        budget_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: BudgetingPeriodViewSet list endpoint called with POST.
+        THEN: HTTP 400 returned - access granted, but data invalid.
+        """
+        budget = budget_factory(owner=base_user)
+        url = periods_url(budget.id)
+        jwt_access_token = get_jwt_access_token(user=base_user)
+        response = api_client.post(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_create_single_period_by_owner(
         self,
@@ -571,6 +607,25 @@ class TestBudgetingPeriodViewSetDetail:
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
+    def test_auth_with_jwt(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: BudgetingPeriodViewSet detail endpoint called with GET.
+        THEN: HTTP 200 returned.
+        """
+        budget = budget_factory(owner=base_user)
+        period = budgeting_period_factory(budget=budget)
+        url = period_detail_url(budget.id, period.id)
+        jwt_access_token = get_jwt_access_token(user=base_user)
+        response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_200_OK
+
     def test_get_period_details_by_owner(
         self,
         api_client: APIClient,
@@ -671,6 +726,25 @@ class TestBudgetingPeriodViewSetUpdate:
         res = api_client.patch(url, data={})
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_auth_with_jwt(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: BudgetingPeriodViewSet detail endpoint called with PATCH.
+        THEN: HTTP 200 returned.
+        """
+        budget = budget_factory(owner=base_user)
+        period = budgeting_period_factory(budget=budget)
+        url = period_detail_url(budget.id, period.id)
+        jwt_access_token = get_jwt_access_token(user=base_user)
+        response = api_client.patch(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_200_OK
 
     @pytest.mark.parametrize(
         "param, value", [("date_start", date(2024, 1, 2)), ("date_end", date(2024, 1, 30)), ("is_active", True)]
@@ -825,6 +899,25 @@ class TestBudgetingPeriodViewSetDelete:
         res = api_client.delete(url)
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_auth_with_jwt(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: BudgetingPeriodViewSet detail endpoint called with DELETE.
+        THEN: HTTP 204 returned.
+        """
+        budget = budget_factory(owner=base_user)
+        period = budgeting_period_factory(budget=budget)
+        url = period_detail_url(budget.id, period.id)
+        jwt_access_token = get_jwt_access_token(user=base_user)
+        response = api_client.delete(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
     def test_delete_period_by_owner(
         self,
