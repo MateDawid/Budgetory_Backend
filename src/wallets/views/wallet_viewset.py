@@ -1,5 +1,4 @@
 from django.db.models import QuerySet
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
@@ -11,7 +10,6 @@ from wallets.serializers.wallet_serializer import WalletSerializer
 class WalletViewSet(ModelViewSet):
     """Base view for managing Wallets."""
 
-    authentication_classes = [TokenAuthentication]
     permission_classes = (
         IsAuthenticated,
         UserBelongsToBudgetPermission,
