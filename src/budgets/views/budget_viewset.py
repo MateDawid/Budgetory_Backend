@@ -1,6 +1,5 @@
 from django.db import transaction
 from django.db.models import QuerySet
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -16,7 +15,6 @@ class BudgetViewSet(ModelViewSet):
 
     serializer_class = BudgetSerializer
     queryset = Budget.objects.all()
-    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self) -> QuerySet:

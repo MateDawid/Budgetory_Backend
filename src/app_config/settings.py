@@ -1,3 +1,4 @@
+import datetime
 import os
 from pathlib import Path
 
@@ -22,6 +23,7 @@ DJANGO_APPS = [
 ]
 
 OUTER_APPS = [
+    "corsheaders",
     "rest_framework",
     "rest_framework.authtoken",
     "django_filters",
@@ -42,6 +44,7 @@ CREATED_APPS = [
 INSTALLED_APPS = DJANGO_APPS + OUTER_APPS + CREATED_APPS
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -151,8 +154,7 @@ AUTH_USER_MODEL = "app_users.User"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication",
-        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
     "DEFAULT_PAGINATION_CLASS": "app_infrastructure.paginations.DefaultPagination",
     "EXCEPTION_HANDLER": "app_infrastructure.exception_handlers.default_exception_handler",
@@ -161,11 +163,22 @@ REST_FRAMEWORK = {
     ],
 }
 
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": datetime.timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": datetime.timedelta(days=1),
+    "USER_ID_CLAIM": "id",
+}
+
 SWAGGER_SETTINGS = {
     "USE_SESSION_AUTH": False,
     "DEFAULT_AUTO_SCHEMA_CLASS": "app_config.swagger_schemas.CustomAutoSchema",
     "SECURITY_DEFINITIONS": {
-        "token": {"type": "apiKey", "description": "User token", "name": "Authorization", "in": "header"}
+        "JWT": {
+            "type": "apiKey",
+            "description": "JSON Web Token => Authorization: Bearer {token_value}",
+            "name": "Authorization",
+            "in": "header",
+        },
     },
 }
 
@@ -205,3 +218,7 @@ LOGGING = {
         },
     },
 }
+
+CORS_ORIGIN_WHITELIST = [
+    "http://localhost:3000",
+]

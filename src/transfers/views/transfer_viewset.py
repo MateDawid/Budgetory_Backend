@@ -1,6 +1,5 @@
 from django.db.models import QuerySet
 from django_filters import rest_framework as filters
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
@@ -13,7 +12,6 @@ class TransferViewSet(ModelViewSet):
     """Base ViewSet for managing Transfers."""
 
     serializer_class = TransferSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, UserBelongsToBudgetPermission)
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
     ordering_fields = (

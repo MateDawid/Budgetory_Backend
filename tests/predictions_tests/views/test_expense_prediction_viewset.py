@@ -2,12 +2,14 @@ from decimal import Decimal
 from typing import Any
 
 import pytest
+from conftest import get_jwt_access_token
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
 from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from app_users.models import User
 from predictions.models.expense_prediction_model import ExpensePrediction
 from predictions.serializers.expense_prediction_serializer import ExpensePredictionSerializer
 
@@ -34,6 +36,23 @@ class TestExpensePredictionViewSetList:
         """
         response = api_client.get(expense_prediction_url(expense_prediction.period.budget.id))
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_auth_with_jwt(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        budget_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: ExpensePredictionViewSet list endpoint called with GET.
+        THEN: HTTP 200 returned.
+        """
+        budget = budget_factory(owner=base_user)
+        url = expense_prediction_url(budget.id)
+        jwt_access_token = get_jwt_access_token(user=base_user)
+        response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_200_OK
 
     def test_user_not_budget_member(
         self,
@@ -125,6 +144,23 @@ class TestExpensePredictionViewSetCreate:
         url = expense_prediction_url(expense_prediction.period.budget.id)
         response = api_client.post(url, data={})
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_auth_with_jwt(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        budget_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: ExpensePredictionViewSet list endpoint called with POST.
+        THEN: HTTP 400 returned - access granted, but input invalid.
+        """
+        budget = budget_factory(owner=base_user)
+        url = expense_prediction_url(budget.id)
+        jwt_access_token = get_jwt_access_token(user=base_user)
+        response = api_client.post(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_user_not_budget_member(
         self,
@@ -259,6 +295,25 @@ class TestExpensePredictionViewSetDetail:
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
+    def test_auth_with_jwt(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        budget_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: ExpensePredictionViewSet detail endpoint called with GET.
+        THEN: HTTP 200 returned.
+        """
+        budget = budget_factory(owner=base_user)
+        expense_prediction = expense_prediction_factory(budget=budget)
+        url = expense_prediction_detail_url(expense_prediction.period.budget.id, expense_prediction.id)
+        jwt_access_token = get_jwt_access_token(user=base_user)
+        response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_200_OK
+
     def test_user_not_budget_member(
         self,
         api_client: APIClient,
@@ -369,6 +424,25 @@ class TestExpensePredictionViewSetUpdate:
         response = api_client.patch(url, {})
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_auth_with_jwt(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        budget_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: ExpensePredictionViewSet detail endpoint called with PATCH.
+        THEN: HTTP 200 returned.
+        """
+        budget = budget_factory(owner=base_user)
+        expense_prediction = expense_prediction_factory(budget=budget)
+        url = expense_prediction_detail_url(expense_prediction.period.budget.id, expense_prediction.id)
+        jwt_access_token = get_jwt_access_token(user=base_user)
+        response = api_client.patch(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_200_OK
 
     def test_user_not_budget_member(
         self,
@@ -592,6 +666,25 @@ class TestExpensePredictionViewSetDelete:
         response = api_client.delete(url)
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_auth_with_jwt(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        budget_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: ExpensePredictionViewSet detail endpoint called with DELETE.
+        THEN: HTTP 204 returned.
+        """
+        budget = budget_factory(owner=base_user)
+        expense_prediction = expense_prediction_factory(budget=budget)
+        url = expense_prediction_detail_url(expense_prediction.period.budget.id, expense_prediction.id)
+        jwt_access_token = get_jwt_access_token(user=base_user)
+        response = api_client.delete(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
     def test_user_not_budget_member(
         self,

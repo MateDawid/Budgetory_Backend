@@ -1,5 +1,4 @@
 from django.db.models import QuerySet
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
@@ -13,7 +12,6 @@ class DepositViewSet(ModelViewSet):
 
     serializer_class = DepositSerializer
     queryset = Deposit.objects.all()
-    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, UserBelongsToBudgetPermission]
 
     def get_queryset(self) -> QuerySet:

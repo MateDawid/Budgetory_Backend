@@ -26,7 +26,7 @@ class TestIncomeCategoryFilterSetOrdering:
 
     @pytest.mark.parametrize(
         "sort_param",
-        ("id", "-id", "name", "-name", "owner__name", "-owner__name", "priority", "-priority"),
+        ("id", "-id", "name", "-name", "owner__email", "-owner__email", "priority", "-priority"),
     )
     def test_get_categories_list_sorted_by_single_param(
         self,
@@ -41,9 +41,9 @@ class TestIncomeCategoryFilterSetOrdering:
         WHEN: The IncomeCategoryViewSet list view is called with sorting by given param and without any filters.
         THEN: Response must contain all IncomeCategory existing in database sorted by given param.
         """
-        member_1 = user_factory(name="Bob")
-        member_2 = user_factory(name="Alice")
-        member_3 = user_factory(name="George")
+        member_1 = user_factory(email="bob@bob.com")
+        member_2 = user_factory(email="alice@alice.com")
+        member_3 = user_factory(email="george@george.com")
         budget = budget_factory(owner=member_1, members=[member_1, member_2, member_3])
         income_category_factory(budget=budget, name="Eee", owner=member_1, priority=IncomeCategoryPriority.REGULAR)
         income_category_factory(budget=budget, name="Ddd", owner=None, priority=IncomeCategoryPriority.REGULAR)
@@ -73,9 +73,9 @@ class TestIncomeCategoryFilterSetOrdering:
         WHEN: The IncomeCategoryViewSet list view is called with two sorting params by given params.
         THEN: Response must contain all IncomeCategory existing in database sorted by given params.
         """
-        member_1 = user_factory(name="Bob")
-        member_2 = user_factory(name="Alice")
-        member_3 = user_factory(name="George")
+        member_1 = user_factory(email="bob@bob.com")
+        member_2 = user_factory(email="alice@alice.com")
+        member_3 = user_factory(email="george@george.com")
         budget = budget_factory(owner=member_1, members=[member_1, member_2, member_3])
         income_category_factory(budget=budget, name="Ddd", owner=None, priority=IncomeCategoryPriority.REGULAR)
         income_category_factory(budget=budget, name="Eee", owner=member_1, priority=IncomeCategoryPriority.REGULAR)
