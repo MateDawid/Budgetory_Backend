@@ -1,6 +1,5 @@
 from django.db.models import QuerySet
 from django_filters import rest_framework as filters
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
@@ -14,7 +13,6 @@ from predictions.serializers.expense_prediction_serializer import ExpensePredict
 class ExpensePredictionViewSet(ModelViewSet):
     """Base view for managing ExpensePredictions."""
 
-    authentication_classes = [TokenAuthentication]
     permission_classes = (
         IsAuthenticated,
         UserBelongsToBudgetPermission,

@@ -1631,11 +1631,12 @@
       "last_login": "2024-10-03T09:16:45.824Z",
       "is_superuser": true,
       "email": "admin@admin.com",
-      "name": "",
       "is_active": true,
       "is_staff": true,
       "groups": [],
-      "user_permissions": []
+      "user_permissions": [],
+      "created_at": "2024-10-03T09:16:45.824Z",
+      "updated_at": "2024-10-03T09:16:45.824Z"
     }
   },
   {
@@ -1646,11 +1647,12 @@
       "last_login": null,
       "is_superuser": false,
       "email": "user@example.com",
-      "name": "Example",
       "is_active": true,
       "is_staff": false,
       "groups": [],
-      "user_permissions": []
+      "user_permissions": [],
+      "created_at": "2024-10-03T09:16:45.824Z",
+      "updated_at": "2024-10-03T09:16:45.824Z"
     }
   },
   {

@@ -3,12 +3,14 @@ from decimal import Decimal
 from typing import Any
 
 import pytest
+from conftest import get_jwt_access_token
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
 from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from app_users.models import User
 from budgets.models.budget_model import Budget
 from categories.models.transfer_category_choices import ExpenseCategoryPriority, IncomeCategoryPriority
 from transfers.models.income_model import Income
@@ -39,6 +41,23 @@ class TestIncomeViewSetList:
         res = api_client.get(transfers_url(budget.id))
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_auth_with_jwt(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        budget_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: IncomeViewSet list endpoint called with GET.
+        THEN: HTTP 200 returned.
+        """
+        budget = budget_factory(owner=base_user)
+        url = transfers_url(budget.id)
+        jwt_access_token = get_jwt_access_token(user=base_user)
+        response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_200_OK
 
     def test_user_not_budget_member(
         self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
@@ -156,6 +175,23 @@ class TestIncomeViewSetCreate:
         res = api_client.post(transfers_url(budget.id), data={})
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_auth_with_jwt(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        budget_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: IncomeViewSet list endpoint called with GET.
+        THEN: HTTP 400 returned - access granted, but data invalid.
+        """
+        budget = budget_factory(owner=base_user)
+        url = transfers_url(budget.id)
+        jwt_access_token = get_jwt_access_token(user=base_user)
+        response = api_client.post(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_user_not_budget_member(
         self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
@@ -503,6 +539,21 @@ class TestIncomeViewSetDetail:
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
+    def test_auth_with_jwt(
+        self, api_client: APIClient, base_user: User, budget_factory: FactoryMetaClass, income_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: IncomeViewSet detail endpoint called with GET.
+        THEN: HTTP 200 returned.
+        """
+        budget = budget_factory(owner=base_user)
+        transfer = income_factory(budget=budget)
+        url = transfer_detail_url(budget.id, transfer.id)
+        jwt_access_token = get_jwt_access_token(user=base_user)
+        response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_200_OK
+
     def test_user_not_budget_member(
         self,
         api_client: APIClient,
@@ -571,6 +622,21 @@ class TestIncomeViewSetUpdate:
         res = api_client.patch(transfer_detail_url(transfer.period.budget.id, transfer.id), data={})
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_auth_with_jwt(
+        self, api_client: APIClient, base_user: User, budget_factory: FactoryMetaClass, income_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: IncomeViewSet detail endpoint called with PATCH.
+        THEN: HTTP 200 returned.
+        """
+        budget = budget_factory(owner=base_user)
+        transfer = income_factory(budget=budget)
+        url = transfer_detail_url(budget.id, transfer.id)
+        jwt_access_token = get_jwt_access_token(user=base_user)
+        response = api_client.patch(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_200_OK
 
     def test_user_not_budget_member(
         self,
@@ -1230,6 +1296,21 @@ class TestIncomeViewSetDelete:
         response = api_client.delete(url)
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_auth_with_jwt(
+        self, api_client: APIClient, base_user: User, budget_factory: FactoryMetaClass, income_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: IncomeViewSet detail endpoint called with DELETE.
+        THEN: HTTP 204 returned.
+        """
+        budget = budget_factory(owner=base_user)
+        transfer = income_factory(budget=budget)
+        url = transfer_detail_url(budget.id, transfer.id)
+        jwt_access_token = get_jwt_access_token(user=base_user)
+        response = api_client.delete(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
     def test_user_not_budget_member(
         self,

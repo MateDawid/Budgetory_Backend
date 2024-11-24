@@ -1,5 +1,7 @@
 from drf_yasg.inspectors import SwaggerAutoSchema
 
+KEYS_TO_OMIT: tuple[str] = ("users",)
+
 
 class CustomAutoSchema(SwaggerAutoSchema):
     """Custom Swagger schema."""
@@ -19,7 +21,7 @@ class CustomAutoSchema(SwaggerAutoSchema):
 
         tags = self.overrides.get("tags")
         if not tags:
-            if len(operation_keys) == 1:
+            if len(operation_keys) == 1 or operation_keys[0] in KEYS_TO_OMIT:
                 tags = [operation_keys[0]]
             else:
                 tags = [" ".join(operation_keys[:-1])]
