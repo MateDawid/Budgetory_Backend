@@ -1,6 +1,6 @@
 from drf_yasg.inspectors import SwaggerAutoSchema
 
-KEYS_TO_OMIT: tuple[str] = ("users",)
+KEYS_TO_OMIT: tuple[str] = ("users", "categories")
 
 
 class CustomAutoSchema(SwaggerAutoSchema):

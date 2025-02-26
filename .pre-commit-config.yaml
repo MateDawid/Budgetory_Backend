@@ -2,7 +2,7 @@ exclude: '.git|venv|__pycache__|.pytest_cache|htmlcov|migrations|docs|docs|manag
 default_stages: [commit]
 fail_fast: true
 default_language_version:
-  python: python3.11
+  python: python3.12
 
 repos:
   - repo: https://github.com/psf/black

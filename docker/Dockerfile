@@ -1,4 +1,4 @@
-FROM python:3.11.4-slim-bookworm as base-image
+FROM python:3.12.9-slim-bookworm as base-image
 
 ARG DEV="false"
 
@@ -13,7 +13,7 @@ WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1 \
     POETRY_HOME="/usr/local/bin/poetry" \
-    POETRY_VERSION=1.6.1 \
+    POETRY_VERSION=2.1.1 \
     PATH="$PATH:$POETRY_HOME/bin"
 
 # Copy settings
