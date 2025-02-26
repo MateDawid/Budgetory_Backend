@@ -22,4 +22,4 @@ class TransferCategoryPriorityView(APIView):
         Returns:
             Response: Priority field choices for TransferCategory.
         """
-        return Response([{"value": choice[0], "label": choice[1]} for choice in self.choices])
+        return Response({"results": [{"value": choice[0], "label": choice[1]} for choice in self.choices]})
