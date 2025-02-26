@@ -22,10 +22,10 @@ class BudgetSerializer(ModelSerializer):
         Raises:
             ValidationError: Raised when Budget with given name and request.user as owner exists already.
         """
-        try:
-            self.Meta.model.objects.get(owner=self.context["request"].user, name=value)
-        except self.Meta.model.DoesNotExist:
-            pass
-        else:
+        if (
+            self.Meta.model.objects.filter(owner=self.context["request"].user, name=value)
+            .exclude(pk=getattr(self.instance, "pk", None))
+            .exists()
+        ):
             raise ValidationError(f'User already owns Budget with name "{value}".')
         return value
