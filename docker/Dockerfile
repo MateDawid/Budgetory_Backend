@@ -13,7 +13,7 @@ WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1 \
     POETRY_HOME="/usr/local/bin/poetry" \
-    POETRY_VERSION=1.6.1 \
+    POETRY_VERSION=2.1.1 \
     PATH="$PATH:$POETRY_HOME/bin"
 
 # Copy settings
