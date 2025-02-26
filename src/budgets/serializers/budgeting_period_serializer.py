@@ -28,11 +28,11 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
         Raises:
             ValidationError: Raised when BudgetingPeriod for Budget with given name already exists in database.
         """
-        try:
-            BudgetingPeriod.objects.get(budget=self.context["view"].kwargs["budget_pk"], name=name)
-        except self.Meta.model.DoesNotExist:
-            pass
-        else:
+        if (
+            BudgetingPeriod.objects.filter(budget=self.context["view"].kwargs["budget_pk"], name=name)
+            .exclude(pk=getattr(self.instance, "pk", None))
+            .exists()
+        ):
             raise ValidationError(f'Period with name "{name}" already exists in Budget.')
         return name
 
