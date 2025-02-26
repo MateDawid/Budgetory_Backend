@@ -42,6 +42,7 @@ services:
       - POSTGRES_PASSWORD=budget_api
       - POSTGRES_DB=budget_manager
   frontend:
+    profiles: [with_frontend]
     build:
       context: ../Budgetory_Frontend
       target: release-image
