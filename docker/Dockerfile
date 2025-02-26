@@ -1,4 +1,4 @@
-FROM python:3.11.4-slim-bookworm as base-image
+FROM python:3.12.9-slim-bookworm as base-image
 
 ARG DEV="false"
 
