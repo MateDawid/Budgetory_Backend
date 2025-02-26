@@ -1,11 +1,14 @@
 from django.db import transaction
 from django.db.models import QuerySet
+from django_filters import rest_framework as filters
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from budgets.filtersets.budget_filterset import BudgetFilterSet
 from budgets.models import Budget
 from budgets.serializers.budget_serializer import BudgetSerializer
 
@@ -16,6 +19,12 @@ class BudgetViewSet(ModelViewSet):
     serializer_class = BudgetSerializer
     queryset = Budget.objects.all()
     permission_classes = [IsAuthenticated]
+    filterset_class = BudgetFilterSet
+    filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
+    ordering_fields = (
+        "id",
+        "name",
+    )
 
     def get_queryset(self) -> QuerySet:
         """
