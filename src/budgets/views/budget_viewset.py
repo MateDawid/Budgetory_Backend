@@ -3,11 +3,13 @@ from django.db.models import QuerySet
 from django_filters import rest_framework as filters
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from app_users.serializers.user_serializer import UserSerializer
 from budgets.filtersets.budget_filterset import BudgetFilterSet
 from budgets.models import Budget
 from budgets.serializers.budget_serializer import BudgetSerializer
@@ -38,46 +40,29 @@ class BudgetViewSet(ModelViewSet):
             return self.queryset.filter(members=user).order_by("id").distinct()
         return self.queryset.none()  # pragma: no cover
 
-    @action(detail=False, methods=["GET"])
-    def owned(self, request: Request, **kwargs: dict) -> Response:
+    @action(detail=True, methods=["GET"])
+    def members(self, request: Request, **kwargs: dict) -> Response:
         """
-        Retrieves Budgets owned by authenticated User.
+        Endpoint returning members list of particular Budget.
 
         Args:
             request [Request]: User request.
+            kwargs [dict]: Keyword arguments.
 
         Returns:
-            Response: Budgets owned by authenticated User.
+            Response: HTTP response with particular Budget members list.
         """
-        owned_budgets = self.queryset.filter(owner=self.request.user).order_by("id").distinct()
-        serializer = self.get_serializer(owned_budgets, many=True)
-        return Response({"results": serializer.data})
-
-    @action(detail=False, methods=["GET"])
-    def membered(self, request: Request, **kwargs: dict) -> Response:
-        """
-        Retrieves Budgets in which authenticated User is a member.
-
-        Args:
-            request [Request]: User request.
-
-        Returns:
-            Response: Budgets in which authenticated User is a member.
-        """
-        membered_budgets = self.queryset.filter(members=self.request.user).order_by("id").distinct()
-        serializer = self.get_serializer(membered_budgets, many=True)
+        budget = get_object_or_404(self.queryset.model, pk=kwargs.get("pk"))
+        serializer = UserSerializer(budget.members.all(), many=True)
         return Response({"results": serializer.data})
 
     def perform_create(self, serializer: BudgetSerializer) -> None:
         """
-        Saves request User as owner of Budget model and creates default ExpenseCategory and IncomeCategory objects.
+        Adds request User as a member of Budget model.
 
         Args:
             serializer [BudgetSerializer]: Budget data serializer.
         """
         with transaction.atomic():
-            serializer.save(owner=self.request.user)
-            # for expense_category in DEFAULT_EXPENSE_CATEGORIES:
-            #     ExpenseCategory.objects.create(budget=budget, **expense_category)
-            # for income_category in DEFAULT_INCOME_CATEGORIES:
-            #     IncomeCategory.objects.create(budget=budget, **income_category)
+            budget = serializer.save(owner=self.request.user)
+            budget.members.add(self.request.user)
