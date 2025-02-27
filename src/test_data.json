@@ -1661,7 +1661,6 @@
     "fields": {
       "name": "Admin budget",
       "description": "",
-      "owner": 1,
       "currency": "PLN",
       "members": [
         1
@@ -1674,7 +1673,6 @@
     "fields": {
       "name": "User budget",
       "description": "",
-      "owner": 2,
       "currency": "EUR",
       "members": [
         2
