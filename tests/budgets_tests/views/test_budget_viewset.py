@@ -31,7 +31,7 @@ def budget_detail_url(budget_id):
 
 
 def budget_members_url(budget_id):
-    """Creates and returns Budget detail URL."""
+    """Creates and returns Budget members URL."""
     return reverse("budgets:budget-members", args=[budget_id])
 
 
