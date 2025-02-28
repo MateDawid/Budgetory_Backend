@@ -51,7 +51,7 @@ class TestIncomeCategoryViewSetList:
         WHEN: IncomeCategoryViewSet list endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         url = categories_url(budget.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -67,7 +67,7 @@ class TestIncomeCategoryViewSetList:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         api_client.force_authenticate(other_user)
 
         response = api_client.get(categories_url(budget.id))
@@ -87,7 +87,7 @@ class TestIncomeCategoryViewSetList:
         WHEN: IncomeCategoryViewSet called by Budget owner.
         THEN: Response with serialized Budget IncomeCategory list returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         for _ in range(2):
             income_category_factory(budget=budget)
@@ -111,7 +111,7 @@ class TestIncomeCategoryViewSetList:
         WHEN: IncomeCategoryViewSet called by one of Budgets owner.
         THEN: Response with serialized IncomeCategory list (only from given Budget) returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         category = income_category_factory(budget=budget)
         income_category_factory()
         api_client.force_authenticate(base_user)
@@ -138,7 +138,7 @@ class TestIncomeCategoryViewSetList:
         WHEN: IncomeCategoryViewSet called by one of Budgets owner.
         THEN: Response with serialized IncomeCategory list (only from given Budget) returned without IncomeCategory.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         income_category_factory(budget=budget)
         expense_category = expense_category_factory(budget=budget)
         api_client.force_authenticate(base_user)
@@ -186,7 +186,7 @@ class TestIncomeCategoryViewSetCreate:
         WHEN: IncomeCategoryViewSet list endpoint called with POST.
         THEN: HTTP 400 returned - access granted, but invalid input.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         url = categories_url(budget.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.post(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -202,7 +202,7 @@ class TestIncomeCategoryViewSetCreate:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         api_client.force_authenticate(other_user)
 
         response = api_client.post(categories_url(budget.id), data={})
@@ -218,7 +218,7 @@ class TestIncomeCategoryViewSetCreate:
         WHEN: IncomeCategoryViewSet called with POST by User belonging to Budget with valid payload.
         THEN: IncomeCategory object created in database with given payload
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
 
         response = api_client.post(categories_url(budget.id), data=self.PAYLOAD)
@@ -242,7 +242,7 @@ class TestIncomeCategoryViewSetCreate:
         WHEN: IncomeCategoryViewSet called with POST by User belonging to Budget with valid payload.
         THEN: IncomeCategory object created in database with given payload
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["owner"] = base_user.id
@@ -272,7 +272,7 @@ class TestIncomeCategoryViewSetCreate:
         WHEN: IncomeCategoryViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. IncomeCategory not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         max_length = IncomeCategory._meta.get_field(field_name).max_length
         payload = self.PAYLOAD.copy()
@@ -293,7 +293,7 @@ class TestIncomeCategoryViewSetCreate:
         WHEN: IncomeCategoryViewSet called twice with POST by User belonging to Budget with the same payload.
         THEN: Bad request HTTP 400 returned. Only one IncomeCategory created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
 
@@ -316,7 +316,7 @@ class TestIncomeCategoryViewSetCreate:
         WHEN: IncomeCategoryViewSet called twice with POST by User belonging to Budget with the same payload.
         THEN: Bad request HTTP 400 returned. Only one IncomeCategory created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["owner"] = base_user.id
@@ -340,7 +340,7 @@ class TestIncomeCategoryViewSetCreate:
         WHEN: IncomeCategoryViewSet called twice with POST by User belonging to Budget with the same payload.
         THEN: Bad request HTTP 400 returned. Only one IncomeCategory created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["priority"] = IncomeCategoryPriority.values[-1] + 1
@@ -381,7 +381,7 @@ class TestIncomeCategoryViewSetDetail:
         WHEN: IncomeCategoryViewSet detail endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         category = income_category_factory(budget=budget)
         url = category_detail_url(category.budget.id, category.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -402,7 +402,7 @@ class TestIncomeCategoryViewSetDetail:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         category = income_category_factory(budget=budget)
         api_client.force_authenticate(other_user)
         url = category_detail_url(category.budget.id, category.id)
@@ -424,7 +424,7 @@ class TestIncomeCategoryViewSetDetail:
         WHEN: IncomeCategoryViewSet detail view called by User belonging to Budget.
         THEN: HTTP 200, IncomeCategory details returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         category = income_category_factory(budget=budget)
         api_client.force_authenticate(base_user)
         url = category_detail_url(budget.id, category.id)
@@ -470,7 +470,7 @@ class TestIncomeCategoryViewSetUpdate:
         WHEN: IncomeCategoryViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         category = income_category_factory(budget=budget)
         url = category_detail_url(category.budget.id, category.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -491,7 +491,7 @@ class TestIncomeCategoryViewSetUpdate:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         category = income_category_factory(budget=budget)
         api_client.force_authenticate(other_user)
         url = category_detail_url(category.budget.id, category.id)
@@ -525,7 +525,7 @@ class TestIncomeCategoryViewSetUpdate:
         WHEN: IncomeCategoryViewSet detail view called with PATCH by User belonging to Budget.
         THEN: HTTP 200, IncomeCategory updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         category = income_category_factory(budget=budget, **self.PAYLOAD)
         update_payload = {param: value}
         api_client.force_authenticate(base_user)
@@ -550,7 +550,7 @@ class TestIncomeCategoryViewSetUpdate:
         with invalid payload.
         THEN: Bad request HTTP 400, IncomeCategory not updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         category_1 = income_category_factory(budget=budget, **self.PAYLOAD, owner=None)
         category_2 = income_category_factory(budget=budget, owner=None)
         old_value = getattr(category_2, "name")
@@ -578,7 +578,7 @@ class TestIncomeCategoryViewSetUpdate:
         with invalid payload.
         THEN: Bad request HTTP 400, IncomeCategory not updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         category = income_category_factory(budget=budget, owner=None)
         old_value = getattr(category, "priority")
         update_payload = {"priority": IncomeCategoryPriority.values[-1] + 1}
@@ -604,7 +604,7 @@ class TestIncomeCategoryViewSetUpdate:
         with "owner" in payload, ending up with two the same IncomeCategory name for single owner.
         THEN: Bad request HTTP 400, IncomeCategory not updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         category_1 = income_category_factory(budget=budget, **self.PAYLOAD, owner=base_user)
         category_2 = income_category_factory(budget=budget, **self.PAYLOAD, owner=None)
         update_payload = {"owner": category_1.owner.id}
@@ -627,7 +627,7 @@ class TestIncomeCategoryViewSetUpdate:
         WHEN: IncomeCategoryViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned. IncomeCategory updated in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["owner"] = None
@@ -684,7 +684,7 @@ class TestIncomeCategoryViewSetDelete:
         WHEN: IncomeCategoryViewSet detail endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         category = income_category_factory(budget=budget)
         url = category_detail_url(category.budget.id, category.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -724,7 +724,7 @@ class TestIncomeCategoryViewSetDelete:
         WHEN: IncomeCategoryViewSet detail view called with DELETE by User belonging to Budget.
         THEN: No content HTTP 204, IncomeCategory deleted.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         category = income_category_factory(budget=budget)
         api_client.force_authenticate(base_user)
         url = category_detail_url(budget.id, category.id)

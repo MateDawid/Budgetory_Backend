@@ -44,7 +44,7 @@ class TestIncomeCategoryFilterSetOrdering:
         member_1 = user_factory(email="bob@bob.com")
         member_2 = user_factory(email="alice@alice.com")
         member_3 = user_factory(email="george@george.com")
-        budget = budget_factory(owner=member_1, members=[member_1, member_2, member_3])
+        budget = budget_factory(members=[member_1, member_2, member_3])
         income_category_factory(budget=budget, name="Eee", owner=member_1, priority=IncomeCategoryPriority.REGULAR)
         income_category_factory(budget=budget, name="Ddd", owner=None, priority=IncomeCategoryPriority.REGULAR)
         income_category_factory(budget=budget, name="Ccc", owner=member_2, priority=IncomeCategoryPriority.IRREGULAR)
@@ -76,7 +76,7 @@ class TestIncomeCategoryFilterSetOrdering:
         member_1 = user_factory(email="bob@bob.com")
         member_2 = user_factory(email="alice@alice.com")
         member_3 = user_factory(email="george@george.com")
-        budget = budget_factory(owner=member_1, members=[member_1, member_2, member_3])
+        budget = budget_factory(members=[member_1, member_2, member_3])
         income_category_factory(budget=budget, name="Ddd", owner=None, priority=IncomeCategoryPriority.REGULAR)
         income_category_factory(budget=budget, name="Eee", owner=member_1, priority=IncomeCategoryPriority.REGULAR)
         income_category_factory(budget=budget, name="Ccc", owner=member_2, priority=IncomeCategoryPriority.IRREGULAR)
@@ -127,7 +127,7 @@ class TestIncomeCategoryFilterSetFiltering:
         THEN: Response must contain all IncomeCategory existing in database assigned to Budget containing given
         "name" value in name param.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         matching_category = income_category_factory(budget=budget, name="Some category")
         income_category_factory(budget=budget, name="Other one")
         api_client.force_authenticate(base_user)
@@ -158,7 +158,7 @@ class TestIncomeCategoryFilterSetFiltering:
         WHEN: The IncomeCategoryViewSet list view is called with "common_only"=True filter.
         THEN: Response must contain all IncomeCategory existing in database assigned to Budget without owner assigned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         matching_category = income_category_factory(budget=budget, name="Some category", owner=None)
         income_category_factory(budget=budget, name="Other one", owner=base_user)
         api_client.force_authenticate(base_user)
@@ -190,7 +190,7 @@ class TestIncomeCategoryFilterSetFiltering:
         THEN: Response must contain all IncomeCategory existing in database assigned to Budget with
         matching "owner" value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         matching_category = income_category_factory(budget=budget, name="Some category", owner=base_user)
         income_category_factory(budget=budget, name="Other one", owner=None)
         api_client.force_authenticate(base_user)
@@ -224,7 +224,7 @@ class TestIncomeCategoryFilterSetFiltering:
         THEN: Response must contain all IncomeCategory existing in database assigned to Budget with
         matching "is_active" value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         matching_category = income_category_factory(budget=budget, name="Some category", is_active=filter_value)
         income_category_factory(budget=budget, name="Other one", is_active=not filter_value)
         api_client.force_authenticate(base_user)
@@ -256,7 +256,7 @@ class TestIncomeCategoryFilterSetFiltering:
         THEN: Response must contain all IncomeCategory existing in database assigned to Budget with
         matching "priority" value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         matching_category = income_category_factory(
             budget=budget, name="Some category", priority=IncomeCategoryPriority.REGULAR
         )

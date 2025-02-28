@@ -49,7 +49,7 @@ class TestWalletViewSetList:
         WHEN: WalletViewSet list endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         url = wallets_url(budget.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -65,7 +65,7 @@ class TestWalletViewSetList:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         api_client.force_authenticate(other_user)
 
         response = api_client.get(wallets_url(budget.id))
@@ -85,7 +85,7 @@ class TestWalletViewSetList:
         WHEN: WalletViewSet called by Budget owner.
         THEN: Response with serialized Budget Wallet list returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         for _ in range(2):
             wallet_factory(budget=budget)
@@ -109,7 +109,7 @@ class TestWalletViewSetList:
         WHEN: WalletViewSet called by one of Budgets owner.
         THEN: Response with serialized Wallet list (only from given Budget) returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet = wallet_factory(budget=budget)
         wallet_factory()
         api_client.force_authenticate(base_user)
@@ -151,7 +151,7 @@ class TestWalletViewSetCreate:
         WHEN: WalletViewSet list endpoint called with POST.
         THEN: HTTP 400 returned - access granted, but data invalid.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         url = wallets_url(budget.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.post(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -167,7 +167,7 @@ class TestWalletViewSetCreate:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         api_client.force_authenticate(other_user)
 
         response = api_client.post(wallets_url(budget.id), data={})
@@ -183,7 +183,7 @@ class TestWalletViewSetCreate:
         WHEN: WalletViewSet called with POST by User belonging to Budget with valid payload.
         THEN: Wallet object created in database with given payload
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
 
         response = api_client.post(wallets_url(budget.id), self.PAYLOAD)
@@ -206,7 +206,7 @@ class TestWalletViewSetCreate:
         WHEN: WalletViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. Wallet not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         max_length = Wallet._meta.get_field(field_name).max_length
         payload = self.PAYLOAD.copy()
@@ -227,7 +227,7 @@ class TestWalletViewSetCreate:
         WHEN: WalletViewSet called twice with POST by User belonging to Budget with the same payload.
         THEN: Bad request HTTP 400 returned. Only one Wallet created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
 
@@ -262,7 +262,7 @@ class TestWalletViewSetDetail:
         WHEN: WalletViewSet detail endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet = wallet_factory(budget=budget)
         url = wallet_detail_url(budget.id, wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -283,7 +283,7 @@ class TestWalletViewSetDetail:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         wallet = wallet_factory(budget=budget)
         api_client.force_authenticate(other_user)
         url = wallet_detail_url(wallet.budget.id, wallet.id)
@@ -305,7 +305,7 @@ class TestWalletViewSetDetail:
         WHEN: WalletViewSet detail view called by User belonging to Budget.
         THEN: HTTP 200, Wallet details returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet = wallet_factory(budget=budget)
         api_client.force_authenticate(base_user)
         url = wallet_detail_url(budget.id, wallet.id)
@@ -343,7 +343,7 @@ class TestWalletViewSetUpdate:
         WHEN: WalletViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet = wallet_factory(budget=budget)
         url = wallet_detail_url(budget.id, wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -364,7 +364,7 @@ class TestWalletViewSetUpdate:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         wallet = wallet_factory(budget=budget)
         api_client.force_authenticate(other_user)
         url = wallet_detail_url(wallet.budget.id, wallet.id)
@@ -395,7 +395,7 @@ class TestWalletViewSetUpdate:
         WHEN: WalletViewSet detail view called with PATCH by User belonging to Budget.
         THEN: HTTP 200, Wallet updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet = wallet_factory(budget=budget, **self.PAYLOAD)
         update_payload = {param: value}
         api_client.force_authenticate(base_user)
@@ -423,7 +423,7 @@ class TestWalletViewSetUpdate:
         with invalid payload.
         THEN: Bad request HTTP 400, Wallet not updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet_factory(budget=budget, **self.PAYLOAD)
         wallet = wallet_factory(budget=budget)
         old_value = getattr(wallet, param)
@@ -463,7 +463,7 @@ class TestWalletViewSetDelete:
         WHEN: WalletViewSet detail endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet = wallet_factory(budget=budget)
         url = wallet_detail_url(budget.id, wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -503,7 +503,7 @@ class TestWalletViewSetDelete:
         WHEN: WalletViewSet detail view called with DELETE by User belonging to Budget.
         THEN: No content HTTP 204, Wallet deleted.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet = wallet_factory(budget=budget)
         api_client.force_authenticate(base_user)
         url = wallet_detail_url(budget.id, wallet.id)

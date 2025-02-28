@@ -53,7 +53,7 @@ class TestIncomeViewSetList:
         WHEN: IncomeViewSet list endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         url = transfers_url(budget.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -69,7 +69,7 @@ class TestIncomeViewSetList:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         api_client.force_authenticate(other_user)
 
         response = api_client.get(transfers_url(budget.id))
@@ -89,7 +89,7 @@ class TestIncomeViewSetList:
         WHEN: IncomeViewSet called by Budget owner.
         THEN: Response with serialized Budget Income list returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         for _ in range(2):
             income_factory(budget=budget)
@@ -113,7 +113,7 @@ class TestIncomeViewSetList:
         WHEN: IncomeViewSet called by one of Budgets owner.
         THEN: Response with serialized Income list (only from given Budget) returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         transfer = income_factory(budget=budget)
         income_factory()
         api_client.force_authenticate(base_user)
@@ -140,7 +140,7 @@ class TestIncomeViewSetList:
         WHEN: IncomeViewSet called by one of Budgets owner.
         THEN: Response with serialized Income list (only from given Budget) returned without Expense.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         income_factory(budget=budget)
         expense_transfer = expense_factory(budget=budget)
         api_client.force_authenticate(base_user)
@@ -187,7 +187,7 @@ class TestIncomeViewSetCreate:
         WHEN: IncomeViewSet list endpoint called with GET.
         THEN: HTTP 400 returned - access granted, but data invalid.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         url = transfers_url(budget.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.post(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -203,7 +203,7 @@ class TestIncomeViewSetCreate:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         api_client.force_authenticate(other_user)
 
         response = api_client.post(transfers_url(budget.id), data={})
@@ -228,7 +228,7 @@ class TestIncomeViewSetCreate:
         WHEN: IncomeViewSet called with POST by User belonging to Budget with valid payload.
         THEN: Income object created in database with given payload.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -264,7 +264,7 @@ class TestIncomeViewSetCreate:
         WHEN: IncomeViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. Income not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         max_length = Income._meta.get_field(field_name).max_length
         payload = self.PAYLOAD.copy()
@@ -294,7 +294,7 @@ class TestIncomeViewSetCreate:
         WHEN: IncomeViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. Income not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -329,7 +329,7 @@ class TestIncomeViewSetCreate:
         WHEN: IncomeViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. Income not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -363,7 +363,7 @@ class TestIncomeViewSetCreate:
         WHEN: IncomeViewSet called with POST by User belonging to Budget.
         THEN: Bad request HTTP 400 returned. Income not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -399,7 +399,7 @@ class TestIncomeViewSetCreate:
         WHEN: IncomeViewSet called with POST by User belonging to Budget.
         THEN: Bad request HTTP 400 returned. Income not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -433,7 +433,7 @@ class TestIncomeViewSetCreate:
         WHEN: IncomeViewSet called with POST by User belonging to Budget.
         THEN: Bad request HTTP 400 returned. Income not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -470,7 +470,7 @@ class TestIncomeViewSetCreate:
         WHEN: IncomeViewSet called with POST by User belonging to Budget.
         THEN: Bad request HTTP 400 returned. Income not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -504,7 +504,7 @@ class TestIncomeViewSetCreate:
         WHEN: IncomeViewSet called with POST by User belonging to Budget.
         THEN: Bad request HTTP 400 returned. Income not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -547,7 +547,7 @@ class TestIncomeViewSetDetail:
         WHEN: IncomeViewSet detail endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         transfer = income_factory(budget=budget)
         url = transfer_detail_url(budget.id, transfer.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -568,7 +568,7 @@ class TestIncomeViewSetDetail:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         transfer = income_factory(budget=budget)
         api_client.force_authenticate(other_user)
         url = transfer_detail_url(budget.id, transfer.id)
@@ -590,7 +590,7 @@ class TestIncomeViewSetDetail:
         WHEN: IncomeViewSet detail view called by User belonging to Budget.
         THEN: HTTP 200, Income details returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         transfer = income_factory(budget=budget)
         api_client.force_authenticate(base_user)
         url = transfer_detail_url(budget.id, transfer.id)
@@ -631,7 +631,7 @@ class TestIncomeViewSetUpdate:
         WHEN: IncomeViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         transfer = income_factory(budget=budget)
         url = transfer_detail_url(budget.id, transfer.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -652,7 +652,7 @@ class TestIncomeViewSetUpdate:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         transfer = income_factory(budget=budget)
         api_client.force_authenticate(other_user)
         url = transfer_detail_url(budget.id, transfer.id)
@@ -690,7 +690,7 @@ class TestIncomeViewSetUpdate:
         WHEN: IncomeViewSet detail view called with PATCH by User belonging to Budget.
         THEN: HTTP 200, Income updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -727,7 +727,7 @@ class TestIncomeViewSetUpdate:
         WHEN: IncomeViewSet detail view called with PATCH with invalid BudgetingPeriod.
         THEN: HTTP 400, Income not updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -769,7 +769,7 @@ class TestIncomeViewSetUpdate:
         WHEN: IncomeViewSet detail view called with PATCH with valid BudgetingPeriod and date.
         THEN: HTTP 400, Income not updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -809,7 +809,7 @@ class TestIncomeViewSetUpdate:
         WHEN: IncomeViewSet detail view called with PATCH with valid Deposit.
         THEN: HTTP 200, Income updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -847,7 +847,7 @@ class TestIncomeViewSetUpdate:
         WHEN: IncomeViewSet detail view called with PATCH with valid Entity.
         THEN: HTTP 200, Income updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -886,7 +886,7 @@ class TestIncomeViewSetUpdate:
         assigned in "deposit" field.
         THEN: HTTP 400, Income not updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -927,7 +927,7 @@ class TestIncomeViewSetUpdate:
         assigned in "entity" field.
         THEN: HTTP 400, Income not updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -969,7 +969,7 @@ class TestIncomeViewSetUpdate:
         "deposit" field.
         THEN: HTTP 400, Income not updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -1007,7 +1007,7 @@ class TestIncomeViewSetUpdate:
         WHEN: IncomeViewSet detail view called with PATCH with valid TransferCategory.
         THEN: HTTP 200, Income updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -1046,7 +1046,7 @@ class TestIncomeViewSetUpdate:
         WHEN: IncomeViewSet detail view called with PATCH with invalid TransferCategory.
         THEN: HTTP 200, Income updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -1083,7 +1083,7 @@ class TestIncomeViewSetUpdate:
         WHEN: IncomeViewSet detail view called with PATCH with valid payload with many fields.
         THEN: HTTP 200, Income updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -1139,7 +1139,7 @@ class TestIncomeViewSetUpdate:
         WHEN: IncomeViewSet called with PATCH by User belonging to Budget.
         THEN: Bad request HTTP 400 returned. Income not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -1178,7 +1178,7 @@ class TestIncomeViewSetUpdate:
         WHEN: IncomeViewSet called with PATCH by User belonging to Budget.
         THEN: Bad request HTTP 400 returned. Income not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -1217,7 +1217,7 @@ class TestIncomeViewSetUpdate:
         WHEN: IncomeViewSet called with PATCH by User belonging to Budget.
         THEN: Bad request HTTP 400 returned. Income not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -1256,7 +1256,7 @@ class TestIncomeViewSetUpdate:
         WHEN: IncomeViewSet called with PATCH by User belonging to Budget.
         THEN: Bad request HTTP 400 returned. Income not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -1305,7 +1305,7 @@ class TestIncomeViewSetDelete:
         WHEN: IncomeViewSet detail endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         transfer = income_factory(budget=budget)
         url = transfer_detail_url(budget.id, transfer.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -1345,7 +1345,7 @@ class TestIncomeViewSetDelete:
         WHEN: IncomeViewSet detail view called with DELETE by User belonging to Budget.
         THEN: No content HTTP 204, Income deleted.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         transfer = income_factory(budget=budget)
         api_client.force_authenticate(base_user)
         url = transfer_detail_url(budget.id, transfer.id)

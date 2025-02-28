@@ -211,7 +211,7 @@ class TestTransferCategoryModel:
             "category_type": CategoryType.EXPENSE,
             "priority": ExpenseCategoryPriority.MOST_IMPORTANT,
             "name": "Some expense category",
-            "owner": budget.owner,
+            "owner": budget.members.first(),
         }
         transfer_category_factory(**payload)
 
