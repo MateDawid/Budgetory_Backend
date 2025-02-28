@@ -51,7 +51,7 @@ class TestExpensePredictionFilterSetOrdering:
         WHEN: The ExpensePredictionViewSet list view is called with sorting by given param and without any filters.
         THEN: Response must contain all ExpensePrediction existing in database sorted by given param.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         period_1 = budgeting_period_factory(
             budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=False
         )
@@ -97,7 +97,7 @@ class TestExpensePredictionFilterSetOrdering:
         WHEN: The ExpensePredictionViewSet list view is called with two sorting params by given params.
         THEN: Response must contain all ExpensePrediction existing in database sorted by given params.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         period_1 = budgeting_period_factory(
             budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=False
         )
@@ -148,7 +148,7 @@ class TestExpensePredictionFilterSetFiltering:
         THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
         period_id value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Test name")
         prediction = expense_prediction_factory(budget=budget, period=period)
         expense_prediction_factory(budget=budget, period=budgeting_period_factory(budget=budget, name="Other period"))
@@ -186,7 +186,7 @@ class TestExpensePredictionFilterSetFiltering:
         THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
         period_name value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Test name")
         prediction = expense_prediction_factory(budget=budget, period=period)
         expense_prediction_factory(budget=budget, period=budgeting_period_factory(budget=budget, name="Other"))
@@ -220,7 +220,7 @@ class TestExpensePredictionFilterSetFiltering:
         THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
         category_id value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         category = expense_category_factory(budget=budget, name="Test name")
         prediction = expense_prediction_factory(budget=budget, category=category)
         expense_prediction_factory(budget=budget, category=expense_category_factory(budget=budget, name="Other"))
@@ -258,7 +258,7 @@ class TestExpensePredictionFilterSetFiltering:
         THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
         category_name value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         category = expense_category_factory(budget=budget, name="Test name")
         prediction = expense_prediction_factory(budget=budget, category=category)
         expense_prediction_factory(budget=budget, category=expense_category_factory(budget=budget, name="Other"))

@@ -48,7 +48,7 @@ class TestExpensePredictionViewSetList:
         WHEN: ExpensePredictionViewSet list endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         url = expense_prediction_url(budget.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -88,7 +88,7 @@ class TestExpensePredictionViewSetList:
         THEN: Response with serialized Budget ExpensePrediction list returned.
         """
         api_client.force_authenticate(base_user)
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         for _ in range(2):
             expense_prediction_factory(budget=budget)
 
@@ -111,7 +111,7 @@ class TestExpensePredictionViewSetList:
         WHEN: ExpensePredictionViewSet called by one of Budgets owner.
         THEN: Response with serialized ExpensePrediction list (only from given Budget) returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         prediction = expense_prediction_factory(budget=budget)
         expense_prediction_factory()
         api_client.force_authenticate(base_user)
@@ -156,7 +156,7 @@ class TestExpensePredictionViewSetCreate:
         WHEN: ExpensePredictionViewSet list endpoint called with POST.
         THEN: HTTP 400 returned - access granted, but input invalid.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         url = expense_prediction_url(budget.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.post(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -200,7 +200,7 @@ class TestExpensePredictionViewSetCreate:
         THEN: ExpensePrediction object created in database with given payload
         """
         other_user = user_factory()
-        budget = budget_factory(owner=base_user, members=[other_user])
+        budget = budget_factory(members=[base_user, other_user])
         period = budgeting_period_factory(budget=budget)
         category = expense_category_factory(budget=budget)
         payload = self.PAYLOAD.copy()
@@ -232,7 +232,7 @@ class TestExpensePredictionViewSetCreate:
         WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         max_length = ExpensePrediction._meta.get_field("description").max_length
         payload = self.PAYLOAD.copy()
@@ -263,7 +263,7 @@ class TestExpensePredictionViewSetCreate:
         WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
         category = expense_category_factory(budget=budget)
         api_client.force_authenticate(base_user)
@@ -307,7 +307,7 @@ class TestExpensePredictionViewSetDetail:
         WHEN: ExpensePredictionViewSet detail endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         expense_prediction = expense_prediction_factory(budget=budget)
         url = expense_prediction_detail_url(expense_prediction.period.budget.id, expense_prediction.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -351,7 +351,7 @@ class TestExpensePredictionViewSetDetail:
         THEN: HTTP 200, ExpensePrediction details returned.
         """
         if user_type == "owner":
-            budget = budget_factory(owner=base_user)
+            budget = budget_factory(members=[base_user])
         else:
             budget = budget_factory(members=[base_user])
         prediction = expense_prediction_factory(budget=budget)
@@ -437,7 +437,7 @@ class TestExpensePredictionViewSetUpdate:
         WHEN: ExpensePredictionViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         expense_prediction = expense_prediction_factory(budget=budget)
         url = expense_prediction_detail_url(expense_prediction.period.budget.id, expense_prediction.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -487,7 +487,7 @@ class TestExpensePredictionViewSetUpdate:
         WHEN: ExpensePredictionViewSet detail view called with PATCH by User belonging to Budget.
         THEN: HTTP 200, ExpensePrediction updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         prediction = expense_prediction_factory(budget=budget, **self.PAYLOAD)
         update_payload = {param: value}
         api_client.force_authenticate(base_user)
@@ -512,7 +512,7 @@ class TestExpensePredictionViewSetUpdate:
         WHEN: ExpensePredictionViewSet detail view called with PATCH by User belonging to Budget with valid payload.
         THEN: HTTP 200, Deposit updated with "period" value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
         prediction = expense_prediction_factory(budget=budget, **self.PAYLOAD)
         update_payload = {"period": period.id}
@@ -538,7 +538,7 @@ class TestExpensePredictionViewSetUpdate:
         WHEN: ExpensePredictionViewSet detail view called with PATCH by User belonging to Budget with valid payload.
         THEN: HTTP 200, Deposit updated with "category" value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         category = expense_category_factory(budget=budget)
         prediction = expense_prediction_factory(budget=budget, **self.PAYLOAD)
         update_payload = {"category": category.id}
@@ -565,7 +565,7 @@ class TestExpensePredictionViewSetUpdate:
         WHEN: ExpensePredictionViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned. ExpensePrediction updated in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         period_1 = budgeting_period_factory(budget=budget)
         period_2 = budgeting_period_factory(budget=budget)
         category_1 = expense_category_factory(budget=budget)
@@ -605,7 +605,7 @@ class TestExpensePredictionViewSetUpdate:
         WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         prediction = expense_prediction_factory(budget=budget)
         payload = {"period": budgeting_period_factory().id}
         api_client.force_authenticate(base_user)
@@ -633,7 +633,7 @@ class TestExpensePredictionViewSetUpdate:
         WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         prediction = expense_prediction_factory(budget=budget)
         payload = {"category": expense_category_factory().id}
         api_client.force_authenticate(base_user)
@@ -679,7 +679,7 @@ class TestExpensePredictionViewSetDelete:
         WHEN: ExpensePredictionViewSet detail endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         expense_prediction = expense_prediction_factory(budget=budget)
         url = expense_prediction_detail_url(expense_prediction.period.budget.id, expense_prediction.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -719,7 +719,7 @@ class TestExpensePredictionViewSetDelete:
         WHEN: ExpensePredictionViewSet detail view called with DELETE by User belonging to Budget.
         THEN: No content HTTP 204, ExpensePrediction deleted.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         prediction = expense_prediction_factory(budget=budget)
         api_client.force_authenticate(base_user)
         url = expense_prediction_detail_url(budget.id, prediction.id)

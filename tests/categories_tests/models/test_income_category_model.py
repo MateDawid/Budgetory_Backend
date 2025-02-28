@@ -150,11 +150,11 @@ class TestIncomeCategoryModel:
         THEN: ValidationError on .full_clean() or IntegrityError on .create() raised.
         """
         payload = self.PAYLOAD.copy()
-        IncomeCategory.objects.create(budget=budget, owner=budget.owner, **payload)
+        IncomeCategory.objects.create(budget=budget, owner=budget.members.first(), **payload)
 
         # .full_clean() & .save() scenario
         with pytest.raises(ValidationError) as exc:
-            income_category = IncomeCategory(budget=budget, owner=budget.owner, **payload)
+            income_category = IncomeCategory(budget=budget, owner=budget.members.first(), **payload)
             income_category.full_clean()
 
         assert (
@@ -165,7 +165,7 @@ class TestIncomeCategoryModel:
 
         # .create() scenario
         with pytest.raises(IntegrityError) as exc:
-            IncomeCategory.objects.create(budget=budget, owner=budget.owner, **payload)
+            IncomeCategory.objects.create(budget=budget, owner=budget.members.first(), **payload)
         assert (
             'duplicate key value violates unique constraint "categories_transfercategory_name_unique_for_owner"'
             in str(exc.value)
