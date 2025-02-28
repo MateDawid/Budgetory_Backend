@@ -64,5 +64,5 @@ class BudgetViewSet(ModelViewSet):
             serializer [BudgetSerializer]: Budget data serializer.
         """
         with transaction.atomic():
-            budget = serializer.save(owner=self.request.user)
+            budget = serializer.save()
             budget.members.add(self.request.user)
