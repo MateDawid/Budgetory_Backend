@@ -1,4 +1,4 @@
-from django.db.models import Q, QuerySet
+from django.db.models import QuerySet
 from django_filters import rest_framework as filters
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
@@ -37,9 +37,7 @@ class BudgetingPeriodViewSet(ModelViewSet):
             budget_pk = self.kwargs.get("budget_pk")
             if budget_pk:
                 return (
-                    self.queryset.filter(Q(budget__owner=user) | Q(budget__members=user), budget__pk=budget_pk)
-                    .order_by("-date_start")
-                    .distinct()
+                    self.queryset.filter(budget__members=user, budget__pk=budget_pk).order_by("-date_start").distinct()
                 )
         return self.queryset.none()  # pragma: no cover
 
