@@ -155,6 +155,9 @@ class TestBudgetViewSetMembersList:
         serializer = UserSerializer(budget.members.all(), many=True)
         assert response.status_code == status.HTTP_200_OK
         assert response.data["results"] == serializer.data
+        for member in serializer.data:
+            assert member["id"] == member.get("value")
+            assert member["username"] == member.get("label")
 
 
 @pytest.mark.django_db
