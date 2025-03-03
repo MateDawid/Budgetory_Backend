@@ -26,7 +26,7 @@ class TestExpenseCategoryFilterSetOrdering:
 
     @pytest.mark.parametrize(
         "sort_param",
-        ("id", "-id", "name", "-name", "priority", "-priority"),
+        ("id", "-id", "name", "-name", "priority", "-priority", "owner", "-owner"),
     )
     def test_get_categories_list_sorted_by_single_param(
         self,
