@@ -37,3 +37,17 @@ class TransferCategorySerializer(serializers.ModelSerializer):
                 f"name already exists in Budget."
             )
         return attrs
+
+    def to_representation(self, instance: TransferCategory) -> OrderedDict:
+        """
+        Overrides "owner" field representation for None value for Frontend proper display.
+
+        Attributes:
+            instance [ExpensePrediction]: TransferCategory model instance
+
+        Returns:
+            OrderedDict: Dictionary containing overridden values.
+        """
+        representation = super().to_representation(instance)
+        representation["owner"] = getattr(instance.owner, "id", -1)
+        return representation

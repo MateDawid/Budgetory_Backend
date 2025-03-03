@@ -125,6 +125,32 @@ class TestExpenseCategoryViewSetList:
         assert response.data["results"] == serializer.data
         assert response.data["results"][0]["id"] == category.id
 
+    def test_category_without_owner_has_fixed_owner_value(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: One ExpenseCategory model instance with owner=None value created in database.
+        WHEN: ExpenseCategoryViewSet called by one of Budgets owner.
+        THEN: Response with serialized ExpenseCategory list (only from given Budget) returned. ExpenseCategory with
+        None value in owner field serialized with -1 value.
+        """
+        budget = budget_factory(members=[base_user])
+        expense_category_factory(budget=budget, owner=None)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(categories_url(budget.id))
+
+        categories = ExpenseCategory.objects.filter(budget=budget)
+        serializer = ExpenseCategorySerializer(categories, many=True)
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data["results"]) == len(serializer.data) == categories.count() == 1
+        assert response.data["results"] == serializer.data
+        assert response.data["results"][0]["owner"] == -1
+
     def test_income_categories_not_in_expense_categories_list(
         self,
         api_client: APIClient,
@@ -434,6 +460,31 @@ class TestExpenseCategoryViewSetDetail:
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data == serializer.data
+
+    def test_category_without_owner_has_fixed_owner_value(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: One ExpenseCategory model instance with owner=None value created in database.
+        WHEN: ExpenseCategoryViewSet detail view called by User belonging to Budget.
+        THEN: HTTP 200, ExpenseCategory details returned. ExpenseCategory with None value in owner field
+        serialized with -1 value.
+        """
+        budget = budget_factory(members=[base_user])
+        category = expense_category_factory(budget=budget, owner=None)
+        api_client.force_authenticate(base_user)
+        url = category_detail_url(budget.id, category.id)
+
+        response = api_client.get(url)
+        serializer = ExpenseCategorySerializer(category)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == serializer.data
+        assert response.data["owner"] == -1
 
 
 @pytest.mark.django_db
