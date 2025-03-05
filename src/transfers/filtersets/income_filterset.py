@@ -1,6 +1,7 @@
 from django_filters import rest_framework as filters
 
-from categories.models.income_category_model import IncomeCategory
+from categories.models import TransferCategory
+from categories.models.choices.category_type import CategoryType
 from transfers.filtersets.transfer_filterset import TransferFilterSet, get_budget_pk
 
 
@@ -8,5 +9,7 @@ class IncomeFilterSet(TransferFilterSet):
     """FilterSet for /income endpoint."""
 
     category = filters.ModelChoiceFilter(
-        queryset=lambda request: IncomeCategory.objects.filter(budget__pk=get_budget_pk(request))
+        queryset=lambda request: TransferCategory.objects.filter(
+            budget__pk=get_budget_pk(request), category_type=CategoryType.INCOME
+        )
     )
