@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 from app_users_tests.factories import UserFactory
 from budgets_tests.factories import BudgetFactory, BudgetingPeriodFactory
-from categories_tests.factories import ExpenseCategoryFactory, IncomeCategoryFactory, TransferCategoryFactory
+from categories_tests.factories import TransferCategoryFactory
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from entities_tests.factories import DepositFactory, EntityFactory
@@ -23,8 +23,6 @@ register(BudgetingPeriodFactory)
 register(DepositFactory)
 register(EntityFactory)
 register(TransferCategoryFactory)
-register(IncomeCategoryFactory)
-register(ExpenseCategoryFactory)
 register(ExpensePredictionFactory)
 register(TransferFactory)
 register(IncomeFactory)

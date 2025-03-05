@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from categories.models.transfer_category_choices import IncomeCategoryPriority
+from categories.models.choices.transfer_category_choices import IncomeCategoryPriority
 
 INCOME_CATEGORY_PRIORITY_URL = reverse("categories:income-category-priorities")
 

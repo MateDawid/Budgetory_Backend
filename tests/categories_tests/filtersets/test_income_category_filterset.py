@@ -5,8 +5,8 @@ from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from categories.models.choices.transfer_category_choices import IncomeCategoryPriority
 from categories.models.income_category_model import IncomeCategory
-from categories.models.transfer_category_choices import IncomeCategoryPriority
 from categories.serializers.income_category_serializer import IncomeCategorySerializer
 
 

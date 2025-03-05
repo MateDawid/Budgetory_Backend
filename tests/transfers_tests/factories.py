@@ -3,11 +3,12 @@ from datetime import date
 
 import factory.fuzzy
 from budgets_tests.factories import BudgetFactory, BudgetingPeriodFactory
-from categories_tests.factories import ExpenseCategoryFactory, IncomeCategoryFactory
+from categories_tests.factories import TransferCategoryFactory
 from entities_tests.factories import DepositFactory, EntityFactory
 
 from budgets.models import Budget, BudgetingPeriod
-from categories.models import ExpenseCategory, IncomeCategory, TransferCategory
+from categories.models import TransferCategory
+from categories.models.choices.category_type import CategoryType
 from entities.models import Deposit, Entity
 
 
@@ -83,8 +84,7 @@ class TransferFactory(factory.django.DjangoModelFactory):
         budget = self._Resolver__step.builder.extras.get("budget")
         if not budget:
             budget = self.period.budget
-        category_factory = random.choice([ExpenseCategoryFactory, IncomeCategoryFactory])
-        return category_factory(budget=budget)
+        return TransferCategoryFactory(budget=budget)
 
     @factory.lazy_attribute
     def date(self) -> date:
@@ -105,17 +105,17 @@ class IncomeFactory(TransferFactory):
         model = "transfers.Income"
 
     @factory.lazy_attribute
-    def category(self, *args) -> IncomeCategory:
+    def category(self, *args) -> TransferCategory:
         """
-        Returns IncomeCategory with the same Budget as prediction period.
+        Returns TransferCategory with the same Budget as prediction period and CategoryType.INCOME category_type value.
 
         Returns:
-            IncomeCategory: IncomeCategory with the same Budget as period.
+            TransferCategory: Generated TransferCategory.
         """
         budget = self._Resolver__step.builder.extras.get("budget")
         if not budget:
             budget = self.period.budget
-        return IncomeCategoryFactory(budget=budget)
+        return TransferCategoryFactory(budget=budget, category_type=CategoryType.INCOME)
 
 
 class ExpenseFactory(TransferFactory):
@@ -125,14 +125,14 @@ class ExpenseFactory(TransferFactory):
         model = "transfers.Expense"
 
     @factory.lazy_attribute
-    def category(self, *args) -> ExpenseCategory:
+    def category(self, *args) -> TransferCategory:
         """
-        Returns ExpenseCategory with the same Budget as prediction period.
+        Returns TransferCategory with the same Budget as prediction period and CategoryType.EXPENSE category_type value.
 
         Returns:
-            ExpenseCategory: ExpenseCategory with the same Budget as period.
+            TransferCategory: Generated TransferCategory.
         """
         budget = self._Resolver__step.builder.extras.get("budget")
         if not budget:
             budget = self.period.budget
-        return ExpenseCategoryFactory(budget=budget)
+        return TransferCategoryFactory(budget=budget, category_type=CategoryType.EXPENSE)

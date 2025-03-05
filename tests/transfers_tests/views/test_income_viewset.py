@@ -12,7 +12,7 @@ from rest_framework.test import APIClient
 
 from app_users.models import User
 from budgets.models.budget_model import Budget
-from categories.models.transfer_category_choices import ExpenseCategoryPriority, IncomeCategoryPriority
+from categories.models.choices.transfer_category_choices import ExpenseCategoryPriority, IncomeCategoryPriority
 from transfers.models.income_model import Income
 from transfers.models.transfer_model import Transfer
 from transfers.serializers.income_serializer import IncomeSerializer

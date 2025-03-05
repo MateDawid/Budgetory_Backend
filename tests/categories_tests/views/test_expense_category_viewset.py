@@ -10,8 +10,8 @@ from rest_framework.test import APIClient
 
 from app_users.models import User
 from budgets.models.budget_model import Budget
+from categories.models.choices.transfer_category_choices import CategoryType, ExpenseCategoryPriority
 from categories.models.expense_category_model import ExpenseCategory
-from categories.models.transfer_category_choices import CategoryType, ExpenseCategoryPriority
 from categories.models.transfer_category_model import TransferCategory
 from categories.serializers.expense_category_serializer import ExpenseCategorySerializer
 

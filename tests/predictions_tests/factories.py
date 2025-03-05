@@ -1,9 +1,10 @@
 import factory
 from budgets_tests.factories import BudgetFactory, BudgetingPeriodFactory
-from categories_tests.factories import ExpenseCategoryFactory
+from categories_tests.factories import TransferCategoryFactory
 
 from budgets.models import Budget, BudgetingPeriod
-from categories.models.expense_category_model import ExpenseCategory
+from categories.models import TransferCategory
+from categories.models.choices.category_type import CategoryType
 
 
 class ExpensePredictionFactory(factory.django.DjangoModelFactory):
@@ -29,17 +30,17 @@ class ExpensePredictionFactory(factory.django.DjangoModelFactory):
         return BudgetingPeriodFactory(budget=budget)
 
     @factory.lazy_attribute
-    def category(self, *args) -> ExpenseCategory:
+    def category(self, *args) -> TransferCategory:
         """
-        Returns ExpenseCategory with the same Budget as prediction period.
+        Returns TransferCategory with the same Budget as prediction period and CategoryType.EXPENSE category_type field.
 
         Returns:
-            ExpenseCategory: ExpenseCategory with the same Budget as period.
+            TransferCategory: Generated TransferCategory.
         """
         budget = self._Resolver__step.builder.extras.get("budget")
         if not budget:
             budget = self.period.budget
-        return ExpenseCategoryFactory(budget=budget)
+        return TransferCategoryFactory(budget=budget, category_type=CategoryType.EXPENSE)
 
     @factory.post_generation
     def budget(self, create: bool, budget: Budget, **kwargs) -> None:
