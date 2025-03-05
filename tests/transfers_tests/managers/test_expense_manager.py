@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from factory.base import FactoryMetaClass
 
 from budgets.models.budget_model import Budget
-from categories.models.transfer_category_choices import ExpenseCategoryPriority
+from categories.models.choices.transfer_category_choices import ExpenseCategoryPriority
 from transfers.models.transfer_model import Transfer
 
 

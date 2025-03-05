@@ -7,7 +7,7 @@ from django.db import DataError, IntegrityError
 from factory.base import BaseFactory, FactoryMetaClass
 
 from budgets.models.budget_model import Budget
-from categories.models.transfer_category_choices import ExpenseCategoryPriority, IncomeCategoryPriority
+from categories.models.choices.transfer_category_choices import ExpenseCategoryPriority, IncomeCategoryPriority
 from transfers.models.transfer_model import Transfer
 
 

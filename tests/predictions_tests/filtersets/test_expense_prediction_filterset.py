@@ -7,7 +7,7 @@ from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from categories.models.transfer_category_choices import ExpenseCategoryPriority
+from categories.models.choices.transfer_category_choices import ExpenseCategoryPriority
 from predictions.models import ExpensePrediction
 from predictions.serializers.expense_prediction_serializer import ExpensePredictionSerializer
 

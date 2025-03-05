@@ -4,7 +4,16 @@ import factory.fuzzy
 from app_users_tests.factories import UserFactory
 from budgets_tests.factories import BudgetFactory
 
-from categories.models.transfer_category_choices import CategoryType, ExpenseCategoryPriority, IncomeCategoryPriority
+from categories.models.choices.category_priority import CategoryPriority
+from categories.models.choices.category_type import CategoryType
+
+INCOME_CATEGORY_PRIORITIES = (CategoryPriority.REGULAR, CategoryPriority.IRREGULAR)
+EXPENSE_CATEGORY_PRIORITIES = (
+    CategoryPriority.MOST_IMPORTANT,
+    CategoryPriority.DEBTS,
+    CategoryPriority.SAVINGS,
+    CategoryPriority.OTHERS,
+)
 
 
 class TransferCategoryFactory(factory.django.DjangoModelFactory):
@@ -33,9 +42,9 @@ class TransferCategoryFactory(factory.django.DjangoModelFactory):
             CategoryType: Category type choice matching selected priority value.
         """
         priority = self._Resolver__step.builder.extras.get("priority")
-        if priority in IncomeCategoryPriority:
+        if priority in INCOME_CATEGORY_PRIORITIES:
             category_type = CategoryType.INCOME
-        elif priority in ExpenseCategoryPriority:
+        elif priority in EXPENSE_CATEGORY_PRIORITIES:
             category_type = CategoryType.EXPENSE
         else:
             category_type = random.choice([choice for choice in CategoryType])
@@ -43,7 +52,7 @@ class TransferCategoryFactory(factory.django.DjangoModelFactory):
         return category_type
 
     @factory.lazy_attribute
-    def priority(self, *args) -> IncomeCategoryPriority | ExpenseCategoryPriority:
+    def priority(self, *args) -> CategoryPriority:
         """
         Returns CategoryPriority matching category_type.
 
@@ -52,31 +61,10 @@ class TransferCategoryFactory(factory.django.DjangoModelFactory):
         """
         category_type = self._Resolver__step.builder.extras.get("category_type")
         if category_type == CategoryType.INCOME:
-            priority = random.choice([choice for choice in IncomeCategoryPriority])
+            priority = random.choice(INCOME_CATEGORY_PRIORITIES)
         elif category_type == CategoryType.EXPENSE:
-            priority = random.choice([choice for choice in ExpenseCategoryPriority])
+            priority = random.choice(EXPENSE_CATEGORY_PRIORITIES)
         else:
-            priority_type = random.choice([ExpenseCategoryPriority, IncomeCategoryPriority])
-            priority = random.choice([choice for choice in priority_type])
+            priority = random.choice([choice for choice in CategoryPriority])
         self._Resolver__step.builder.extras["priority"] = priority
         return priority
-
-
-class IncomeCategoryFactory(TransferCategoryFactory):
-    """Factory for IncomeCategory proxy model."""
-
-    category_type = factory.LazyAttribute(lambda _: CategoryType.INCOME)
-    priority = factory.fuzzy.FuzzyChoice([choice for choice in IncomeCategoryPriority])
-
-    class Meta:
-        model = "categories.TransferCategory"
-
-
-class ExpenseCategoryFactory(TransferCategoryFactory):
-    """Factory for IncomeCategory proxy model."""
-
-    category_type = factory.LazyAttribute(lambda _: CategoryType.EXPENSE)
-    priority = factory.fuzzy.FuzzyChoice([choice for choice in ExpenseCategoryPriority])
-
-    class Meta:
-        model = "categories.TransferCategory"
