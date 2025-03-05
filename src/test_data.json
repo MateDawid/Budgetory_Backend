@@ -1867,7 +1867,7 @@
       "owner": 1,
       "is_active": true,
       "category_type": 1,
-      "priority": 101
+      "priority": 3
     }
   },
   {
@@ -1880,7 +1880,7 @@
       "owner": null,
       "is_active": true,
       "category_type": 1,
-      "priority": 101
+      "priority": 3
     }
   },
   {
@@ -1893,7 +1893,7 @@
       "owner": null,
       "is_active": true,
       "category_type": 1,
-      "priority": 102
+      "priority": 4
     }
   },
   {
@@ -1906,7 +1906,7 @@
       "owner": 1,
       "is_active": true,
       "category_type": 1,
-      "priority": 102
+      "priority": 4
     }
   },
   {
@@ -1919,7 +1919,7 @@
       "owner": null,
       "is_active": true,
       "category_type": 1,
-      "priority": 103
+      "priority": 5
     }
   },
   {
@@ -1932,7 +1932,7 @@
       "owner": 1,
       "is_active": true,
       "category_type": 1,
-      "priority": 103
+      "priority": 5
     }
   },
   {
@@ -1945,7 +1945,7 @@
       "owner": null,
       "is_active": true,
       "category_type": 1,
-      "priority": 104
+      "priority": 6
     }
   },
   {
@@ -1958,7 +1958,7 @@
       "owner": 1,
       "is_active": true,
       "category_type": 1,
-      "priority": 104
+      "priority": 6
     }
   },
   {
@@ -1971,7 +1971,7 @@
       "owner": 1,
       "is_active": true,
       "category_type": 2,
-      "priority": 201
+      "priority": 1
     }
   },
   {
@@ -1984,7 +1984,7 @@
       "owner": null,
       "is_active": true,
       "category_type": 2,
-      "priority": 201
+      "priority": 1
     }
   },
   {
@@ -1997,7 +1997,7 @@
       "owner": 1,
       "is_active": true,
       "category_type": 2,
-      "priority": 202
+      "priority": 2
     }
   },
   {
@@ -2010,7 +2010,7 @@
       "owner": null,
       "is_active": true,
       "category_type": 2,
-      "priority": 202
+      "priority": 2
     }
   },
   {
@@ -2023,7 +2023,7 @@
       "owner": 2,
       "is_active": true,
       "category_type": 1,
-      "priority": 101
+      "priority": 3
     }
   },
   {
@@ -2036,7 +2036,7 @@
       "owner": null,
       "is_active": true,
       "category_type": 1,
-      "priority": 101
+      "priority": 3
     }
   },
   {
@@ -2049,7 +2049,7 @@
       "owner": null,
       "is_active": true,
       "category_type": 1,
-      "priority": 102
+      "priority": 4
     }
   },
   {
@@ -2062,7 +2062,7 @@
       "owner": 2,
       "is_active": true,
       "category_type": 1,
-      "priority": 102
+      "priority": 4
     }
   },
   {
@@ -2075,7 +2075,7 @@
       "owner": null,
       "is_active": true,
       "category_type": 1,
-      "priority": 103
+      "priority": 5
     }
   },
   {
@@ -2088,7 +2088,7 @@
       "owner": 2,
       "is_active": true,
       "category_type": 1,
-      "priority": 103
+      "priority": 5
     }
   },
   {
@@ -2101,7 +2101,7 @@
       "owner": null,
       "is_active": true,
       "category_type": 1,
-      "priority": 104
+      "priority": 6
     }
   },
   {
@@ -2114,7 +2114,7 @@
       "owner": 2,
       "is_active": true,
       "category_type": 1,
-      "priority": 104
+      "priority": 6
     }
   },
   {
@@ -2127,7 +2127,7 @@
       "owner": 2,
       "is_active": true,
       "category_type": 2,
-      "priority": 201
+      "priority": 1
     }
   },
   {
@@ -2140,7 +2140,7 @@
       "owner": null,
       "is_active": true,
       "category_type": 2,
-      "priority": 201
+      "priority": 1
     }
   },
   {
@@ -2153,7 +2153,7 @@
       "owner": 2,
       "is_active": true,
       "category_type": 2,
-      "priority": 202
+      "priority": 2
     }
   },
   {
@@ -2166,7 +2166,7 @@
       "owner": null,
       "is_active": true,
       "category_type": 2,
-      "priority": 202
+      "priority": 2
     }
   },
   {
