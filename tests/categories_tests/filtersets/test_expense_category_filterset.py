@@ -117,12 +117,17 @@ class TestExpenseCategoryFilterSetFiltering:
             "CATEGORY",
         ),
     )
-    def test_get_categories_list_filtered_by_name(
+    @pytest.mark.parametrize(
+        "param",
+        ("name", "description"),
+    )
+    def test_get_categories_list_filtered_by_char_filter(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         expense_category_factory: FactoryMetaClass,
+        param: str,
         filter_value: str,
     ):
         """
@@ -132,42 +137,11 @@ class TestExpenseCategoryFilterSetFiltering:
         "name" value in name param.
         """
         budget = budget_factory(members=[base_user])
-        matching_category = expense_category_factory(budget=budget, name="Some category")
-        expense_category_factory(budget=budget, name="Other one")
+        matching_category = expense_category_factory(budget=budget, **{param: "Some category"})
+        expense_category_factory(budget=budget, **{param: "Other one"})
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(categories_url(budget.id), data={"name": filter_value})
-
-        assert response.status_code == status.HTTP_200_OK
-        assert ExpenseCategory.objects.all().count() == 2
-        categories = ExpenseCategory.objects.filter(budget=budget, id=matching_category.id)
-        serializer = ExpenseCategorySerializer(
-            categories,
-            many=True,
-        )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == categories.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == matching_category.id
-
-    def test_get_categories_list_filtered_by_common_only(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Two ExpenseCategory objects for single Budget.
-        WHEN: The ExpenseCategoryViewSet list view is called with "common_only"=True filter.
-        THEN: Response must contain all ExpenseCategory existing in database assigned to Budget without owner assigned.
-        """
-        budget = budget_factory(members=[base_user])
-        matching_category = expense_category_factory(budget=budget, name="Some category", owner=None)
-        expense_category_factory(budget=budget, name="Other one", owner=base_user)
-        api_client.force_authenticate(base_user)
-
-        response = api_client.get(categories_url(budget.id), data={"common_only": True})
+        response = api_client.get(categories_url(budget.id), data={param: filter_value})
 
         assert response.status_code == status.HTTP_200_OK
         assert ExpenseCategory.objects.all().count() == 2
@@ -189,7 +163,7 @@ class TestExpenseCategoryFilterSetFiltering:
         expense_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Two ExpenseCategory objects for single Budget.
+        GIVEN: Two ExpenseCategory objects for single Budget - one with owner set, one without an owner.
         WHEN: The ExpenseCategoryViewSet list view is called with "owner" filter.
         THEN: Response must contain all ExpenseCategory existing in database assigned to Budget with
         matching "owner" value.
@@ -200,6 +174,38 @@ class TestExpenseCategoryFilterSetFiltering:
         api_client.force_authenticate(base_user)
 
         response = api_client.get(categories_url(budget.id), data={"owner": base_user.id})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert ExpenseCategory.objects.all().count() == 2
+        categories = ExpenseCategory.objects.filter(budget=budget, id=matching_category.id)
+        serializer = ExpenseCategorySerializer(
+            categories,
+            many=True,
+        )
+        assert response.data["results"] and serializer.data
+        assert len(response.data["results"]) == len(serializer.data) == categories.count() == 1
+        assert response.data["results"] == serializer.data
+        assert response.data["results"][0]["id"] == matching_category.id
+
+    def test_get_categories_list_filtered_by_empty_owner(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two ExpenseCategory objects for single Budget - one with owner set, one without an owner.
+        WHEN: The ExpenseCategoryViewSet list view is called with -1 value for "owner" filter.
+        THEN: Response must contain all ExpenseCategory existing in database assigned to Budget with
+        None value for "owner" field.
+        """
+        budget = budget_factory(members=[base_user])
+        matching_category = expense_category_factory(budget=budget, name="Some category", owner=None)
+        expense_category_factory(budget=budget, name="Other one", owner=base_user)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(categories_url(budget.id), data={"owner": -1})
 
         assert response.status_code == status.HTTP_200_OK
         assert ExpenseCategory.objects.all().count() == 2
