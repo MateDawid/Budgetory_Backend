@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
+from categories.filtersets.transfer_category_filterset import TransferCategoryFilterSet
 from categories.serializers.transfer_category_serializer import TransferCategorySerializer
 
 
@@ -12,6 +13,7 @@ class TransferCategoryViewSet(ModelViewSet):
     """Base ViewSet for managing TransferCategories."""
 
     serializer_class = TransferCategorySerializer
+    filterset_class = TransferCategoryFilterSet
     permission_classes = (IsAuthenticated, UserBelongsToBudgetPermission)
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
     ordering_fields = ("id", "name", "priority", "owner")
