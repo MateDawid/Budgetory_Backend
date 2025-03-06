@@ -5,17 +5,17 @@ from rest_framework.test import APIClient
 
 from categories.models.choices.category_priority import CategoryPriority
 
-CATEGORY_PRIORITY_URL = reverse("categories:category-priorities")
+CATEGORY_PRIORITY_URL = reverse("categories:category-priority")
 
 
 @pytest.mark.django_db
-class TestCategoryPriorityList:
-    """Tests for list view on ExpenseCategoryViewSet."""
+class TestCategoryPriorityView:
+    """Tests for list view on CategoryPriorityView."""
 
     def test_auth_not_required(self, api_client: APIClient):
         """
         GIVEN: CategoryPriority choices defined in application.
-        WHEN: Performing HTTP GET request on EXPENSE_CATEGORY_PRIORITY_URL without authentication.
+        WHEN: Performing HTTP GET request on CATEGORY_PRIORITY_URL without authentication.
         THEN: HTTP_200_OK returned, endpoint accessible without authentication.
         """
         response = api_client.get(CATEGORY_PRIORITY_URL)
@@ -25,7 +25,7 @@ class TestCategoryPriorityList:
     def test_get_priorities_list(self, api_client: APIClient):
         """
         GIVEN: CategoryPriority choices defined in application.
-        WHEN: Performing HTTP GET request on EXPENSE_CATEGORY_PRIORITY_URL.
+        WHEN: Performing HTTP GET request on CATEGORY_PRIORITY_URL.
         THEN: HTTP_200_OK, choices for CategoryPriority returned.
         """
         response = api_client.get(CATEGORY_PRIORITY_URL)
