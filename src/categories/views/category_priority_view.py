@@ -1,15 +1,16 @@
-from django.db import models
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from categories.models.choices.category_priority import CategoryPriority
 
-class TransferCategoryPriorityView(APIView):
+
+class CategoryPriorityView(APIView):
     """
-    View returning IncomeCategoryPriority choices for IncomeCategory.
+    View returning CategoryPriority choices for TransferCategory.
     """
 
-    choices = models.IntegerChoices.choices
+    choices = CategoryPriority.choices
     permission_classes = []
 
     def get(self, request: Request) -> Response:
