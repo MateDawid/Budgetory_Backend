@@ -7,7 +7,7 @@ from django.db import DataError, IntegrityError
 from factory.base import BaseFactory, FactoryMetaClass
 
 from budgets.models.budget_model import Budget
-from categories.models.choices.transfer_category_choices import ExpenseCategoryPriority, IncomeCategoryPriority
+from categories.models.choices.category_priority import CategoryPriority
 from transfers.models.income_model import Income
 from transfers.models.transfer_model import Transfer
 
@@ -42,7 +42,7 @@ class TestIncomeModel:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = income_category_factory(budget=budget, priority=IncomeCategoryPriority.REGULAR)
+        payload["category"] = income_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
         income = Income.objects.create(**payload)
 
         for key in payload:
@@ -72,7 +72,7 @@ class TestIncomeModel:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = income_category_factory(budget=budget, priority=IncomeCategoryPriority.REGULAR)
+        payload["category"] = income_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
 
         income = Income(**payload)
         income.full_clean()
@@ -106,7 +106,7 @@ class TestIncomeModel:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
 
         with pytest.raises(ValidationError) as exc:
             Income.objects.create(**payload)
@@ -133,7 +133,7 @@ class TestIncomeModel:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
 
         with pytest.raises(ValidationError) as exc:
             income = Income(**payload)

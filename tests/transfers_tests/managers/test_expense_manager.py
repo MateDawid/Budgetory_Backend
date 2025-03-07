@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from factory.base import FactoryMetaClass
 
 from budgets.models.budget_model import Budget
-from categories.models.choices.transfer_category_choices import ExpenseCategoryPriority
+from categories.models.choices.category_priority import CategoryPriority
 from transfers.models.transfer_model import Transfer
 
 
@@ -55,7 +55,7 @@ class TestExpenseManager:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
 
         transfer = Transfer.expenses.create(**payload)
 
