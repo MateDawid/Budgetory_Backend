@@ -43,7 +43,7 @@ class TestExpensePredictionFilterSetOrdering:
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         sort_param: str,
     ):
         """
@@ -58,10 +58,12 @@ class TestExpensePredictionFilterSetOrdering:
         period_2 = budgeting_period_factory(
             budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 28), is_active=True
         )
-        category_1 = expense_category_factory(
+        category_1 = transfer_category_factory(
             budget=budget, name="Most important", owner=None, priority=CategoryPriority.MOST_IMPORTANT
         )
-        category_2 = expense_category_factory(budget=budget, name="Other", owner=None, priority=CategoryPriority.OTHERS)
+        category_2 = transfer_category_factory(
+            budget=budget, name="Other", owner=None, priority=CategoryPriority.OTHERS
+        )
         expense_prediction_factory(budget=budget, value=5, period=period_1, category=category_1)
         expense_prediction_factory(budget=budget, value=4, period=period_2, category=category_2)
         expense_prediction_factory(budget=budget, value=3, period=period_2, category=category_1)
@@ -88,7 +90,7 @@ class TestExpensePredictionFilterSetOrdering:
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Five ExpensePrediction objects created in database.
@@ -102,10 +104,12 @@ class TestExpensePredictionFilterSetOrdering:
         period_2 = budgeting_period_factory(
             budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 28), is_active=True
         )
-        category_1 = expense_category_factory(
+        category_1 = transfer_category_factory(
             budget=budget, name="Most important", owner=None, priority=CategoryPriority.MOST_IMPORTANT
         )
-        category_2 = expense_category_factory(budget=budget, name="Other", owner=None, priority=CategoryPriority.OTHERS)
+        category_2 = transfer_category_factory(
+            budget=budget, name="Other", owner=None, priority=CategoryPriority.OTHERS
+        )
         expense_prediction_factory(budget=budget, value=5, period=period_1, category=category_1)
         expense_prediction_factory(budget=budget, value=4, period=period_2, category=category_2)
         expense_prediction_factory(budget=budget, value=3, period=period_2, category=category_1)
@@ -207,7 +211,7 @@ class TestExpensePredictionFilterSetFiltering:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
@@ -217,9 +221,9 @@ class TestExpensePredictionFilterSetFiltering:
         category_id value.
         """
         budget = budget_factory(members=[base_user])
-        category = expense_category_factory(budget=budget, name="Test name")
+        category = transfer_category_factory(budget=budget, name="Test name")
         prediction = expense_prediction_factory(budget=budget, category=category)
-        expense_prediction_factory(budget=budget, category=expense_category_factory(budget=budget, name="Other"))
+        expense_prediction_factory(budget=budget, category=transfer_category_factory(budget=budget, name="Other"))
         api_client.force_authenticate(base_user)
 
         response = api_client.get(expense_prediction_url(budget.id), data={"category_id": category.id})
@@ -244,7 +248,7 @@ class TestExpensePredictionFilterSetFiltering:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
         filter_value: str,
     ):
@@ -255,9 +259,9 @@ class TestExpensePredictionFilterSetFiltering:
         category_name value.
         """
         budget = budget_factory(members=[base_user])
-        category = expense_category_factory(budget=budget, name="Test name")
+        category = transfer_category_factory(budget=budget, name="Test name")
         prediction = expense_prediction_factory(budget=budget, category=category)
-        expense_prediction_factory(budget=budget, category=expense_category_factory(budget=budget, name="Other"))
+        expense_prediction_factory(budget=budget, category=transfer_category_factory(budget=budget, name="Other"))
         api_client.force_authenticate(base_user)
 
         response = api_client.get(expense_prediction_url(budget.id), data={"category_name": filter_value})

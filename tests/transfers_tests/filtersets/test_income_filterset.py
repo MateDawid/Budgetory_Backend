@@ -134,7 +134,7 @@ class TestIncomeFilterSetFiltering:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         income_factory: FactoryMetaClass,
     ):
         """
@@ -144,8 +144,8 @@ class TestIncomeFilterSetFiltering:
         THEN: Response must contain all Income existing in database with common IncomeCategory.
         """
         budget = budget_factory(members=[base_user])
-        common_category = income_category_factory(budget=budget, owner=None)
-        personal_category = income_category_factory(budget=budget, owner=base_user)
+        common_category = transfer_category_factory(budget=budget, owner=None)
+        personal_category = transfer_category_factory(budget=budget, owner=base_user)
         matching_transfer = income_factory(budget=budget, name="Some transfer", category=common_category)
         income_factory(budget=budget, name="Other one", category=personal_category)
         api_client.force_authenticate(base_user)
@@ -169,7 +169,7 @@ class TestIncomeFilterSetFiltering:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         income_factory: FactoryMetaClass,
     ):
         """
@@ -179,8 +179,8 @@ class TestIncomeFilterSetFiltering:
         THEN: Response must contain all Income existing in database with given User as IncomeCategory owner.
         """
         budget = budget_factory(members=[base_user])
-        common_category = income_category_factory(budget=budget, owner=None)
-        personal_category = income_category_factory(budget=budget, owner=base_user)
+        common_category = transfer_category_factory(budget=budget, owner=None)
+        personal_category = transfer_category_factory(budget=budget, owner=base_user)
         matching_transfer = income_factory(budget=budget, name="Some transfer", category=personal_category)
         income_factory(budget=budget, name="Other one", category=common_category)
         api_client.force_authenticate(base_user)
@@ -313,7 +313,7 @@ class TestIncomeFilterSetFiltering:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         income_factory: FactoryMetaClass,
     ):
         """
@@ -323,8 +323,8 @@ class TestIncomeFilterSetFiltering:
         "category" value.
         """
         budget = budget_factory(members=[base_user])
-        other_category = income_category_factory(budget=budget)
-        matching_category = income_category_factory(budget=budget)
+        other_category = transfer_category_factory(budget=budget)
+        matching_category = transfer_category_factory(budget=budget)
         income_factory(budget=budget, category=other_category)
         transfer = income_factory(budget=budget, category=matching_category)
         api_client.force_authenticate(base_user)
