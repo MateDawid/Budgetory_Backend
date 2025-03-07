@@ -7,7 +7,7 @@ from django.db import DataError, IntegrityError
 from factory.base import BaseFactory, FactoryMetaClass
 
 from budgets.models.budget_model import Budget
-from categories.models.choices.transfer_category_choices import ExpenseCategoryPriority, IncomeCategoryPriority
+from categories.models.choices.category_priority import CategoryPriority
 from transfers.models.transfer_model import Transfer
 
 
@@ -47,7 +47,7 @@ class TestTransferModel:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = income_category_factory(budget=budget, priority=IncomeCategoryPriority.REGULAR)
+        payload["category"] = income_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
         transfer = Transfer.objects.create(**payload)
 
         for key in payload:
@@ -77,7 +77,7 @@ class TestTransferModel:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = income_category_factory(budget=budget, priority=IncomeCategoryPriority.REGULAR)
+        payload["category"] = income_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
 
         transfer = Transfer(**payload)
         transfer.full_clean()
@@ -111,7 +111,7 @@ class TestTransferModel:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
 
         transfer = Transfer.objects.create(**payload)
 
@@ -142,7 +142,7 @@ class TestTransferModel:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
 
         transfer = Transfer(**payload)
         transfer.full_clean()

@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from factory.base import FactoryMetaClass
 
 from budgets.models.budget_model import Budget
-from categories.models.choices.transfer_category_choices import IncomeCategoryPriority
+from categories.models.choices.category_priority import CategoryPriority
 from transfers.models.transfer_model import Transfer
 
 
@@ -55,7 +55,7 @@ class TestIncomeManager:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = income_category_factory(budget=budget, priority=IncomeCategoryPriority.REGULAR)
+        payload["category"] = income_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
 
         transfer = Transfer.incomes.create(**payload)
 

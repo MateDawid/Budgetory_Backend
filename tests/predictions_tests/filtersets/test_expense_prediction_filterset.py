@@ -7,7 +7,7 @@ from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from categories.models.choices.transfer_category_choices import ExpenseCategoryPriority
+from categories.models.choices.category_priority import CategoryPriority
 from predictions.models import ExpensePrediction
 from predictions.serializers.expense_prediction_serializer import ExpensePredictionSerializer
 
@@ -59,11 +59,9 @@ class TestExpensePredictionFilterSetOrdering:
             budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 28), is_active=True
         )
         category_1 = expense_category_factory(
-            budget=budget, name="Most important", owner=None, priority=ExpenseCategoryPriority.MOST_IMPORTANT
+            budget=budget, name="Most important", owner=None, priority=CategoryPriority.MOST_IMPORTANT
         )
-        category_2 = expense_category_factory(
-            budget=budget, name="Other", owner=None, priority=ExpenseCategoryPriority.OTHERS
-        )
+        category_2 = expense_category_factory(budget=budget, name="Other", owner=None, priority=CategoryPriority.OTHERS)
         expense_prediction_factory(budget=budget, value=5, period=period_1, category=category_1)
         expense_prediction_factory(budget=budget, value=4, period=period_2, category=category_2)
         expense_prediction_factory(budget=budget, value=3, period=period_2, category=category_1)
@@ -105,11 +103,9 @@ class TestExpensePredictionFilterSetOrdering:
             budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 28), is_active=True
         )
         category_1 = expense_category_factory(
-            budget=budget, name="Most important", owner=None, priority=ExpenseCategoryPriority.MOST_IMPORTANT
+            budget=budget, name="Most important", owner=None, priority=CategoryPriority.MOST_IMPORTANT
         )
-        category_2 = expense_category_factory(
-            budget=budget, name="Other", owner=None, priority=ExpenseCategoryPriority.OTHERS
-        )
+        category_2 = expense_category_factory(budget=budget, name="Other", owner=None, priority=CategoryPriority.OTHERS)
         expense_prediction_factory(budget=budget, value=5, period=period_1, category=category_1)
         expense_prediction_factory(budget=budget, value=4, period=period_2, category=category_2)
         expense_prediction_factory(budget=budget, value=3, period=period_2, category=category_1)

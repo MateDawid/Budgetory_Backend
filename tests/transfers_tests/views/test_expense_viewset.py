@@ -12,7 +12,7 @@ from rest_framework.test import APIClient
 
 from app_users.models import User
 from budgets.models.budget_model import Budget
-from categories.models.choices.transfer_category_choices import ExpenseCategoryPriority, IncomeCategoryPriority
+from categories.models.choices.category_priority import CategoryPriority
 from transfers.models.expense_model import Expense
 from transfers.models.transfer_model import Transfer
 from transfers.serializers.expense_serializer import ExpenseSerializer
@@ -237,9 +237,7 @@ class TestExpenseViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = expense_category_factory(
-            budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT
-        ).pk
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT).pk
         payload["value"] = value
 
         response = api_client.post(transfers_url(budget.id), data=payload)
@@ -305,9 +303,7 @@ class TestExpenseViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = expense_category_factory(
-            budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT
-        ).pk
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT).pk
 
         payload["value"] = value
 
@@ -342,9 +338,7 @@ class TestExpenseViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = expense_category_factory(
-            budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT
-        ).pk
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT).pk
 
         payload["value"] = Decimal("100000000.00")
 
@@ -378,7 +372,7 @@ class TestExpenseViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = income_category_factory(budget=budget, priority=IncomeCategoryPriority.REGULAR).pk
+        payload["category"] = income_category_factory(budget=budget, priority=CategoryPriority.REGULAR).pk
 
         api_client.post(transfers_url(budget.id), payload)
         response = api_client.post(transfers_url(budget.id), payload)
@@ -710,7 +704,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         update_payload = {param: value}
         api_client.force_authenticate(base_user)
@@ -747,7 +741,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_period = budgeting_period_factory(
             budget=budget, date_start=datetime.date(2024, 10, 1), date_end=datetime.date(2024, 10, 31), is_active=True
@@ -789,7 +783,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_period = budgeting_period_factory(
             budget=budget, date_start=datetime.date(2024, 10, 1), date_end=datetime.date(2024, 10, 31), is_active=True
@@ -829,7 +823,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_deposit = deposit_factory(budget=budget)
         update_payload = {"deposit": new_deposit.pk}
@@ -867,7 +861,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_entity = entity_factory(budget=budget)
         update_payload = {"entity": new_entity.pk}
@@ -906,7 +900,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         update_payload = {"entity": payload["deposit"].pk}
         api_client.force_authenticate(base_user)
@@ -947,7 +941,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = deposit_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         update_payload = {"deposit": payload["entity"].pk}
         api_client.force_authenticate(base_user)
@@ -989,7 +983,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_deposit = entity_factory(budget=budget, is_deposit=False)
         update_payload = {"deposit": new_deposit.pk}
@@ -1027,9 +1021,9 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
-        new_category = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.DEBTS)
+        new_category = expense_category_factory(budget=budget, priority=CategoryPriority.DEBTS)
         update_payload = {"category": new_category.pk}
         api_client.force_authenticate(base_user)
         url = transfer_detail_url(budget.id, transfer.id)
@@ -1066,7 +1060,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_category = income_category_factory(budget=budget)
         update_payload = {"category": new_category.pk}
@@ -1103,7 +1097,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         update_payload = {
             "name": "New name",
@@ -1118,7 +1112,7 @@ class TestExpenseViewSetUpdate:
             ).pk,
             "entity": entity_factory(budget=budget).pk,
             "deposit": deposit_factory(budget=budget).pk,
-            "category": expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.DEBTS).pk,
+            "category": expense_category_factory(budget=budget, priority=CategoryPriority.DEBTS).pk,
         }
         api_client.force_authenticate(base_user)
         url = transfer_detail_url(budget.id, transfer.id)
@@ -1160,7 +1154,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_period = budgeting_period_factory(budget=budget_factory())
         update_payload = {"period": new_period.pk}
@@ -1199,7 +1193,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_category = expense_category_factory(budget=budget_factory())
         update_payload = {"category": new_category.pk}
@@ -1238,7 +1232,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_deposit = deposit_factory(budget=budget_factory())
         update_payload = {"deposit": new_deposit.pk}
@@ -1277,7 +1271,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = expense_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_entity = entity_factory(budget=budget_factory())
         update_payload = {"entity": new_entity.pk}
