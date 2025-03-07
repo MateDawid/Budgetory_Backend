@@ -1866,7 +1866,7 @@
       "description": null,
       "owner": 1,
       "is_active": true,
-      "category_type": 1,
+      "category_type": 2,
       "priority": 3
     }
   },
@@ -1879,7 +1879,7 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 1,
+      "category_type": 2,
       "priority": 3
     }
   },
@@ -1892,7 +1892,7 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 1,
+      "category_type": 2,
       "priority": 4
     }
   },
@@ -1905,7 +1905,7 @@
       "description": null,
       "owner": 1,
       "is_active": true,
-      "category_type": 1,
+      "category_type": 2,
       "priority": 4
     }
   },
@@ -1918,7 +1918,7 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 1,
+      "category_type": 2,
       "priority": 5
     }
   },
@@ -1931,7 +1931,7 @@
       "description": null,
       "owner": 1,
       "is_active": true,
-      "category_type": 1,
+      "category_type": 2,
       "priority": 5
     }
   },
@@ -1944,7 +1944,7 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 1,
+      "category_type": 2,
       "priority": 6
     }
   },
@@ -1957,7 +1957,7 @@
       "description": null,
       "owner": 1,
       "is_active": true,
-      "category_type": 1,
+      "category_type": 2,
       "priority": 6
     }
   },
@@ -1970,7 +1970,7 @@
       "description": null,
       "owner": 1,
       "is_active": true,
-      "category_type": 2,
+      "category_type": 1,
       "priority": 1
     }
   },
@@ -1983,7 +1983,7 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 2,
+      "category_type": 1,
       "priority": 1
     }
   },
@@ -1996,7 +1996,7 @@
       "description": null,
       "owner": 1,
       "is_active": true,
-      "category_type": 2,
+      "category_type": 1,
       "priority": 2
     }
   },
@@ -2009,7 +2009,7 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 2,
+      "category_type": 1,
       "priority": 2
     }
   },
@@ -2022,7 +2022,7 @@
       "description": null,
       "owner": 2,
       "is_active": true,
-      "category_type": 1,
+      "category_type": 2,
       "priority": 3
     }
   },
@@ -2035,7 +2035,7 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 1,
+      "category_type": 2,
       "priority": 3
     }
   },
@@ -2048,7 +2048,7 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 1,
+      "category_type": 2,
       "priority": 4
     }
   },
@@ -2061,7 +2061,7 @@
       "description": null,
       "owner": 2,
       "is_active": true,
-      "category_type": 1,
+      "category_type": 2,
       "priority": 4
     }
   },
@@ -2074,7 +2074,7 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 1,
+      "category_type": 2,
       "priority": 5
     }
   },
@@ -2087,7 +2087,7 @@
       "description": null,
       "owner": 2,
       "is_active": true,
-      "category_type": 1,
+      "category_type": 2,
       "priority": 5
     }
   },
@@ -2100,7 +2100,7 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 1,
+      "category_type": 2,
       "priority": 6
     }
   },
@@ -2113,7 +2113,7 @@
       "description": null,
       "owner": 2,
       "is_active": true,
-      "category_type": 1,
+      "category_type": 2,
       "priority": 6
     }
   },
@@ -2126,7 +2126,7 @@
       "description": null,
       "owner": 2,
       "is_active": true,
-      "category_type": 2,
+      "category_type": 1,
       "priority": 1
     }
   },
@@ -2139,7 +2139,7 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 2,
+      "category_type": 1,
       "priority": 1
     }
   },
@@ -2152,7 +2152,7 @@
       "description": null,
       "owner": 2,
       "is_active": true,
-      "category_type": 2,
+      "category_type": 1,
       "priority": 2
     }
   },
@@ -2165,7 +2165,7 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 2,
+      "category_type": 1,
       "priority": 2
     }
   },
