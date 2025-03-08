@@ -12,7 +12,8 @@ from rest_framework.test import APIClient
 
 from app_users.models import User
 from budgets.models.budget_model import Budget
-from categories.models.transfer_category_choices import ExpenseCategoryPriority, IncomeCategoryPriority
+from categories.models.choices.category_priority import CategoryPriority
+from categories.models.choices.category_type import CategoryType
 from transfers.models.expense_model import Expense
 from transfers.models.transfer_model import Transfer
 from transfers.serializers.expense_serializer import ExpenseSerializer
@@ -53,7 +54,7 @@ class TestExpenseViewSetList:
         WHEN: ExpenseViewSet list endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         url = transfers_url(budget.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -69,7 +70,7 @@ class TestExpenseViewSetList:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         api_client.force_authenticate(other_user)
 
         response = api_client.get(transfers_url(budget.id))
@@ -89,7 +90,7 @@ class TestExpenseViewSetList:
         WHEN: ExpenseViewSet called by Budget owner.
         THEN: Response with serialized Budget Expense list returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         for _ in range(2):
             expense_factory(budget=budget)
@@ -113,7 +114,7 @@ class TestExpenseViewSetList:
         WHEN: ExpenseViewSet called by one of Budgets owner.
         THEN: Response with serialized Expense list (only from given Budget) returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         transfer = expense_factory(budget=budget)
         expense_factory()
         api_client.force_authenticate(base_user)
@@ -140,7 +141,7 @@ class TestExpenseViewSetList:
         WHEN: ExpenseViewSet called by one of Budgets owner.
         THEN: Response with serialized Expense list (only from given Budget) returned without Income.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         expense_factory(budget=budget)
         income_transfer = income_factory(budget=budget)
         api_client.force_authenticate(base_user)
@@ -187,7 +188,7 @@ class TestExpenseViewSetCreate:
         WHEN: ExpenseViewSet list endpoint called with GET.
         THEN: HTTP 400 returned - access granted, but data invalid.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         url = transfers_url(budget.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.post(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -203,7 +204,7 @@ class TestExpenseViewSetCreate:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         api_client.force_authenticate(other_user)
 
         response = api_client.post(transfers_url(budget.id), data={})
@@ -220,7 +221,7 @@ class TestExpenseViewSetCreate:
         budgeting_period_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         value: Decimal,
     ):
         """
@@ -228,7 +229,7 @@ class TestExpenseViewSetCreate:
         WHEN: ExpenseViewSet called with POST by User belonging to Budget with valid payload.
         THEN: Expense object created in database with given payload.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -237,9 +238,7 @@ class TestExpenseViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = expense_category_factory(
-            budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT
-        ).pk
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT).pk
         payload["value"] = value
 
         response = api_client.post(transfers_url(budget.id), data=payload)
@@ -266,7 +265,7 @@ class TestExpenseViewSetCreate:
         WHEN: ExpenseViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. Expense not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         max_length = Expense._meta.get_field(field_name).max_length
         payload = self.PAYLOAD.copy()
@@ -286,7 +285,7 @@ class TestExpenseViewSetCreate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         value: Decimal,
@@ -296,7 +295,7 @@ class TestExpenseViewSetCreate:
         WHEN: ExpenseViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. Expense not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -305,9 +304,7 @@ class TestExpenseViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = expense_category_factory(
-            budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT
-        ).pk
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT).pk
 
         payload["value"] = value
 
@@ -324,7 +321,7 @@ class TestExpenseViewSetCreate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
     ):
@@ -333,7 +330,7 @@ class TestExpenseViewSetCreate:
         WHEN: ExpenseViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. Expense not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -342,9 +339,7 @@ class TestExpenseViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = expense_category_factory(
-            budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT
-        ).pk
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT).pk
 
         payload["value"] = Decimal("100000000.00")
 
@@ -360,7 +355,7 @@ class TestExpenseViewSetCreate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
     ):
@@ -369,7 +364,7 @@ class TestExpenseViewSetCreate:
         WHEN: ExpenseViewSet called with POST by User belonging to Budget.
         THEN: Bad request HTTP 400 returned. Expense not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -378,7 +373,7 @@ class TestExpenseViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = income_category_factory(budget=budget, priority=IncomeCategoryPriority.REGULAR).pk
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.REGULAR).pk
 
         api_client.post(transfers_url(budget.id), payload)
         response = api_client.post(transfers_url(budget.id), payload)
@@ -394,7 +389,7 @@ class TestExpenseViewSetCreate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
     ):
@@ -403,7 +398,7 @@ class TestExpenseViewSetCreate:
         WHEN: ExpenseViewSet called with POST by User belonging to Budget.
         THEN: Bad request HTTP 400 returned. Expense not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -412,7 +407,7 @@ class TestExpenseViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = expense_category_factory(budget=budget_factory()).pk
+        payload["category"] = transfer_category_factory(budget=budget_factory(), category_type=CategoryType.EXPENSE).pk
 
         api_client.post(transfers_url(budget.id), payload)
         response = api_client.post(transfers_url(budget.id), payload)
@@ -428,7 +423,7 @@ class TestExpenseViewSetCreate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
     ):
@@ -437,7 +432,7 @@ class TestExpenseViewSetCreate:
         WHEN: ExpenseViewSet called with POST by User belonging to Budget.
         THEN: Bad request HTTP 400 returned. Expense not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -449,7 +444,7 @@ class TestExpenseViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = expense_category_factory(budget=budget).pk
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE).pk
 
         api_client.post(transfers_url(budget.id), payload)
         response = api_client.post(transfers_url(budget.id), payload)
@@ -465,7 +460,7 @@ class TestExpenseViewSetCreate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
     ):
@@ -474,7 +469,7 @@ class TestExpenseViewSetCreate:
         WHEN: ExpenseViewSet called with POST by User belonging to Budget.
         THEN: Bad request HTTP 400 returned. Expense not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -483,7 +478,7 @@ class TestExpenseViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget_factory()).pk
-        payload["category"] = expense_category_factory(budget=budget).pk
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE).pk
 
         api_client.post(transfers_url(budget.id), payload)
         response = api_client.post(transfers_url(budget.id), payload)
@@ -499,7 +494,7 @@ class TestExpenseViewSetCreate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
     ):
@@ -508,7 +503,7 @@ class TestExpenseViewSetCreate:
         WHEN: ExpenseViewSet called with POST by User belonging to Budget.
         THEN: Bad request HTTP 400 returned. Expense not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -517,7 +512,7 @@ class TestExpenseViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget_factory()).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = expense_category_factory(budget=budget).pk
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE).pk
 
         api_client.post(transfers_url(budget.id), payload)
         response = api_client.post(transfers_url(budget.id), payload)
@@ -555,7 +550,7 @@ class TestExpenseViewSetDetail:
         WHEN: ExpenseViewSet detail endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         transfer = expense_factory(budget=budget)
         url = transfer_detail_url(budget.id, transfer.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -576,7 +571,7 @@ class TestExpenseViewSetDetail:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         transfer = expense_factory(budget=budget)
         api_client.force_authenticate(other_user)
         url = transfer_detail_url(budget.id, transfer.id)
@@ -598,7 +593,7 @@ class TestExpenseViewSetDetail:
         WHEN: ExpenseViewSet detail view called by User belonging to Budget.
         THEN: HTTP 200, Expense details returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         transfer = expense_factory(budget=budget)
         api_client.force_authenticate(base_user)
         url = transfer_detail_url(budget.id, transfer.id)
@@ -643,7 +638,7 @@ class TestExpenseViewSetUpdate:
         WHEN: ExpenseViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         transfer = expense_factory(budget=budget)
         url = transfer_detail_url(budget.id, transfer.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -664,7 +659,7 @@ class TestExpenseViewSetUpdate:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         transfer = expense_factory(budget=budget)
         api_client.force_authenticate(other_user)
         url = transfer_detail_url(budget.id, transfer.id)
@@ -690,7 +685,7 @@ class TestExpenseViewSetUpdate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
@@ -702,7 +697,7 @@ class TestExpenseViewSetUpdate:
         WHEN: ExpenseViewSet detail view called with PATCH by User belonging to Budget.
         THEN: HTTP 200, Expense updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -710,7 +705,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         update_payload = {param: value}
         api_client.force_authenticate(base_user)
@@ -729,7 +724,7 @@ class TestExpenseViewSetUpdate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
@@ -739,7 +734,7 @@ class TestExpenseViewSetUpdate:
         WHEN: ExpenseViewSet detail view called with PATCH with invalid BudgetingPeriod.
         THEN: HTTP 400, Expense not updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -747,7 +742,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_period = budgeting_period_factory(
             budget=budget, date_start=datetime.date(2024, 10, 1), date_end=datetime.date(2024, 10, 31), is_active=True
@@ -771,7 +766,7 @@ class TestExpenseViewSetUpdate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
@@ -781,7 +776,7 @@ class TestExpenseViewSetUpdate:
         WHEN: ExpenseViewSet detail view called with PATCH with valid BudgetingPeriod and date.
         THEN: HTTP 400, Expense not updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -789,7 +784,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_period = budgeting_period_factory(
             budget=budget, date_start=datetime.date(2024, 10, 1), date_end=datetime.date(2024, 10, 31), is_active=True
@@ -811,7 +806,7 @@ class TestExpenseViewSetUpdate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
@@ -821,7 +816,7 @@ class TestExpenseViewSetUpdate:
         WHEN: ExpenseViewSet detail view called with PATCH with valid Deposit.
         THEN: HTTP 200, Expense updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -829,7 +824,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_deposit = deposit_factory(budget=budget)
         update_payload = {"deposit": new_deposit.pk}
@@ -849,7 +844,7 @@ class TestExpenseViewSetUpdate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
@@ -859,7 +854,7 @@ class TestExpenseViewSetUpdate:
         WHEN: ExpenseViewSet detail view called with PATCH with valid Entity.
         THEN: HTTP 200, Expense updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -867,7 +862,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_entity = entity_factory(budget=budget)
         update_payload = {"entity": new_entity.pk}
@@ -887,7 +882,7 @@ class TestExpenseViewSetUpdate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
@@ -898,7 +893,7 @@ class TestExpenseViewSetUpdate:
         assigned in "deposit" field.
         THEN: HTTP 400, Expense not updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -906,7 +901,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         update_payload = {"entity": payload["deposit"].pk}
         api_client.force_authenticate(base_user)
@@ -929,7 +924,7 @@ class TestExpenseViewSetUpdate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
     ):
@@ -939,7 +934,7 @@ class TestExpenseViewSetUpdate:
         assigned in "entity" field.
         THEN: HTTP 400, Expense not updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -947,7 +942,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = deposit_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         update_payload = {"deposit": payload["entity"].pk}
         api_client.force_authenticate(base_user)
@@ -970,7 +965,7 @@ class TestExpenseViewSetUpdate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
@@ -981,7 +976,7 @@ class TestExpenseViewSetUpdate:
         "deposit" field.
         THEN: HTTP 400, Expense not updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -989,7 +984,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_deposit = entity_factory(budget=budget, is_deposit=False)
         update_payload = {"deposit": new_deposit.pk}
@@ -1009,7 +1004,7 @@ class TestExpenseViewSetUpdate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
@@ -1019,7 +1014,7 @@ class TestExpenseViewSetUpdate:
         WHEN: ExpenseViewSet detail view called with PATCH with valid TransferCategory.
         THEN: HTTP 200, Expense updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -1027,9 +1022,9 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
-        new_category = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.DEBTS)
+        new_category = transfer_category_factory(budget=budget, priority=CategoryPriority.DEBTS)
         update_payload = {"category": new_category.pk}
         api_client.force_authenticate(base_user)
         url = transfer_detail_url(budget.id, transfer.id)
@@ -1047,8 +1042,7 @@ class TestExpenseViewSetUpdate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
@@ -1058,7 +1052,7 @@ class TestExpenseViewSetUpdate:
         WHEN: ExpenseViewSet detail view called with PATCH with invalid TransferCategory.
         THEN: HTTP 200, Expense updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -1066,9 +1060,9 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
         transfer = expense_factory(budget=budget, **payload)
-        new_category = income_category_factory(budget=budget)
+        new_category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
         update_payload = {"category": new_category.pk}
         api_client.force_authenticate(base_user)
         url = transfer_detail_url(budget.id, transfer.id)
@@ -1085,7 +1079,7 @@ class TestExpenseViewSetUpdate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
@@ -1095,7 +1089,7 @@ class TestExpenseViewSetUpdate:
         WHEN: ExpenseViewSet detail view called with PATCH with valid payload with many fields.
         THEN: HTTP 200, Expense updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
@@ -1103,7 +1097,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         update_payload = {
             "name": "New name",
@@ -1118,7 +1112,7 @@ class TestExpenseViewSetUpdate:
             ).pk,
             "entity": entity_factory(budget=budget).pk,
             "deposit": deposit_factory(budget=budget).pk,
-            "category": expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.DEBTS).pk,
+            "category": transfer_category_factory(budget=budget, priority=CategoryPriority.DEBTS).pk,
         }
         api_client.force_authenticate(base_user)
         url = transfer_detail_url(budget.id, transfer.id)
@@ -1141,7 +1135,7 @@ class TestExpenseViewSetUpdate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
@@ -1151,7 +1145,7 @@ class TestExpenseViewSetUpdate:
         WHEN: ExpenseViewSet called with PATCH by User belonging to Budget.
         THEN: Bad request HTTP 400 returned. Expense not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -1160,7 +1154,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_period = budgeting_period_factory(budget=budget_factory())
         update_payload = {"period": new_period.pk}
@@ -1180,7 +1174,7 @@ class TestExpenseViewSetUpdate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
@@ -1190,7 +1184,7 @@ class TestExpenseViewSetUpdate:
         WHEN: ExpenseViewSet called with PATCH by User belonging to Budget.
         THEN: Bad request HTTP 400 returned. Expense not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -1199,9 +1193,9 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
         transfer = expense_factory(budget=budget, **payload)
-        new_category = expense_category_factory(budget=budget_factory())
+        new_category = transfer_category_factory(budget=budget_factory(), category_type=CategoryType.EXPENSE)
         update_payload = {"category": new_category.pk}
         api_client.force_authenticate(base_user)
         url = transfer_detail_url(budget.id, transfer.id)
@@ -1219,7 +1213,7 @@ class TestExpenseViewSetUpdate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
@@ -1229,7 +1223,7 @@ class TestExpenseViewSetUpdate:
         WHEN: ExpenseViewSet called with PATCH by User belonging to Budget.
         THEN: Bad request HTTP 400 returned. Expense not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -1238,7 +1232,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_deposit = deposit_factory(budget=budget_factory())
         update_payload = {"deposit": new_deposit.pk}
@@ -1258,7 +1252,7 @@ class TestExpenseViewSetUpdate:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
@@ -1268,7 +1262,7 @@ class TestExpenseViewSetUpdate:
         WHEN: ExpenseViewSet called with PATCH by User belonging to Budget.
         THEN: Bad request HTTP 400 returned. Expense not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -1277,7 +1271,7 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_entity = entity_factory(budget=budget_factory())
         update_payload = {"entity": new_entity.pk}
@@ -1321,7 +1315,7 @@ class TestExpenseViewSetDelete:
         WHEN: ExpenseViewSet detail endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         transfer = expense_factory(budget=budget)
         url = transfer_detail_url(budget.id, transfer.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -1361,7 +1355,7 @@ class TestExpenseViewSetDelete:
         WHEN: ExpenseViewSet detail view called with DELETE by User belonging to Budget.
         THEN: No content HTTP 204, Expense deleted.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         transfer = expense_factory(budget=budget)
         api_client.force_authenticate(base_user)
         url = transfer_detail_url(budget.id, transfer.id)

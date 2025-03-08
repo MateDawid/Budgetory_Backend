@@ -6,7 +6,8 @@ from django.core.exceptions import ValidationError
 from factory.base import FactoryMetaClass
 
 from budgets.models.budget_model import Budget
-from categories.models.transfer_category_choices import IncomeCategoryPriority
+from categories.models.choices.category_priority import CategoryPriority
+from categories.models.choices.category_type import CategoryType
 from transfers.models.transfer_model import Transfer
 
 
@@ -42,7 +43,7 @@ class TestIncomeManager:
         budgeting_period_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Valid payload for Income proxy model.
@@ -55,7 +56,7 @@ class TestIncomeManager:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = income_category_factory(budget=budget, priority=IncomeCategoryPriority.REGULAR)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
 
         transfer = Transfer.incomes.create(**payload)
 
@@ -72,7 +73,7 @@ class TestIncomeManager:
         budgeting_period_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Invalid payload for Income proxy model with IncomeCategory in "category" field.
@@ -85,7 +86,7 @@ class TestIncomeManager:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget)
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
 
         with pytest.raises(ValidationError) as exc:
             Transfer.incomes.create(**payload)
@@ -93,7 +94,7 @@ class TestIncomeManager:
         assert not Transfer.incomes.all().exists()
 
     def test_update(
-        self, budget: Budget, income_category_factory: FactoryMetaClass, transfer_factory: FactoryMetaClass
+        self, budget: Budget, transfer_category_factory: FactoryMetaClass, transfer_factory: FactoryMetaClass
     ):
         """
         GIVEN: Valid payload for Income proxy model.
@@ -101,9 +102,11 @@ class TestIncomeManager:
         THEN: Income proxy model updated in database.
         """
 
-        transfer = transfer_factory(budget=budget, category=income_category_factory(budget=budget))
+        transfer = transfer_factory(
+            budget=budget, category=transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
+        )
         assert Transfer.incomes.all().count() == 1
-        new_category = income_category_factory(budget=budget)
+        new_category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
 
         Transfer.incomes.filter(pk=transfer.pk).update(category=new_category)
 
@@ -111,11 +114,10 @@ class TestIncomeManager:
         assert Transfer.incomes.all().count() == 1
         assert transfer.category == new_category
 
-    def test_error_on_update_with_income_category(
+    def test_error_on_update_with_expense_category(
         self,
         budget: Budget,
-        expense_category_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
@@ -123,10 +125,10 @@ class TestIncomeManager:
         WHEN: Calling IncomeManager for update.
         THEN: ValidationError raised, Income proxy model not updated in database.
         """
-        valid_category = income_category_factory(budget=budget)
+        valid_category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
         transfer = transfer_factory(budget=budget, category=valid_category)
         assert Transfer.incomes.all().count() == 1
-        invalid_category = expense_category_factory(budget=budget)
+        invalid_category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
 
         with pytest.raises(ValidationError) as exc:
             Transfer.incomes.filter(pk=transfer.pk).update(category=invalid_category)

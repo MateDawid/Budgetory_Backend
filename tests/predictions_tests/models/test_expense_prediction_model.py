@@ -6,6 +6,7 @@ from django.db import DataError, IntegrityError
 from factory.base import FactoryMetaClass
 
 from budgets.models.budget_model import Budget
+from categories.models.choices.category_type import CategoryType
 from predictions.models.expense_prediction_model import ExpensePrediction
 
 
@@ -19,7 +20,7 @@ class TestExpensePredictionModel:
     }
 
     def test_create_expense_prediction(
-        self, budget: Budget, budgeting_period_factory: FactoryMetaClass, expense_category_factory: FactoryMetaClass
+        self, budget: Budget, budgeting_period_factory: FactoryMetaClass, transfer_category_factory: FactoryMetaClass
     ):
         """
         GIVEN: BudgetingPeriod and ExpenseCategory models instances in database. Valid payload for
@@ -28,7 +29,7 @@ class TestExpensePredictionModel:
         THEN: ExpensePrediction model instance exists in database with given data.
         """
         period = budgeting_period_factory(budget=budget)
-        category = expense_category_factory(budget=budget)
+        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
 
         prediction = ExpensePrediction.objects.create(period=period, category=category, **self.PAYLOAD)
 
@@ -41,7 +42,7 @@ class TestExpensePredictionModel:
 
     @pytest.mark.django_db(transaction=True)
     def test_error_description_too_long(
-        self, budget: Budget, budgeting_period_factory: FactoryMetaClass, expense_category_factory: FactoryMetaClass
+        self, budget: Budget, budgeting_period_factory: FactoryMetaClass, transfer_category_factory: FactoryMetaClass
     ):
         """
         GIVEN: BudgetingPeriod and ExpenseCategory models instances in database.
@@ -52,7 +53,7 @@ class TestExpensePredictionModel:
         payload = self.PAYLOAD.copy()
         payload["description"] = (max_length + 1) * "a"
         payload["period"] = budgeting_period_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget)
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
 
         with pytest.raises(DataError) as exc:
             ExpensePrediction.objects.create(**payload)
@@ -61,7 +62,7 @@ class TestExpensePredictionModel:
 
     @pytest.mark.django_db(transaction=True)
     def test_error_value_too_long(
-        self, budget: Budget, budgeting_period_factory: FactoryMetaClass, expense_category_factory: FactoryMetaClass
+        self, budget: Budget, budgeting_period_factory: FactoryMetaClass, transfer_category_factory: FactoryMetaClass
     ):
         """
         GIVEN: BudgetingPeriod and ExpenseCategory models instances in database.
@@ -75,7 +76,7 @@ class TestExpensePredictionModel:
         payload = self.PAYLOAD.copy()
         payload["value"] = "1" + "0" * max_length
         payload["period"] = budgeting_period_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget)
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
 
         with pytest.raises(DataError) as exc:
             ExpensePrediction.objects.create(**payload)
@@ -88,7 +89,7 @@ class TestExpensePredictionModel:
         self,
         budget: Budget,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         value: Decimal,
     ):
         """
@@ -99,7 +100,7 @@ class TestExpensePredictionModel:
         payload = self.PAYLOAD.copy()
         payload["value"] = value
         payload["period"] = budgeting_period_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget)
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
 
         with pytest.raises(IntegrityError) as exc:
             ExpensePrediction.objects.create(**payload)
@@ -108,7 +109,7 @@ class TestExpensePredictionModel:
 
     @pytest.mark.django_db(transaction=True)
     def test_error_on_second_prediction_for_category_in_period(
-        self, budget: Budget, budgeting_period_factory: FactoryMetaClass, expense_category_factory: FactoryMetaClass
+        self, budget: Budget, budgeting_period_factory: FactoryMetaClass, transfer_category_factory: FactoryMetaClass
     ):
         """
         GIVEN: BudgetingPeriod and ExpenseCategory models instances in database.
@@ -116,7 +117,7 @@ class TestExpensePredictionModel:
         THEN: IntegrityError raised.
         """
         period = budgeting_period_factory(budget=budget)
-        category = expense_category_factory(budget=budget)
+        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
         ExpensePrediction.objects.create(period=period, category=category, **self.PAYLOAD)
 
         with pytest.raises(IntegrityError) as exc:
@@ -130,7 +131,7 @@ class TestExpensePredictionModel:
         self,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
     ):
         """
         GIVEN: BudgetingPeriod and ExpenseCategory models instances for different Budgets in database.
@@ -140,7 +141,7 @@ class TestExpensePredictionModel:
         budget_1 = budget_factory()
         budget_2 = budget_factory()
         period = budgeting_period_factory(budget=budget_1)
-        category = expense_category_factory(budget=budget_2)
+        category = transfer_category_factory(budget=budget_2, category_type=CategoryType.EXPENSE)
 
         with pytest.raises(ValidationError) as exc:
             ExpensePrediction.objects.create(period=period, category=category, **self.PAYLOAD)

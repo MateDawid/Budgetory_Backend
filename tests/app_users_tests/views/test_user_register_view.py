@@ -1,6 +1,7 @@
 import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -13,6 +14,7 @@ class TestUserRegisterView:
 
     payload = {
         "email": "test@example.com",
+        "username": "Test",
         "password_1": "testpass123",
         "password_2": "testpass123",
     }
@@ -32,13 +34,13 @@ class TestUserRegisterView:
         assert "password_1" not in response.data
         assert "password_2" not in response.data
 
-    def test_user_with_email_exists_error(self, api_client: APIClient):
+    def test_user_with_email_exists_error(self, api_client: APIClient, user_factory: FactoryMetaClass):
         """
         GIVEN: Payload for User creation with duplicated email.
         WHEN: POST request on CreateUserView.
         THEN: HTTP 400 returned.
         """
-        get_user_model().objects.create_user(email=self.payload["email"])
+        user_factory(email=self.payload["email"])
         response = api_client.post(REGISTER_URL, self.payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST

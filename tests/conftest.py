@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 from app_users_tests.factories import UserFactory
 from budgets_tests.factories import BudgetFactory, BudgetingPeriodFactory
-from categories_tests.factories import ExpenseCategoryFactory, IncomeCategoryFactory, TransferCategoryFactory
+from categories_tests.factories import TransferCategoryFactory
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from entities_tests.factories import DepositFactory, EntityFactory
@@ -23,8 +23,6 @@ register(BudgetingPeriodFactory)
 register(DepositFactory)
 register(EntityFactory)
 register(TransferCategoryFactory)
-register(IncomeCategoryFactory)
-register(ExpenseCategoryFactory)
 register(ExpensePredictionFactory)
 register(TransferFactory)
 register(IncomeFactory)
@@ -43,13 +41,13 @@ def api_client() -> APIClient:
 @pytest.fixture
 def base_user() -> Any:
     """User with base permissions."""
-    return get_user_model().objects.create_user("user@example.com", "user123!@#")
+    return get_user_model().objects.create_user("user@example.com", "User", "user123!@#")
 
 
 @pytest.fixture
 def superuser() -> Any:
     """User with admin permissions."""
-    return get_user_model().objects.create_superuser("admin@example.com", "admin123!@#")
+    return get_user_model().objects.create_superuser("admin@example.com", "Admin", "admin123!@#")
 
 
 def get_jwt_access_token(user: User | None = None) -> str:
@@ -63,12 +61,12 @@ def get_jwt_access_token(user: User | None = None) -> str:
         str: JWT access token.
     """
     if user is None:
-        user_payload = {"email": "jwt@example.com", "password": "p4ssw0rd!"}
+        user_payload = {"email": "jwt@example.com", "username": "JWT", "password": "p4ssw0rd!"}
         get_user_model().objects.create_user(**user_payload)
     else:
         raw_password = "p4ssw0rd!"
         user.set_password(raw_password)
         user.save()
-        user_payload = {"email": user.email, "password": raw_password}
+        user_payload = {"email": user.email, "username": user.username, "password": raw_password}
     login_response = APIClient().post(reverse("app_users:login"), data=user_payload)
     return login_response.data["access"]

@@ -7,7 +7,8 @@ from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from categories.models.transfer_category_choices import ExpenseCategoryPriority
+from categories.models.choices.category_priority import CategoryPriority
+from categories.models.choices.category_type import CategoryType
 from predictions.models import ExpensePrediction
 from predictions.serializers.expense_prediction_serializer import ExpensePredictionSerializer
 
@@ -43,7 +44,7 @@ class TestExpensePredictionFilterSetOrdering:
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         sort_param: str,
     ):
         """
@@ -51,18 +52,18 @@ class TestExpensePredictionFilterSetOrdering:
         WHEN: The ExpensePredictionViewSet list view is called with sorting by given param and without any filters.
         THEN: Response must contain all ExpensePrediction existing in database sorted by given param.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         period_1 = budgeting_period_factory(
             budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=False
         )
         period_2 = budgeting_period_factory(
             budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 28), is_active=True
         )
-        category_1 = expense_category_factory(
-            budget=budget, name="Most important", owner=None, priority=ExpenseCategoryPriority.MOST_IMPORTANT
+        category_1 = transfer_category_factory(
+            budget=budget, name="Most important", owner=None, priority=CategoryPriority.MOST_IMPORTANT
         )
-        category_2 = expense_category_factory(
-            budget=budget, name="Other", owner=None, priority=ExpenseCategoryPriority.OTHERS
+        category_2 = transfer_category_factory(
+            budget=budget, name="Other", owner=None, priority=CategoryPriority.OTHERS
         )
         expense_prediction_factory(budget=budget, value=5, period=period_1, category=category_1)
         expense_prediction_factory(budget=budget, value=4, period=period_2, category=category_2)
@@ -90,25 +91,25 @@ class TestExpensePredictionFilterSetOrdering:
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Five ExpensePrediction objects created in database.
         WHEN: The ExpensePredictionViewSet list view is called with two sorting params by given params.
         THEN: Response must contain all ExpensePrediction existing in database sorted by given params.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         period_1 = budgeting_period_factory(
             budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=False
         )
         period_2 = budgeting_period_factory(
             budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 28), is_active=True
         )
-        category_1 = expense_category_factory(
-            budget=budget, name="Most important", owner=None, priority=ExpenseCategoryPriority.MOST_IMPORTANT
+        category_1 = transfer_category_factory(
+            budget=budget, name="Most important", owner=None, priority=CategoryPriority.MOST_IMPORTANT
         )
-        category_2 = expense_category_factory(
-            budget=budget, name="Other", owner=None, priority=ExpenseCategoryPriority.OTHERS
+        category_2 = transfer_category_factory(
+            budget=budget, name="Other", owner=None, priority=CategoryPriority.OTHERS
         )
         expense_prediction_factory(budget=budget, value=5, period=period_1, category=category_1)
         expense_prediction_factory(budget=budget, value=4, period=period_2, category=category_2)
@@ -148,7 +149,7 @@ class TestExpensePredictionFilterSetFiltering:
         THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
         period_id value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Test name")
         prediction = expense_prediction_factory(budget=budget, period=period)
         expense_prediction_factory(budget=budget, period=budgeting_period_factory(budget=budget, name="Other period"))
@@ -186,7 +187,7 @@ class TestExpensePredictionFilterSetFiltering:
         THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
         period_name value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Test name")
         prediction = expense_prediction_factory(budget=budget, period=period)
         expense_prediction_factory(budget=budget, period=budgeting_period_factory(budget=budget, name="Other"))
@@ -211,7 +212,7 @@ class TestExpensePredictionFilterSetFiltering:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
@@ -220,10 +221,13 @@ class TestExpensePredictionFilterSetFiltering:
         THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
         category_id value.
         """
-        budget = budget_factory(owner=base_user)
-        category = expense_category_factory(budget=budget, name="Test name")
+        budget = budget_factory(members=[base_user])
+        category = transfer_category_factory(budget=budget, name="Test name", category_type=CategoryType.EXPENSE)
         prediction = expense_prediction_factory(budget=budget, category=category)
-        expense_prediction_factory(budget=budget, category=expense_category_factory(budget=budget, name="Other"))
+        expense_prediction_factory(
+            budget=budget,
+            category=transfer_category_factory(budget=budget, name="Other", category_type=CategoryType.EXPENSE),
+        )
         api_client.force_authenticate(base_user)
 
         response = api_client.get(expense_prediction_url(budget.id), data={"category_id": category.id})
@@ -248,7 +252,7 @@ class TestExpensePredictionFilterSetFiltering:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
         filter_value: str,
     ):
@@ -258,10 +262,13 @@ class TestExpensePredictionFilterSetFiltering:
         THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
         category_name value.
         """
-        budget = budget_factory(owner=base_user)
-        category = expense_category_factory(budget=budget, name="Test name")
+        budget = budget_factory(members=[base_user])
+        category = transfer_category_factory(budget=budget, name="Test name", category_type=CategoryType.EXPENSE)
         prediction = expense_prediction_factory(budget=budget, category=category)
-        expense_prediction_factory(budget=budget, category=expense_category_factory(budget=budget, name="Other"))
+        expense_prediction_factory(
+            budget=budget,
+            category=transfer_category_factory(budget=budget, name="Other", category_type=CategoryType.EXPENSE),
+        )
         api_client.force_authenticate(base_user)
 
         response = api_client.get(expense_prediction_url(budget.id), data={"category_name": filter_value})

@@ -7,7 +7,8 @@ from django.db import DataError, IntegrityError
 from factory.base import BaseFactory, FactoryMetaClass
 
 from budgets.models.budget_model import Budget
-from categories.models.transfer_category_choices import ExpenseCategoryPriority, IncomeCategoryPriority
+from categories.models.choices.category_priority import CategoryPriority
+from categories.models.choices.category_type import CategoryType
 from transfers.models.income_model import Income
 from transfers.models.transfer_model import Transfer
 
@@ -28,7 +29,7 @@ class TestIncomeModel:
         budgeting_period_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Budget model instance in database. Valid payload for Income proxy model.
@@ -42,7 +43,7 @@ class TestIncomeModel:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = income_category_factory(budget=budget, priority=IncomeCategoryPriority.REGULAR)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
         income = Income.objects.create(**payload)
 
         for key in payload:
@@ -58,7 +59,7 @@ class TestIncomeModel:
         budgeting_period_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Budget model instance in database. Valid payload for Income proxy model.
@@ -72,7 +73,7 @@ class TestIncomeModel:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = income_category_factory(budget=budget, priority=IncomeCategoryPriority.REGULAR)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
 
         income = Income(**payload)
         income.full_clean()
@@ -92,7 +93,7 @@ class TestIncomeModel:
         budgeting_period_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Budget model instance in database. Invalid payload for Income proxy model.
@@ -106,7 +107,7 @@ class TestIncomeModel:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
 
         with pytest.raises(ValidationError) as exc:
             Income.objects.create(**payload)
@@ -119,7 +120,7 @@ class TestIncomeModel:
         budgeting_period_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Budget model instance in database. Invalid payload for Income proxy model.
@@ -133,7 +134,7 @@ class TestIncomeModel:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
 
         with pytest.raises(ValidationError) as exc:
             income = Income(**payload)
@@ -263,7 +264,7 @@ class TestIncomeModel:
         budget_factory: FactoryMetaClass,
         income_factory: BaseFactory,
         budgeting_period_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         field: str,
@@ -281,7 +282,7 @@ class TestIncomeModel:
             case "period":
                 payload[field] = budgeting_period_factory(budget=budget_2)
             case "category":
-                payload[field] = income_category_factory(budget=budget_2)
+                payload[field] = transfer_category_factory(budget=budget_2, category_type=CategoryType.INCOME)
             case "entity":
                 payload[field] = entity_factory(budget=budget_2)
             case "deposit":

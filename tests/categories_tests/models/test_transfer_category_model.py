@@ -1,9 +1,11 @@
 import pytest
+from categories_tests.utils import INVALID_TYPE_AND_PRIORITY_COMBINATIONS, VALID_TYPE_AND_PRIORITY_COMBINATIONS
 from django.db import DataError, IntegrityError
 from factory.base import FactoryMetaClass
 
 from budgets.models.budget_model import Budget
-from categories.models.transfer_category_choices import CategoryType, ExpenseCategoryPriority, IncomeCategoryPriority
+from categories.models.choices.category_priority import CategoryPriority
+from categories.models.choices.category_type import CategoryType
 from categories.models.transfer_category_model import TransferCategory
 
 
@@ -12,57 +14,51 @@ class TestTransferCategoryModel:
     """Tests for TransferCategory model"""
 
     PAYLOAD = {
-        "name": "Food",
-        "description": "Category for food expenses.",
+        "name": "Category name",
+        "description": "Category description.",
         "is_active": True,
         "category_type": CategoryType.EXPENSE,
-        "priority": ExpenseCategoryPriority.MOST_IMPORTANT,
+        "priority": CategoryPriority.MOST_IMPORTANT,
     }
 
-    def test_create_income_category(self, budget: Budget):
+    @pytest.mark.parametrize("category_type, priority", VALID_TYPE_AND_PRIORITY_COMBINATIONS)
+    def test_create_transfer_category(self, budget: Budget, category_type: CategoryType, priority: CategoryPriority):
         """
-        GIVEN: Budget model instance in database. Valid payload for INCOME TransferCategory.
+        GIVEN: Budget model instance in database. Valid payload for TransferCategory.
         WHEN: TransferCategory instance create attempt with valid data.
-        THEN: INCOME TransferCategory model instance created in database with given data.
+        THEN: TransferCategory model instance created in database with given data.
         """
-        payload = {
-            "name": "Salary",
-            "description": "Category for salary.",
-            "is_active": True,
-            "category_type": CategoryType.INCOME,
-            "priority": IncomeCategoryPriority.REGULAR,
-        }
+        payload = self.PAYLOAD.copy()
+        payload["category_type"] = category_type
+        payload["priority"] = priority
+
         category = TransferCategory.objects.create(budget=budget, **payload)
 
         for key in payload:
             assert getattr(category, key) == payload[key]
-        assert category.owner is None
         assert TransferCategory.objects.filter(budget=budget).count() == 1
-        assert TransferCategory.income_categories.filter(budget=budget).count() == 1
-        assert str(category) == f"({category.category_type.label}) {category.name}"
+        assert str(category) == f"({category_type.label}) {category.name}"
 
-    @pytest.mark.parametrize("priority", (priority for priority in ExpenseCategoryPriority))
-    def test_create_expense_category(self, budget: Budget, priority: ExpenseCategoryPriority):
+    @pytest.mark.parametrize("category_type, priority", VALID_TYPE_AND_PRIORITY_COMBINATIONS)
+    def test_save_transfer_category(self, budget: Budget, category_type: CategoryType, priority: CategoryPriority):
         """
-        GIVEN: Budget model instance in database. Valid payload for EXPENSE TransferCategory.
-        WHEN: TransferCategory instance create attempt with valid data.
-        THEN: EXPENSE TransferCategory model instance created in database with given data.
+        GIVEN: Budget model instance in database.
+        WHEN: TransferCategory instance save attempt with valid data.
+        THEN: TransferCategory model instance exists in database with given data.
         """
-        payload = {
-            "name": "Expense",
-            "description": "Category for expense.",
-            "is_active": True,
-            "category_type": CategoryType.EXPENSE,
-            "priority": priority,
-        }
-        category = TransferCategory.objects.create(budget=budget, **payload)
+        payload = self.PAYLOAD.copy()
+        payload["category_type"] = category_type
+        payload["priority"] = priority
+
+        category = TransferCategory(budget=budget, **payload)
+        category.full_clean()
+        category.save()
+        category.refresh_from_db()
 
         for key in payload:
             assert getattr(category, key) == payload[key]
-        assert category.owner is None
         assert TransferCategory.objects.filter(budget=budget).count() == 1
-        assert TransferCategory.expense_categories.filter(budget=budget).count() == 1
-        assert str(category) == f"({category.category_type.label}) {category.name}"
+        assert str(category) == f"({category_type.label}) {category.name}"
 
     def test_create_category_without_owner(self, budget: Budget):
         """
@@ -70,13 +66,12 @@ class TestTransferCategoryModel:
         WHEN: TransferCategory instance create attempt with valid data.
         THEN: TransferCategory model instance exists in database with given data.
         """
-        category = TransferCategory.objects.create(budget=budget, **self.PAYLOAD)
+        category = TransferCategory.objects.create(budget=budget, owner=None, **self.PAYLOAD)
 
+        assert TransferCategory.objects.filter(budget=budget).count() == 1
         for key in self.PAYLOAD:
             assert getattr(category, key) == self.PAYLOAD[key]
         assert category.owner is None
-        assert TransferCategory.objects.filter(budget=budget).count() == 1
-        assert str(category) == f"({category.category_type.label}) {category.name}"
 
     def test_create_category_with_owner(self, user_factory: FactoryMetaClass, budget: Budget):
         """
@@ -134,36 +129,18 @@ class TestTransferCategoryModel:
         assert not TransferCategory.objects.filter(budget=budget).exists()
 
     @pytest.mark.django_db(transaction=True)
-    @pytest.mark.parametrize("priority", (priority for priority in ExpenseCategoryPriority))
-    def test_error_invalid_priority_for_income_category_type(self, budget: Budget, priority: ExpenseCategoryPriority):
+    @pytest.mark.parametrize("category_type, priority", INVALID_TYPE_AND_PRIORITY_COMBINATIONS)
+    def test_error_invalid_priority_for_category_type(
+        self, budget: Budget, category_type: CategoryType, priority: CategoryPriority
+    ):
         """
         GIVEN: Budget model instance in database.
-        WHEN: TransferCategory instance create attempt with invalid priority for INCOME category_type.
+        WHEN: TransferCategory instance create attempt with invalid priority for category_type.
         THEN: IntegrityError raised. TransferCategory not created in database.
         """
         payload = self.PAYLOAD.copy()
         payload["priority"] = priority
-        payload["category_type"] = CategoryType.INCOME
-
-        with pytest.raises(IntegrityError) as exc:
-            TransferCategory.objects.create(budget=budget, **payload)
-
-        assert (
-            'new row for relation "categories_transfercategory" violates check constraint '
-            '"categories_transfercategory_correct_priority_for_type"' in str(exc.value)
-        )
-        assert not TransferCategory.objects.filter(budget=budget).exists()
-
-    @pytest.mark.django_db(transaction=True)
-    def test_error_invalid_priority_for_expense_category_type(self, budget: Budget):
-        """
-        GIVEN: Budget model instance in database.
-        WHEN: TransferCategory instance create attempt with invalid priority for EXPENSE category_type.
-        THEN: IntegrityError raised. TransferCategory not created in database.
-        """
-        payload = self.PAYLOAD.copy()
-        payload["priority"] = IncomeCategoryPriority.REGULAR.value
-        payload["category_type"] = CategoryType.EXPENSE
+        payload["category_type"] = category_type
 
         with pytest.raises(IntegrityError) as exc:
             TransferCategory.objects.create(budget=budget, **payload)
@@ -181,13 +158,9 @@ class TestTransferCategoryModel:
         WHEN: TransferCategory instance create attempt without owner violating unique constraint.
         THEN: IntegrityError raised. TransferCategory not created in database.
         """
-        payload = {
-            "budget": budget,
-            "category_type": CategoryType.EXPENSE,
-            "priority": ExpenseCategoryPriority.MOST_IMPORTANT,
-            "name": "Some expense category",
-            "owner": None,
-        }
+        payload: dict = self.PAYLOAD.copy()
+        payload["budget"] = budget
+        payload["owner"] = None
         transfer_category_factory(**payload)
 
         with pytest.raises(IntegrityError) as exc:
@@ -206,13 +179,9 @@ class TestTransferCategoryModel:
         WHEN: TransferCategory instance create attempt with owner violating unique constraint.
         THEN: IntegrityError raised. TransferCategory not created in database.
         """
-        payload = {
-            "budget": budget,
-            "category_type": CategoryType.EXPENSE,
-            "priority": ExpenseCategoryPriority.MOST_IMPORTANT,
-            "name": "Some expense category",
-            "owner": budget.owner,
-        }
+        payload: dict = self.PAYLOAD.copy()
+        payload["budget"] = budget
+        payload["owner"] = budget.members.first()
         transfer_category_factory(**payload)
 
         with pytest.raises(IntegrityError) as exc:

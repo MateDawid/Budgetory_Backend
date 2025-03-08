@@ -32,7 +32,7 @@ class TestBudgetFilterSetOrdering:
         THEN: Response must contain all Budget existing in database sorted by given param.
         """
         for _ in range(5):
-            budget_factory(owner=base_user)
+            budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
 
         response = api_client.get(BUDGETS_URL, data={"ordering": sort_param})
@@ -74,11 +74,11 @@ class TestBudgetFilterSetFiltering:
         """
         GIVEN: Two Budget objects for single Budget.
         WHEN: The BudgetViewSet list view is called with "name" filter.
-        THEN: Response must contain all Budget existing in database assigned to Budget containing given
+        THEN: Response must contain all Budget existing in database containing given
         "name" value in name param.
         """
-        matching_budget = budget_factory(owner=base_user, name="Some budget")
-        budget_factory(owner=base_user, name="Other one")
+        matching_budget = budget_factory(members=[base_user], name="Some budget")
+        budget_factory(members=[base_user], name="Other one")
         api_client.force_authenticate(base_user)
 
         response = api_client.get(BUDGETS_URL, data={"name": filter_value})

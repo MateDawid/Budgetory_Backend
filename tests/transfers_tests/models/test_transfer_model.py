@@ -7,7 +7,7 @@ from django.db import DataError, IntegrityError
 from factory.base import BaseFactory, FactoryMetaClass
 
 from budgets.models.budget_model import Budget
-from categories.models.transfer_category_choices import ExpenseCategoryPriority, IncomeCategoryPriority
+from categories.models.choices.category_priority import CategoryPriority
 from transfers.models.transfer_model import Transfer
 
 
@@ -33,7 +33,7 @@ class TestTransferModel:
         budgeting_period_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Budget model instance in database. Valid payload for Income proxy of Transfer model.
@@ -47,7 +47,7 @@ class TestTransferModel:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = income_category_factory(budget=budget, priority=IncomeCategoryPriority.REGULAR)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
         transfer = Transfer.objects.create(**payload)
 
         for key in payload:
@@ -63,7 +63,7 @@ class TestTransferModel:
         budgeting_period_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Budget model instance in database. Valid payload for Income proxy of Transfer model.
@@ -77,7 +77,7 @@ class TestTransferModel:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = income_category_factory(budget=budget, priority=IncomeCategoryPriority.REGULAR)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
 
         transfer = Transfer(**payload)
         transfer.full_clean()
@@ -97,7 +97,7 @@ class TestTransferModel:
         budgeting_period_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Budget model instance in database. Valid payload for Expense proxy of Transfer model.
@@ -111,7 +111,7 @@ class TestTransferModel:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
 
         transfer = Transfer.objects.create(**payload)
 
@@ -128,7 +128,7 @@ class TestTransferModel:
         budgeting_period_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Budget model instance in database. Valid payload for Expense proxy of Transfer model.
@@ -142,7 +142,7 @@ class TestTransferModel:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = expense_category_factory(budget=budget, priority=ExpenseCategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
 
         transfer = Transfer(**payload)
         transfer.full_clean()
@@ -277,7 +277,7 @@ class TestTransferModel:
         budget_factory: FactoryMetaClass,
         transfer_factory: BaseFactory,
         budgeting_period_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         field: str,
@@ -295,7 +295,7 @@ class TestTransferModel:
             case "period":
                 payload[field] = budgeting_period_factory(budget=budget_2)
             case "category":
-                payload[field] = expense_category_factory(budget=budget_2)
+                payload[field] = transfer_category_factory(budget=budget_2)
             case "entity":
                 payload[field] = entity_factory(budget=budget_2)
             case "deposit":

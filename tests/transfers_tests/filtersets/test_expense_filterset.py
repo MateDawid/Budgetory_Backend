@@ -8,6 +8,7 @@ from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from categories.models.choices.category_type import CategoryType
 from transfers.models.expense_model import Expense
 from transfers.serializers.expense_serializer import ExpenseSerializer
 
@@ -62,7 +63,7 @@ class TestExpenseFilterSetOrdering:
         WHEN: The ExpenseViewSet list view is called with sorting by given param and without any filters.
         THEN: Response must contain all Expense existing in database sorted by given param.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         for _ in range(5):
             expense_factory(budget=budget)
         api_client.force_authenticate(base_user)
@@ -110,7 +111,7 @@ class TestExpenseFilterSetFiltering:
         THEN: Response must contain all Expense existing in database assigned to Budget containing given
         "name" value in name param.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         matching_transfer = expense_factory(budget=budget, name="Some transfer")
         expense_factory(budget=budget, name="Other one")
         api_client.force_authenticate(base_user)
@@ -134,7 +135,7 @@ class TestExpenseFilterSetFiltering:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
     ):
         """
@@ -143,9 +144,11 @@ class TestExpenseFilterSetFiltering:
         WHEN: The ExpenseViewSet list view is called with "common_only"=True filter.
         THEN: Response must contain all Expense existing in database with common ExpenseCategory.
         """
-        budget = budget_factory(owner=base_user)
-        common_category = expense_category_factory(budget=budget, owner=None)
-        personal_category = expense_category_factory(budget=budget, owner=base_user)
+        budget = budget_factory(members=[base_user])
+        common_category = transfer_category_factory(budget=budget, owner=None, category_type=CategoryType.EXPENSE)
+        personal_category = transfer_category_factory(
+            budget=budget, owner=base_user, category_type=CategoryType.EXPENSE
+        )
         matching_transfer = expense_factory(budget=budget, name="Some transfer", category=common_category)
         expense_factory(budget=budget, name="Other one", category=personal_category)
         api_client.force_authenticate(base_user)
@@ -169,7 +172,7 @@ class TestExpenseFilterSetFiltering:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
     ):
         """
@@ -178,9 +181,11 @@ class TestExpenseFilterSetFiltering:
         WHEN: The ExpenseViewSet list view is called with "owner" filter.
         THEN: Response must contain all Expense existing in database with given User as ExpenseCategory owner.
         """
-        budget = budget_factory(owner=base_user)
-        common_category = expense_category_factory(budget=budget, owner=None)
-        personal_category = expense_category_factory(budget=budget, owner=base_user)
+        budget = budget_factory(members=[base_user])
+        common_category = transfer_category_factory(budget=budget, owner=None, category_type=CategoryType.EXPENSE)
+        personal_category = transfer_category_factory(
+            budget=budget, owner=base_user, category_type=CategoryType.EXPENSE
+        )
         matching_transfer = expense_factory(budget=budget, name="Some transfer", category=personal_category)
         expense_factory(budget=budget, name="Other one", category=common_category)
         api_client.force_authenticate(base_user)
@@ -213,7 +218,7 @@ class TestExpenseFilterSetFiltering:
         THEN: Response contains all Expenses existing in database assigned to Budget matching given
         "period" value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         other_period = budgeting_period_factory(
             budget=budget, date_start=date(2024, 9, 1), date_end=date(2024, 9, 30), is_active=False
         )
@@ -252,7 +257,7 @@ class TestExpenseFilterSetFiltering:
         THEN: Response contains all Expenses existing in database assigned to Budget matching given
         "entity" value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         other_entity = entity_factory(budget=budget)
         matching_entity = entity_factory(budget=budget)
         expense_factory(budget=budget, entity=other_entity)
@@ -287,7 +292,7 @@ class TestExpenseFilterSetFiltering:
         THEN: Response contains all Expenses existing in database assigned to Budget matching given
         "deposit" value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         other_deposit = deposit_factory(budget=budget)
         matching_deposit = deposit_factory(budget=budget)
         expense_factory(budget=budget, deposit=other_deposit)
@@ -313,7 +318,7 @@ class TestExpenseFilterSetFiltering:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
-        expense_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
     ):
         """
@@ -322,9 +327,9 @@ class TestExpenseFilterSetFiltering:
         THEN: Response contains all Expenses existing in database assigned to Budget matching given
         "category" value.
         """
-        budget = budget_factory(owner=base_user)
-        other_category = expense_category_factory(budget=budget)
-        matching_category = expense_category_factory(budget=budget)
+        budget = budget_factory(members=[base_user])
+        other_category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        matching_category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
         expense_factory(budget=budget, category=other_category)
         transfer = expense_factory(budget=budget, category=matching_category)
         api_client.force_authenticate(base_user)
@@ -357,7 +362,7 @@ class TestExpenseFilterSetFiltering:
         THEN: Response contains all Expenses existing in database assigned to Budget matching given
         "date" value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(
             budget=budget, date_start=date(2024, 10, 1), date_end=date(2024, 10, 30), is_active=True
         )
@@ -397,7 +402,7 @@ class TestExpenseFilterSetFiltering:
         THEN: Response contains all Expenses existing in database assigned to Budget matching given
         "value" value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         matching_value = Decimal("100.00")
 
         expense_factory(budget=budget, value=Decimal("1.0"))

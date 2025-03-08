@@ -1636,7 +1636,8 @@
       "groups": [],
       "user_permissions": [],
       "created_at": "2024-10-03T09:16:45.824Z",
-      "updated_at": "2024-10-03T09:16:45.824Z"
+      "updated_at": "2024-10-03T09:16:45.824Z",
+      "username": "Admin user"
     }
   },
   {
@@ -1652,7 +1653,8 @@
       "groups": [],
       "user_permissions": [],
       "created_at": "2024-10-03T09:16:45.824Z",
-      "updated_at": "2024-10-03T09:16:45.824Z"
+      "updated_at": "2024-10-03T09:16:45.824Z",
+      "username": "Example user"
     }
   },
   {
@@ -1661,7 +1663,6 @@
     "fields": {
       "name": "Admin budget",
       "description": "",
-      "owner": 1,
       "currency": "PLN",
       "members": [
         1
@@ -1674,7 +1675,6 @@
     "fields": {
       "name": "User budget",
       "description": "",
-      "owner": 2,
       "currency": "EUR",
       "members": [
         2
@@ -1866,8 +1866,8 @@
       "description": null,
       "owner": 1,
       "is_active": true,
-      "category_type": 1,
-      "priority": 101
+      "category_type": 2,
+      "priority": 3
     }
   },
   {
@@ -1879,8 +1879,8 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 1,
-      "priority": 101
+      "category_type": 2,
+      "priority": 3
     }
   },
   {
@@ -1892,8 +1892,8 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 1,
-      "priority": 102
+      "category_type": 2,
+      "priority": 4
     }
   },
   {
@@ -1905,8 +1905,8 @@
       "description": null,
       "owner": 1,
       "is_active": true,
-      "category_type": 1,
-      "priority": 102
+      "category_type": 2,
+      "priority": 4
     }
   },
   {
@@ -1918,8 +1918,8 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 1,
-      "priority": 103
+      "category_type": 2,
+      "priority": 5
     }
   },
   {
@@ -1931,8 +1931,8 @@
       "description": null,
       "owner": 1,
       "is_active": true,
-      "category_type": 1,
-      "priority": 103
+      "category_type": 2,
+      "priority": 5
     }
   },
   {
@@ -1944,8 +1944,8 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 1,
-      "priority": 104
+      "category_type": 2,
+      "priority": 6
     }
   },
   {
@@ -1957,8 +1957,8 @@
       "description": null,
       "owner": 1,
       "is_active": true,
-      "category_type": 1,
-      "priority": 104
+      "category_type": 2,
+      "priority": 6
     }
   },
   {
@@ -1970,8 +1970,8 @@
       "description": null,
       "owner": 1,
       "is_active": true,
-      "category_type": 2,
-      "priority": 201
+      "category_type": 1,
+      "priority": 1
     }
   },
   {
@@ -1983,8 +1983,8 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 2,
-      "priority": 201
+      "category_type": 1,
+      "priority": 1
     }
   },
   {
@@ -1996,8 +1996,8 @@
       "description": null,
       "owner": 1,
       "is_active": true,
-      "category_type": 2,
-      "priority": 202
+      "category_type": 1,
+      "priority": 2
     }
   },
   {
@@ -2009,8 +2009,8 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 2,
-      "priority": 202
+      "category_type": 1,
+      "priority": 2
     }
   },
   {
@@ -2022,8 +2022,8 @@
       "description": null,
       "owner": 2,
       "is_active": true,
-      "category_type": 1,
-      "priority": 101
+      "category_type": 2,
+      "priority": 3
     }
   },
   {
@@ -2035,8 +2035,8 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 1,
-      "priority": 101
+      "category_type": 2,
+      "priority": 3
     }
   },
   {
@@ -2048,8 +2048,8 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 1,
-      "priority": 102
+      "category_type": 2,
+      "priority": 4
     }
   },
   {
@@ -2061,8 +2061,8 @@
       "description": null,
       "owner": 2,
       "is_active": true,
-      "category_type": 1,
-      "priority": 102
+      "category_type": 2,
+      "priority": 4
     }
   },
   {
@@ -2074,8 +2074,8 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 1,
-      "priority": 103
+      "category_type": 2,
+      "priority": 5
     }
   },
   {
@@ -2087,8 +2087,8 @@
       "description": null,
       "owner": 2,
       "is_active": true,
-      "category_type": 1,
-      "priority": 103
+      "category_type": 2,
+      "priority": 5
     }
   },
   {
@@ -2100,8 +2100,8 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 1,
-      "priority": 104
+      "category_type": 2,
+      "priority": 6
     }
   },
   {
@@ -2113,8 +2113,8 @@
       "description": null,
       "owner": 2,
       "is_active": true,
-      "category_type": 1,
-      "priority": 104
+      "category_type": 2,
+      "priority": 6
     }
   },
   {
@@ -2126,8 +2126,8 @@
       "description": null,
       "owner": 2,
       "is_active": true,
-      "category_type": 2,
-      "priority": 201
+      "category_type": 1,
+      "priority": 1
     }
   },
   {
@@ -2139,8 +2139,8 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 2,
-      "priority": 201
+      "category_type": 1,
+      "priority": 1
     }
   },
   {
@@ -2152,8 +2152,8 @@
       "description": null,
       "owner": 2,
       "is_active": true,
-      "category_type": 2,
-      "priority": 202
+      "category_type": 1,
+      "priority": 2
     }
   },
   {
@@ -2165,8 +2165,8 @@
       "description": null,
       "owner": null,
       "is_active": true,
-      "category_type": 2,
-      "priority": 202
+      "category_type": 1,
+      "priority": 2
     }
   },
   {

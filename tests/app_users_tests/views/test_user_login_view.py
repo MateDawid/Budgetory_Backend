@@ -24,7 +24,7 @@ class TestUserLoginView:
         WHEN: UserLoginView.post() called with given data.
         THEN: Token returned.
         """
-        get_user_model().objects.create_user(**self.payload)
+        get_user_model().objects.create_user(**self.payload, username="User")
 
         response = api_client.post(LOGIN_URL, self.payload)
 
@@ -56,7 +56,7 @@ class TestUserLoginView:
         THEN: HTTP 401 returned.
         """
         payload = self.payload.copy()
-        get_user_model().objects.create_user(**payload)
+        get_user_model().objects.create_user(**payload, username="User")
         payload["password"] = "wrong"
 
         response = api_client.post(LOGIN_URL, payload)
