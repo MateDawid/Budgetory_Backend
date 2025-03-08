@@ -8,6 +8,7 @@ from factory.base import BaseFactory, FactoryMetaClass
 
 from budgets.models.budget_model import Budget
 from categories.models.choices.category_priority import CategoryPriority
+from categories.models.choices.category_type import CategoryType
 from transfers.models.expense_model import Expense
 from transfers.models.transfer_model import Transfer
 
@@ -281,7 +282,7 @@ class TestExpenseModel:
             case "period":
                 payload[field] = budgeting_period_factory(budget=budget_2)
             case "category":
-                payload[field] = transfer_category_factory(budget=budget_2)
+                payload[field] = transfer_category_factory(budget=budget_2, category_type=CategoryType.EXPENSE)
             case "entity":
                 payload[field] = entity_factory(budget=budget_2)
             case "deposit":

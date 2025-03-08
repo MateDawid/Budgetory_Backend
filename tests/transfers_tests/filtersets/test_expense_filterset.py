@@ -8,6 +8,7 @@ from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from categories.models.choices.category_type import CategoryType
 from transfers.models.expense_model import Expense
 from transfers.serializers.expense_serializer import ExpenseSerializer
 
@@ -180,7 +181,9 @@ class TestExpenseFilterSetFiltering:
         """
         budget = budget_factory(members=[base_user])
         common_category = transfer_category_factory(budget=budget, owner=None)
-        personal_category = transfer_category_factory(budget=budget, owner=base_user)
+        personal_category = transfer_category_factory(
+            budget=budget, owner=base_user, category_type=CategoryType.EXPENSE
+        )
         matching_transfer = expense_factory(budget=budget, name="Some transfer", category=personal_category)
         expense_factory(budget=budget, name="Other one", category=common_category)
         api_client.force_authenticate(base_user)
@@ -324,7 +327,7 @@ class TestExpenseFilterSetFiltering:
         """
         budget = budget_factory(members=[base_user])
         other_category = transfer_category_factory(budget=budget)
-        matching_category = transfer_category_factory(budget=budget)
+        matching_category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
         expense_factory(budget=budget, category=other_category)
         transfer = expense_factory(budget=budget, category=matching_category)
         api_client.force_authenticate(base_user)

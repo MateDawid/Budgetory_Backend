@@ -13,6 +13,7 @@ from rest_framework.test import APIClient
 from app_users.models import User
 from budgets.models.budget_model import Budget
 from categories.models.choices.category_priority import CategoryPriority
+from categories.models.choices.category_type import CategoryType
 from transfers.models.expense_model import Expense
 from transfers.models.transfer_model import Transfer
 from transfers.serializers.expense_serializer import ExpenseSerializer
@@ -406,7 +407,7 @@ class TestExpenseViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = transfer_category_factory(budget=budget_factory()).pk
+        payload["category"] = transfer_category_factory(budget=budget_factory(), category_type=CategoryType.EXPENSE).pk
 
         api_client.post(transfers_url(budget.id), payload)
         response = api_client.post(transfers_url(budget.id), payload)
@@ -443,7 +444,7 @@ class TestExpenseViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = transfer_category_factory(budget=budget).pk
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE).pk
 
         api_client.post(transfers_url(budget.id), payload)
         response = api_client.post(transfers_url(budget.id), payload)
@@ -477,7 +478,7 @@ class TestExpenseViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget_factory()).pk
-        payload["category"] = transfer_category_factory(budget=budget).pk
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE).pk
 
         api_client.post(transfers_url(budget.id), payload)
         response = api_client.post(transfers_url(budget.id), payload)
@@ -511,7 +512,7 @@ class TestExpenseViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget_factory()).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = transfer_category_factory(budget=budget).pk
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE).pk
 
         api_client.post(transfers_url(budget.id), payload)
         response = api_client.post(transfers_url(budget.id), payload)
@@ -1059,9 +1060,9 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
         transfer = expense_factory(budget=budget, **payload)
-        new_category = transfer_category_factory(budget=budget)
+        new_category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
         update_payload = {"category": new_category.pk}
         api_client.force_authenticate(base_user)
         url = transfer_detail_url(budget.id, transfer.id)
@@ -1192,9 +1193,9 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
         transfer = expense_factory(budget=budget, **payload)
-        new_category = transfer_category_factory(budget=budget_factory())
+        new_category = transfer_category_factory(budget=budget_factory(), category_type=CategoryType.EXPENSE)
         update_payload = {"category": new_category.pk}
         api_client.force_authenticate(base_user)
         url = transfer_detail_url(budget.id, transfer.id)
