@@ -8,6 +8,7 @@ from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from categories.models.choices.category_type import CategoryType
 from transfers.models.income_model import Income
 from transfers.serializers.income_serializer import IncomeSerializer
 
@@ -145,7 +146,7 @@ class TestIncomeFilterSetFiltering:
         """
         budget = budget_factory(members=[base_user])
         common_category = transfer_category_factory(budget=budget, owner=None)
-        personal_category = transfer_category_factory(budget=budget, owner=base_user)
+        personal_category = transfer_category_factory(budget=budget, owner=base_user, category_type=CategoryType.INCOME)
         matching_transfer = income_factory(budget=budget, name="Some transfer", category=common_category)
         income_factory(budget=budget, name="Other one", category=personal_category)
         api_client.force_authenticate(base_user)
@@ -324,7 +325,7 @@ class TestIncomeFilterSetFiltering:
         """
         budget = budget_factory(members=[base_user])
         other_category = transfer_category_factory(budget=budget)
-        matching_category = transfer_category_factory(budget=budget)
+        matching_category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
         income_factory(budget=budget, category=other_category)
         transfer = income_factory(budget=budget, category=matching_category)
         api_client.force_authenticate(base_user)

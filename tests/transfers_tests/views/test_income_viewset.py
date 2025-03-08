@@ -13,6 +13,7 @@ from rest_framework.test import APIClient
 from app_users.models import User
 from budgets.models.budget_model import Budget
 from categories.models.choices.category_priority import CategoryPriority
+from categories.models.choices.category_type import CategoryType
 from transfers.models.income_model import Income
 from transfers.models.transfer_model import Transfer
 from transfers.serializers.income_serializer import IncomeSerializer
@@ -406,7 +407,7 @@ class TestIncomeViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = transfer_category_factory(budget=budget_factory()).pk
+        payload["category"] = transfer_category_factory(budget=budget_factory(), category_type=CategoryType.INCOME).pk
 
         api_client.post(transfers_url(budget.id), payload)
         response = api_client.post(transfers_url(budget.id), payload)
@@ -443,7 +444,7 @@ class TestIncomeViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = transfer_category_factory(budget=budget).pk
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME).pk
 
         api_client.post(transfers_url(budget.id), payload)
         response = api_client.post(transfers_url(budget.id), payload)
@@ -477,7 +478,7 @@ class TestIncomeViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget_factory()).pk
-        payload["category"] = transfer_category_factory(budget=budget).pk
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME).pk
 
         api_client.post(transfers_url(budget.id), payload)
         response = api_client.post(transfers_url(budget.id), payload)
@@ -511,7 +512,7 @@ class TestIncomeViewSetCreate:
         ).pk
         payload["entity"] = entity_factory(budget=budget_factory()).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = transfer_category_factory(budget=budget).pk
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME).pk
 
         api_client.post(transfers_url(budget.id), payload)
         response = api_client.post(transfers_url(budget.id), payload)
@@ -1051,9 +1052,9 @@ class TestIncomeViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
         transfer = income_factory(budget=budget, **payload)
-        new_category = transfer_category_factory(budget=budget)
+        new_category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
         update_payload = {"category": new_category.pk}
         api_client.force_authenticate(base_user)
         url = transfer_detail_url(budget.id, transfer.id)
@@ -1145,7 +1146,7 @@ class TestIncomeViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget)
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
         transfer = income_factory(budget=budget, **payload)
         new_period = budgeting_period_factory(budget=budget_factory())
         update_payload = {"period": new_period.pk}
@@ -1184,9 +1185,9 @@ class TestIncomeViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget)
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
         transfer = income_factory(budget=budget, **payload)
-        new_category = transfer_category_factory(budget=budget_factory())
+        new_category = transfer_category_factory(budget=budget_factory(), category_type=CategoryType.INCOME)
         update_payload = {"category": new_category.pk}
         api_client.force_authenticate(base_user)
         url = transfer_detail_url(budget.id, transfer.id)
@@ -1223,7 +1224,7 @@ class TestIncomeViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget)
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
         transfer = income_factory(budget=budget, **payload)
         new_deposit = deposit_factory(budget=budget_factory())
         update_payload = {"deposit": new_deposit.pk}
@@ -1262,7 +1263,7 @@ class TestIncomeViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget)
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
         transfer = income_factory(budget=budget, **payload)
         new_entity = entity_factory(budget=budget_factory())
         update_payload = {"entity": new_entity.pk}

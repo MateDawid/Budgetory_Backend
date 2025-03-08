@@ -7,6 +7,7 @@ from factory.base import FactoryMetaClass
 
 from budgets.models.budget_model import Budget
 from categories.models.choices.category_priority import CategoryPriority
+from categories.models.choices.category_type import CategoryType
 from transfers.models.transfer_model import Transfer
 
 
@@ -85,7 +86,7 @@ class TestExpenseManager:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget)
+        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
 
         with pytest.raises(ValidationError) as exc:
             Transfer.expenses.create(**payload)
@@ -103,7 +104,7 @@ class TestExpenseManager:
 
         transfer = transfer_factory(budget=budget, category=transfer_category_factory(budget=budget))
         assert Transfer.expenses.all().count() == 1
-        new_category = transfer_category_factory(budget=budget)
+        new_category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
 
         Transfer.expenses.filter(pk=transfer.pk).update(category=new_category)
 
@@ -122,10 +123,10 @@ class TestExpenseManager:
         WHEN: Calling ExpenseManager for update.
         THEN: ValidationError raised, Expense proxy model not updated in database.
         """
-        valid_category = transfer_category_factory(budget=budget)
+        valid_category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
         transfer = transfer_factory(budget=budget, category=valid_category)
         assert Transfer.expenses.all().count() == 1
-        invalid_category = transfer_category_factory(budget=budget)
+        invalid_category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
 
         with pytest.raises(ValidationError) as exc:
             Transfer.expenses.filter(pk=transfer.pk).update(category=invalid_category)
