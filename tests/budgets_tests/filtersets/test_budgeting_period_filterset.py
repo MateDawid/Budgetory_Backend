@@ -42,7 +42,7 @@ class TestBudgetingPeriodFilterSetOrdering:
         WHEN: The BudgetingPeriodViewSet list view is called with sorting by given param and without any filters.
         THEN: Response must contain all BudgetingPeriod existing in database sorted by given param.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         for _ in range(5):
             budgeting_period_factory(budget=budget)
         api_client.force_authenticate(base_user)
@@ -90,7 +90,7 @@ class TestBudgetingPeriodFilterSetFiltering:
         THEN: Response must contain all BudgetingPeriod existing in database assigned to Budget containing given
         "name" value in name param.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         matching_period = budgeting_period_factory(budget=budget, name="Some period")
         budgeting_period_factory(budget=budget, name="Other one")
         api_client.force_authenticate(base_user)
@@ -124,7 +124,7 @@ class TestBudgetingPeriodFilterSetFiltering:
         THEN: Response contains all BudgetingPeriods existing in database assigned to Budget matching given
         date value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         other_date_start, other_date_end = date(year=2024, month=10, day=1), date(year=2024, month=10, day=31)
         matching_date_start, matching_date_end = date(year=2024, month=11, day=1), date(year=2024, month=11, day=30)
 
@@ -165,7 +165,7 @@ class TestBudgetingPeriodFilterSetFiltering:
         WHEN: The BudgetingPeriodViewSet list view is called with is_active filter.
         THEN: Response must contain all BudgetingPeriod existing in database with specified is_active value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         budgeting_period_factory(
             budget=budget,
             is_active=not is_active,

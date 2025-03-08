@@ -45,7 +45,7 @@ class TestWalletDepositViewSetList:
         WHEN: WalletDepositViewSet list endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet = wallet_factory(budget=budget)
         url = wallet_deposit_url(budget.id, wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -87,7 +87,7 @@ class TestWalletDepositViewSetList:
         THEN: Response with serialized Budget WalletDeposit list returned.
         """
         api_client.force_authenticate(base_user)
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet = wallet_factory(budget=budget)
         for _ in range(2):
             wallet_deposit_factory(budget=budget, wallet=wallet)
@@ -112,7 +112,7 @@ class TestWalletDepositViewSetList:
         WHEN: WalletDepositViewSet called by one of Budgets owner with Budget and Wallet ids.
         THEN: Response with serialized WalletDeposit list (only from given Budget and Wallet) returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet = wallet_factory(budget=budget)
         wallet_deposit = wallet_deposit_factory(budget=budget, wallet=wallet)
         # WalletDeposit from the same Budget, but different Wallet
@@ -159,7 +159,7 @@ class TestWalletDepositViewSetCreate:
         WHEN: WalletDepositViewSet list endpoint called with POST.
         THEN: HTTP 400 returned - access granted, but data invalid.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet = wallet_factory(budget=budget)
         url = wallet_deposit_url(budget.id, wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -204,7 +204,7 @@ class TestWalletDepositViewSetCreate:
         THEN: WalletDeposit object created in database with given payload
         """
         other_user = user_factory()
-        budget = budget_factory(owner=base_user, members=[other_user])
+        budget = budget_factory(members=[base_user, other_user])
         wallet = wallet_factory(budget=budget)
         deposit = deposit_factory(budget=budget)
         payload = self.PAYLOAD.copy()
@@ -242,8 +242,8 @@ class TestWalletDepositViewSetCreate:
         WHEN: WalletDepositViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. WalletDeposit not created in database.
         """
-        user_budget = budget_factory(owner=base_user)
-        other_budget = budget_factory(owner=base_user)
+        user_budget = budget_factory(members=[base_user])
+        other_budget = budget_factory(members=[base_user])
         wallet = wallet_factory(budget=user_budget)
         deposit = deposit_factory(budget=other_budget)
         api_client.force_authenticate(base_user)
@@ -272,7 +272,7 @@ class TestWalletDepositViewSetCreate:
         WHEN: WalletDepositViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. WalletDeposit not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet_1 = wallet_factory(budget=budget)
         wallet_2 = wallet_factory(budget=budget)
         deposit = deposit_factory(budget=budget)
@@ -304,7 +304,7 @@ class TestWalletDepositViewSetCreate:
         WHEN: WalletDepositViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. WalletDeposit not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet = wallet_factory(budget=budget)
         deposit = deposit_factory(budget=budget)
         api_client.force_authenticate(base_user)
@@ -334,7 +334,7 @@ class TestWalletDepositViewSetCreate:
         WHEN: WalletDepositViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. WalletDeposit not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet = wallet_factory(budget=budget)
         for _ in range(2):
             wallet_deposit_factory(wallet=wallet, planned_weight=Decimal("40.00"))
@@ -382,7 +382,7 @@ class TestWalletDepositViewSetDetail:
         WHEN: WalletDepositViewSet detail endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet_deposit = wallet_deposit_factory(budget=budget)
         url = wallet_deposit_detail_url(budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -426,7 +426,7 @@ class TestWalletDepositViewSetDetail:
         THEN: HTTP 200, WalletDeposit details returned.
         """
         if user_type == "owner":
-            budget = budget_factory(owner=base_user)
+            budget = budget_factory(members=[base_user])
         else:
             budget = budget_factory(members=[base_user])
         wallet_deposit = wallet_deposit_factory(budget=budget)
@@ -471,7 +471,7 @@ class TestWalletDepositViewSetUpdate:
         WHEN: WalletDepositViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet_deposit = wallet_deposit_factory(budget=budget)
         url = wallet_deposit_detail_url(budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -512,7 +512,7 @@ class TestWalletDepositViewSetUpdate:
         WHEN: WalletDepositViewSet detail view called with PATCH by User belonging to Budget to update planned_weight.
         THEN: HTTP 200, WalletDeposit updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet_deposit = wallet_deposit_factory(budget=budget, planned_weight=Decimal("10.00"))
         update_payload = {"planned_weight": Decimal("20.00")}
         api_client.force_authenticate(base_user)
@@ -538,7 +538,7 @@ class TestWalletDepositViewSetUpdate:
         update deposit.
         THEN: HTTP 200, Deposit updated with "deposit" value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         deposit = deposit_factory(budget=budget)
         wallet_deposit = wallet_deposit_factory(budget=budget)
         update_payload = {"deposit": deposit.id}
@@ -564,7 +564,7 @@ class TestWalletDepositViewSetUpdate:
         WHEN: WalletDepositViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned. WalletDeposit updated in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         deposit_1 = deposit_factory(budget=budget)
         deposit_2 = deposit_factory(budget=budget)
         api_client.force_authenticate(base_user)
@@ -600,7 +600,7 @@ class TestWalletDepositViewSetUpdate:
         WHEN: WalletDepositViewSet called with PATCH by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. WalletDeposit not updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet_deposit = wallet_deposit_factory(budget=budget)
         payload = {"deposit": deposit_factory().id}
         api_client.force_authenticate(base_user)
@@ -627,7 +627,7 @@ class TestWalletDepositViewSetUpdate:
         WHEN: WalletDepositViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. WalletDeposit not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet_1 = wallet_factory(budget=budget)
         wallet_2 = wallet_factory(budget=budget)
         deposit = deposit_factory(budget=budget)
@@ -660,7 +660,7 @@ class TestWalletDepositViewSetUpdate:
         WHEN: WalletDepositViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. WalletDeposit not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet_deposit = wallet_deposit_factory(budget=budget)
         api_client.force_authenticate(base_user)
         payload = {"planned_weight": planned_weight}
@@ -688,7 +688,7 @@ class TestWalletDepositViewSetUpdate:
         WHEN: WalletDepositViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. WalletDeposit not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet = wallet_factory(budget=budget)
         for _ in range(2):
             wallet_deposit_factory(wallet=wallet, planned_weight=Decimal("40.00"))
@@ -740,7 +740,7 @@ class TestWalletDepositViewSetDelete:
         WHEN: WalletDepositViewSet detail endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet_deposit = wallet_deposit_factory(budget=budget)
         url = wallet_deposit_detail_url(budget.id, wallet_deposit.wallet.id, wallet_deposit.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -780,7 +780,7 @@ class TestWalletDepositViewSetDelete:
         WHEN: WalletDepositViewSet detail view called with DELETE by User belonging to Budget.
         THEN: No content HTTP 204, WalletDeposit deleted.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         wallet_deposit = wallet_deposit_factory(budget=budget)
         api_client.force_authenticate(base_user)
         url = wallet_deposit_detail_url(wallet_deposit.wallet.budget.id, wallet_deposit.wallet.id, wallet_deposit.id)

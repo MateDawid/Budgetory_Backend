@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 
-from categories.models.transfer_category_choices import CategoryType
+from categories.models.choices.category_type import CategoryType
 from transfers.managers.income_manager import IncomeManager
 from transfers.models.transfer_model import Transfer
 

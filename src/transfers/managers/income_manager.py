@@ -2,7 +2,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Model, QuerySet
 
-from categories.models.transfer_category_choices import CategoryType
+from categories.models.choices.category_type import CategoryType
 
 
 class IncomeQuerySet(QuerySet):

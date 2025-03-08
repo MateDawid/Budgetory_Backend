@@ -16,7 +16,6 @@ class BudgetFactory(factory.django.DjangoModelFactory):
 
     name = factory.Faker("text", max_nb_chars=128)
     description = factory.Faker("text", max_nb_chars=255)
-    owner = factory.SubFactory(UserFactory)
 
     @factory.lazy_attribute
     def currency(self) -> str:
@@ -33,9 +32,12 @@ class BudgetFactory(factory.django.DjangoModelFactory):
             users [list[AbstractUser]]:
             **kwargs [dict]: Keyword arguments
         """
-        if not create or not users:
+        if not create:
             return
-        self.members.add(*users, self.owner)
+        if users:
+            self.members.add(*users)
+        else:
+            self.members.add(UserFactory())
 
 
 class BudgetingPeriodFactory(factory.django.DjangoModelFactory):

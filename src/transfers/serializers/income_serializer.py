@@ -1,7 +1,7 @@
 from rest_framework.exceptions import ValidationError
 
-from categories.models import IncomeCategory, TransferCategory
-from categories.models.transfer_category_choices import CategoryType
+from categories.models import TransferCategory
+from categories.models.choices.category_type import CategoryType
 from transfers.models.income_model import Income
 from transfers.serializers.transfer_serializer import TransferSerializer
 
@@ -12,7 +12,7 @@ class IncomeSerializer(TransferSerializer):
     class Meta(TransferSerializer.Meta):
         model = Income
 
-    def validate_category(self, category: IncomeCategory) -> TransferCategory:
+    def validate_category(self, category: TransferCategory) -> TransferCategory:
         """
         Checks if provided category.category_type is equal to CategoryType.INCOME.
 

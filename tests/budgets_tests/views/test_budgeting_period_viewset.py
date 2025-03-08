@@ -61,7 +61,7 @@ class TestBudgetingPeriodViewSetList:
         WHEN: BudgetingPeriodViewSet list endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         url = periods_url(budget.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -79,7 +79,7 @@ class TestBudgetingPeriodViewSetList:
         WHEN: BudgetingPeriodViewSet list view for Budget id called by authenticated Budget owner.
         THEN: List of BudgetingPeriods for given Budget id sorted from newest to oldest returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         budgeting_period_factory(
             budget=budget, date_start=date(2023, 1, 1), date_end=date(2023, 1, 31), is_active=False
@@ -138,7 +138,7 @@ class TestBudgetingPeriodViewSetList:
         # Other period
         budgeting_period_factory()
         # Auth User period
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
         api_client.force_authenticate(base_user)
         url = periods_url(budget.id)
@@ -181,7 +181,7 @@ class TestBudgetingPeriodViewSetCreate:
         WHEN: BudgetingPeriodViewSet list endpoint called with POST.
         THEN: HTTP 400 returned - access granted, but data invalid.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         url = periods_url(budget.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.post(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -199,7 +199,7 @@ class TestBudgetingPeriodViewSetCreate:
         valid data.
         THEN: BudgetingPeriod for Budget created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = {"name": "2023_01", "date_start": date(2023, 1, 1), "date_end": date(2023, 1, 31)}
         url = periods_url(budget.id)
@@ -252,7 +252,7 @@ class TestBudgetingPeriodViewSetCreate:
         with valid data two times.
         THEN: Two BudgetingPeriod for Budget created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload_1 = {
             "name": "2023_01",
@@ -291,10 +291,10 @@ class TestBudgetingPeriodViewSetCreate:
             "date_end": date(2023, 1, 31),
         }
         api_client.force_authenticate(base_user)
-        budget_1 = budget_factory(owner=base_user)
+        budget_1 = budget_factory(members=[base_user])
         url = periods_url(budget_1.id)
         api_client.post(url, payload)
-        budget_2 = budget_factory(owner=base_user)
+        budget_2 = budget_factory(members=[base_user])
         url = periods_url(budget_2.id)
         api_client.post(url, payload)
 
@@ -313,7 +313,7 @@ class TestBudgetingPeriodViewSetCreate:
         too long in passed data.
         THEN: Bad request 400 returned, no object in database created.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         max_length = BudgetingPeriod._meta.get_field("name").max_length
         payload = {
@@ -339,7 +339,7 @@ class TestBudgetingPeriodViewSetCreate:
         for existing BudgetingPeriod in passed data.
         THEN: Bad request 400 returned, no object in database created.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = {
             "name": "2023_01",
@@ -367,7 +367,7 @@ class TestBudgetingPeriodViewSetCreate:
         and inactive BudgetingPeriods.
         THEN: Two BudgetingPeriods for Budget in database create - one active, one inactive.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload_inactive = {
             "name": "2023_01",
@@ -403,7 +403,7 @@ class TestBudgetingPeriodViewSetCreate:
         to create active BudgetingPeriod.
         THEN: Bad request 400 returned, no object in database created.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload_1 = {
             "name": "2023_01",
@@ -437,7 +437,7 @@ class TestBudgetingPeriodViewSetCreate:
         BudgetingPeriod without declaring if it's active or not.
         THEN: BudgetingPeriod for Budget in database created with 'is_active' set to False by default.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = {
             "name": "2023_02",
@@ -469,7 +469,7 @@ class TestBudgetingPeriodViewSetCreate:
         BudgetingPeriod with one of or both dates blank.
         THEN: Bad request 400 returned, no object in database created.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = {"name": "2023_01", "date_start": date_start, "date_end": date_end, "is_active": False}
         url = periods_url(budget.id)
@@ -494,7 +494,7 @@ class TestBudgetingPeriodViewSetCreate:
         BudgetingPeriod with date_end before date_start.
         THEN: Bad request 400 returned, no object in database created.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = {"name": "2023_01", "date_start": date(2023, 5, 1), "date_end": date(2023, 4, 30), "is_active": False}
         url = periods_url(budget.id)
@@ -559,7 +559,7 @@ class TestBudgetingPeriodViewSetCreate:
         BudgetingPeriod with dates colliding with existing BudgetingPeriods.
         THEN: Bad request 400 returned, no object in database created.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         payload_1 = {
             "name": "2023_06",
             "date_start": date(2023, 6, 1),
@@ -619,7 +619,7 @@ class TestBudgetingPeriodViewSetDetail:
         WHEN: BudgetingPeriodViewSet detail endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
         url = period_detail_url(budget.id, period.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -638,7 +638,7 @@ class TestBudgetingPeriodViewSetDetail:
         WHEN: BudgetingPeriodViewSet detail view called for BudgetingPeriod by authenticated User (owner of Budget).
         THEN: BudgetingPeriod details returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
         api_client.force_authenticate(base_user)
         url = period_detail_url(budget.id, period.id)
@@ -702,7 +702,7 @@ class TestBudgetingPeriodViewSetDetail:
         """
         user_1 = user_factory()
         user_2 = user_factory()
-        period = budgeting_period_factory(budget=budget_factory(owner=user_1))
+        period = budgeting_period_factory(budget=budget_factory(members=[user_1]))
         api_client.force_authenticate(user_2)
 
         url = period_detail_url(period.budget.id, period.id)
@@ -739,7 +739,7 @@ class TestBudgetingPeriodViewSetUpdate:
         WHEN: BudgetingPeriodViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
         url = period_detail_url(budget.id, period.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -766,7 +766,7 @@ class TestBudgetingPeriodViewSetUpdate:
         """
         api_client.force_authenticate(base_user)
         period = budgeting_period_factory(
-            budget=budget_factory(owner=base_user),
+            budget=budget_factory(members=[base_user]),
             date_start=date(2024, 1, 1),
             date_end=date(2024, 1, 31),
             is_active=False,
@@ -868,7 +868,7 @@ class TestBudgetingPeriodViewSetUpdate:
         THEN: Bad request HTTP 400 returned.
         """
         api_client.force_authenticate(base_user)
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         budgeting_period_factory(budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=True)
         period = budgeting_period_factory(
             budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), is_active=False
@@ -912,7 +912,7 @@ class TestBudgetingPeriodViewSetDelete:
         WHEN: BudgetingPeriodViewSet detail endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
         url = period_detail_url(budget.id, period.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -933,7 +933,7 @@ class TestBudgetingPeriodViewSetDelete:
         THEN: BudgetingPeriod deleted from database.
         """
         api_client.force_authenticate(base_user)
-        period = budgeting_period_factory(budget=budget_factory(owner=base_user))
+        period = budgeting_period_factory(budget=budget_factory(members=[base_user]))
         url = period_detail_url(period.budget.id, period.id)
 
         assert BudgetingPeriod.objects.all().count() == 1
@@ -980,7 +980,7 @@ class TestBudgetingPeriodViewSetDelete:
         nor member) by DELETE.
         THEN: Forbidden HTTP 403 returned, BudgetingPeriod not deleted.
         """
-        period = budgeting_period_factory(budget=budget_factory(owner=user_factory()))
+        period = budgeting_period_factory(budget=budget_factory(members=[user_factory()]))
         url = period_detail_url(period.budget.id, period.id)
         api_client.force_authenticate(user_factory())
 

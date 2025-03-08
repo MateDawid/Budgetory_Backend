@@ -49,7 +49,7 @@ class TestDepositViewSetList:
         WHEN: DepositViewSet list endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         url = deposits_url(budget.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -65,7 +65,7 @@ class TestDepositViewSetList:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         api_client.force_authenticate(other_user)
 
         response = api_client.get(deposits_url(budget.id))
@@ -85,7 +85,7 @@ class TestDepositViewSetList:
         WHEN: DepositViewSet called by Budget owner.
         THEN: Response with serialized Budget Deposit list returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         for _ in range(2):
             deposit_factory(budget=budget)
@@ -109,7 +109,7 @@ class TestDepositViewSetList:
         WHEN: DepositViewSet called by one of Budgets owner.
         THEN: Response with serialized Deposit list (only from given Budget) returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         deposit = deposit_factory(budget=budget)
         deposit_factory()
         api_client.force_authenticate(base_user)
@@ -155,7 +155,7 @@ class TestDepositViewSetCreate:
         WHEN: DepositViewSet list endpoint called with POST.
         THEN: HTTP 400 returned - access granted, but invalid input.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         url = deposits_url(budget.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.post(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -171,7 +171,7 @@ class TestDepositViewSetCreate:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         api_client.force_authenticate(other_user)
 
         response = api_client.post(deposits_url(budget.id), data={})
@@ -187,7 +187,7 @@ class TestDepositViewSetCreate:
         WHEN: DepositViewSet called with POST by User belonging to Budget with valid payload.
         THEN: Deposit object created in database with given payload
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
 
         response = api_client.post(deposits_url(budget.id), self.PAYLOAD)
@@ -211,7 +211,7 @@ class TestDepositViewSetCreate:
         WHEN: DepositViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. Deposit not created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         max_length = Deposit._meta.get_field(field_name).max_length
         payload = self.PAYLOAD.copy()
@@ -232,7 +232,7 @@ class TestDepositViewSetCreate:
         WHEN: DepositViewSet called twice with POST by User belonging to Budget with the same payload.
         THEN: Bad request HTTP 400 returned. Only one Deposit created in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
 
@@ -271,7 +271,7 @@ class TestDepositViewSetDetail:
         WHEN: DepositViewSet detail endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         deposit = deposit_factory(budget=budget)
         url = deposit_detail_url(deposit.budget.id, deposit.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -292,7 +292,7 @@ class TestDepositViewSetDetail:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         deposit = deposit_factory(budget=budget)
         api_client.force_authenticate(other_user)
         url = deposit_detail_url(deposit.budget.id, deposit.id)
@@ -314,7 +314,7 @@ class TestDepositViewSetDetail:
         WHEN: DepositViewSet detail view called by User belonging to Budget.
         THEN: HTTP 200, Deposit details returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         deposit = deposit_factory(budget=budget)
         api_client.force_authenticate(base_user)
         url = deposit_detail_url(budget.id, deposit.id)
@@ -395,7 +395,7 @@ class TestDepositViewSetUpdate:
         WHEN: DepositViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         deposit = deposit_factory(budget=budget)
         url = deposit_detail_url(deposit.budget.id, deposit.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -416,7 +416,7 @@ class TestDepositViewSetUpdate:
         """
         budget_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(owner=budget_owner)
+        budget = budget_factory(members=[budget_owner])
         deposit = deposit_factory(budget=budget)
         api_client.force_authenticate(other_user)
         url = deposit_detail_url(deposit.budget.id, deposit.id)
@@ -450,7 +450,7 @@ class TestDepositViewSetUpdate:
         WHEN: DepositViewSet detail view called with PATCH by User belonging to Budget.
         THEN: HTTP 200, Deposit updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         deposit = deposit_factory(budget=budget, **self.PAYLOAD)
         update_payload = {param: value}
         api_client.force_authenticate(base_user)
@@ -474,7 +474,7 @@ class TestDepositViewSetUpdate:
         WHEN: DepositViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned. Deposit updated in database.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         deposit = deposit_factory(budget=budget, **payload)
@@ -509,7 +509,7 @@ class TestDepositViewSetUpdate:
         with invalid payload.
         THEN: Bad request HTTP 400, Deposit not updated.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         deposit_factory(budget=budget, **self.PAYLOAD)
         deposit = deposit_factory(budget=budget)
         old_value = getattr(deposit, param)
@@ -553,7 +553,7 @@ class TestDepositViewSetDelete:
         WHEN: DepositViewSet detail endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         deposit = deposit_factory(budget=budget)
         url = deposit_detail_url(deposit.budget.id, deposit.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -593,7 +593,7 @@ class TestDepositViewSetDelete:
         WHEN: DepositViewSet detail view called with DELETE by User belonging to Budget.
         THEN: No content HTTP 204, Deposit deleted.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         deposit = deposit_factory(budget=budget)
         api_client.force_authenticate(base_user)
         url = deposit_detail_url(budget.id, deposit.id)

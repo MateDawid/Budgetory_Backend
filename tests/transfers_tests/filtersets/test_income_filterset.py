@@ -8,6 +8,7 @@ from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from categories.models.choices.category_type import CategoryType
 from transfers.models.income_model import Income
 from transfers.serializers.income_serializer import IncomeSerializer
 
@@ -62,7 +63,7 @@ class TestIncomeFilterSetOrdering:
         WHEN: The IncomeViewSet list view is called with sorting by given param and without any filters.
         THEN: Response must contain all Income existing in database sorted by given param.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         for _ in range(5):
             income_factory(budget=budget)
         api_client.force_authenticate(base_user)
@@ -110,7 +111,7 @@ class TestIncomeFilterSetFiltering:
         THEN: Response must contain all Income existing in database assigned to Budget containing given
         "name" value in name param.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         matching_transfer = income_factory(budget=budget, name="Some transfer")
         income_factory(budget=budget, name="Other one")
         api_client.force_authenticate(base_user)
@@ -134,7 +135,7 @@ class TestIncomeFilterSetFiltering:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         income_factory: FactoryMetaClass,
     ):
         """
@@ -143,9 +144,9 @@ class TestIncomeFilterSetFiltering:
         WHEN: The IncomeViewSet list view is called with "common_only"=True filter.
         THEN: Response must contain all Income existing in database with common IncomeCategory.
         """
-        budget = budget_factory(owner=base_user)
-        common_category = income_category_factory(budget=budget, owner=None)
-        personal_category = income_category_factory(budget=budget, owner=base_user)
+        budget = budget_factory(members=[base_user])
+        common_category = transfer_category_factory(budget=budget, owner=None, category_type=CategoryType.INCOME)
+        personal_category = transfer_category_factory(budget=budget, owner=base_user, category_type=CategoryType.INCOME)
         matching_transfer = income_factory(budget=budget, name="Some transfer", category=common_category)
         income_factory(budget=budget, name="Other one", category=personal_category)
         api_client.force_authenticate(base_user)
@@ -169,7 +170,7 @@ class TestIncomeFilterSetFiltering:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         income_factory: FactoryMetaClass,
     ):
         """
@@ -178,9 +179,9 @@ class TestIncomeFilterSetFiltering:
         WHEN: The IncomeViewSet list view is called with "owner" filter.
         THEN: Response must contain all Income existing in database with given User as IncomeCategory owner.
         """
-        budget = budget_factory(owner=base_user)
-        common_category = income_category_factory(budget=budget, owner=None)
-        personal_category = income_category_factory(budget=budget, owner=base_user)
+        budget = budget_factory(members=[base_user])
+        common_category = transfer_category_factory(budget=budget, owner=None, category_type=CategoryType.INCOME)
+        personal_category = transfer_category_factory(budget=budget, owner=base_user, category_type=CategoryType.INCOME)
         matching_transfer = income_factory(budget=budget, name="Some transfer", category=personal_category)
         income_factory(budget=budget, name="Other one", category=common_category)
         api_client.force_authenticate(base_user)
@@ -213,7 +214,7 @@ class TestIncomeFilterSetFiltering:
         THEN: Response contains all Incomes existing in database assigned to Budget matching given
         "period" value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         other_period = budgeting_period_factory(
             budget=budget, date_start=date(2024, 9, 1), date_end=date(2024, 9, 30), is_active=False
         )
@@ -252,7 +253,7 @@ class TestIncomeFilterSetFiltering:
         THEN: Response contains all Incomes existing in database assigned to Budget matching given
         "entity" value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         other_entity = entity_factory(budget=budget)
         matching_entity = entity_factory(budget=budget)
         income_factory(budget=budget, entity=other_entity)
@@ -287,7 +288,7 @@ class TestIncomeFilterSetFiltering:
         THEN: Response contains all Incomes existing in database assigned to Budget matching given
         "deposit" value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         other_deposit = deposit_factory(budget=budget)
         matching_deposit = deposit_factory(budget=budget)
         income_factory(budget=budget, deposit=other_deposit)
@@ -313,7 +314,7 @@ class TestIncomeFilterSetFiltering:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
-        income_category_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         income_factory: FactoryMetaClass,
     ):
         """
@@ -322,9 +323,9 @@ class TestIncomeFilterSetFiltering:
         THEN: Response contains all Incomes existing in database assigned to Budget matching given
         "category" value.
         """
-        budget = budget_factory(owner=base_user)
-        other_category = income_category_factory(budget=budget)
-        matching_category = income_category_factory(budget=budget)
+        budget = budget_factory(members=[base_user])
+        other_category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
+        matching_category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
         income_factory(budget=budget, category=other_category)
         transfer = income_factory(budget=budget, category=matching_category)
         api_client.force_authenticate(base_user)
@@ -357,7 +358,7 @@ class TestIncomeFilterSetFiltering:
         THEN: Response contains all Incomes existing in database assigned to Budget matching given
         "date" value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(
             budget=budget, date_start=date(2024, 10, 1), date_end=date(2024, 10, 30), is_active=True
         )
@@ -397,7 +398,7 @@ class TestIncomeFilterSetFiltering:
         THEN: Response contains all Incomes existing in database assigned to Budget matching given
         "value" value.
         """
-        budget = budget_factory(owner=base_user)
+        budget = budget_factory(members=[base_user])
         matching_value = Decimal("100.00")
 
         income_factory(budget=budget, value=Decimal("1.0"))

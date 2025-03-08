@@ -10,7 +10,7 @@ class ExpensePrediction(models.Model):
 
     period = models.ForeignKey("budgets.BudgetingPeriod", on_delete=models.CASCADE, related_name="expense_predictions")
     category = models.ForeignKey(
-        "categories.ExpenseCategory", on_delete=models.CASCADE, related_name="expense_predictions"
+        "categories.TransferCategory", on_delete=models.CASCADE, related_name="expense_predictions"
     )
     value = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.CharField(max_length=255, blank=True, null=True)
