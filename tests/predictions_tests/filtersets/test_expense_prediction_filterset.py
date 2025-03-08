@@ -8,6 +8,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from categories.models.choices.category_priority import CategoryPriority
+from categories.models.choices.category_type import CategoryType
 from predictions.models import ExpensePrediction
 from predictions.serializers.expense_prediction_serializer import ExpensePredictionSerializer
 
@@ -221,9 +222,12 @@ class TestExpensePredictionFilterSetFiltering:
         category_id value.
         """
         budget = budget_factory(members=[base_user])
-        category = transfer_category_factory(budget=budget, name="Test name")
+        category = transfer_category_factory(budget=budget, name="Test name", category_type=CategoryType.EXPENSE)
         prediction = expense_prediction_factory(budget=budget, category=category)
-        expense_prediction_factory(budget=budget, category=transfer_category_factory(budget=budget, name="Other"))
+        expense_prediction_factory(
+            budget=budget,
+            category=transfer_category_factory(budget=budget, name="Other", category_type=CategoryType.EXPENSE),
+        )
         api_client.force_authenticate(base_user)
 
         response = api_client.get(expense_prediction_url(budget.id), data={"category_id": category.id})
@@ -259,9 +263,12 @@ class TestExpensePredictionFilterSetFiltering:
         category_name value.
         """
         budget = budget_factory(members=[base_user])
-        category = transfer_category_factory(budget=budget, name="Test name")
+        category = transfer_category_factory(budget=budget, name="Test name", category_type=CategoryType.EXPENSE)
         prediction = expense_prediction_factory(budget=budget, category=category)
-        expense_prediction_factory(budget=budget, category=transfer_category_factory(budget=budget, name="Other"))
+        expense_prediction_factory(
+            budget=budget,
+            category=transfer_category_factory(budget=budget, name="Other", category_type=CategoryType.EXPENSE),
+        )
         api_client.force_authenticate(base_user)
 
         response = api_client.get(expense_prediction_url(budget.id), data={"category_name": filter_value})

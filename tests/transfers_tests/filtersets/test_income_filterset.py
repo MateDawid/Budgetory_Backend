@@ -145,7 +145,7 @@ class TestIncomeFilterSetFiltering:
         THEN: Response must contain all Income existing in database with common IncomeCategory.
         """
         budget = budget_factory(members=[base_user])
-        common_category = transfer_category_factory(budget=budget, owner=None)
+        common_category = transfer_category_factory(budget=budget, owner=None, category_type=CategoryType.INCOME)
         personal_category = transfer_category_factory(budget=budget, owner=base_user, category_type=CategoryType.INCOME)
         matching_transfer = income_factory(budget=budget, name="Some transfer", category=common_category)
         income_factory(budget=budget, name="Other one", category=personal_category)
@@ -180,8 +180,8 @@ class TestIncomeFilterSetFiltering:
         THEN: Response must contain all Income existing in database with given User as IncomeCategory owner.
         """
         budget = budget_factory(members=[base_user])
-        common_category = transfer_category_factory(budget=budget, owner=None)
-        personal_category = transfer_category_factory(budget=budget, owner=base_user)
+        common_category = transfer_category_factory(budget=budget, owner=None, category_type=CategoryType.INCOME)
+        personal_category = transfer_category_factory(budget=budget, owner=base_user, category_type=CategoryType.INCOME)
         matching_transfer = income_factory(budget=budget, name="Some transfer", category=personal_category)
         income_factory(budget=budget, name="Other one", category=common_category)
         api_client.force_authenticate(base_user)
@@ -324,7 +324,7 @@ class TestIncomeFilterSetFiltering:
         "category" value.
         """
         budget = budget_factory(members=[base_user])
-        other_category = transfer_category_factory(budget=budget)
+        other_category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
         matching_category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
         income_factory(budget=budget, category=other_category)
         transfer = income_factory(budget=budget, category=matching_category)

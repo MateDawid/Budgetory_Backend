@@ -102,7 +102,9 @@ class TestExpenseManager:
         THEN: Expense proxy model updated in database.
         """
 
-        transfer = transfer_factory(budget=budget, category=transfer_category_factory(budget=budget))
+        transfer = transfer_factory(
+            budget=budget, category=transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        )
         assert Transfer.expenses.all().count() == 1
         new_category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
 

@@ -10,6 +10,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from app_users.models import User
+from categories.models.choices.category_type import CategoryType
 from predictions.models.expense_prediction_model import ExpensePrediction
 from predictions.serializers.expense_prediction_serializer import ExpensePredictionSerializer
 
@@ -202,7 +203,7 @@ class TestExpensePredictionViewSetCreate:
         other_user = user_factory()
         budget = budget_factory(members=[base_user, other_user])
         period = budgeting_period_factory(budget=budget)
-        category = transfer_category_factory(budget=budget)
+        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
         payload = self.PAYLOAD.copy()
         payload["period"] = period.id
         payload["category"] = category.id
@@ -265,7 +266,7 @@ class TestExpensePredictionViewSetCreate:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
-        category = transfer_category_factory(budget=budget)
+        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["period"] = period.id
@@ -539,7 +540,7 @@ class TestExpensePredictionViewSetUpdate:
         THEN: HTTP 200, Deposit updated with "category" value.
         """
         budget = budget_factory(members=[base_user])
-        category = transfer_category_factory(budget=budget)
+        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
         prediction = expense_prediction_factory(budget=budget, **self.PAYLOAD)
         update_payload = {"category": category.id}
         api_client.force_authenticate(base_user)
@@ -568,8 +569,8 @@ class TestExpensePredictionViewSetUpdate:
         budget = budget_factory(members=[base_user])
         period_1 = budgeting_period_factory(budget=budget)
         period_2 = budgeting_period_factory(budget=budget)
-        category_1 = transfer_category_factory(budget=budget)
-        category_2 = transfer_category_factory(budget=budget)
+        category_1 = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        category_2 = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
         api_client.force_authenticate(base_user)
         payload = {"period": period_1, "category": category_1, **self.PAYLOAD}
         prediction = expense_prediction_factory(budget=budget, **payload)
@@ -635,7 +636,7 @@ class TestExpensePredictionViewSetUpdate:
         """
         budget = budget_factory(members=[base_user])
         prediction = expense_prediction_factory(budget=budget)
-        payload = {"category": transfer_category_factory().id}
+        payload = {"category": transfer_category_factory(category_type=CategoryType.EXPENSE).id}
         api_client.force_authenticate(base_user)
         url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
 
