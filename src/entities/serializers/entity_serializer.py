@@ -25,7 +25,11 @@ class EntitySerializer(serializers.ModelSerializer):
         Raises:
             ValidationError: Raised if Entity with given name exists in Budget already.
         """
-        if self.Meta.model.objects.filter(budget=self.context["view"].kwargs["budget_pk"], name__iexact=name).exists():
+        if (
+            self.Meta.model.objects.filter(budget=self.context["view"].kwargs["budget_pk"], name__iexact=name)
+            .exclude(pk=getattr(self.instance, "pk", None))
+            .exists()
+        ):
             raise ValidationError(
                 "{class_name} with given name already exists in Budget.".format(class_name=self.Meta.model.__name__)
             )
