@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 from conftest import get_jwt_access_token
 from django.contrib.auth.models import AbstractUser
-from django.urls import reverse
+from entities_tests.urls import deposit_detail_url, deposits_url
 from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -12,16 +12,6 @@ from app_users.models import User
 from budgets.models.budget_model import Budget
 from entities.models.deposit_model import Deposit
 from entities.serializers.deposit_serializer import DepositSerializer
-
-
-def deposits_url(budget_id):
-    """Create and return an Deposit detail URL."""
-    return reverse("budgets:deposit-list", args=[budget_id])
-
-
-def deposit_detail_url(budget_id, deposit_id):
-    """Create and return an Deposit detail URL."""
-    return reverse("budgets:deposit-detail", args=[budget_id, deposit_id])
 
 
 @pytest.mark.django_db

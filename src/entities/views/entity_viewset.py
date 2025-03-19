@@ -1,8 +1,11 @@
 from django.db.models import QuerySet
+from django_filters import rest_framework as filters
+from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
+from entities.filtersets.entity_filterset import EntityFilterSet
 from entities.models.entity_model import Entity
 from entities.serializers.entity_serializer import EntitySerializer
 
@@ -13,6 +16,9 @@ class EntityViewSet(ModelViewSet):
     serializer_class = EntitySerializer
     queryset = Entity.objects.all()
     permission_classes = [IsAuthenticated, UserBelongsToBudgetPermission]
+    filterset_class = EntityFilterSet
+    filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
+    ordering_fields = ("id", "name")
 
     def get_queryset(self) -> QuerySet:
         """

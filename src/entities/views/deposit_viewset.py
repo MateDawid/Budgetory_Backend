@@ -1,8 +1,11 @@
 from django.db.models import QuerySet
+from django_filters import rest_framework as filters
+from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
+from entities.filtersets.deposit_filterset import DepositFilterSet
 from entities.models.deposit_model import Deposit
 from entities.serializers.deposit_serializer import DepositSerializer
 
@@ -13,6 +16,9 @@ class DepositViewSet(ModelViewSet):
     serializer_class = DepositSerializer
     queryset = Deposit.objects.all()
     permission_classes = [IsAuthenticated, UserBelongsToBudgetPermission]
+    filterset_class = DepositFilterSet
+    filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
+    ordering_fields = ("id", "name")
 
     def get_queryset(self) -> QuerySet:
         """
