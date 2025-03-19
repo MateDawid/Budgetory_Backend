@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 from conftest import get_jwt_access_token
 from django.contrib.auth.models import AbstractUser
-from django.urls import reverse
+from entities_tests.urls import entities_url, entity_detail_url
 from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -12,16 +12,6 @@ from app_users.models import User
 from budgets.models.budget_model import Budget
 from entities.models.entity_model import Entity
 from entities.serializers.entity_serializer import EntitySerializer
-
-
-def entities_url(budget_id):
-    """Create and return an Entity detail URL."""
-    return reverse("budgets:entity-list", args=[budget_id])
-
-
-def entity_detail_url(budget_id, entity_id):
-    """Create and return an Entity detail URL."""
-    return reverse("budgets:entity-detail", args=[budget_id, entity_id])
 
 
 @pytest.mark.django_db
