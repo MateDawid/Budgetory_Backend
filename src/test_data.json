@@ -1851,9 +1851,9 @@
     "pk": 12,
     "fields": {
       "budget": 1,
-      "name": "Retirement savings depoisit",
+      "name": "Retirement savings deposit",
       "description": "",
-      "is_active": true,
+      "is_active": false,
       "is_deposit": true
     }
   },
@@ -2175,7 +2175,8 @@
     "fields": {
       "period": 1,
       "category": 1,
-      "value": "100.00",
+      "initial_value": "100.00",
+      "current_value": "100.00",
       "description": null
     }
   },
@@ -2185,7 +2186,8 @@
     "fields": {
       "period": 1,
       "category": 2,
-      "value": "100.00",
+      "initial_value": "100.00",
+      "current_value": "100.00",
       "description": null
     }
   },
@@ -2195,7 +2197,8 @@
     "fields": {
       "period": 3,
       "category": 13,
-      "value": "100.00",
+      "initial_value": "100.00",
+      "current_value": "100.00",
       "description": null
     }
   },
@@ -2205,7 +2208,8 @@
     "fields": {
       "period": 3,
       "category": 14,
-      "value": "100.00",
+      "initial_value": "100.00",
+      "current_value": "100.00",
       "description": null
     }
   },
@@ -2331,16 +2335,7 @@
     "fields": {
       "wallet": 1,
       "deposit": 12,
-      "planned_weight": "20"
-    }
-  },
-  {
-    "model": "wallets.walletdeposit",
-    "pk": 5,
-    "fields": {
-      "wallet": 1,
-      "deposit": 11,
-      "planned_weight": "80"
+      "planned_weight": "20.00"
     }
   },
   {
@@ -2349,7 +2344,7 @@
     "fields": {
       "wallet": 2,
       "deposit": 1,
-      "planned_weight": "70"
+      "planned_weight": "70.00"
     }
   },
   {
@@ -2358,7 +2353,7 @@
     "fields": {
       "wallet": 2,
       "deposit": 4,
-      "planned_weight": "30"
+      "planned_weight": "30.00"
     }
   },
   {
@@ -2367,7 +2362,7 @@
     "fields": {
       "wallet": 4,
       "deposit": 6,
-      "planned_weight": "100"
+      "planned_weight": "100.00"
     }
   },
   {
@@ -2376,7 +2371,7 @@
     "fields": {
       "wallet": 3,
       "deposit": 9,
-      "planned_weight": "100"
+      "planned_weight": "100.00"
     }
   }
 ]
