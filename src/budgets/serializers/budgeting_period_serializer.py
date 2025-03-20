@@ -86,3 +86,18 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
             raise ValidationError("Budgeting period date range collides with other period in Budget.")
 
         return super().validate(attrs)
+
+    def to_representation(self, instance: BudgetingPeriod) -> OrderedDict:
+        """
+        Extends model representation with "value" and "label" fields for React MUI DataGrid filtering purposes.
+
+        Attributes:
+            instance [BudgetingPeriod]: BudgetingPeriod model instance
+
+        Returns:
+            OrderedDict: Dictionary containing overridden values.
+        """
+        representation = super().to_representation(instance)
+        representation["value"] = instance.id
+        representation["label"] = instance.name
+        return representation

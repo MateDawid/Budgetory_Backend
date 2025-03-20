@@ -98,8 +98,11 @@ class TestTransferCategoryViewSetList:
         categories = TransferCategory.objects.filter(budget=budget)
         serializer = TransferCategorySerializer(categories, many=True)
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["results"] == serializer.data
         assert len(serializer.data) == 2
+        assert response.data["results"] == serializer.data
+        for category in serializer.data:
+            assert category["value"] == category["id"]
+            assert category["label"] == f"📉 {category['name']}"
 
     def test_categories_list_limited_to_budget(
         self,

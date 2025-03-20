@@ -75,13 +75,16 @@ class TransferCategorySerializer(serializers.ModelSerializer):
     def to_representation(self, instance: TransferCategory) -> OrderedDict:
         """
         Overrides "owner" field representation for None value for Frontend proper display.
+        Extends model representation with "value" and "label" fields for React MUI DataGrid filtering purposes.
 
         Attributes:
-            instance [ExpensePrediction]: TransferCategory model instance
+            instance [TransferCategory]: TransferCategory model instance
 
         Returns:
             OrderedDict: Dictionary containing overridden values.
         """
         representation = super().to_representation(instance)
         representation["owner"] = getattr(instance.owner, "id", -1)
+        representation["value"] = instance.id
+        representation["label"] = f"📉 {instance.name}"
         return representation

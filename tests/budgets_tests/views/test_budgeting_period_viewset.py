@@ -94,6 +94,9 @@ class TestBudgetingPeriodViewSetList:
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data["results"]) == len(serializer.data) == periods.count() == 2
         assert response.data["results"] == serializer.data
+        for category in serializer.data:
+            assert category["value"] == category["id"]
+            assert category["label"] == category["name"]
 
     def test_retrieve_periods_list_by_member(
         self,
