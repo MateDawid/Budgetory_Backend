@@ -8,6 +8,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from budgets.models import BudgetingPeriod
+from budgets.models.choices.period_status import PeriodStatus
 from budgets.serializers.budgeting_period_serializer import BudgetingPeriodSerializer
 
 
@@ -27,7 +28,7 @@ class TestBudgetingPeriodFilterSetOrdering:
 
     @pytest.mark.parametrize(
         "sort_param",
-        ("id", "name", "date_start", "date_end", "-id", "-name", "-date_start", "-date_end"),
+        ("id", "name", "status", "-status", "date_start", "date_end", "-id", "-name", "-date_start", "-date_end"),
     )
     def test_get_periods_list_sorted_by_single_param(
         self,
@@ -151,40 +152,39 @@ class TestBudgetingPeriodFilterSetFiltering:
         assert response.data["results"] == serializer.data
         assert response.data["results"][0]["id"] == period.id
 
-    @pytest.mark.parametrize("is_active", (True, False))
-    def test_get_periods_list_filtered_by_is_active(
+    def test_get_periods_list_filtered_by_status(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        is_active: bool,
     ):
         """
-        GIVEN: Two BudgetingPeriod objects for single Budget - one with is_active = True, one with is_active = False.
-        WHEN: The BudgetingPeriodViewSet list view is called with is_active filter.
-        THEN: Response must contain all BudgetingPeriod existing in database with specified is_active value.
+        GIVEN: Two BudgetingPeriod objects for single Budget - one with status = PeriodStatus.ACTIVE,
+        one with status = PeriodStatus.CLOSED.
+        WHEN: The BudgetingPeriodViewSet list view is called with status filter.
+        THEN: Response must contain all BudgetingPeriod existing in database with specified status value.
         """
         budget = budget_factory(members=[base_user])
         budgeting_period_factory(
             budget=budget,
-            is_active=not is_active,
+            status=PeriodStatus.CLOSED,
             date_start=date(year=2024, month=10, day=1),
             date_end=date(year=2024, month=10, day=31),
         )
         period = budgeting_period_factory(
             budget=budget,
-            is_active=is_active,
+            status=PeriodStatus.ACTIVE,
             date_start=date(year=2024, month=11, day=1),
             date_end=date(year=2024, month=11, day=30),
         )
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(periods_url(budget.id), data={"is_active": is_active})
+        response = api_client.get(periods_url(budget.id), data={"status": PeriodStatus.ACTIVE})
 
         assert response.status_code == status.HTTP_200_OK
         assert BudgetingPeriod.objects.all().count() == 2
-        periods = BudgetingPeriod.objects.filter(is_active=is_active)
+        periods = BudgetingPeriod.objects.filter(status=PeriodStatus.ACTIVE)
         serializer = BudgetingPeriodSerializer(
             periods,
             many=True,

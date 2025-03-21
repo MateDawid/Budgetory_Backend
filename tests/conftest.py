@@ -12,8 +12,6 @@ from pytest_django.lazy_django import skip_if_no_django
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
 from transfers_tests.factories import ExpenseFactory, IncomeFactory, TransferFactory
-from wallets_tests.factories.wallet_deposit_factory import WalletDepositFactory
-from wallets_tests.factories.wallet_factory import WalletFactory
 
 from app_users.models import User
 
@@ -27,8 +25,6 @@ register(ExpensePredictionFactory)
 register(TransferFactory)
 register(IncomeFactory)
 register(ExpenseFactory)
-register(WalletFactory)
-register(WalletDepositFactory)
 
 
 @pytest.fixture

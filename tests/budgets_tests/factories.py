@@ -7,6 +7,8 @@ from app_users_tests.factories import UserFactory
 from dateutil.relativedelta import relativedelta
 from django.contrib.auth.models import AbstractUser
 
+from budgets.models.choices.period_status import PeriodStatus
+
 
 class BudgetFactory(factory.django.DjangoModelFactory):
     """Factory for Budget model."""
@@ -47,7 +49,7 @@ class BudgetingPeriodFactory(factory.django.DjangoModelFactory):
         model = "budgets.BudgetingPeriod"
 
     budget = factory.SubFactory(BudgetFactory)
-    is_active = factory.Sequence(lambda _: False)
+    status = factory.Sequence(lambda _: PeriodStatus.DRAFT)
 
     @factory.lazy_attribute
     def date_start(self) -> date:
@@ -71,6 +73,6 @@ class BudgetingPeriodFactory(factory.django.DjangoModelFactory):
         year_start, year_end = self.date_start.year, self.date_end.year
         month_start, month_end = self.date_start.month, self.date_end.month
         if year_start == year_end and month_start == month_end:
-            return f"{year_start}_{month_start:02d}"
+            return f"{year_start}_{month_start:02d}"  # noqa:E231
         else:
-            return f"{year_start}_{month_start:02d} - {year_end}_{month_end:02d}"  # pragma: no cover
+            return f"{year_start}_{month_start:02d} - {year_end}_{month_end:02d}"  # pragma: no cover  # noqa:E231
