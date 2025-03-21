@@ -3,6 +3,7 @@ from django.urls import include, path
 from app_infrastructure.routers import AppNestedRouter, AppRouter
 from budgets.views.budget_viewset import BudgetViewSet
 from budgets.views.budgeting_period_viewset import BudgetingPeriodViewSet
+from budgets.views.period_status_view import PeriodStatusView
 from categories.views.transfer_category_viewset import TransferCategoryViewSet
 from entities.views.deposit_viewset import DepositViewSet
 from entities.views.entity_viewset import EntityViewSet
@@ -34,4 +35,5 @@ urlpatterns = [
     path("", include(router.urls)),
     path("", include(budget_router.urls)),
     path("", include(wallet_router.urls)),
+    path("periods/statuses", PeriodStatusView.as_view(), name="period-status"),
 ]
