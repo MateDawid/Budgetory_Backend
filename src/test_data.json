@@ -1360,78 +1360,6 @@
     }
   },
   {
-    "model": "auth.permission",
-    "pk": 77,
-    "fields": {
-      "name": "Can add wallet",
-      "content_type": 20,
-      "codename": "add_wallet"
-    }
-  },
-  {
-    "model": "auth.permission",
-    "pk": 78,
-    "fields": {
-      "name": "Can change wallet",
-      "content_type": 20,
-      "codename": "change_wallet"
-    }
-  },
-  {
-    "model": "auth.permission",
-    "pk": 79,
-    "fields": {
-      "name": "Can delete wallet",
-      "content_type": 20,
-      "codename": "delete_wallet"
-    }
-  },
-  {
-    "model": "auth.permission",
-    "pk": 80,
-    "fields": {
-      "name": "Can view wallet",
-      "content_type": 20,
-      "codename": "view_wallet"
-    }
-  },
-  {
-    "model": "auth.permission",
-    "pk": 81,
-    "fields": {
-      "name": "Can add wallet deposit",
-      "content_type": 21,
-      "codename": "add_walletdeposit"
-    }
-  },
-  {
-    "model": "auth.permission",
-    "pk": 82,
-    "fields": {
-      "name": "Can change wallet deposit",
-      "content_type": 21,
-      "codename": "change_walletdeposit"
-    }
-  },
-  {
-    "model": "auth.permission",
-    "pk": 83,
-    "fields": {
-      "name": "Can delete wallet deposit",
-      "content_type": 21,
-      "codename": "delete_walletdeposit"
-    }
-  },
-  {
-    "model": "auth.permission",
-    "pk": 84,
-    "fields": {
-      "name": "Can view wallet deposit",
-      "content_type": 21,
-      "codename": "view_walletdeposit"
-    }
-  },
-  {
     "model": "contenttypes.contenttype",
     "pk": 1,
     "fields": {
@@ -1584,22 +1512,6 @@
     }
   },
   {
-    "model": "contenttypes.contenttype",
-    "pk": 20,
-    "fields": {
-      "app_label": "wallets",
-      "model": "wallet"
-    }
-  },
-  {
-    "model": "contenttypes.contenttype",
-    "pk": 21,
-    "fields": {
-      "app_label": "wallets",
-      "model": "walletdeposit"
-    }
-  },
-  {
     "model": "sessions.session",
     "pk": "607vwla0h1s4zwc78zte98qad4yji4m5",
     "fields": {
@@ -1631,13 +1543,13 @@
       "last_login": "2024-10-03T09:16:45.824Z",
       "is_superuser": true,
       "email": "admin@admin.com",
+      "username": "Admin user",
       "is_active": true,
       "is_staff": true,
-      "groups": [],
-      "user_permissions": [],
       "created_at": "2024-10-03T09:16:45.824Z",
       "updated_at": "2024-10-03T09:16:45.824Z",
-      "username": "Admin user"
+      "groups": [],
+      "user_permissions": []
     }
   },
   {
@@ -1648,13 +1560,13 @@
       "last_login": null,
       "is_superuser": false,
       "email": "user@example.com",
+      "username": "Example user",
       "is_active": true,
       "is_staff": false,
-      "groups": [],
-      "user_permissions": [],
       "created_at": "2024-10-03T09:16:45.824Z",
       "updated_at": "2024-10-03T09:16:45.824Z",
-      "username": "Example user"
+      "groups": [],
+      "user_permissions": []
     }
   },
   {
@@ -1686,10 +1598,10 @@
     "pk": 1,
     "fields": {
       "budget": 1,
-      "name": "2024_10",
-      "date_start": "2024-10-01",
-      "date_end": "2024-10-31",
-      "is_active": true
+      "status": 3,
+      "name": "2024_08",
+      "date_start": "2024-08-01",
+      "date_end": "2024-08-31"
     }
   },
   {
@@ -1697,21 +1609,21 @@
     "pk": 2,
     "fields": {
       "budget": 1,
+      "status": 2,
       "name": "2024_09",
       "date_start": "2024-09-01",
-      "date_end": "2024-09-30",
-      "is_active": false
+      "date_end": "2024-09-30"
     }
   },
   {
     "model": "budgets.budgetingperiod",
-    "pk": 3,
+    "pk": 2,
     "fields": {
-      "budget": 2,
+      "budget": 1,
+      "status": 1,
       "name": "2024_10",
       "date_start": "2024-10-01",
-      "date_end": "2024-10-31",
-      "is_active": true
+      "date_end": "2024-10-31"
     }
   },
   {
@@ -1719,10 +1631,32 @@
     "pk": 4,
     "fields": {
       "budget": 2,
+      "status": 3,
+      "name": "2024_08",
+      "date_start": "2024-08-01",
+      "date_end": "2024-08-31"
+    }
+  },
+  {
+    "model": "budgets.budgetingperiod",
+    "pk": 5,
+    "fields": {
+      "budget": 2,
+      "status": 2,
       "name": "2024_09",
       "date_start": "2024-09-01",
-      "date_end": "2024-09-30",
-      "is_active": false
+      "date_end": "2024-09-30"
+    }
+  },
+  {
+    "model": "budgets.budgetingperiod",
+    "pk": 6,
+    "fields": {
+      "budget": 2,
+      "status": 1,
+      "name": "2024_10",
+      "date_start": "2024-10-01",
+      "date_end": "2024-10-31"
     }
   },
   {
@@ -2195,7 +2129,7 @@
     "model": "predictions.expenseprediction",
     "pk": 3,
     "fields": {
-      "period": 3,
+      "period": 4,
       "category": 13,
       "initial_value": "100.00",
       "current_value": "100.00",
@@ -2206,7 +2140,7 @@
     "model": "predictions.expenseprediction",
     "pk": 4,
     "fields": {
-      "period": 3,
+      "period": 4,
       "category": 14,
       "initial_value": "100.00",
       "current_value": "100.00",
@@ -2263,7 +2197,7 @@
       "description": null,
       "value": "10.00",
       "date": "2024-10-01",
-      "period": 3,
+      "period": 4,
       "entity": 7,
       "deposit": 9,
       "category": 13
@@ -2277,7 +2211,7 @@
       "description": null,
       "value": "100.00",
       "date": "2024-10-01",
-      "period": 3,
+      "period": 4,
       "entity": 10,
       "deposit": 6,
       "category": 14
@@ -2291,87 +2225,10 @@
       "description": null,
       "value": "1000.00",
       "date": "2024-10-01",
-      "period": 3,
+      "period": 4,
       "entity": 8,
       "deposit": 9,
       "category": 21
-    }
-  },
-  {
-    "model": "wallets.wallet",
-    "pk": 1,
-    "fields": {
-      "budget": 1,
-      "name": "Long term"
-    }
-  },
-  {
-    "model": "wallets.wallet",
-    "pk": 2,
-    "fields": {
-      "budget": 1,
-      "name": "Short term"
-    }
-  },
-  {
-    "model": "wallets.wallet",
-    "pk": 3,
-    "fields": {
-      "budget": 2,
-      "name": "Long term"
-    }
-  },
-  {
-    "model": "wallets.wallet",
-    "pk": 4,
-    "fields": {
-      "budget": 2,
-      "name": "Short term"
-    }
-  },
-  {
-    "model": "wallets.walletdeposit",
-    "pk": 4,
-    "fields": {
-      "wallet": 1,
-      "deposit": 12,
-      "planned_weight": "20.00"
-    }
-  },
-  {
-    "model": "wallets.walletdeposit",
-    "pk": 6,
-    "fields": {
-      "wallet": 2,
-      "deposit": 1,
-      "planned_weight": "70.00"
-    }
-  },
-  {
-    "model": "wallets.walletdeposit",
-    "pk": 7,
-    "fields": {
-      "wallet": 2,
-      "deposit": 4,
-      "planned_weight": "30.00"
-    }
-  },
-  {
-    "model": "wallets.walletdeposit",
-    "pk": 8,
-    "fields": {
-      "wallet": 4,
-      "deposit": 6,
-      "planned_weight": "100.00"
-    }
-  },
-  {
-    "model": "wallets.walletdeposit",
-    "pk": 9,
-    "fields": {
-      "wallet": 3,
-      "deposit": 9,
-      "planned_weight": "100.00"
     }
   }
 ]

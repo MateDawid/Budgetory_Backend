@@ -2,15 +2,17 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 
+from budgets.models.choices.period_status import PeriodStatus
+
 
 class BudgetingPeriod(models.Model):
     """Model for period in which Budget data will be calculated and reported."""
 
     budget = models.ForeignKey("budgets.Budget", on_delete=models.CASCADE, related_name="periods")
+    status = models.PositiveSmallIntegerField(choices=PeriodStatus.choices, null=False, blank=False)
     name = models.CharField(max_length=128)
     date_start = models.DateField(null=False, blank=False)
     date_end = models.DateField(null=False, blank=False)
-    is_active = models.BooleanField(default=False)
 
     class Meta:
         unique_together = (
@@ -31,26 +33,23 @@ class BudgetingPeriod(models.Model):
         """
         Overrides .save() method to execute .clean() method before saving model in database.
         """
-        self.clean()
+        self.clean_status()
+        self.clean_dates()
         super().save(*args, **kwargs)
 
-    def clean(self) -> None:
+    def clean_status(self) -> None:
         """
-        Validates BudgetingPeriod input data before saving in database.
-        """
-        self.clean_is_active()
-        self.clean_dates()
-
-    def clean_is_active(self) -> None:
-        """
-        Validates is_active field. If is_active not given, passes it to default model validation.
+        Validates status field. If status not given, passes it to default model validation.
 
         Raises:
-            ValidationError: Raised when is_active=True and another BudgetingPeriod with such flag
+            ValidationError: Raised when status=True and another BudgetingPeriod with such flag
             already exists for Budget.
         """
-        if self.is_active and self.budget.periods.filter(is_active=True).exclude(pk=self.pk).exists():
-            raise ValidationError("is_active: Active period already exists.", code="active-invalid")
+        if (
+            self.status == PeriodStatus.ACTIVE
+            and self.budget.periods.filter(status=PeriodStatus.ACTIVE).exclude(pk=self.pk).exists()
+        ):
+            raise ValidationError("status: Active period already exists.", code="status-invalid")
 
     def clean_dates(self) -> None:
         """
