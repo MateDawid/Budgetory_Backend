@@ -21,6 +21,7 @@ from rest_framework.test import APIClient
 from app_users.models import User
 from budgets.models.budget_model import Budget
 from budgets.models.budgeting_period_model import BudgetingPeriod
+from budgets.models.choices.period_status import PeriodStatus
 from budgets.serializers.budgeting_period_serializer import BudgetingPeriodSerializer
 
 
@@ -82,9 +83,11 @@ class TestBudgetingPeriodViewSetList:
         budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         budgeting_period_factory(
-            budget=budget, date_start=date(2023, 1, 1), date_end=date(2023, 1, 31), is_active=False
+            budget=budget, date_start=date(2023, 1, 1), date_end=date(2023, 1, 31), status=PeriodStatus.CLOSED
         )
-        budgeting_period_factory(budget=budget, date_start=date(2023, 2, 1), date_end=date(2023, 2, 28), is_active=True)
+        budgeting_period_factory(
+            budget=budget, date_start=date(2023, 2, 1), date_end=date(2023, 2, 28), status=PeriodStatus.ACTIVE
+        )
         url = periods_url(budget.id)
 
         response = api_client.get(url)
@@ -113,9 +116,11 @@ class TestBudgetingPeriodViewSetList:
         budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         budgeting_period_factory(
-            budget=budget, date_start=date(2023, 1, 1), date_end=date(2023, 1, 31), is_active=False
+            budget=budget, date_start=date(2023, 1, 1), date_end=date(2023, 1, 31), status=PeriodStatus.CLOSED
         )
-        budgeting_period_factory(budget=budget, date_start=date(2023, 2, 1), date_end=date(2023, 2, 28), is_active=True)
+        budgeting_period_factory(
+            budget=budget, date_start=date(2023, 2, 1), date_end=date(2023, 2, 28), status=PeriodStatus.ACTIVE
+        )
         url = periods_url(budget.id)
 
         response = api_client.get(url)
@@ -204,7 +209,12 @@ class TestBudgetingPeriodViewSetCreate:
         """
         budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
-        payload = {"name": "2023_01", "date_start": date(2023, 1, 1), "date_end": date(2023, 1, 31)}
+        payload = {
+            "name": "2023_01",
+            "date_start": date(2023, 1, 1),
+            "date_end": date(2023, 1, 31),
+            "status": PeriodStatus.DRAFT,
+        }
         url = periods_url(budget.id)
 
         response = api_client.post(url, payload)
@@ -230,7 +240,12 @@ class TestBudgetingPeriodViewSetCreate:
         """
         budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
-        payload = {"name": "2023_01", "date_start": date(2023, 1, 1), "date_end": date(2023, 1, 31)}
+        payload = {
+            "name": "2023_01",
+            "status": PeriodStatus.DRAFT,
+            "date_start": date(2023, 1, 1),
+            "date_end": date(2023, 1, 31),
+        }
         url = periods_url(budget.id)
 
         response = api_client.post(url, payload)
@@ -259,11 +274,13 @@ class TestBudgetingPeriodViewSetCreate:
         api_client.force_authenticate(base_user)
         payload_1 = {
             "name": "2023_01",
+            "status": PeriodStatus.DRAFT,
             "date_start": date(2023, 1, 1),
             "date_end": date(2023, 1, 31),
         }
         payload_2 = {
             "name": "2023_02",
+            "status": PeriodStatus.DRAFT,
             "date_start": date(2023, 2, 1),
             "date_end": date(2023, 2, 28),
         }
@@ -290,6 +307,7 @@ class TestBudgetingPeriodViewSetCreate:
         """
         payload = {
             "name": "2023_01",
+            "status": PeriodStatus.DRAFT,
             "date_start": date(2023, 1, 1),
             "date_end": date(2023, 1, 31),
         }
@@ -346,6 +364,7 @@ class TestBudgetingPeriodViewSetCreate:
         api_client.force_authenticate(base_user)
         payload = {
             "name": "2023_01",
+            "status": PeriodStatus.DRAFT,
             "date_start": date(2023, 1, 1),
             "date_end": date(2023, 1, 2),
         }
@@ -376,13 +395,13 @@ class TestBudgetingPeriodViewSetCreate:
             "name": "2023_01",
             "date_start": date(2023, 1, 1),
             "date_end": date(2023, 1, 31),
-            "is_active": False,
+            "status": PeriodStatus.CLOSED,
         }
         payload_active = {
             "name": "2023_02",
             "date_start": date(2023, 2, 1),
             "date_end": date(2023, 2, 28),
-            "is_active": True,
+            "status": PeriodStatus.ACTIVE,
         }
         url = periods_url(budget.id)
 
@@ -395,9 +414,9 @@ class TestBudgetingPeriodViewSetCreate:
         for response, payload in [(response_inactive, payload_inactive), (response_active, payload_active)]:
             assert response.status_code == status.HTTP_201_CREATED
             period = budget_periods.get(id=response.data["id"])
-            assert period.is_active == payload["is_active"]
+            assert period.status == payload["status"]
 
-    def test_error_create_period_when_is_active_set_already(
+    def test_error_create_period_when_active_period_exists_already(
         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
     ):
         """
@@ -412,50 +431,24 @@ class TestBudgetingPeriodViewSetCreate:
             "name": "2023_01",
             "date_start": date(2023, 1, 1),
             "date_end": date(2023, 1, 31),
-            "is_active": True,
+            "status": PeriodStatus.ACTIVE,
         }
         active_period = BudgetingPeriod.objects.create(budget=budget, **payload_1)
         payload_2 = {
             "name": "2023_02",
             "date_start": date(2023, 1, 1),
             "date_end": date(2023, 1, 31),
-            "is_active": True,
+            "status": PeriodStatus.ACTIVE,
         }
         url = periods_url(budget.id)
 
         response = api_client.post(url, payload_2)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "is_active" in response.data["detail"]
-        assert response.data["detail"]["is_active"][0] == "Active period already exists in Budget."
+        assert "status" in response.data["detail"]
+        assert response.data["detail"]["status"][0] == "status: Active period already exists in Budget."
         assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
         assert BudgetingPeriod.objects.filter(budget=budget).first() == active_period
-
-    def test_is_active_default_value(
-        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
-    ):
-        """
-        GIVEN: Budget in database created.
-        WHEN: BudgetingPeriodViewSet list view called for Budget by authenticated User by POST to create
-        BudgetingPeriod without declaring if it's active or not.
-        THEN: BudgetingPeriod for Budget in database created with 'is_active' set to False by default.
-        """
-        budget = budget_factory(members=[base_user])
-        api_client.force_authenticate(base_user)
-        payload = {
-            "name": "2023_02",
-            "date_start": date(2023, 1, 1),
-            "date_end": date(2023, 1, 31),
-            "is_active": "",
-        }
-        url = periods_url(budget.id)
-
-        response = api_client.post(url, payload)
-
-        assert response.status_code == status.HTTP_201_CREATED
-        assert BudgetingPeriod.objects.all().count() == 1
-        assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
-        assert response.data["is_active"] is False
 
     @pytest.mark.parametrize("date_start, date_end", (("", date.today()), (date.today(), ""), ("", "")))
     def test_error_date_blank(
@@ -474,7 +467,7 @@ class TestBudgetingPeriodViewSetCreate:
         """
         budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
-        payload = {"name": "2023_01", "date_start": date_start, "date_end": date_end, "is_active": False}
+        payload = {"name": "2023_01", "date_start": date_start, "date_end": date_end, "status": PeriodStatus.CLOSED}
         url = periods_url(budget.id)
         error_message = "Date has wrong format. Use one of these formats instead: YYYY-MM-DD."
 
@@ -499,7 +492,12 @@ class TestBudgetingPeriodViewSetCreate:
         """
         budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
-        payload = {"name": "2023_01", "date_start": date(2023, 5, 1), "date_end": date(2023, 4, 30), "is_active": False}
+        payload = {
+            "name": "2023_01",
+            "date_start": date(2023, 5, 1),
+            "date_end": date(2023, 4, 30),
+            "status": PeriodStatus.DRAFT,
+        }
         url = periods_url(budget.id)
 
         response = api_client.post(url, payload)
@@ -565,16 +563,19 @@ class TestBudgetingPeriodViewSetCreate:
         budget = budget_factory(members=[base_user])
         payload_1 = {
             "name": "2023_06",
+            "status": PeriodStatus.DRAFT,
             "date_start": date(2023, 6, 1),
             "date_end": date(2023, 6, 30),
         }
         payload_2 = {
             "name": "2023_07",
+            "status": PeriodStatus.DRAFT,
             "date_start": date(2023, 7, 1),
             "date_end": date(2023, 7, 31),
         }
         payload_invalid = {
             "name": "invalid",
+            "status": PeriodStatus.DRAFT,
             "date_start": date_start,
             "date_end": date_end,
         }
@@ -750,7 +751,8 @@ class TestBudgetingPeriodViewSetUpdate:
         assert response.status_code == status.HTTP_200_OK
 
     @pytest.mark.parametrize(
-        "param, value", [("date_start", date(2024, 1, 2)), ("date_end", date(2024, 1, 30)), ("is_active", True)]
+        "param, value",
+        [("date_start", date(2024, 1, 2)), ("date_end", date(2024, 1, 30)), ("status", PeriodStatus.CLOSED)],
     )
     def test_update_single_field_by_owner(
         self,
@@ -772,7 +774,7 @@ class TestBudgetingPeriodViewSetUpdate:
             budget=budget_factory(members=[base_user]),
             date_start=date(2024, 1, 1),
             date_end=date(2024, 1, 31),
-            is_active=False,
+            status=PeriodStatus.ACTIVE,
         )
         payload = {param: value}
         url = period_detail_url(period.budget.id, period.id)
@@ -784,7 +786,8 @@ class TestBudgetingPeriodViewSetUpdate:
         assert getattr(period, param) == payload[param]
 
     @pytest.mark.parametrize(
-        "param, value", [("date_start", date(2024, 1, 2)), ("date_end", date(2024, 1, 30)), ("is_active", True)]
+        "param, value",
+        [("date_start", date(2024, 1, 2)), ("date_end", date(2024, 1, 30)), ("status", PeriodStatus.CLOSED)],
     )
     def test_update_single_field_by_member(
         self,
@@ -806,7 +809,7 @@ class TestBudgetingPeriodViewSetUpdate:
             budget=budget_factory(members=[base_user]),
             date_start=date(2024, 1, 1),
             date_end=date(2024, 1, 31),
-            is_active=False,
+            status=PeriodStatus.ACTIVE,
         )
         payload = {param: value}
         url = period_detail_url(period.budget.id, period.id)
@@ -835,13 +838,13 @@ class TestBudgetingPeriodViewSetUpdate:
             budget=budget_factory(members=[base_user]),
             date_start=date(2024, 1, 1),
             date_end=date(2024, 1, 31),
-            is_active=False,
+            status=PeriodStatus.ACTIVE,
         )
         payload = {
             "name": "2023_07",
             "date_start": date(2023, 7, 1),
             "date_end": date(2023, 7, 31),
-            "is_active": True,
+            "status": PeriodStatus.CLOSED,
         }
         url = period_detail_url(period.budget.id, period.id)
 
@@ -853,7 +856,8 @@ class TestBudgetingPeriodViewSetUpdate:
             assert getattr(period, param) == value
 
     @pytest.mark.parametrize(
-        "param, value", [("date_start", date(2023, 12, 31)), ("date_end", date(2024, 2, 1)), ("is_active", True)]
+        "param, value",
+        [("date_start", date(2023, 12, 31)), ("date_end", date(2024, 2, 1)), ("status", PeriodStatus.ACTIVE)],
     )
     def test_error_on_period_update(
         self,
@@ -872,9 +876,11 @@ class TestBudgetingPeriodViewSetUpdate:
         """
         api_client.force_authenticate(base_user)
         budget = budget_factory(members=[base_user])
-        budgeting_period_factory(budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=True)
+        budgeting_period_factory(
+            budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), status=PeriodStatus.ACTIVE
+        )
         period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), is_active=False
+            budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), status=PeriodStatus.DRAFT
         )
         old_value = getattr(period, param)
         payload = {param: value}
@@ -885,6 +891,68 @@ class TestBudgetingPeriodViewSetUpdate:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         period.refresh_from_db()
         assert getattr(period, param) == old_value
+
+    def test_error_cannot_update_closed_period(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Closed BudgetingPeriod for Budget in database created.
+        WHEN: BudgetingPeriodViewSet list view called for Budget by authenticated User by POST
+        to update BudgetingPeriod with active status.
+        THEN: Bad request 400 returned, not updated in database.
+        """
+        api_client.force_authenticate(base_user)
+        budget = budget_factory(members=[base_user])
+        period = budgeting_period_factory(
+            budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), status=PeriodStatus.CLOSED
+        )
+        payload = {"status": PeriodStatus.ACTIVE}
+        url = period_detail_url(budget.id, period.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        period.refresh_from_db()
+        assert getattr(period, "status") == PeriodStatus.CLOSED
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "status" in response.data["detail"]
+        assert response.data["detail"]["status"][0] == "status: Closed period cannot be changed."
+
+    def test_error_active_period_cannot_be_moved_back_to_draft(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Active BudgetingPeriod for Budget in database created.
+        WHEN: BudgetingPeriodViewSet list view called for Budget by authenticated User by POST
+        to update BudgetingPeriod with draft status.
+        THEN: Bad request 400 returned, not updated in database.
+        """
+        api_client.force_authenticate(base_user)
+        budget = budget_factory(members=[base_user])
+        period = budgeting_period_factory(
+            budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), status=PeriodStatus.ACTIVE
+        )
+        payload = {"status": PeriodStatus.DRAFT}
+        url = period_detail_url(budget.id, period.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        period.refresh_from_db()
+        assert getattr(period, "status") == PeriodStatus.ACTIVE
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "status" in response.data["detail"]
+        assert response.data["detail"]["status"][0] == "status: Active period cannot be moved back to Draft status."
 
 
 @pytest.mark.django_db

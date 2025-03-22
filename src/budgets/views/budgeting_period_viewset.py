@@ -20,6 +20,7 @@ class BudgetingPeriodViewSet(ModelViewSet):
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
     ordering_fields = (
         "id",
+        "status",
         "name",
         "date_start",
         "date_end",
