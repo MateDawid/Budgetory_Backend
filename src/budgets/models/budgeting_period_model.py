@@ -45,11 +45,20 @@ class BudgetingPeriod(models.Model):
             ValidationError: Raised when status=True and another BudgetingPeriod with such flag
             already exists for Budget.
         """
-        if (
+        try:
+            current_status = BudgetingPeriod.objects.filter(id=self.id).values_list("status", flat=True)[0]
+        except IndexError:
+            current_status = None
+
+        if current_status == PeriodStatus.CLOSED:
+            raise ValidationError("status: Closed period cannot be changed.")
+        elif current_status == PeriodStatus.ACTIVE and self.status == PeriodStatus.DRAFT:
+            raise ValidationError("status: Active period cannot be moved back to Draft status.")
+        elif (
             self.status == PeriodStatus.ACTIVE
             and self.budget.periods.filter(status=PeriodStatus.ACTIVE).exclude(pk=self.pk).exists()
         ):
-            raise ValidationError("status: Active period already exists.", code="status-invalid")
+            raise ValidationError("status: Active period already exists in Budget.")
 
     def clean_dates(self) -> None:
         """
