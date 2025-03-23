@@ -2109,7 +2109,6 @@
     "fields": {
       "period": 1,
       "category": 1,
-      "initial_value": "100.00",
       "current_value": "100.00",
       "description": null
     }
@@ -2120,7 +2119,6 @@
     "fields": {
       "period": 1,
       "category": 2,
-      "initial_value": "100.00",
       "current_value": "100.00",
       "description": null
     }
@@ -2131,7 +2129,6 @@
     "fields": {
       "period": 4,
       "category": 13,
-      "initial_value": "100.00",
       "current_value": "100.00",
       "description": null
     }
@@ -2142,7 +2139,6 @@
     "fields": {
       "period": 4,
       "category": 14,
-      "initial_value": "100.00",
       "current_value": "100.00",
       "description": null
     }
