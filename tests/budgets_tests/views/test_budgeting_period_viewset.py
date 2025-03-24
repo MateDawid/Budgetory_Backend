@@ -380,75 +380,42 @@ class TestBudgetingPeriodViewSetCreate:
         assert response.data["detail"]["name"][0] == f'Period with name "{payload["name"]}" already exists in Budget.'
         assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
 
-    def test_create_active_period_successfully(
-        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
+    @pytest.mark.parametrize(
+        "period_status",
+        (
+            pytest.param(PeriodStatus.ACTIVE, id="active"),
+            pytest.param(PeriodStatus.CLOSED, id="closed"),
+        ),
+    )
+    def test_error_new_period_status_has_to_be_draft(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        period_status: PeriodStatus,
     ):
         """
         GIVEN: Budget in database created.
-        WHEN: BudgetingPeriodViewSet list view called twice for Budget by authenticated User by POST to create active
-        and inactive BudgetingPeriods.
-        THEN: Two BudgetingPeriods for Budget in database create - one active, one inactive.
-        """
-        budget = budget_factory(members=[base_user])
-        api_client.force_authenticate(base_user)
-        payload_inactive = {
-            "name": "2023_01",
-            "date_start": date(2023, 1, 1),
-            "date_end": date(2023, 1, 31),
-            "status": PeriodStatus.CLOSED,
-        }
-        payload_active = {
-            "name": "2023_02",
-            "date_start": date(2023, 2, 1),
-            "date_end": date(2023, 2, 28),
-            "status": PeriodStatus.ACTIVE,
-        }
-        url = periods_url(budget.id)
-
-        response_inactive = api_client.post(url, payload_inactive)
-        response_active = api_client.post(url, payload_active)
-
-        assert BudgetingPeriod.objects.all().count() == 2
-        budget_periods = BudgetingPeriod.objects.filter(budget=budget)
-        assert budget_periods.count() == 2
-        for response, payload in [(response_inactive, payload_inactive), (response_active, payload_active)]:
-            assert response.status_code == status.HTTP_201_CREATED
-            period = budget_periods.get(id=response.data["id"])
-            assert period.status == payload["status"]
-
-    def test_error_create_period_when_active_period_exists_already(
-        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
-    ):
-        """
-        GIVEN: Active BudgetingPeriod for Budget in database created.
         WHEN: BudgetingPeriodViewSet list view called for Budget by authenticated User by POST
-        to create active BudgetingPeriod.
-        THEN: Bad request 400 returned, no object in database created.
+        to create BudgetingPeriod with not DRAFT status.
+        THEN: Bad request 400 returned, period not created in database.
         """
         budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
-        payload_1 = {
-            "name": "2023_01",
-            "date_start": date(2023, 1, 1),
-            "date_end": date(2023, 1, 31),
-            "status": PeriodStatus.ACTIVE,
-        }
-        active_period = BudgetingPeriod.objects.create(budget=budget, **payload_1)
-        payload_2 = {
+        payload = {
             "name": "2023_02",
             "date_start": date(2023, 1, 1),
             "date_end": date(2023, 1, 31),
-            "status": PeriodStatus.ACTIVE,
+            "status": period_status,
         }
         url = periods_url(budget.id)
 
-        response = api_client.post(url, payload_2)
+        response = api_client.post(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "status" in response.data["detail"]
-        assert response.data["detail"]["status"][0] == "status: Active period already exists in Budget."
-        assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
-        assert BudgetingPeriod.objects.filter(budget=budget).first() == active_period
+        assert response.data["detail"]["status"][0] == "status: New period has to be created with draft status."
+        assert not BudgetingPeriod.objects.exists()
 
     @pytest.mark.parametrize("date_start, date_end", (("", date.today()), (date.today(), ""), ("", "")))
     def test_error_date_blank(
@@ -932,7 +899,7 @@ class TestBudgetingPeriodViewSetUpdate:
     ):
         """
         GIVEN: Active BudgetingPeriod for Budget in database created.
-        WHEN: BudgetingPeriodViewSet list view called for Budget by authenticated User by POST
+        WHEN: BudgetingPeriodViewSet list view called for Budget by authenticated User by PATCH
         to update BudgetingPeriod with draft status.
         THEN: Bad request 400 returned, not updated in database.
         """
@@ -953,6 +920,108 @@ class TestBudgetingPeriodViewSetUpdate:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "status" in response.data["detail"]
         assert response.data["detail"]["status"][0] == "status: Active period cannot be moved back to Draft status."
+
+    def test_error_draft_period_cannot_be_closed(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Draft BudgetingPeriod for Budget in database created.
+        WHEN: BudgetingPeriodViewSet list view called for Budget by authenticated User by PATCH
+        to update BudgetingPeriod with closed status.
+        THEN: Bad request 400 returned, not updated in database.
+        """
+        api_client.force_authenticate(base_user)
+        budget = budget_factory(members=[base_user])
+        period = budgeting_period_factory(
+            budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), status=PeriodStatus.DRAFT
+        )
+        payload = {"status": PeriodStatus.CLOSED}
+        url = period_detail_url(budget.id, period.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        period.refresh_from_db()
+        assert getattr(period, "status") == PeriodStatus.DRAFT
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "status" in response.data["detail"]
+        assert (
+            response.data["detail"]["status"][0] == "status: Draft period cannot be closed. It has to be active first."
+        )
+
+    def test_error_on_activating_period_when_other_active_exists(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Draft BudgetingPeriod for Budget in database created.
+        WHEN: BudgetingPeriodViewSet list view called for Budget by authenticated User by PATCH
+        to update BudgetingPeriod with closed status.
+        THEN: Bad request 400 returned, not updated in database.
+        """
+        api_client.force_authenticate(base_user)
+        budget = budget_factory(members=[base_user])
+        budgeting_period_factory(
+            budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), status=PeriodStatus.ACTIVE
+        )
+        period = budgeting_period_factory(
+            budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), status=PeriodStatus.DRAFT
+        )
+        payload = {"status": PeriodStatus.ACTIVE}
+        url = period_detail_url(budget.id, period.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        period.refresh_from_db()
+        assert getattr(period, "status") == PeriodStatus.DRAFT
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "status" in response.data["detail"]
+        assert response.data["detail"]["status"][0] == "status: Active period already exists in Budget."
+
+    def test_update_predictions_initial_value_on_period_activating(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: BudgetingPeriod and two ExpensePrediction for it created in database.
+        WHEN: BudgetingPeriodViewSet detail view called for BudgetingPeriod by authenticated User by
+        PATCH to change period status to ACTIVE.
+        THEN: BudgetingPeriod updated in database, initial_value for both ExpensePredictions set.
+        """
+        api_client.force_authenticate(base_user)
+        period = budgeting_period_factory(
+            budget=budget_factory(members=[base_user]),
+            date_start=date(2024, 1, 1),
+            date_end=date(2024, 1, 31),
+            status=PeriodStatus.DRAFT,
+        )
+        prediction_1 = expense_prediction_factory(period=period, current_value=123.00)
+        prediction_2 = expense_prediction_factory(period=period, current_value=321.00)
+        payload = {"status": PeriodStatus.ACTIVE}
+        url = period_detail_url(period.budget.id, period.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        period.refresh_from_db()
+        assert period.status == PeriodStatus.ACTIVE
+        for prediction in (prediction_1, prediction_2):
+            prediction.refresh_from_db()
+            assert prediction.initial_value == prediction.current_value
 
 
 @pytest.mark.django_db

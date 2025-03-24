@@ -50,8 +50,12 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
         Raises:
             ValidationError: Raised when active BudgetingPeriod for Budget already exists in database.
         """
-        if (instance_status := getattr(self.instance, "status", None)) == PeriodStatus.CLOSED:
+        if self.instance is None and status != PeriodStatus.DRAFT:
+            raise ValidationError("status: New period has to be created with draft status.")
+        elif (instance_status := getattr(self.instance, "status", None)) == PeriodStatus.CLOSED:
             raise ValidationError("status: Closed period cannot be changed.")
+        elif instance_status == PeriodStatus.DRAFT and status == PeriodStatus.CLOSED:
+            raise ValidationError("status: Draft period cannot be closed. It has to be active first.")
         elif instance_status == PeriodStatus.ACTIVE and status == PeriodStatus.DRAFT:
             raise ValidationError("status: Active period cannot be moved back to Draft status.")
         elif status == PeriodStatus.ACTIVE:
