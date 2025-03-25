@@ -17,5 +17,9 @@ class ExpensePredictionFilterSet(filters.FilterSet):
             budget__pk=get_budget_pk(request), category_type=CategoryType.EXPENSE
         )
     )
-    initial_value = filters.NumericRangeFilter()
-    current_value = filters.NumericRangeFilter()
+    initial_value = filters.NumberFilter()
+    initial_value_min = filters.NumberFilter(field_name="initial_value", lookup_expr="gte")
+    initial_value_max = filters.NumberFilter(field_name="initial_value", lookup_expr="lte")
+    current_value = filters.NumberFilter()
+    current_value_min = filters.NumberFilter(field_name="current_value", lookup_expr="gte")
+    current_value_max = filters.NumberFilter(field_name="current_value", lookup_expr="lte")

@@ -17,7 +17,7 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model: Model = ExpensePrediction
-        fields = ("id", "period", "category", "current_value", "description")
+        fields = ("id", "period", "category", "current_value", "initial_value", "description")
         read_only_fields = ("id", "initial_value")
 
     @staticmethod
@@ -76,7 +76,7 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
             ValidationError: Raised when "current_value" is lower than 0.01.
         """
         if current_value <= Decimal("0.00"):
-            raise ValidationError("current_value: Value should be higher than 0.00.")
+            raise ValidationError("Value should be higher than 0.00.")
         return current_value
 
     def validate(self, attrs: OrderedDict) -> OrderedDict:
