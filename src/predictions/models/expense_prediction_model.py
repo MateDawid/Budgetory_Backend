@@ -12,7 +12,7 @@ class ExpensePrediction(models.Model):
     category = models.ForeignKey(
         "categories.TransferCategory", on_delete=models.CASCADE, related_name="expense_predictions"
     )
-    initial_value = models.DecimalField(max_digits=10, decimal_places=2)
+    initial_value = models.DecimalField(max_digits=10, decimal_places=2, default=None, blank=True, null=True)
     current_value = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.CharField(max_length=255, blank=True, null=True)
 
@@ -43,7 +43,6 @@ class ExpensePrediction(models.Model):
         Override save method to execute validation before saving model in database.
         """
         self.validate_budget()
-        # self.validate_period_status()
         super().save(*args, **kwargs)
 
     def validate_budget(self) -> None:
@@ -55,13 +54,3 @@ class ExpensePrediction(models.Model):
         """
         if self.period.budget != self.category.budget:
             raise ValidationError("Budget for period and category fields is not the same.", code="budget-invalid")
-
-    # def validate_period_status(self) -> None:
-    #     """
-    #     Checks if category Budget and period Budget are the same.
-    #
-    #     Raises:
-    #         ValidationError: Raised when category Budget and period Budget are not the same.
-    #     """
-    #     if self.period.is_active:
-    #         raise ValidationError("Budget for period and category fields is not the same.", code="budget-invalid")
