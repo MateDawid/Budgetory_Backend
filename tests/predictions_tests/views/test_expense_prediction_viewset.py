@@ -597,32 +597,6 @@ class TestExpensePredictionViewSetUpdate:
         prediction.refresh_from_db()
         assert getattr(prediction, param) == update_payload[param]
 
-    def test_prediction_update_period(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
-        expense_prediction_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: ExpensePrediction instance for Budget created in database. Update payload with "period" value prepared.
-        WHEN: ExpensePredictionViewSet detail view called with PATCH by User belonging to Budget with valid payload.
-        THEN: HTTP 200, Deposit updated with "period" value.
-        """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        prediction = expense_prediction_factory(budget=budget, **self.PAYLOAD)
-        update_payload = {"period": period.id}
-        api_client.force_authenticate(base_user)
-        url = expense_prediction_detail_url(budget.id, prediction.id)
-
-        response = api_client.patch(url, update_payload)
-
-        assert response.status_code == status.HTTP_200_OK
-        prediction.refresh_from_db()
-        assert prediction.period == period
-
     def test_prediction_update_category(
         self,
         api_client: APIClient,
@@ -648,74 +622,6 @@ class TestExpensePredictionViewSetUpdate:
         assert response.status_code == status.HTTP_200_OK
         prediction.refresh_from_db()
         assert prediction.category == category
-
-    def test_prediction_update_many_fields(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
-        transfer_category_factory: FactoryMetaClass,
-        expense_prediction_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: ExpensePrediction instance for Budget created in database. Valid payload with many params.
-        WHEN: ExpensePredictionViewSet detail endpoint called with PATCH.
-        THEN: HTTP 200 returned. ExpensePrediction updated in database.
-        """
-        budget = budget_factory(members=[base_user])
-        period_1 = budgeting_period_factory(budget=budget)
-        period_2 = budgeting_period_factory(budget=budget)
-        category_1 = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
-        category_2 = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
-        api_client.force_authenticate(base_user)
-        payload = {"period": period_1, "category": category_1, **self.PAYLOAD}
-        prediction = expense_prediction_factory(budget=budget, **payload)
-        update_payload = {
-            "current_value": Decimal("200.00"),
-            "description": "Updated prediction.",
-            "period": period_2.id,
-            "category": category_2.id,
-        }
-        url = expense_prediction_detail_url(budget.id, prediction.id)
-
-        response = api_client.patch(url, update_payload)
-
-        assert response.status_code == status.HTTP_200_OK
-        prediction.refresh_from_db()
-        for param, value in update_payload.items():
-            if param in ("period", "category"):
-                assert getattr(prediction, param).id == value
-            else:
-                assert getattr(prediction, param) == value
-
-    def test_error_update_period_does_not_belong_to_budget(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
-        expense_prediction_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Budget instance created in database. BudgetingPeriod not belonging to Budget as
-        'period' in payload.
-        WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Budget with invalid payload.
-        THEN: Bad request HTTP 400 returned. ExpensePrediction not updated.
-        """
-        budget = budget_factory(members=[base_user])
-        prediction = expense_prediction_factory(budget=budget)
-        payload = {"period": budgeting_period_factory().id}
-        api_client.force_authenticate(base_user)
-        url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
-
-        response = api_client.patch(url, payload)
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "non_field_errors" in response.data["detail"]
-        assert (
-            response.data["detail"]["non_field_errors"][0] == "Budget for period and category fields is not the same."
-        )
 
     def test_error_update_category_does_not_belong_to_budget(
         self,

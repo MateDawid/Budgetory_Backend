@@ -43,7 +43,7 @@ class TestTransferModel:
         payload = self.INCOME_PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
@@ -73,7 +73,7 @@ class TestTransferModel:
         payload = self.INCOME_PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
@@ -107,7 +107,7 @@ class TestTransferModel:
         payload = self.EXPENSE_PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
@@ -138,7 +138,7 @@ class TestTransferModel:
         payload = self.EXPENSE_PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
@@ -242,7 +242,7 @@ class TestTransferModel:
         payload = self.EXPENSE_PAYLOAD.copy()
         payload["date"] = date
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 10, 1), date_end=datetime.date(2024, 10, 31), is_active=True
+            budget=budget, date_start=datetime.date(2024, 10, 1), date_end=datetime.date(2024, 10, 31)
         )
 
         transfer = transfer_factory.build(budget=budget, **payload)

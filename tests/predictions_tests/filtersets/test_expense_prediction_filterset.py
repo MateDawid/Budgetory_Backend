@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 
 import pytest
 from django.contrib.auth.models import AbstractUser
@@ -27,14 +28,14 @@ class TestExpensePredictionFilterSetOrdering:
         (
             "id",
             "-id",
-            "period__name",
-            "-period__name",
-            "category__priority",
-            "-category__priority",
-            "category__name",
-            "-category__name",
-            "value",
-            "-value",
+            "period",
+            "-period",
+            "category",
+            "-category",
+            "initial_value",
+            "-initial_value",
+            "current_value",
+            "-current_value",
         ),
     )
     def test_get_predictions_list_sorted_by_param(
@@ -53,22 +54,26 @@ class TestExpensePredictionFilterSetOrdering:
         THEN: Response must contain all ExpensePrediction existing in database sorted by given param.
         """
         budget = budget_factory(members=[base_user])
-        period_1 = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=False
-        )
-        period_2 = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 28), is_active=True
-        )
+        period_1 = budgeting_period_factory(budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
+        period_2 = budgeting_period_factory(budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 28))
         category_1 = transfer_category_factory(
             budget=budget, name="Most important", owner=None, priority=CategoryPriority.MOST_IMPORTANT
         )
         category_2 = transfer_category_factory(
             budget=budget, name="Other", owner=None, priority=CategoryPriority.OTHERS
         )
-        expense_prediction_factory(budget=budget, value=5, period=period_1, category=category_1)
-        expense_prediction_factory(budget=budget, value=4, period=period_2, category=category_2)
-        expense_prediction_factory(budget=budget, value=3, period=period_2, category=category_1)
-        expense_prediction_factory(budget=budget, value=2, period=period_1, category=category_2)
+        expense_prediction_factory(
+            budget=budget, current_value=5, initial_value=5, period=period_1, category=category_1
+        )
+        expense_prediction_factory(
+            budget=budget, current_value=4, initial_value=4, period=period_2, category=category_2
+        )
+        expense_prediction_factory(
+            budget=budget, current_value=3, initial_value=3, period=period_2, category=category_1
+        )
+        expense_prediction_factory(
+            budget=budget, current_value=2, initial_value=2, period=period_1, category=category_2
+        )
         api_client.force_authenticate(base_user)
 
         response = api_client.get(expense_prediction_url(budget.id), data={"ordering": sort_param})
@@ -84,58 +89,12 @@ class TestExpensePredictionFilterSetOrdering:
         assert len(response.data["results"]) == len(serializer.data) == len(predictions) == 4
         assert response.data["results"] == serializer.data
 
-    def test_get_categories_list_sorted_by_two_params(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
-        expense_prediction_factory: FactoryMetaClass,
-        transfer_category_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Five ExpensePrediction objects created in database.
-        WHEN: The ExpensePredictionViewSet list view is called with two sorting params by given params.
-        THEN: Response must contain all ExpensePrediction existing in database sorted by given params.
-        """
-        budget = budget_factory(members=[base_user])
-        period_1 = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), is_active=False
-        )
-        period_2 = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 28), is_active=True
-        )
-        category_1 = transfer_category_factory(
-            budget=budget, name="Most important", owner=None, priority=CategoryPriority.MOST_IMPORTANT
-        )
-        category_2 = transfer_category_factory(
-            budget=budget, name="Other", owner=None, priority=CategoryPriority.OTHERS
-        )
-        expense_prediction_factory(budget=budget, value=5, period=period_1, category=category_1)
-        expense_prediction_factory(budget=budget, value=4, period=period_2, category=category_2)
-        expense_prediction_factory(budget=budget, value=3, period=period_2, category=category_1)
-        expense_prediction_factory(budget=budget, value=2, period=period_1, category=category_2)
-        api_client.force_authenticate(base_user)
-
-        response = api_client.get(expense_prediction_url(budget.id), data={"ordering": "period__name, -category__name"})
-
-        assert response.status_code == status.HTTP_200_OK
-        predictions = (
-            ExpensePrediction.objects.filter(period__budget__pk=budget.pk)
-            .prefetch_related("period", "category")
-            .order_by("period__name", "-category__name")
-        )
-        serializer = ExpensePredictionSerializer(predictions, many=True)
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == len(predictions) == 4
-        assert response.data["results"] == serializer.data
-
 
 @pytest.mark.django_db
 class TestExpensePredictionFilterSetFiltering:
     """Tests for filtering with ExpensePredictionFilterSet."""
 
-    def test_get_predictions_list_filtered_by_period_id(
+    def test_get_predictions_list_filtered_by_period(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -145,9 +104,9 @@ class TestExpensePredictionFilterSetFiltering:
     ):
         """
         GIVEN: Two ExpensePrediction objects for single Budget.
-        WHEN: The ExpensePredictionViewSet list view is called with period_id filter.
+        WHEN: The ExpensePredictionViewSet list view is called with period filter.
         THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
-        period_id value.
+        period value.
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Test name")
@@ -155,7 +114,7 @@ class TestExpensePredictionFilterSetFiltering:
         expense_prediction_factory(budget=budget, period=budgeting_period_factory(budget=budget, name="Other period"))
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(expense_prediction_url(budget.id), data={"period_id": period.id})
+        response = api_client.get(expense_prediction_url(budget.id), data={"period": period.id})
 
         assert response.status_code == status.HTTP_200_OK
         assert ExpensePrediction.objects.all().count() == 2
@@ -169,45 +128,7 @@ class TestExpensePredictionFilterSetFiltering:
         assert response.data["results"] == serializer.data
         assert response.data["results"][0]["id"] == prediction.id
 
-    @pytest.mark.parametrize(
-        "filter_value", ("Test", "TEST", "test", "name", "NAME", "Name", "Test name", "TEST NAME", "test name")
-    )
-    def test_get_predictions_list_filtered_by_period_name(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
-        expense_prediction_factory: FactoryMetaClass,
-        filter_value: str,
-    ):
-        """
-        GIVEN: Two ExpensePrediction objects for single Budget.
-        WHEN: The ExpensePredictionViewSet list view is called with period_name filter.
-        THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
-        period_name value.
-        """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, name="Test name")
-        prediction = expense_prediction_factory(budget=budget, period=period)
-        expense_prediction_factory(budget=budget, period=budgeting_period_factory(budget=budget, name="Other"))
-        api_client.force_authenticate(base_user)
-
-        response = api_client.get(expense_prediction_url(budget.id), data={"period_name": filter_value})
-
-        assert response.status_code == status.HTTP_200_OK
-        assert ExpensePrediction.objects.all().count() == 2
-        predictions = ExpensePrediction.objects.filter(period__budget=budget, period__name__icontains=filter_value)
-        serializer = ExpensePredictionSerializer(
-            predictions,
-            many=True,
-        )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == predictions.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == prediction.id
-
-    def test_get_predictions_list_filtered_by_category_id(
+    def test_get_predictions_list_filtered_by_category(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -217,9 +138,9 @@ class TestExpensePredictionFilterSetFiltering:
     ):
         """
         GIVEN: Two ExpensePrediction objects for single Budget.
-        WHEN: The ExpensePredictionViewSet list view is called with category_id filter.
+        WHEN: The ExpensePredictionViewSet list view is called with category filter.
         THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
-        category_id value.
+        category value.
         """
         budget = budget_factory(members=[base_user])
         category = transfer_category_factory(budget=budget, name="Test name", category_type=CategoryType.EXPENSE)
@@ -230,7 +151,7 @@ class TestExpensePredictionFilterSetFiltering:
         )
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(expense_prediction_url(budget.id), data={"category_id": category.id})
+        response = api_client.get(expense_prediction_url(budget.id), data={"category": category.id})
 
         assert response.status_code == status.HTTP_200_OK
         assert ExpensePrediction.objects.all().count() == 2
@@ -244,38 +165,32 @@ class TestExpensePredictionFilterSetFiltering:
         assert response.data["results"] == serializer.data
         assert response.data["results"][0]["id"] == prediction.id
 
-    @pytest.mark.parametrize(
-        "filter_value", ("Test", "TEST", "test", "name", "NAME", "Name", "Test name", "TEST NAME", "test name")
-    )
-    def test_get_predictions_list_filtered_by_category_name(
+    @pytest.mark.parametrize("field", ("initial_value", "current_value"))
+    def test_get_predictions_list_filtered_by_value(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
-        transfer_category_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
-        filter_value: str,
+        field,
     ):
         """
         GIVEN: Two ExpensePrediction objects for single Budget.
-        WHEN: The ExpensePredictionViewSet list view is called with category_name filter.
+        WHEN: The ExpensePredictionViewSet list view is called with Decimal value filter.
         THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
-        category_name value.
+        Decimal value.
         """
         budget = budget_factory(members=[base_user])
-        category = transfer_category_factory(budget=budget, name="Test name", category_type=CategoryType.EXPENSE)
-        prediction = expense_prediction_factory(budget=budget, category=category)
-        expense_prediction_factory(
-            budget=budget,
-            category=transfer_category_factory(budget=budget, name="Other", category_type=CategoryType.EXPENSE),
-        )
+        value = "123.45"
+        prediction = expense_prediction_factory(budget=budget, **{field: Decimal(value)})
+        expense_prediction_factory(budget=budget, **{field: Decimal("234.56")})
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(expense_prediction_url(budget.id), data={"category_name": filter_value})
+        response = api_client.get(expense_prediction_url(budget.id), data={field: value})
 
         assert response.status_code == status.HTTP_200_OK
         assert ExpensePrediction.objects.all().count() == 2
-        predictions = ExpensePrediction.objects.filter(category__budget=budget, category__name__icontains=filter_value)
+        predictions = ExpensePrediction.objects.filter(**{field: value})
         serializer = ExpensePredictionSerializer(
             predictions,
             many=True,
@@ -284,3 +199,76 @@ class TestExpensePredictionFilterSetFiltering:
         assert len(response.data["results"]) == len(serializer.data) == predictions.count() == 1
         assert response.data["results"] == serializer.data
         assert response.data["results"][0]["id"] == prediction.id
+        assert response.data["results"][0][field] == value
+
+    @pytest.mark.parametrize("field", ("initial_value", "current_value"))
+    def test_get_predictions_list_filtered_by_value_max(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+        field,
+    ):
+        """
+        GIVEN: Two ExpensePrediction objects for single Budget.
+        WHEN: The ExpensePredictionViewSet list view is called with Decimal value MAX filter.
+        THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
+        Decimal value MAX value.
+        """
+        budget = budget_factory(members=[base_user])
+        value = "123.45"
+        prediction = expense_prediction_factory(budget=budget, **{field: Decimal(value)})
+        expense_prediction_factory(budget=budget, **{field: Decimal("234.56")})
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(expense_prediction_url(budget.id), data={f"{field}_max": value})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert ExpensePrediction.objects.all().count() == 2
+        predictions = ExpensePrediction.objects.filter(**{f"{field}__lte": value})
+        serializer = ExpensePredictionSerializer(
+            predictions,
+            many=True,
+        )
+        assert response.data["results"] and serializer.data
+        assert len(response.data["results"]) == len(serializer.data) == predictions.count() == 1
+        assert response.data["results"] == serializer.data
+        assert response.data["results"][0]["id"] == prediction.id
+        assert response.data["results"][0][field] == value
+
+    @pytest.mark.parametrize("field", ("initial_value", "current_value"))
+    def test_get_predictions_list_filtered_by_value_min(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+        field,
+    ):
+        """
+        GIVEN: Two ExpensePrediction objects for single Budget.
+        WHEN: The ExpensePredictionViewSet list view is called with Decimal value MIN filter.
+        THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
+        Decimal value MIN value.
+        """
+        budget = budget_factory(members=[base_user])
+        value = "234.56"
+        prediction = expense_prediction_factory(budget=budget, **{field: Decimal(value)})
+        expense_prediction_factory(budget=budget, **{field: Decimal("123.45")})
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(expense_prediction_url(budget.id), data={f"{field}_min": value})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert ExpensePrediction.objects.all().count() == 2
+        predictions = ExpensePrediction.objects.filter(**{f"{field}__gte": value})
+        serializer = ExpensePredictionSerializer(
+            predictions,
+            many=True,
+        )
+        assert response.data["results"] and serializer.data
+        assert len(response.data["results"]) == len(serializer.data) == predictions.count() == 1
+        assert response.data["results"] == serializer.data
+        assert response.data["results"][0]["id"] == prediction.id
+        assert response.data["results"][0][field] == value
