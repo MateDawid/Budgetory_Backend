@@ -219,11 +219,9 @@ class TestExpenseFilterSetFiltering:
         "period" value.
         """
         budget = budget_factory(members=[base_user])
-        other_period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 9, 1), date_end=date(2024, 9, 30), is_active=False
-        )
+        other_period = budgeting_period_factory(budget=budget, date_start=date(2024, 9, 1), date_end=date(2024, 9, 30))
         matching_period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 10, 1), date_end=date(2024, 10, 31), is_active=True
+            budget=budget, date_start=date(2024, 10, 1), date_end=date(2024, 10, 31)
         )
         expense_factory(budget=budget, period=other_period)
         transfer = expense_factory(budget=budget, period=matching_period)
@@ -363,9 +361,7 @@ class TestExpenseFilterSetFiltering:
         "date" value.
         """
         budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 10, 1), date_end=date(2024, 10, 30), is_active=True
-        )
+        period = budgeting_period_factory(budget=budget, date_start=date(2024, 10, 1), date_end=date(2024, 10, 30))
         other_date = date(year=2024, month=10, day=11)
         matching_date = date(year=2024, month=10, day=10)
 

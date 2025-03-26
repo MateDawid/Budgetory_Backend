@@ -10,6 +10,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from app_users.models import User
+from budgets.models.choices.period_status import PeriodStatus
 from categories.models.choices.category_type import CategoryType
 from predictions.models.expense_prediction_model import ExpensePrediction
 from predictions.serializers.expense_prediction_serializer import ExpensePredictionSerializer
@@ -132,7 +133,7 @@ class TestExpensePredictionViewSetCreate:
     """Tests for create ExpensePrediction on ExpensePredictionViewSet."""
 
     PAYLOAD = {
-        "value": Decimal("100.00"),
+        "current_value": Decimal("100.00"),
         "description": "Expense prediction.",
     }
 
@@ -170,7 +171,7 @@ class TestExpensePredictionViewSetCreate:
         budget_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget, BudgetingPeriod and ExpenseCategory instances created in database. Valid payload
+        GIVEN: Budget, BudgetingPeriod and TransferCategory instances created in database. Valid payload
         for ExpensePrediction.
         WHEN: ExpensePredictionViewSet called with POST by User not belonging to Budget with valid payload.
         THEN: Forbidden HTTP 403 returned. Object not created.
@@ -195,14 +196,14 @@ class TestExpensePredictionViewSetCreate:
         transfer_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget, BudgetingPeriod and ExpenseCategory instances created in database. Valid payload prepared
+        GIVEN: Budget, BudgetingPeriod and TransferCategory instances created in database. Valid payload prepared
         for ExpensePrediction.
         WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with valid payload.
         THEN: ExpensePrediction object created in database with given payload
         """
         other_user = user_factory()
         budget = budget_factory(members=[base_user, other_user])
-        period = budgeting_period_factory(budget=budget)
+        period = budgeting_period_factory(budget=budget, status=PeriodStatus.DRAFT)
         category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
         payload = self.PAYLOAD.copy()
         payload["period"] = period.id
@@ -216,6 +217,7 @@ class TestExpensePredictionViewSetCreate:
         prediction = ExpensePrediction.objects.get(id=response.data["id"])
         for key in self.PAYLOAD:
             assert getattr(prediction, key) == self.PAYLOAD[key]
+        assert getattr(prediction, "initial_value") is None
         assert prediction.category == category
         assert prediction.period == period
         serializer = ExpensePredictionSerializer(prediction)
@@ -228,7 +230,7 @@ class TestExpensePredictionViewSetCreate:
         budget_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget, BudgetingPeriod and ExpenseCategory instances created in database. Payload for ExpensePrediction
+        GIVEN: Budget, BudgetingPeriod and TransferCategory instances created in database. Payload for ExpensePrediction
         with field value too long.
         WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not created in database.
@@ -248,7 +250,7 @@ class TestExpensePredictionViewSetCreate:
         )
         assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
 
-    @pytest.mark.parametrize("value", [Decimal("0.00"), Decimal("-0.01")])
+    @pytest.mark.parametrize("current_value", [Decimal("0.00"), Decimal("-0.01")])
     def test_error_value_lower_than_min(
         self,
         api_client: APIClient,
@@ -256,11 +258,11 @@ class TestExpensePredictionViewSetCreate:
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
-        value: Decimal,
+        current_value: Decimal,
     ):
         """
-        GIVEN: Budget, BudgetingPeriod and ExpenseCategory instances created in database. Payload for ExpensePrediction
-        with field value too long.
+        GIVEN: Budget, BudgetingPeriod and TransferCategory instances created in database. Payload for ExpensePrediction
+        with current_value too low.
         WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not created in database.
         """
@@ -271,14 +273,109 @@ class TestExpensePredictionViewSetCreate:
         payload = self.PAYLOAD.copy()
         payload["period"] = period.id
         payload["category"] = category.id
-        payload["value"] = value
+        payload["current_value"] = current_value
 
         response = api_client.post(expense_prediction_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "value" in response.data["detail"]
-        assert response.data["detail"]["value"][0] == "Value should be higher than 0.00."
+        assert "current_value" in response.data["detail"]
+        assert response.data["detail"]["current_value"][0] == "Value should be higher than 0.00."
         assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
+
+    def test_error_category_not_with_expense_type(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget, BudgetingPeriod and TransferCategory instances created in database. Payload for ExpensePrediction
+        with INCOME TransferCategory as category.
+        WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. ExpensePrediction not created in database.
+        """
+        budget = budget_factory(members=[base_user])
+        period = budgeting_period_factory(budget=budget)
+        category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["period"] = period.id
+        payload["category"] = category.id
+
+        response = api_client.post(expense_prediction_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "category" in response.data["detail"]
+        assert response.data["detail"]["category"][0] == "Incorrect category provided. Please provide expense category."
+        assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
+
+    def test_error_add_prediction_to_closed_period(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget, BudgetingPeriod and TransferCategory instances created in database. Payload for ExpensePrediction
+        with CLOSED BudgetingPeriod as period.
+        WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. ExpensePrediction not created in database.
+        """
+        budget = budget_factory(members=[base_user])
+        period = budgeting_period_factory(budget=budget, status=PeriodStatus.CLOSED)
+        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["period"] = period.id
+        payload["category"] = category.id
+
+        response = api_client.post(expense_prediction_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "period" in response.data["detail"]
+        assert (
+            response.data["detail"]["period"][0] == "New Expense Prediction cannot be added to closed Budgeting Period."
+        )
+        assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
+
+    def test_error_add_prediction_to_active_period(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget, BudgetingPeriod and TransferCategory instances created in database. Payload for ExpensePrediction
+        with ACTIVE BudgetingPeriod as period.
+        WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. ExpensePrediction not created in database.
+        """
+        budget = budget_factory(members=[base_user])
+        period = budgeting_period_factory(budget=budget, status=PeriodStatus.ACTIVE)
+        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["period"] = period.id
+        payload["category"] = category.id
+
+        response = api_client.post(expense_prediction_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "period" in response.data["detail"]
+        assert (
+            response.data["detail"]["period"][0] == "New Expense Prediction cannot be added to active Budgeting Period."
+        )
+        assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
+
+    # TODO: Update prediction for CLOSED period
+    # TODO: Update prediction for ACTIVE period
+    # TODO: Coverage check
 
 
 @pytest.mark.django_db
@@ -407,7 +504,7 @@ class TestExpensePredictionViewSetUpdate:
     """Tests for update view on ExpensePredictionViewSet."""
 
     PAYLOAD = {
-        "value": Decimal("100.00"),
+        "current_value": Decimal("100.00"),
         "description": "Expense prediction.",
     }
 
@@ -469,7 +566,7 @@ class TestExpensePredictionViewSetUpdate:
     @pytest.mark.parametrize(
         "param, value",
         [
-            ("value", Decimal("200.00")),
+            ("current_value", Decimal("200.00")),
             ("description", "New description"),
         ],
     )
@@ -500,32 +597,6 @@ class TestExpensePredictionViewSetUpdate:
         prediction.refresh_from_db()
         assert getattr(prediction, param) == update_payload[param]
 
-    def test_prediction_update_period(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
-        expense_prediction_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: ExpensePrediction instance for Budget created in database. Update payload with "period" value prepared.
-        WHEN: ExpensePredictionViewSet detail view called with PATCH by User belonging to Budget with valid payload.
-        THEN: HTTP 200, Deposit updated with "period" value.
-        """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        prediction = expense_prediction_factory(budget=budget, **self.PAYLOAD)
-        update_payload = {"period": period.id}
-        api_client.force_authenticate(base_user)
-        url = expense_prediction_detail_url(budget.id, prediction.id)
-
-        response = api_client.patch(url, update_payload)
-
-        assert response.status_code == status.HTTP_200_OK
-        prediction.refresh_from_db()
-        assert prediction.period == period
-
     def test_prediction_update_category(
         self,
         api_client: APIClient,
@@ -552,74 +623,6 @@ class TestExpensePredictionViewSetUpdate:
         prediction.refresh_from_db()
         assert prediction.category == category
 
-    def test_prediction_update_many_fields(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
-        transfer_category_factory: FactoryMetaClass,
-        expense_prediction_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: ExpensePrediction instance for Budget created in database. Valid payload with many params.
-        WHEN: ExpensePredictionViewSet detail endpoint called with PATCH.
-        THEN: HTTP 200 returned. ExpensePrediction updated in database.
-        """
-        budget = budget_factory(members=[base_user])
-        period_1 = budgeting_period_factory(budget=budget)
-        period_2 = budgeting_period_factory(budget=budget)
-        category_1 = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
-        category_2 = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
-        api_client.force_authenticate(base_user)
-        payload = {"period": period_1, "category": category_1, **self.PAYLOAD}
-        prediction = expense_prediction_factory(budget=budget, **payload)
-        update_payload = {
-            "value": Decimal("200.00"),
-            "description": "Updated prediction.",
-            "period": period_2.id,
-            "category": category_2.id,
-        }
-        url = expense_prediction_detail_url(budget.id, prediction.id)
-
-        response = api_client.patch(url, update_payload)
-
-        assert response.status_code == status.HTTP_200_OK
-        prediction.refresh_from_db()
-        for param, value in update_payload.items():
-            if param in ("period", "category"):
-                assert getattr(prediction, param).id == value
-            else:
-                assert getattr(prediction, param) == value
-
-    def test_error_update_period_does_not_belong_to_budget(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
-        expense_prediction_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Budget instance created in database. User not belonging to Budget as
-        'period' in payload.
-        WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Budget with invalid payload.
-        THEN: Bad request HTTP 400 returned. ExpensePrediction not updated.
-        """
-        budget = budget_factory(members=[base_user])
-        prediction = expense_prediction_factory(budget=budget)
-        payload = {"period": budgeting_period_factory().id}
-        api_client.force_authenticate(base_user)
-        url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
-
-        response = api_client.patch(url, payload)
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "non_field_errors" in response.data["detail"]
-        assert (
-            response.data["detail"]["non_field_errors"][0] == "Budget for period and category fields is not the same."
-        )
-
     def test_error_update_category_does_not_belong_to_budget(
         self,
         api_client: APIClient,
@@ -629,7 +632,7 @@ class TestExpensePredictionViewSetUpdate:
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget instance created in database. User not belonging to Budget as
+        GIVEN: Budget instance created in database. TransferCategory not belonging to Budget as
         'category' in payload.
         WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not updated.
@@ -647,6 +650,119 @@ class TestExpensePredictionViewSetUpdate:
         assert (
             response.data["detail"]["non_field_errors"][0] == "Budget for period and category fields is not the same."
         )
+
+    def test_error_category_not_with_expense_type(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget instance created in database. INCOME TransferCategory as 'category' in payload.
+        WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Budget with invalid payload.
+        THEN: Bad request HTTP 400 returned. ExpensePrediction not updated.
+        """
+        budget = budget_factory(members=[base_user])
+        prediction = expense_prediction_factory(budget=budget)
+        payload = {"category": transfer_category_factory(budget=budget, category_type=CategoryType.INCOME).id}
+        api_client.force_authenticate(base_user)
+        url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "category" in response.data["detail"]
+        assert response.data["detail"]["category"][0] == "Incorrect category provided. Please provide expense category."
+
+    def test_error_change_prediction_for_closed_period(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: ExpensePrediction instance created in database.
+        WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Budget with valid payload, but when
+        the BudgetingPeriod of prediction is CLOSED.
+        THEN: Bad request HTTP 400 returned. ExpensePrediction not updated.
+        """
+        budget = budget_factory(members=[base_user])
+        period = budgeting_period_factory(budget=budget, status=PeriodStatus.DRAFT)
+        prediction = expense_prediction_factory(period=period)
+        period.status = PeriodStatus.CLOSED
+        period.save()
+        payload = {"current_value": Decimal("123.45")}
+        api_client.force_authenticate(base_user)
+        url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "non_field_errors" in response.data["detail"]
+        assert (
+            response.data["detail"]["non_field_errors"][0]
+            == "Expense Prediction cannot be changed when Budgeting Period is closed."
+        )
+
+    def test_update_prediction_for_active_period(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: ExpensePrediction instance created in database.
+        WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Budget with valid payload, but when
+        the BudgetingPeriod of prediction is ACTIVE.
+        THEN: HTTP 200 returned. ExpensePrediction updated.
+        """
+        budget = budget_factory(members=[base_user])
+        period = budgeting_period_factory(budget=budget, status=PeriodStatus.DRAFT)
+        prediction = expense_prediction_factory(period=period, current_value=Decimal("100.00"))
+        period.status = PeriodStatus.ACTIVE
+        period.save()
+        payload = {"current_value": Decimal("123.45")}
+        api_client.force_authenticate(base_user)
+        url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        prediction.refresh_from_db()
+        assert prediction.current_value == Decimal("123.45")
+
+    def test_error_change_period_of_prediction(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: ExpensePrediction instance created in database.
+        WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Budget with other BudgetingPeriod
+        in payload.
+        THEN: Bad request HTTP 400 returned. ExpensePrediction not updated.
+        """
+        budget = budget_factory(members=[base_user])
+        period = budgeting_period_factory(budget=budget)
+        prediction = expense_prediction_factory(period=period)
+        payload = {"period": budgeting_period_factory(budget=budget).id}
+        api_client.force_authenticate(base_user)
+        url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "period" in response.data["detail"]
+        assert response.data["detail"]["period"][0] == "Budgeting Period for Expense Prediction cannot be changed."
 
 
 @pytest.mark.django_db

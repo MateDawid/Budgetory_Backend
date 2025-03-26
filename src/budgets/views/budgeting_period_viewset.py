@@ -1,13 +1,18 @@
-from django.db.models import QuerySet
+from django.db import transaction
+from django.db.models import F, QuerySet
 from django_filters import rest_framework as filters
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
 from budgets.filtersets.budgeting_period_filterset import BudgetingPeriodFilterSet
 from budgets.models import BudgetingPeriod
+from budgets.models.choices.period_status import PeriodStatus
 from budgets.serializers.budgeting_period_serializer import BudgetingPeriodSerializer
+from predictions.models import ExpensePrediction
 
 
 class BudgetingPeriodViewSet(ModelViewSet):
@@ -20,6 +25,7 @@ class BudgetingPeriodViewSet(ModelViewSet):
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
     ordering_fields = (
         "id",
+        "status",
         "name",
         "date_start",
         "date_end",
@@ -49,3 +55,23 @@ class BudgetingPeriodViewSet(ModelViewSet):
             serializer [BudgetingPeriodSerializer]: Serializer for BudgetingPeriod
         """
         serializer.save(budget_id=self.kwargs.get("budget_pk"))
+
+    def update(self, request: Request, *args: list, **kwargs: dict) -> Response:
+        """
+        Method extended with updating periods ExpensePredictions initial_value field on activating
+        BudgetingPeriod.
+
+        Args:
+            request (Request): User's request.
+            *args (list): Additional arguments.
+            **kwargs (dict): Keyword arguments.
+
+        Returns:
+            Response: Response object.
+        """
+        with transaction.atomic():
+            if int(request.data.get("status", 0)) == PeriodStatus.ACTIVE.value:
+                ExpensePrediction.objects.filter(period__id=kwargs.get("pk"), initial_value__isnull=True).update(
+                    initial_value=F("current_value")
+                )
+            return super().update(request, *args, **kwargs)

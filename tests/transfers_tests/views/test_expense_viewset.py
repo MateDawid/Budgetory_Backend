@@ -234,7 +234,7 @@ class TestExpenseViewSetCreate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
@@ -300,7 +300,7 @@ class TestExpenseViewSetCreate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
@@ -335,7 +335,7 @@ class TestExpenseViewSetCreate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
@@ -369,7 +369,7 @@ class TestExpenseViewSetCreate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
@@ -403,7 +403,7 @@ class TestExpenseViewSetCreate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
@@ -440,7 +440,6 @@ class TestExpenseViewSetCreate:
             budget=budget_factory(),
             date_start=datetime.date(2024, 9, 1),
             date_end=datetime.date(2024, 9, 30),
-            is_active=True,
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
@@ -474,7 +473,7 @@ class TestExpenseViewSetCreate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
         payload["deposit"] = deposit_factory(budget=budget_factory()).pk
@@ -508,7 +507,7 @@ class TestExpenseViewSetCreate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         ).pk
         payload["entity"] = entity_factory(budget=budget_factory()).pk
         payload["deposit"] = deposit_factory(budget=budget).pk
@@ -701,7 +700,7 @@ class TestExpenseViewSetUpdate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
@@ -738,14 +737,14 @@ class TestExpenseViewSetUpdate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=False
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
         payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_period = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 10, 1), date_end=datetime.date(2024, 10, 31), is_active=True
+            budget=budget, date_start=datetime.date(2024, 10, 1), date_end=datetime.date(2024, 10, 31)
         )
         new_date = datetime.date(2024, 10, 1)
         update_payload = {"period": new_period.pk, "date": new_date}
@@ -780,14 +779,14 @@ class TestExpenseViewSetUpdate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=False
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
         payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
         new_period = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 10, 1), date_end=datetime.date(2024, 10, 31), is_active=True
+            budget=budget, date_start=datetime.date(2024, 10, 1), date_end=datetime.date(2024, 10, 31)
         )
         update_payload = {"period": new_period.pk}
         api_client.force_authenticate(base_user)
@@ -820,7 +819,7 @@ class TestExpenseViewSetUpdate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=False
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
@@ -858,7 +857,7 @@ class TestExpenseViewSetUpdate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=False
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
@@ -897,7 +896,7 @@ class TestExpenseViewSetUpdate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=False
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
@@ -938,7 +937,7 @@ class TestExpenseViewSetUpdate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=False
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload["entity"] = deposit_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
@@ -980,7 +979,7 @@ class TestExpenseViewSetUpdate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=False
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
@@ -1018,7 +1017,7 @@ class TestExpenseViewSetUpdate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=False
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
@@ -1056,7 +1055,7 @@ class TestExpenseViewSetUpdate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=False
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
@@ -1093,7 +1092,7 @@ class TestExpenseViewSetUpdate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=False
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
@@ -1108,7 +1107,6 @@ class TestExpenseViewSetUpdate:
                 budget=budget,
                 date_start=datetime.date(2024, 10, 1),
                 date_end=datetime.date(2024, 10, 31),
-                is_active=True,
             ).pk,
             "entity": entity_factory(budget=budget).pk,
             "deposit": deposit_factory(budget=budget).pk,
@@ -1150,7 +1148,7 @@ class TestExpenseViewSetUpdate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
@@ -1189,7 +1187,7 @@ class TestExpenseViewSetUpdate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
@@ -1228,7 +1226,7 @@ class TestExpenseViewSetUpdate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
@@ -1267,7 +1265,7 @@ class TestExpenseViewSetUpdate:
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
         payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30), is_active=True
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)

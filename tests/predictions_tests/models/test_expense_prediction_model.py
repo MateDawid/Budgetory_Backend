@@ -15,7 +15,7 @@ class TestExpensePredictionModel:
     """Tests for ExpensePrediction model"""
 
     PAYLOAD = {
-        "value": Decimal("100.00"),
+        "current_value": Decimal("100.00"),
         "description": "50.00 for X, 50.00 for Y",
     }
 
@@ -61,8 +61,13 @@ class TestExpensePredictionModel:
         assert not ExpensePrediction.objects.all().exists()
 
     @pytest.mark.django_db(transaction=True)
+    @pytest.mark.parametrize("field", ("initial_value", "current_value"))
     def test_error_value_too_long(
-        self, budget: Budget, budgeting_period_factory: FactoryMetaClass, transfer_category_factory: FactoryMetaClass
+        self,
+        budget: Budget,
+        budgeting_period_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        field: str,
     ):
         """
         GIVEN: BudgetingPeriod and ExpenseCategory models instances in database.
@@ -70,11 +75,11 @@ class TestExpensePredictionModel:
         THEN: DataError raised.
         """
         max_length = (
-            ExpensePrediction._meta.get_field("value").max_digits
-            - ExpensePrediction._meta.get_field("value").decimal_places
+            ExpensePrediction._meta.get_field(field).max_digits
+            - ExpensePrediction._meta.get_field(field).decimal_places
         )
         payload = self.PAYLOAD.copy()
-        payload["value"] = "1" + "0" * max_length
+        payload[field] = "1" + "0" * max_length
         payload["period"] = budgeting_period_factory(budget=budget)
         payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
 
@@ -84,12 +89,14 @@ class TestExpensePredictionModel:
         assert not ExpensePrediction.objects.all().exists()
 
     @pytest.mark.django_db(transaction=True)
+    @pytest.mark.parametrize("field", ("initial_value", "current_value"))
     @pytest.mark.parametrize("value", [Decimal("0.00"), Decimal("-0.01")])
     def test_error_value_too_low(
         self,
         budget: Budget,
         budgeting_period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
+        field: str,
         value: Decimal,
     ):
         """
@@ -98,13 +105,13 @@ class TestExpensePredictionModel:
         THEN: DataError raised.
         """
         payload = self.PAYLOAD.copy()
-        payload["value"] = value
+        payload[field] = value
         payload["period"] = budgeting_period_factory(budget=budget)
         payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
 
         with pytest.raises(IntegrityError) as exc:
             ExpensePrediction.objects.create(**payload)
-        assert 'violates check constraint "value_gte_0"' in str(exc.value)
+        assert f'violates check constraint "{field}_gte_0"' in str(exc.value)
         assert not ExpensePrediction.objects.all().exists()
 
     @pytest.mark.django_db(transaction=True)

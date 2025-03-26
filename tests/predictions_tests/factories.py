@@ -3,6 +3,7 @@ from budgets_tests.factories import BudgetFactory, BudgetingPeriodFactory
 from categories_tests.factories import TransferCategoryFactory
 
 from budgets.models import Budget, BudgetingPeriod
+from budgets.models.choices.period_status import PeriodStatus
 from categories.models import TransferCategory
 from categories.models.choices.category_type import CategoryType
 
@@ -13,7 +14,7 @@ class ExpensePredictionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "predictions.ExpensePrediction"
 
-    value = factory.Faker("pyint", min_value=0, max_value=99999999)
+    current_value = factory.Faker("pyint", min_value=0, max_value=99999999)
     description = factory.Faker("text", max_nb_chars=255)
 
     @factory.lazy_attribute
@@ -28,6 +29,19 @@ class ExpensePredictionFactory(factory.django.DjangoModelFactory):
         if not budget:
             budget = BudgetFactory()
         return BudgetingPeriodFactory(budget=budget)
+
+    @factory.lazy_attribute
+    def initial_value(self, *args) -> float | None:
+        """
+        Returns TransferCategory with the same Budget as prediction period and CategoryType.EXPENSE category_type field.
+
+        Returns:
+            TransferCategory: Generated TransferCategory.
+        """
+        if self.period.status in (PeriodStatus.ACTIVE, PeriodStatus.CLOSED):
+            return self.current_value
+        else:
+            return None
 
     @factory.lazy_attribute
     def category(self, *args) -> TransferCategory:

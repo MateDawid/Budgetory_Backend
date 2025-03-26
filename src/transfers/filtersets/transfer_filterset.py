@@ -2,12 +2,9 @@ from django.db.models import QuerySet
 from django_filters import rest_framework as filters
 
 from budgets.models import BudgetingPeriod
+from budgets.utils import get_budget_pk
 from categories.models import TransferCategory
 from entities.models import Deposit, Entity
-
-
-def get_budget_pk(request):
-    return request.parser_context.get("kwargs", {}).get("budget_pk")
 
 
 class TransferFilterSet(filters.FilterSet):

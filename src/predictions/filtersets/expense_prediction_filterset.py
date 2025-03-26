@@ -1,73 +1,25 @@
-from django.db.models import QuerySet
 from django_filters import rest_framework as filters
 
-from predictions.models.expense_prediction_model import ExpensePrediction
+from budgets.models import BudgetingPeriod
+from budgets.utils import get_budget_pk
+from categories.models import TransferCategory
+from categories.models.choices.category_type import CategoryType
 
 
 class ExpensePredictionFilterSet(filters.FilterSet):
     """FilterSet for ExpensePrediction endpoints."""
 
-    period_name = filters.CharFilter(method="get_period_name")
-    period_id = filters.NumberFilter(method="get_period_id")
-    category_name = filters.CharFilter(method="get_category_name")
-    category_id = filters.NumberFilter(method="get_category_id")
-
-    class Meta:
-        model = ExpensePrediction
-        fields = ["period_id", "period_name", "category_id", "category_name"]
-
-    @staticmethod
-    def get_period_name(queryset: QuerySet, name: str, value: str):
-        """
-        Filtering QuerySet with period name or its part.
-
-        Args:
-            queryset [QuerySet]: Input QuerySet.
-            name [str]: Name of filtered param.
-            value [str]: Period name or its part.
-        Returns:
-            QuerySet: QuerySet filtered with period name.
-        """
-        return queryset.filter(period__name__icontains=value)
-
-    @staticmethod
-    def get_period_id(queryset: QuerySet, name: str, value: int):
-        """
-        Filtering QuerySet with period id.
-
-        Args:
-            queryset [QuerySet]: Input QuerySet.
-            name [str]: Name of filtered param.
-            value [str]: Period id.
-        Returns:
-            QuerySet: QuerySet filtered with period id.
-        """
-        return queryset.filter(period__id=value)
-
-    @staticmethod
-    def get_category_name(queryset: QuerySet, name: str, value: str):
-        """
-        Filtering QuerySet with category name or its part.
-
-        Args:
-            queryset [QuerySet]: Input QuerySet.
-            name [str]: Name of filtered param.
-            value [str]: Category name or its part.
-        Returns:
-            QuerySet: QuerySet filtered with category name.
-        """
-        return queryset.filter(category__name__icontains=value)
-
-    @staticmethod
-    def get_category_id(queryset: QuerySet, name: str, value: int):
-        """
-        Filtering QuerySet with category id.
-
-        Args:
-            queryset [QuerySet]: Input QuerySet.
-            name [str]: Name of filtered param.
-            value [str]: Category id.
-        Returns:
-            QuerySet: QuerySet filtered with category id.
-        """
-        return queryset.filter(category__id=value)
+    period = filters.ModelChoiceFilter(
+        queryset=lambda request: BudgetingPeriod.objects.filter(budget__pk=get_budget_pk(request))
+    )
+    category = filters.ModelChoiceFilter(
+        queryset=lambda request: TransferCategory.objects.filter(
+            budget__pk=get_budget_pk(request), category_type=CategoryType.EXPENSE
+        )
+    )
+    initial_value = filters.NumberFilter()
+    initial_value_min = filters.NumberFilter(field_name="initial_value", lookup_expr="gte")
+    initial_value_max = filters.NumberFilter(field_name="initial_value", lookup_expr="lte")
+    current_value = filters.NumberFilter()
+    current_value_min = filters.NumberFilter(field_name="current_value", lookup_expr="gte")
+    current_value_max = filters.NumberFilter(field_name="current_value", lookup_expr="lte")

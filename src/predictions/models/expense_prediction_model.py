@@ -6,21 +6,26 @@ from django.db.models import CheckConstraint, Q
 
 
 class ExpensePrediction(models.Model):
-    """ExpensePrediction model for planned expenses in particular BudgetingPeriod"""
+    """ExpensePrediction model for planned expenses in particular BudgetingPeriod."""
 
     period = models.ForeignKey("budgets.BudgetingPeriod", on_delete=models.CASCADE, related_name="expense_predictions")
     category = models.ForeignKey(
         "categories.TransferCategory", on_delete=models.CASCADE, related_name="expense_predictions"
     )
-    value = models.DecimalField(max_digits=10, decimal_places=2)
+    initial_value = models.DecimalField(max_digits=10, decimal_places=2, default=None, blank=True, null=True)
+    current_value = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         unique_together = ("period", "category")
         constraints = (
             CheckConstraint(
-                check=Q(value__gt=Decimal("0.00")),
-                name="value_gte_0",
+                check=Q(initial_value__gt=Decimal("0.00")),
+                name="initial_value_gte_0",
+            ),
+            CheckConstraint(
+                check=Q(current_value__gt=Decimal("0.00")),
+                name="current_value_gte_0",
             ),
         )
 

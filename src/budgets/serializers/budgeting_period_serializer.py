@@ -5,6 +5,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from budgets.models import BudgetingPeriod
+from budgets.models.choices.period_status import PeriodStatus
 
 
 class BudgetingPeriodSerializer(serializers.ModelSerializer):
@@ -12,7 +13,7 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BudgetingPeriod
-        fields = ["id", "name", "date_start", "date_end", "is_active"]
+        fields = ["id", "name", "status", "date_start", "date_end"]
         read_only_fields = ["id"]
 
     def validate_name(self, name: str) -> str:
@@ -36,26 +37,34 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
             raise ValidationError(f'Period with name "{name}" already exists in Budget.')
         return name
 
-    def validate_is_active(self, is_active: bool) -> bool:
+    def validate_status(self, status: bool) -> bool:
         """
         Checks if Budget contains active BudgetingPeriod.
 
         Args:
-            is_active [bool]: Given is_active value to determine if BudgetingPeriod is active or not.
+            status [PeriodStatus]: Given status value to determine if BudgetingPeriod is active or not.
 
         Returns:
-            bool: Validated is_active value.
+            PeriodStatus: Validated status value.
 
         Raises:
             ValidationError: Raised when active BudgetingPeriod for Budget already exists in database.
         """
-        if is_active is True:
+        if self.instance is None and status != PeriodStatus.DRAFT:
+            raise ValidationError("status: New period has to be created with draft status.")
+        elif (instance_status := getattr(self.instance, "status", None)) == PeriodStatus.CLOSED:
+            raise ValidationError("status: Closed period cannot be changed.")
+        elif instance_status == PeriodStatus.DRAFT and status == PeriodStatus.CLOSED:
+            raise ValidationError("status: Draft period cannot be closed. It has to be active first.")
+        elif instance_status == PeriodStatus.ACTIVE and status == PeriodStatus.DRAFT:
+            raise ValidationError("status: Active period cannot be moved back to Draft status.")
+        elif status == PeriodStatus.ACTIVE:
             active_periods = BudgetingPeriod.objects.filter(
-                budget__pk=self.context["view"].kwargs["budget_pk"], is_active=True
+                budget__pk=self.context["view"].kwargs["budget_pk"], status=PeriodStatus.ACTIVE
             ).exclude(pk=getattr(self.instance, "pk", None))
             if active_periods.exists():
-                raise ValidationError("Active period already exists in Budget.")
-        return is_active
+                raise ValidationError("status: Active period already exists in Budget.")
+        return status
 
     def validate(self, attrs: OrderedDict) -> OrderedDict:
         """
@@ -86,3 +95,18 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
             raise ValidationError("Budgeting period date range collides with other period in Budget.")
 
         return super().validate(attrs)
+
+    def to_representation(self, instance: BudgetingPeriod) -> OrderedDict:
+        """
+        Extends model representation with "value" and "label" fields for React MUI DataGrid filtering purposes.
+
+        Attributes:
+            instance [BudgetingPeriod]: BudgetingPeriod model instance
+
+        Returns:
+            OrderedDict: Dictionary containing overridden values.
+        """
+        representation = super().to_representation(instance)
+        representation["value"] = instance.id
+        representation["label"] = instance.name
+        return representation
