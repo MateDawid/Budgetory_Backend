@@ -55,9 +55,9 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
         """
         if self.instance and self.instance.period != period:
             raise ValidationError("Budgeting Period for Expense Prediction cannot be changed.")
-        if period.status == PeriodStatus.ACTIVE:
+        if not self.instance and period.status == PeriodStatus.ACTIVE:
             raise ValidationError("New Expense Prediction cannot be added to active Budgeting Period.")
-        elif period.status == PeriodStatus.CLOSED:
+        elif not self.instance and period.status == PeriodStatus.CLOSED:
             raise ValidationError("New Expense Prediction cannot be added to closed Budgeting Period.")
         return period
 
