@@ -70,7 +70,7 @@ class BudgetingPeriodViewSet(ModelViewSet):
             Response: Response object.
         """
         with transaction.atomic():
-            if int(request.data.get("status")) == PeriodStatus.ACTIVE.value:
+            if int(request.data.get("status", 0)) == PeriodStatus.ACTIVE.value:
                 ExpensePrediction.objects.filter(period__id=kwargs.get("pk"), initial_value__isnull=True).update(
                     initial_value=F("current_value")
                 )
