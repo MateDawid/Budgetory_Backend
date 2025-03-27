@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -34,3 +36,18 @@ class EntitySerializer(serializers.ModelSerializer):
                 "{class_name} with given name already exists in Budget.".format(class_name=self.Meta.model.__name__)
             )
         return name
+
+    def to_representation(self, instance: Entity) -> OrderedDict:
+        """
+        Extends model representation with "value" and "label" fields for React MUI DataGrid filtering purposes.
+
+        Attributes:
+            instance [Entity]: BudgetingPeriod model instance
+
+        Returns:
+            OrderedDict: Dictionary containing overridden values.
+        """
+        representation = super().to_representation(instance)
+        representation["value"] = instance.id
+        representation["label"] = instance.name
+        return representation
