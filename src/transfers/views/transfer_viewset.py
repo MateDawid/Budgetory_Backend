@@ -14,17 +14,7 @@ class TransferViewSet(ModelViewSet):
     serializer_class = TransferSerializer
     permission_classes = (IsAuthenticated, UserBelongsToBudgetPermission)
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
-    ordering_fields = (
-        "id",
-        "name",
-        "value",
-        "date",
-        "period__name",
-        "entity__name",
-        "deposit__name",
-        "category__name",
-        "category__priority",
-    )
+    ordering_fields = ("id", "name", "value", "date", "period", "entity", "category", "deposit")
 
     def get_queryset(self) -> QuerySet:
         """
