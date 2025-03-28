@@ -86,5 +86,5 @@ class TransferCategorySerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         representation["owner"] = getattr(instance.owner, "id", -1)
         representation["value"] = instance.id
-        representation["label"] = f"📉 {instance.name}"
+        representation["label"] = f"{'📉' if instance.category_type == CategoryType.EXPENSE else '📈'} {instance.name}"
         return representation
