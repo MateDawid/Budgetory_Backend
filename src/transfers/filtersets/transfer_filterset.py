@@ -1,5 +1,5 @@
-from django.db.models import QuerySet
 from django_filters import rest_framework as filters
+from rest_framework.request import Request
 
 from budgets.models import BudgetingPeriod
 from budgets.utils import get_budget_pk
@@ -23,74 +23,20 @@ class TransferFilterSet(filters.FilterSet):
     category = filters.ModelChoiceFilter(
         queryset=lambda request: TransferCategory.objects.filter(budget__pk=get_budget_pk(request))
     )
-    owner = filters.NumberFilter(method="get_owner_transfers")
-    common_only = filters.BooleanFilter(method="get_common_transfers")
     date = filters.DateFromToRangeFilter()
-    value_min = filters.NumberFilter(method="get_transfers_with_min_value")
-    value_max = filters.NumberFilter(method="get_transfers_with_max_value")
+    value = filters.NumberFilter()
+    value_min = filters.NumberFilter(field_name="value", lookup_expr="gte")
+    value_max = filters.NumberFilter(field_name="value", lookup_expr="lte")
 
     @staticmethod
-    def get_budget_pk(request):
+    def get_budget_pk(request: Request) -> int:
+        """
+        Retrieves Budget PK from User Request.
+
+        Args:
+            request (Request): User request.
+
+        Returns:
+            int: Budget PK.
+        """
         return request.parser_context.get("kwargs", {}).get("budget_pk")  # pragma: no cover
-
-    @staticmethod
-    def get_owner_transfers(queryset: QuerySet, name: str, value: str) -> QuerySet:
-        """
-        Filtering QuerySet Transfer with given category owner.
-
-        Args:
-            queryset [QuerySet]: Input QuerySet
-            name [str]: Name of filtered param
-            value [str]: Value of filtered param
-
-        Returns:
-            QuerySet: Filtered QuerySet.
-        """
-        return queryset.filter(category__owner__pk=value)
-
-    @staticmethod
-    def get_common_transfers(queryset: QuerySet, name: str, value: str) -> QuerySet:
-        """
-        Filtering QuerySet Transfer with category with or without an owner.
-
-        Args:
-            queryset [QuerySet]: Input QuerySet
-            name [str]: Name of filtered param
-            value [str]: Value of filtered param
-
-        Returns:
-            QuerySet: Filtered QuerySet.
-        """
-        if value is True:
-            return queryset.filter(category__owner__isnull=True)
-        return queryset  # pragma: no cover
-
-    @staticmethod
-    def get_transfers_with_min_value(queryset: QuerySet, name: str, value: str) -> QuerySet:
-        """
-        Filtering QuerySet Transfer with category with min value.
-
-        Args:
-            queryset [QuerySet]: Input QuerySet
-            name [str]: Name of filtered param
-            value [str]: Value of filtered param
-
-        Returns:
-            QuerySet: Filtered QuerySet.
-        """
-        return queryset.filter(value__gte=value)
-
-    @staticmethod
-    def get_transfers_with_max_value(queryset: QuerySet, name: str, value: str) -> QuerySet:
-        """
-        Filtering QuerySet Transfer with category with max value.
-
-        Args:
-            queryset [QuerySet]: Input QuerySet
-            name [str]: Name of filtered param
-            value [str]: Value of filtered param
-
-        Returns:
-            QuerySet: Filtered QuerySet.
-        """
-        return queryset.filter(value__lte=value)

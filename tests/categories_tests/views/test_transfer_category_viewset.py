@@ -102,7 +102,10 @@ class TestTransferCategoryViewSetList:
         assert response.data["results"] == serializer.data
         for category in serializer.data:
             assert category["value"] == category["id"]
-            assert category["label"] == f"📉 {category['name']}"
+            assert (
+                category["label"]
+                == f"{'📉' if category['category_type'] == CategoryType.EXPENSE else '📈'} {category['name']}"
+            )
 
     def test_categories_list_limited_to_budget(
         self,
