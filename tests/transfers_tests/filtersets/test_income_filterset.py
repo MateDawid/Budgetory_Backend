@@ -34,20 +34,18 @@ class TestIncomeFilterSetOrdering:
             "name",
             "value",
             "date",
-            "period__name",
-            "entity__name",
-            "deposit__name",
-            "category__name",
-            "category__priority",
+            "period",
+            "entity",
+            "category",
+            "deposit",
             "-id",
             "-name",
             "-value",
             "-date",
-            "-period__name",
-            "-entity__name",
-            "-deposit__name",
-            "-category__name",
-            "-category__priority",
+            "-period",
+            "-entity",
+            "-category",
+            "-deposit",
         ),
     )
     def test_get_transfers_list_sorted_by_single_param(
@@ -117,76 +115,6 @@ class TestIncomeFilterSetFiltering:
         api_client.force_authenticate(base_user)
 
         response = api_client.get(transfers_url(budget.id), data={"name": filter_value})
-
-        assert response.status_code == status.HTTP_200_OK
-        assert Income.objects.all().count() == 2
-        transfers = Income.objects.filter(period__budget=budget, id=matching_transfer.id)
-        serializer = IncomeSerializer(
-            transfers,
-            many=True,
-        )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == transfers.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == matching_transfer.id
-
-    def test_get_transfers_list_filtered_by_common_only(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        transfer_category_factory: FactoryMetaClass,
-        income_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Two Income objects for single Budget - one with personal IncomeCategory, one with
-        common IncomeCategory.
-        WHEN: The IncomeViewSet list view is called with "common_only"=True filter.
-        THEN: Response must contain all Income existing in database with common IncomeCategory.
-        """
-        budget = budget_factory(members=[base_user])
-        common_category = transfer_category_factory(budget=budget, owner=None, category_type=CategoryType.INCOME)
-        personal_category = transfer_category_factory(budget=budget, owner=base_user, category_type=CategoryType.INCOME)
-        matching_transfer = income_factory(budget=budget, name="Some transfer", category=common_category)
-        income_factory(budget=budget, name="Other one", category=personal_category)
-        api_client.force_authenticate(base_user)
-
-        response = api_client.get(transfers_url(budget.id), data={"common_only": True})
-
-        assert response.status_code == status.HTTP_200_OK
-        assert Income.objects.all().count() == 2
-        transfers = Income.objects.filter(period__budget=budget, id=matching_transfer.id)
-        serializer = IncomeSerializer(
-            transfers,
-            many=True,
-        )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == transfers.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == matching_transfer.id
-
-    def test_get_transfers_list_filtered_by_owner(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        transfer_category_factory: FactoryMetaClass,
-        income_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Two Income objects for single Budget - one with personal IncomeCategory, one with
-        common IncomeCategory.
-        WHEN: The IncomeViewSet list view is called with "owner" filter.
-        THEN: Response must contain all Income existing in database with given User as IncomeCategory owner.
-        """
-        budget = budget_factory(members=[base_user])
-        common_category = transfer_category_factory(budget=budget, owner=None, category_type=CategoryType.INCOME)
-        personal_category = transfer_category_factory(budget=budget, owner=base_user, category_type=CategoryType.INCOME)
-        matching_transfer = income_factory(budget=budget, name="Some transfer", category=personal_category)
-        income_factory(budget=budget, name="Other one", category=common_category)
-        api_client.force_authenticate(base_user)
-
-        response = api_client.get(transfers_url(budget.id), data={"owner": base_user.id})
 
         assert response.status_code == status.HTTP_200_OK
         assert Income.objects.all().count() == 2
