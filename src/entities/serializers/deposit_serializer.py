@@ -7,7 +7,7 @@ from entities.serializers.entity_serializer import EntitySerializer
 class DepositSerializer(EntitySerializer):
     """Serializer for Deposit."""
 
-    balance = serializers.IntegerField(default=0)
+    balance = serializers.DecimalField(max_digits=20, decimal_places=2, default=0)
 
     class Meta:
         model = Deposit

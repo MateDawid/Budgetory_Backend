@@ -1,4 +1,4 @@
-from django.db.models import DecimalField, Func, QuerySet, Sum
+from django.db.models import DecimalField, Func, QuerySet, Sum, Value
 from django.db.models.functions import Coalesce
 from django_filters import rest_framework as filters
 from rest_framework.filters import OrderingFilter
@@ -18,7 +18,11 @@ def calculate_deposit_balance() -> Func:
     Returns:
         Func: ORM function returning Sum of Deposit Transfers values.
     """
-    return Coalesce(Sum("deposit_transfers__value", output_field=DecimalField()), 0, output_field=DecimalField())
+    return Coalesce(
+        Sum("deposit_transfers__value", output_field=DecimalField(decimal_places=2)),
+        Value(0),
+        output_field=DecimalField(decimal_places=2),
+    )
 
 
 class DepositViewSet(ModelViewSet):
