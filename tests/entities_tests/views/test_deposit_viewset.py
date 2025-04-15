@@ -45,6 +45,55 @@ class TestDepositViewSetList:
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
         assert response.status_code == status.HTTP_200_OK
 
+    def test_get_response_without_pagination(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Ten Deposit model instances for single Budget created in database.
+        WHEN: DepositViewSet called by Budget member without pagination parameters.
+        THEN: HTTP 200 - Response with all objects returned.
+        """
+        budget = budget_factory(members=[base_user])
+        for _ in range(10):
+            deposit_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(deposits_url(budget.id))
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "results" not in response.data
+        assert "count" not in response.data
+        assert len(response.data) == 10
+
+    def test_get_response_with_pagination(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        transfer_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Ten Deposit model instances for single Budget created in database.
+        WHEN: DepositViewSet called by Budget member with pagination parameters - page_size and page.
+        THEN: HTTP 200 - Paginated response returned.
+        """
+        budget = budget_factory(members=[base_user])
+        for _ in range(10):
+            deposit_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(deposits_url(budget.id), data={"page_size": 2, "page": 1})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "results" in response.data
+        assert response.data["count"] == 10
+
     def test_user_not_budget_member(
         self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
     ):
@@ -85,7 +134,7 @@ class TestDepositViewSetList:
         deposits = Deposit.objects.filter(budget=budget)
         serializer = DepositSerializer(deposits, many=True)
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["results"] == serializer.data
+        assert response.data == serializer.data
 
     def test_deposits_list_limited_to_budget(
         self,
@@ -109,9 +158,9 @@ class TestDepositViewSetList:
         deposits = Deposit.objects.filter(budget=budget)
         serializer = DepositSerializer(deposits, many=True)
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data["results"]) == len(serializer.data) == deposits.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == deposit.id
+        assert len(response.data) == len(serializer.data) == deposits.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == deposit.id
 
 
 @pytest.mark.django_db
