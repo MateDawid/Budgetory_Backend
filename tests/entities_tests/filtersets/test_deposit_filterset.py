@@ -7,6 +7,7 @@ from rest_framework.test import APIClient
 
 from entities.models import Deposit
 from entities.serializers.deposit_serializer import DepositSerializer
+from entities.views.deposit_viewset import calculate_deposit_balance
 
 
 @pytest.mark.django_db
@@ -20,6 +21,8 @@ class TestDepositFilterSetOrdering:
             "-id",
             "name",
             "-name",
+            "balance",
+            "-balance",
             "name,id",
         ),
     )
@@ -29,6 +32,7 @@ class TestDepositFilterSetOrdering:
         user_factory: FactoryMetaClass,
         budget_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
+        transfer_factory: FactoryMetaClass,
         sort_param: str,
     ):
         """
@@ -40,17 +44,20 @@ class TestDepositFilterSetOrdering:
         member_2 = user_factory(email="alice@alice.com")
         budget = budget_factory(members=[member_1, member_2])
         for _ in range(3):
-            deposit_factory(budget=budget)
+            deposit = deposit_factory(budget=budget)
+            for _ in range(3):
+                transfer_factory(budget=budget, deposit=deposit)
         api_client.force_authenticate(member_1)
 
         response = api_client.get(deposits_url(budget.id), data={"ordering": sort_param})
 
         assert response.status_code == status.HTTP_200_OK
-        deposits = Deposit.objects.all().order_by(*sort_param.split(","))
+
+        deposits = Deposit.objects.all().annotate(balance=calculate_deposit_balance()).order_by(*sort_param.split(","))
         serializer = DepositSerializer(deposits, many=True)
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == len(deposits) == 3
-        assert response.data["results"] == serializer.data
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == len(deposits) == 3
+        assert response.data == serializer.data
 
 
 @pytest.mark.django_db
