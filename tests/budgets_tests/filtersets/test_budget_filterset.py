@@ -40,9 +40,9 @@ class TestBudgetFilterSetOrdering:
         assert response.status_code == status.HTTP_200_OK
         budgets = Budget.objects.all().order_by(sort_param)
         serializer = BudgetSerializer(budgets, many=True)
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == len(budgets) == 5
-        assert response.data["results"] == serializer.data
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == len(budgets) == 5
+        assert response.data == serializer.data
 
 
 @pytest.mark.django_db
@@ -90,7 +90,7 @@ class TestBudgetFilterSetFiltering:
             budgets,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == budgets.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == matching_budget.id
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == budgets.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == matching_budget.id

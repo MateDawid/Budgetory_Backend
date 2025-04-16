@@ -53,9 +53,9 @@ class TestBudgetingPeriodFilterSetOrdering:
         assert response.status_code == status.HTTP_200_OK
         periods = BudgetingPeriod.objects.all().order_by(sort_param)
         serializer = BudgetingPeriodSerializer(periods, many=True)
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == len(periods) == 5
-        assert response.data["results"] == serializer.data
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == len(periods) == 5
+        assert response.data == serializer.data
 
 
 @pytest.mark.django_db
@@ -105,10 +105,10 @@ class TestBudgetingPeriodFilterSetFiltering:
             periods,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == periods.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == matching_period.id
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == periods.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == matching_period.id
 
     @pytest.mark.parametrize("date_param", ("date_start", "date_end"))
     def test_get_periods_list_filtered_by_date(
@@ -147,10 +147,10 @@ class TestBudgetingPeriodFilterSetFiltering:
             periods,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == periods.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == period.id
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == periods.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == period.id
 
     def test_get_periods_list_filtered_by_status(
         self,
@@ -189,7 +189,7 @@ class TestBudgetingPeriodFilterSetFiltering:
             periods,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == periods.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == period.id
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == periods.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == period.id
