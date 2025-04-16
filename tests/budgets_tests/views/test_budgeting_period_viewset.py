@@ -68,6 +68,53 @@ class TestBudgetingPeriodViewSetList:
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
         assert response.status_code == status.HTTP_200_OK
 
+    def test_get_response_without_pagination(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Ten BudgetingPeriod model instances for single Budget created in database.
+        WHEN: BudgetingPeriodViewSet called by Budget member without pagination parameters.
+        THEN: HTTP 200 - Response with all objects returned.
+        """
+        budget = budget_factory(members=[base_user])
+        for _ in range(10):
+            budgeting_period_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(periods_url(budget.id))
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "results" not in response.data
+        assert "count" not in response.data
+        assert len(response.data) == 10
+
+    def test_get_response_with_pagination(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Ten BudgetingPeriod model instances for single Budget created in database.
+        WHEN: BudgetingPeriodViewSet called by Budget member with pagination parameters - page_size and page.
+        THEN: HTTP 200 - Paginated response returned.
+        """
+        budget = budget_factory(members=[base_user])
+        for _ in range(10):
+            budgeting_period_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(periods_url(budget.id), data={"page_size": 2, "page": 1})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "results" in response.data
+        assert response.data["count"] == 10
+
     def test_retrieve_periods_list_by_owner(
         self,
         api_client: APIClient,
@@ -95,8 +142,8 @@ class TestBudgetingPeriodViewSetList:
         periods = BudgetingPeriod.objects.filter(budget=budget).order_by("-date_start")
         serializer = BudgetingPeriodSerializer(periods, many=True)
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data["results"]) == len(serializer.data) == periods.count() == 2
-        assert response.data["results"] == serializer.data
+        assert len(response.data) == len(serializer.data) == periods.count() == 2
+        assert response.data == serializer.data
         for category in serializer.data:
             assert category["value"] == category["id"]
             assert category["label"] == category["name"]
@@ -128,8 +175,8 @@ class TestBudgetingPeriodViewSetList:
         periods = BudgetingPeriod.objects.filter(budget=budget).order_by("-date_start")
         serializer = BudgetingPeriodSerializer(periods, many=True)
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data["results"]) == len(serializer.data) == periods.count() == 2
-        assert response.data["results"] == serializer.data
+        assert len(response.data) == len(serializer.data) == periods.count() == 2
+        assert response.data == serializer.data
 
     def test_periods_list_limited_to_budget(
         self,
@@ -157,9 +204,9 @@ class TestBudgetingPeriodViewSetList:
         serializer = BudgetingPeriodSerializer(periods, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert BudgetingPeriod.objects.all().count() == 2
-        assert len(response.data["results"]) == len(serializer.data) == periods.count() == 1
+        assert len(response.data) == len(serializer.data) == periods.count() == 1
         assert periods.first() == period
-        assert response.data["results"] == serializer.data
+        assert response.data == serializer.data
 
 
 @pytest.mark.django_db

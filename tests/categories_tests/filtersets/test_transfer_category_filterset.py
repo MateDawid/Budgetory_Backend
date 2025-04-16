@@ -67,9 +67,9 @@ class TestTransferCategoryFilterSetOrdering:
         assert response.status_code == status.HTTP_200_OK
         categories = TransferCategory.objects.all().order_by(*sort_param.split(","))
         serializer = TransferCategorySerializer(categories, many=True)
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == len(categories) == 3
-        assert response.data["results"] == serializer.data
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == len(categories) == 3
+        assert response.data == serializer.data
 
 
 @pytest.mark.django_db
@@ -124,10 +124,10 @@ class TestTransferCategoryFilterSetFiltering:
             categories,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == categories.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == matching_category.id
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == categories.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == matching_category.id
 
     def test_get_categories_list_filtered_by_owner(
         self,
@@ -156,10 +156,10 @@ class TestTransferCategoryFilterSetFiltering:
             categories,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == categories.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == matching_category.id
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == categories.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == matching_category.id
 
     def test_get_categories_list_filtered_by_empty_owner(
         self,
@@ -188,10 +188,10 @@ class TestTransferCategoryFilterSetFiltering:
             categories,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == categories.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == matching_category.id
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == categories.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == matching_category.id
 
     @pytest.mark.parametrize("filter_value", (True, False))
     def test_get_categories_list_filtered_by_is_active(
@@ -222,10 +222,10 @@ class TestTransferCategoryFilterSetFiltering:
             categories,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == categories.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == matching_category.id
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == categories.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == matching_category.id
 
     def test_get_categories_list_filtered_by_category_type(
         self,
@@ -256,10 +256,10 @@ class TestTransferCategoryFilterSetFiltering:
             categories,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == categories.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == matching_category.id
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == categories.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == matching_category.id
 
     def test_get_categories_list_filtered_by_priority(
         self,
@@ -290,7 +290,7 @@ class TestTransferCategoryFilterSetFiltering:
             categories,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == categories.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == matching_category.id
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == categories.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == matching_category.id

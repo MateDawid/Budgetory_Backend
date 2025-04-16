@@ -59,6 +59,43 @@ class TestBudgetViewSetList:
         response = api_client.get(BUDGETS_URL, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
         assert response.status_code == status.HTTP_200_OK
 
+    def test_get_response_without_pagination(
+        self, api_client: APIClient, base_user: User, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Ten Budget model instances created in database.
+        WHEN: BudgetViewSet called without pagination parameters.
+        THEN: HTTP 200 - Response with all objects returned.
+        """
+        for _ in range(10):
+            budget_factory(members=[base_user])
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(BUDGETS_URL)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "results" not in response.data
+        assert "count" not in response.data
+        assert len(response.data) == 10
+
+    def test_get_response_with_pagination(
+        self, api_client: APIClient, base_user: User, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Ten BudgetViewSet model instances created in database.
+        WHEN: BudgetViewSet called by Budget member with pagination parameters - page_size and page.
+        THEN: HTTP 200 - Paginated response returned.
+        """
+        for _ in range(10):
+            budget_factory(members=[base_user])
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(BUDGETS_URL, data={"page_size": 2, "page": 1})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "results" in response.data
+        assert response.data["count"] == 10
+
     def test_retrieve_budgets_list(
         self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
     ):
@@ -82,7 +119,7 @@ class TestBudgetViewSetList:
         budgets = Budget.objects.filter(members=auth_user).order_by("id").distinct()
         serializer = BudgetSerializer(budgets, many=True)
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["results"] == serializer.data
+        assert response.data == serializer.data
 
     def test_budgets_list_limited_to_user(
         self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
@@ -104,8 +141,8 @@ class TestBudgetViewSetList:
         serializer = BudgetSerializer(budgets, many=True)
         assert Budget.objects.all().count() == 3
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["results"] == serializer.data
-        assert len(response.data["results"]) == budgets.count() == 2
+        assert response.data == serializer.data
+        assert len(response.data) == budgets.count() == 2
 
 
 @pytest.mark.django_db
@@ -154,7 +191,7 @@ class TestBudgetViewSetMembersList:
 
         serializer = UserSerializer(budget.members.all(), many=True)
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["results"] == serializer.data
+        assert response.data == serializer.data
         for member in serializer.data:
             assert member["id"] == member.get("value")
             assert member["username"] == member.get("label")

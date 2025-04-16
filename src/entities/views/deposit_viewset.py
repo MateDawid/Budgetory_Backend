@@ -1,4 +1,5 @@
-from django.db.models import QuerySet
+from django.db.models import DecimalField, Func, QuerySet, Sum, Value
+from django.db.models.functions import Coalesce
 from django_filters import rest_framework as filters
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
@@ -10,6 +11,20 @@ from entities.models.deposit_model import Deposit
 from entities.serializers.deposit_serializer import DepositSerializer
 
 
+def calculate_deposit_balance() -> Func:
+    """
+    Function for calculate Transfers values sum for Deposit.
+
+    Returns:
+        Func: ORM function returning Sum of Deposit Transfers values.
+    """
+    return Coalesce(
+        Sum("deposit_transfers__value", output_field=DecimalField(decimal_places=2)),
+        Value(0),
+        output_field=DecimalField(decimal_places=2),
+    )
+
+
 class DepositViewSet(ModelViewSet):
     """View for managing Deposits."""
 
@@ -18,16 +33,20 @@ class DepositViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, UserBelongsToBudgetPermission]
     filterset_class = DepositFilterSet
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
-    ordering_fields = ("id", "name")
+    ordering_fields = ("id", "name", "balance")
 
     def get_queryset(self) -> QuerySet:
         """
-        Retrieve Deposits for Budget passed in URL.
+        Retrieve Deposits for Budget passed in URL and annotate them with sum of Transfers.
 
         Returns:
             QuerySet: Filtered Deposit QuerySet.
         """
-        return self.queryset.filter(budget__pk=self.kwargs.get("budget_pk")).distinct()
+        return (
+            self.queryset.filter(budget__pk=self.kwargs.get("budget_pk"))
+            .distinct()
+            .annotate(balance=calculate_deposit_balance())
+        )
 
     def perform_create(self, serializer: DepositSerializer) -> None:
         """

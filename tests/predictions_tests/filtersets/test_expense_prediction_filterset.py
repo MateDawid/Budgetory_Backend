@@ -85,9 +85,9 @@ class TestExpensePredictionFilterSetOrdering:
             .order_by(sort_param)
         )
         serializer = ExpensePredictionSerializer(predictions, many=True)
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == len(predictions) == 4
-        assert response.data["results"] == serializer.data
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == len(predictions) == 4
+        assert response.data == serializer.data
 
 
 @pytest.mark.django_db
@@ -123,10 +123,10 @@ class TestExpensePredictionFilterSetFiltering:
             predictions,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == predictions.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == prediction.id
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == predictions.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == prediction.id
 
     def test_get_predictions_list_filtered_by_category(
         self,
@@ -160,10 +160,10 @@ class TestExpensePredictionFilterSetFiltering:
             predictions,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == predictions.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == prediction.id
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == predictions.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == prediction.id
 
     @pytest.mark.parametrize("field", ("initial_value", "current_value"))
     def test_get_predictions_list_filtered_by_value(
@@ -195,11 +195,11 @@ class TestExpensePredictionFilterSetFiltering:
             predictions,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == predictions.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == prediction.id
-        assert response.data["results"][0][field] == value
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == predictions.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == prediction.id
+        assert response.data[0][field] == value
 
     @pytest.mark.parametrize("field", ("initial_value", "current_value"))
     def test_get_predictions_list_filtered_by_value_max(
@@ -231,11 +231,11 @@ class TestExpensePredictionFilterSetFiltering:
             predictions,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == predictions.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == prediction.id
-        assert response.data["results"][0][field] == value
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == predictions.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == prediction.id
+        assert response.data[0][field] == value
 
     @pytest.mark.parametrize("field", ("initial_value", "current_value"))
     def test_get_predictions_list_filtered_by_value_min(
@@ -267,8 +267,8 @@ class TestExpensePredictionFilterSetFiltering:
             predictions,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == predictions.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == prediction.id
-        assert response.data["results"][0][field] == value
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == predictions.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == prediction.id
+        assert response.data[0][field] == value
