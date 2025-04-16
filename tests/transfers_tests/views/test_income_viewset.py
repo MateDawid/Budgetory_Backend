@@ -91,7 +91,7 @@ class TestIncomeViewSetList:
         budget_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
     ):
-        """tat
+        """
         GIVEN: Ten Income model instances for single Budget created in database.
         WHEN: IncomeViewSet called by Budget member with pagination parameters - page_size and page.
         THEN: HTTP 200 - Paginated response returned.
