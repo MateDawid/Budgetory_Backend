@@ -58,6 +58,53 @@ class TestTransferCategoryViewSetList:
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
         assert response.status_code == status.HTTP_200_OK
 
+    def test_get_response_without_pagination(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Ten TransferCategory model instances for single Budget created in database.
+        WHEN: TransferCategoryViewSet called by Budget member without pagination parameters.
+        THEN: HTTP 200 - Response with all objects returned.
+        """
+        budget = budget_factory(members=[base_user])
+        for _ in range(10):
+            transfer_category_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(categories_url(budget.id))
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "results" not in response.data
+        assert "count" not in response.data
+        assert len(response.data) == 10
+
+    def test_get_response_with_pagination(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Ten TransferCategory model instances for single Budget created in database.
+        WHEN: TransferCategoryViewSet called by Budget member with pagination parameters - page_size and page.
+        THEN: HTTP 200 - Paginated response returned.
+        """
+        budget = budget_factory(members=[base_user])
+        for _ in range(10):
+            transfer_category_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(categories_url(budget.id), data={"page_size": 2, "page": 1})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "results" in response.data
+        assert response.data["count"] == 10
+
     def test_user_not_budget_member(
         self, api_client: APIClient, user_factory: FactoryMetaClass, budget_factory: FactoryMetaClass
     ):
@@ -99,7 +146,7 @@ class TestTransferCategoryViewSetList:
         serializer = TransferCategorySerializer(categories, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert len(serializer.data) == 2
-        assert response.data["results"] == serializer.data
+        assert response.data == serializer.data
         for category in serializer.data:
             assert category["value"] == category["id"]
             assert (
@@ -129,9 +176,9 @@ class TestTransferCategoryViewSetList:
         categories = TransferCategory.objects.filter(budget=budget)
         serializer = TransferCategorySerializer(categories, many=True)
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data["results"]) == len(serializer.data) == categories.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == category.id
+        assert len(response.data) == len(serializer.data) == categories.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == category.id
 
     def test_category_without_owner_has_fixed_owner_value(
         self,
@@ -155,9 +202,9 @@ class TestTransferCategoryViewSetList:
         categories = TransferCategory.objects.filter(budget=budget)
         serializer = TransferCategorySerializer(categories, many=True)
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data["results"]) == len(serializer.data) == categories.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["owner"] == -1
+        assert len(response.data) == len(serializer.data) == categories.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["owner"] == -1
 
 
 @pytest.mark.django_db
