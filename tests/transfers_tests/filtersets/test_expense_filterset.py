@@ -71,9 +71,9 @@ class TestExpenseFilterSetOrdering:
         assert response.status_code == status.HTTP_200_OK
         transfers = Expense.objects.all().order_by(sort_param)
         serializer = ExpenseSerializer(transfers, many=True)
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == len(transfers) == 5
-        assert response.data["results"] == serializer.data
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == len(transfers) == 5
+        assert response.data == serializer.data
 
 
 @pytest.mark.django_db
@@ -123,10 +123,10 @@ class TestExpenseFilterSetFiltering:
             transfers,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == transfers.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == matching_transfer.id
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == transfers.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == matching_transfer.id
 
     def test_get_transfers_list_filtered_by_period(
         self,
@@ -160,10 +160,10 @@ class TestExpenseFilterSetFiltering:
             transfers,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == transfers.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == transfer.id
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == transfers.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == transfer.id
 
     def test_get_transfers_list_filtered_by_entity(
         self,
@@ -195,10 +195,10 @@ class TestExpenseFilterSetFiltering:
             transfers,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == transfers.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == transfer.id
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == transfers.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == transfer.id
 
     def test_get_transfers_list_filtered_by_deposit(
         self,
@@ -230,10 +230,10 @@ class TestExpenseFilterSetFiltering:
             transfers,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == transfers.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == transfer.id
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == transfers.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == transfer.id
 
     def test_get_transfers_list_filtered_by_category(
         self,
@@ -265,10 +265,10 @@ class TestExpenseFilterSetFiltering:
             transfers,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == transfers.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == transfer.id
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == transfers.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == transfer.id
 
     def test_get_transfers_list_filtered_by_date(
         self,
@@ -304,10 +304,10 @@ class TestExpenseFilterSetFiltering:
             transfers,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == transfers.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == transfer.id
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == transfers.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == transfer.id
 
     def test_get_transfers_list_filtered_by_value(
         self,
@@ -339,7 +339,7 @@ class TestExpenseFilterSetFiltering:
             transfers,
             many=True,
         )
-        assert response.data["results"] and serializer.data
-        assert len(response.data["results"]) == len(serializer.data) == transfers.count() == 1
-        assert response.data["results"] == serializer.data
-        assert response.data["results"][0]["id"] == transfer.id
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == transfers.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == transfer.id
