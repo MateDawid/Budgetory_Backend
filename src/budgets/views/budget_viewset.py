@@ -54,7 +54,7 @@ class BudgetViewSet(ModelViewSet):
         """
         budget = get_object_or_404(self.queryset.model, pk=kwargs.get("pk"))
         serializer = UserSerializer(budget.members.all(), many=True)
-        return Response({"results": serializer.data})
+        return Response(serializer.data)
 
     def perform_create(self, serializer: BudgetSerializer) -> None:
         """

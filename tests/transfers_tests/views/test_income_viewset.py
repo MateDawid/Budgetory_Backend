@@ -89,7 +89,7 @@ class TestIncomeViewSetList:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
-        deposit_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Ten Income model instances for single Budget created in database.
@@ -98,7 +98,7 @@ class TestIncomeViewSetList:
         """
         budget = budget_factory(members=[base_user])
         for _ in range(10):
-            deposit_factory(budget=budget)
+            income_factory(budget=budget)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(transfers_url(budget.id), data={"page_size": 2, "page": 1})
