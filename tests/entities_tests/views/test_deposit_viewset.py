@@ -75,8 +75,6 @@ class TestDepositViewSetList:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
-        transfer_category_factory: FactoryMetaClass,
-        transfer_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Ten Deposit model instances for single Budget created in database.
