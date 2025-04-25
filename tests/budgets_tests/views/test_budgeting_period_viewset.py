@@ -144,9 +144,8 @@ class TestBudgetingPeriodViewSetList:
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == len(serializer.data) == periods.count() == 2
         assert response.data == serializer.data
-        for category in serializer.data:
-            assert category["value"] == category["id"]
-            assert category["label"] == category["name"]
+        for period in serializer.data:
+            assert period["status_display"] == PeriodStatus(period["status"]).label
 
     def test_retrieve_periods_list_by_member(
         self,
@@ -461,7 +460,7 @@ class TestBudgetingPeriodViewSetCreate:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "status" in response.data["detail"]
-        assert response.data["detail"]["status"][0] == "status: New period has to be created with draft status."
+        assert response.data["detail"]["status"][0] == "New period has to be created with draft status."
         assert not BudgetingPeriod.objects.exists()
 
     @pytest.mark.parametrize("date_start, date_end", (("", date.today()), (date.today(), ""), ("", "")))
@@ -935,7 +934,7 @@ class TestBudgetingPeriodViewSetUpdate:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "status" in response.data["detail"]
-        assert response.data["detail"]["status"][0] == "status: Closed period cannot be changed."
+        assert response.data["detail"]["status"][0] == "Closed period cannot be changed."
 
     def test_error_active_period_cannot_be_moved_back_to_draft(
         self,
@@ -966,7 +965,7 @@ class TestBudgetingPeriodViewSetUpdate:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "status" in response.data["detail"]
-        assert response.data["detail"]["status"][0] == "status: Active period cannot be moved back to Draft status."
+        assert response.data["detail"]["status"][0] == "Active period cannot be moved back to Draft status."
 
     def test_error_draft_period_cannot_be_closed(
         self,
@@ -997,9 +996,7 @@ class TestBudgetingPeriodViewSetUpdate:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "status" in response.data["detail"]
-        assert (
-            response.data["detail"]["status"][0] == "status: Draft period cannot be closed. It has to be active first."
-        )
+        assert response.data["detail"]["status"][0] == "Draft period cannot be closed. It has to be active first."
 
     def test_error_on_activating_period_when_other_active_exists(
         self,
@@ -1033,7 +1030,7 @@ class TestBudgetingPeriodViewSetUpdate:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "status" in response.data["detail"]
-        assert response.data["detail"]["status"][0] == "status: Active period already exists in Budget."
+        assert response.data["detail"]["status"][0] == "Active period already exists in Budget."
 
     def test_update_predictions_initial_value_on_period_activating(
         self,
