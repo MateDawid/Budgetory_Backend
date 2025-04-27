@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Any
 
 import pytest
@@ -10,8 +11,11 @@ from rest_framework.test import APIClient
 
 from app_users.models import User
 from budgets.models.budget_model import Budget
+from categories.models.choices.category_type import CategoryType
 from entities.models.deposit_model import Deposit
 from entities.serializers.deposit_serializer import DepositSerializer
+from entities.views.deposit_viewset import calculate_deposit_balance, sum_deposit_transfers
+from transfers.models import Transfer
 
 
 @pytest.mark.django_db
@@ -129,10 +133,32 @@ class TestDepositViewSetList:
 
         response = api_client.get(deposits_url(budget.id))
 
-        deposits = Deposit.objects.filter(budget=budget)
+        deposits = (
+            Deposit.objects.distinct()
+            .annotate(
+                incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
+                expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
+            )
+            .annotate(balance=calculate_deposit_balance())
+            .filter(budget=budget)
+        )
         serializer = DepositSerializer(deposits, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert response.data == serializer.data
+        for deposit in serializer.data:
+            incomes_sum = sum(
+                Transfer.objects.filter(
+                    deposit__id=deposit["id"], category__category_type=CategoryType.INCOME
+                ).values_list("value", flat=True)
+            )
+            expenses_sum = sum(
+                Transfer.objects.filter(
+                    deposit__id=deposit["id"], category__category_type=CategoryType.EXPENSE
+                ).values_list("value", flat=True)
+            )
+            assert deposit["incomes_sum"] == str(Decimal(incomes_sum).quantize(Decimal("0.00")))
+            assert deposit["expenses_sum"] == str(Decimal(expenses_sum).quantize(Decimal("0.00")))
+            assert deposit["balance"] == str(Decimal(incomes_sum - expenses_sum).quantize(Decimal("0.00")))
 
     def test_deposits_list_limited_to_budget(
         self,
