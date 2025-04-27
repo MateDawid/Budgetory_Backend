@@ -12,11 +12,13 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
     """Serializer for BudgetingPeriod."""
 
     status = serializers.IntegerField(default=PeriodStatus.DRAFT)
+    incomes_sum = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
+    expenses_sum = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
 
     class Meta:
         model = BudgetingPeriod
-        fields = ["id", "name", "status", "date_start", "date_end"]
-        read_only_fields = ["id"]
+        fields = ["id", "name", "status", "date_start", "date_end", "incomes_sum", "expenses_sum"]
+        read_only_fields = ["id", "incomes_sum", "expenses_sum"]
 
     def validate_name(self, name: str) -> str:
         """
