@@ -10,7 +10,7 @@ from rest_framework.test import APIClient
 from categories.models.choices.category_type import CategoryType
 from entities.models import Deposit
 from entities.serializers.deposit_serializer import DepositSerializer
-from entities.views.deposit_viewset import calculate_deposit_balance
+from entities.views.deposit_viewset import calculate_deposit_balance, sum_deposit_transfers
 
 
 @pytest.mark.django_db
@@ -56,7 +56,15 @@ class TestDepositFilterSetOrdering:
 
         assert response.status_code == status.HTTP_200_OK
 
-        deposits = Deposit.objects.all().annotate(balance=calculate_deposit_balance()).order_by(*sort_param.split(","))
+        deposits = (
+            Deposit.objects.all()
+            .annotate(
+                incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
+                expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
+            )
+            .annotate(balance=calculate_deposit_balance())
+            .order_by(*sort_param.split(","))
+        )
         serializer = DepositSerializer(deposits, many=True)
         assert response.data and serializer.data
         assert len(response.data) == len(serializer.data) == len(deposits) == 3
@@ -172,7 +180,7 @@ class TestDepositFilterSetFiltering:
         budget = budget_factory(members=[base_user])
         balance = "123.45"
         target_deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
         transfer_factory(
             budget=budget, deposit=target_deposit, category=category, value=Decimal(balance).quantize(Decimal("0.00"))
         )
@@ -186,7 +194,14 @@ class TestDepositFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert Deposit.objects.all().count() == 2
-        deposits = Deposit.objects.annotate(balance=calculate_deposit_balance()).filter(balance=balance)
+        deposits = (
+            Deposit.objects.annotate(
+                incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
+                expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
+            )
+            .annotate(balance=calculate_deposit_balance())
+            .filter(balance=balance)
+        )
         serializer = DepositSerializer(
             deposits,
             many=True,
@@ -215,7 +230,7 @@ class TestDepositFilterSetFiltering:
         budget = budget_factory(members=[base_user])
         balance = "123.45"
         target_deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
         transfer_factory(
             budget=budget, deposit=target_deposit, category=category, value=Decimal(balance).quantize(Decimal("0.00"))
         )
@@ -229,7 +244,14 @@ class TestDepositFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert Deposit.objects.all().count() == 2
-        deposits = Deposit.objects.annotate(balance=calculate_deposit_balance()).filter(balance__lte=balance)
+        deposits = (
+            Deposit.objects.annotate(
+                incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
+                expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
+            )
+            .annotate(balance=calculate_deposit_balance())
+            .filter(balance__lte=balance)
+        )
         serializer = DepositSerializer(
             deposits,
             many=True,
@@ -258,7 +280,7 @@ class TestDepositFilterSetFiltering:
         budget = budget_factory(members=[base_user])
         balance = "234.56"
         target_deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
         transfer_factory(
             budget=budget, deposit=target_deposit, category=category, value=Decimal(balance).quantize(Decimal("0.00"))
         )
@@ -272,7 +294,14 @@ class TestDepositFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert Deposit.objects.all().count() == 2
-        deposits = Deposit.objects.annotate(balance=calculate_deposit_balance()).filter(balance__gte=balance)
+        deposits = (
+            Deposit.objects.annotate(
+                incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
+                expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
+            )
+            .annotate(balance=calculate_deposit_balance())
+            .filter(balance__gte=balance)
+        )
         serializer = DepositSerializer(
             deposits,
             many=True,
