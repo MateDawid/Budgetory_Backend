@@ -30,7 +30,7 @@ class UserManager(BaseUserManager):
 
         return user
 
-    def create_superuser(self, email: str, username: str, password: str) -> AbstractUser:
+    def create_superuser(self, email: str, password: str, username: str | None = None) -> AbstractUser:
         """
         Create and return a new superuser.
 
@@ -41,6 +41,7 @@ class UserManager(BaseUserManager):
         Returns:
             User: Created User model instance.
         """
+        username = username or email
         user = self.create_user(email, username, password)
         user.is_staff = True
         user.is_superuser = True

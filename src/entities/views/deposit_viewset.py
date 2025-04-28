@@ -1,4 +1,4 @@
-from django.db.models import DecimalField, Func, QuerySet, Sum, Value
+from django.db.models import DecimalField, F, Func, Q, QuerySet, Sum, Value
 from django.db.models.functions import Coalesce
 from django_filters import rest_framework as filters
 from rest_framework.filters import OrderingFilter
@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
+from categories.models.choices.category_type import CategoryType
 from entities.filtersets.deposit_filterset import DepositFilterSet
 from entities.models.deposit_model import Deposit
 from entities.serializers.deposit_serializer import DepositSerializer
@@ -18,8 +19,22 @@ def calculate_deposit_balance() -> Func:
     Returns:
         Func: ORM function returning Sum of Deposit Transfers values.
     """
+    return Coalesce(F("incomes_sum") - F("expenses_sum"), Value(0), output_field=DecimalField(decimal_places=2))
+
+
+def sum_deposit_transfers(category_type: CategoryType) -> Func:
+    """
+    Function for calculate Transfers values sum of given CategoryType for Deposit.
+
+    Returns:
+        Func: ORM function returning Sum of Deposit Transfers values for specified CategoryType.
+    """
     return Coalesce(
-        Sum("deposit_transfers__value", output_field=DecimalField(decimal_places=2)),
+        Sum(
+            "deposit_transfers__value",
+            filter=Q(deposit_transfers__category__category_type=category_type),
+            output_field=DecimalField(decimal_places=2),
+        ),
         Value(0),
         output_field=DecimalField(decimal_places=2),
     )
@@ -45,6 +60,10 @@ class DepositViewSet(ModelViewSet):
         return (
             self.queryset.filter(budget__pk=self.kwargs.get("budget_pk"))
             .distinct()
+            .annotate(
+                incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
+                expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
+            )
             .annotate(balance=calculate_deposit_balance())
         )
 

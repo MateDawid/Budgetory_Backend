@@ -11,10 +11,14 @@ from budgets.models.choices.period_status import PeriodStatus
 class BudgetingPeriodSerializer(serializers.ModelSerializer):
     """Serializer for BudgetingPeriod."""
 
+    status = serializers.IntegerField(default=PeriodStatus.DRAFT)
+    incomes_sum = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
+    expenses_sum = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
+
     class Meta:
         model = BudgetingPeriod
-        fields = ["id", "name", "status", "date_start", "date_end"]
-        read_only_fields = ["id"]
+        fields = ["id", "name", "status", "date_start", "date_end", "incomes_sum", "expenses_sum"]
+        read_only_fields = ["id", "incomes_sum", "expenses_sum"]
 
     def validate_name(self, name: str) -> str:
         """
@@ -51,19 +55,19 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
             ValidationError: Raised when active BudgetingPeriod for Budget already exists in database.
         """
         if self.instance is None and status != PeriodStatus.DRAFT:
-            raise ValidationError("status: New period has to be created with draft status.")
+            raise ValidationError("New period has to be created with draft status.")
         elif (instance_status := getattr(self.instance, "status", None)) == PeriodStatus.CLOSED:
-            raise ValidationError("status: Closed period cannot be changed.")
+            raise ValidationError("Closed period cannot be changed.")
         elif instance_status == PeriodStatus.DRAFT and status == PeriodStatus.CLOSED:
-            raise ValidationError("status: Draft period cannot be closed. It has to be active first.")
+            raise ValidationError("Draft period cannot be closed. It has to be active first.")
         elif instance_status == PeriodStatus.ACTIVE and status == PeriodStatus.DRAFT:
-            raise ValidationError("status: Active period cannot be moved back to Draft status.")
+            raise ValidationError("Active period cannot be moved back to Draft status.")
         elif status == PeriodStatus.ACTIVE:
             active_periods = BudgetingPeriod.objects.filter(
                 budget__pk=self.context["view"].kwargs["budget_pk"], status=PeriodStatus.ACTIVE
             ).exclude(pk=getattr(self.instance, "pk", None))
             if active_periods.exists():
-                raise ValidationError("status: Active period already exists in Budget.")
+                raise ValidationError("Active period already exists in Budget.")
         return status
 
     def validate(self, attrs: OrderedDict) -> OrderedDict:
@@ -107,6 +111,5 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
             OrderedDict: Dictionary containing overridden values.
         """
         representation = super().to_representation(instance)
-        representation["value"] = instance.id
-        representation["label"] = instance.name
+        representation["status_display"] = PeriodStatus(representation["status"]).label
         return representation

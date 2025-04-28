@@ -8,6 +8,7 @@ Tests for BudgetingPeriodViewSet:
 """
 
 from datetime import date
+from decimal import Decimal
 from typing import Any
 
 import pytest
@@ -23,6 +24,9 @@ from budgets.models.budget_model import Budget
 from budgets.models.budgeting_period_model import BudgetingPeriod
 from budgets.models.choices.period_status import PeriodStatus
 from budgets.serializers.budgeting_period_serializer import BudgetingPeriodSerializer
+from budgets.views.budgeting_period_viewset import sum_period_transfers
+from categories.models.choices.category_type import CategoryType
+from transfers.models import Transfer
 
 
 def periods_url(budget_id):
@@ -121,6 +125,7 @@ class TestBudgetingPeriodViewSetList:
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
+        transfer_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Two BudgetingPeriods for Budget in database created.
@@ -129,24 +134,53 @@ class TestBudgetingPeriodViewSetList:
         """
         budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
-        budgeting_period_factory(
-            budget=budget, date_start=date(2023, 1, 1), date_end=date(2023, 1, 31), status=PeriodStatus.CLOSED
-        )
-        budgeting_period_factory(
-            budget=budget, date_start=date(2023, 2, 1), date_end=date(2023, 2, 28), status=PeriodStatus.ACTIVE
-        )
+        periods = [
+            budgeting_period_factory(
+                budget=budget, date_start=date(2023, 1, 1), date_end=date(2023, 1, 31), status=PeriodStatus.CLOSED
+            ),
+            budgeting_period_factory(
+                budget=budget, date_start=date(2023, 2, 1), date_end=date(2023, 2, 28), status=PeriodStatus.ACTIVE
+            ),
+        ]
+        for period in periods:
+            for _ in range(3):
+                transfer_factory(period=period)
         url = periods_url(budget.id)
 
         response = api_client.get(url)
 
-        periods = BudgetingPeriod.objects.filter(budget=budget).order_by("-date_start")
+        periods = (
+            BudgetingPeriod.objects.annotate(
+                incomes_sum=sum_period_transfers(CategoryType.INCOME),
+                expenses_sum=sum_period_transfers(CategoryType.EXPENSE),
+            )
+            .filter(budget=budget)
+            .order_by("-date_start")
+        )
         serializer = BudgetingPeriodSerializer(periods, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == len(serializer.data) == periods.count() == 2
         assert response.data == serializer.data
-        for category in serializer.data:
-            assert category["value"] == category["id"]
-            assert category["label"] == category["name"]
+        for period in serializer.data:
+            assert period["status_display"] == PeriodStatus(period["status"]).label
+            assert period["incomes_sum"] == str(
+                Decimal(
+                    sum(
+                        Transfer.objects.filter(
+                            period__id=period["id"], category__category_type=CategoryType.INCOME
+                        ).values_list("value", flat=True)
+                    )
+                ).quantize(Decimal("0.00"))
+            )
+            assert period["expenses_sum"] == str(
+                Decimal(
+                    sum(
+                        Transfer.objects.filter(
+                            period__id=period["id"], category__category_type=CategoryType.EXPENSE
+                        ).values_list("value", flat=True)
+                    )
+                ).quantize(Decimal("0.00"))
+            )
 
     def test_retrieve_periods_list_by_member(
         self,
@@ -461,7 +495,7 @@ class TestBudgetingPeriodViewSetCreate:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "status" in response.data["detail"]
-        assert response.data["detail"]["status"][0] == "status: New period has to be created with draft status."
+        assert response.data["detail"]["status"][0] == "New period has to be created with draft status."
         assert not BudgetingPeriod.objects.exists()
 
     @pytest.mark.parametrize("date_start, date_end", (("", date.today()), (date.today(), ""), ("", "")))
@@ -935,7 +969,7 @@ class TestBudgetingPeriodViewSetUpdate:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "status" in response.data["detail"]
-        assert response.data["detail"]["status"][0] == "status: Closed period cannot be changed."
+        assert response.data["detail"]["status"][0] == "Closed period cannot be changed."
 
     def test_error_active_period_cannot_be_moved_back_to_draft(
         self,
@@ -966,7 +1000,7 @@ class TestBudgetingPeriodViewSetUpdate:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "status" in response.data["detail"]
-        assert response.data["detail"]["status"][0] == "status: Active period cannot be moved back to Draft status."
+        assert response.data["detail"]["status"][0] == "Active period cannot be moved back to Draft status."
 
     def test_error_draft_period_cannot_be_closed(
         self,
@@ -997,9 +1031,7 @@ class TestBudgetingPeriodViewSetUpdate:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "status" in response.data["detail"]
-        assert (
-            response.data["detail"]["status"][0] == "status: Draft period cannot be closed. It has to be active first."
-        )
+        assert response.data["detail"]["status"][0] == "Draft period cannot be closed. It has to be active first."
 
     def test_error_on_activating_period_when_other_active_exists(
         self,
@@ -1033,7 +1065,7 @@ class TestBudgetingPeriodViewSetUpdate:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "status" in response.data["detail"]
-        assert response.data["detail"]["status"][0] == "status: Active period already exists in Budget."
+        assert response.data["detail"]["status"][0] == "Active period already exists in Budget."
 
     def test_update_predictions_initial_value_on_period_activating(
         self,

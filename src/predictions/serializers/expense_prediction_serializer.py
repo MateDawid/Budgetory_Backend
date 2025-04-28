@@ -8,6 +8,7 @@ from rest_framework.exceptions import ValidationError
 from budgets.models import BudgetingPeriod
 from budgets.models.choices.period_status import PeriodStatus
 from categories.models import TransferCategory
+from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from predictions.models.expense_prediction_model import ExpensePrediction
 
@@ -95,3 +96,18 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
         if self.instance and self.instance.period.status == PeriodStatus.CLOSED:
             raise ValidationError("Expense Prediction cannot be changed when Budgeting Period is closed.")
         return attrs
+
+    def to_representation(self, instance: ExpensePrediction) -> OrderedDict:
+        """
+        Extends model representation with "value" and "label" fields for React MUI DataGrid filtering purposes.
+
+        Attributes:
+            instance [BudgetingPeriod]: BudgetingPeriod model instance
+
+        Returns:
+            OrderedDict: Dictionary containing overridden values.
+        """
+        representation = super().to_representation(instance)
+        representation["category_display"] = instance.category.name
+        representation["category_priority"] = CategoryPriority(instance.category.priority).label
+        return representation

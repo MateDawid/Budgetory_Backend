@@ -1,5 +1,6 @@
 from django.db import transaction
-from django.db.models import F, QuerySet
+from django.db.models import DecimalField, F, Func, Q, QuerySet, Sum, Value
+from django.db.models.functions import Coalesce
 from django_filters import rest_framework as filters
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
@@ -12,7 +13,26 @@ from budgets.filtersets.budgeting_period_filterset import BudgetingPeriodFilterS
 from budgets.models import BudgetingPeriod
 from budgets.models.choices.period_status import PeriodStatus
 from budgets.serializers.budgeting_period_serializer import BudgetingPeriodSerializer
+from categories.models.choices.category_type import CategoryType
 from predictions.models import ExpensePrediction
+
+
+def sum_period_transfers(category_type: CategoryType) -> Func:
+    """
+    Function for calculate Transfers values sum of given CategoryType for BudgetingPeriod.
+
+    Returns:
+        Func: ORM function returning Sum of BudgetingPeriod Transfers values for specified CategoryType.
+    """
+    return Coalesce(
+        Sum(
+            "transfers__value",
+            filter=Q(transfers__category__category_type=category_type),
+            output_field=DecimalField(decimal_places=2),
+        ),
+        Value(0),
+        output_field=DecimalField(decimal_places=2),
+    )
 
 
 class BudgetingPeriodViewSet(ModelViewSet):
@@ -43,7 +63,13 @@ class BudgetingPeriodViewSet(ModelViewSet):
             budget_pk = self.kwargs.get("budget_pk")
             if budget_pk:
                 return (
-                    self.queryset.filter(budget__members=user, budget__pk=budget_pk).order_by("-date_start").distinct()
+                    self.queryset.filter(budget__members=user, budget__pk=budget_pk)
+                    .order_by("-date_start")
+                    .distinct()
+                    .annotate(
+                        incomes_sum=sum_period_transfers(CategoryType.INCOME),
+                        expenses_sum=sum_period_transfers(CategoryType.EXPENSE),
+                    )
                 )
         return self.queryset.none()  # pragma: no cover
 
