@@ -11,6 +11,8 @@ from rest_framework.test import APIClient
 
 from app_users.models import User
 from budgets.models.choices.period_status import PeriodStatus
+from categories.models import TransferCategory
+from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from predictions.models.expense_prediction_model import ExpensePrediction
 from predictions.serializers.expense_prediction_serializer import ExpensePredictionSerializer
@@ -147,6 +149,10 @@ class TestExpensePredictionViewSetList:
         serializer = ExpensePredictionSerializer(predictions, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert response.data == serializer.data
+        for prediction in serializer.data:
+            category = TransferCategory.objects.get(id=prediction["category"])
+            assert prediction["category_display"] == category.name
+            assert prediction["category_priority"] == CategoryPriority(category.priority).label
 
     def test_prediction_list_limited_to_budget(
         self,
