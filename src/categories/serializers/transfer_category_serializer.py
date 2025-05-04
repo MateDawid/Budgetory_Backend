@@ -1,3 +1,4 @@
+import copy
 from collections import OrderedDict
 
 from django.db.models import Model
@@ -27,7 +28,10 @@ class TransferCategorySerializer(serializers.ModelSerializer):
         Returns:
             OrderedDict: Validated parameters.
         """
-        self._validate_type_and_priority(category_type=attrs.get("category_type"), priority=attrs.get("priority"))
+        self._validate_type_and_priority(
+            category_type=attrs.get("category_type", getattr(self.instance, "category_type", None)),
+            priority=attrs.get("priority", getattr(self.instance, "priority", None)),
+        )
         self._validate_category_uniqueness(attrs)
         return attrs
 
@@ -87,4 +91,22 @@ class TransferCategorySerializer(serializers.ModelSerializer):
         representation["owner"] = getattr(instance.owner, "id", -1)
         representation["value"] = instance.id
         representation["label"] = f"{'📉' if instance.category_type == CategoryType.EXPENSE else '📈'} {instance.name}"
+        representation["owner_display"] = getattr(instance, "owner_display", None)  # noqa
+        representation["priority_display"] = CategoryPriority(representation["priority"]).label
+        representation["category_type_display"] = CategoryType(representation["category_type"]).label
         return representation
+
+    def to_internal_value(self, data: OrderedDict) -> OrderedDict:
+        """
+        Additionally handles "-1" value for owner sent by Frontend in case of selecting None owner value.
+
+        Attributes:
+            data [dict]: Input data.
+
+        Returns:
+            dict: Dictionary containing overridden values.
+        """
+        updated_data = copy.deepcopy(data)
+        if str(updated_data.get("owner")) == "-1":
+            updated_data["owner"] = None
+        return super().to_internal_value(updated_data)
