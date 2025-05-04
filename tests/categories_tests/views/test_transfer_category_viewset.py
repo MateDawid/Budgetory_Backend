@@ -15,6 +15,7 @@ from categories.models import TransferCategory
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from categories.serializers.transfer_category_serializer import TransferCategorySerializer
+from categories.views.transfer_category_viewset import get_category_owner_display
 
 
 def categories_url(budget_id):
@@ -137,12 +138,12 @@ class TestTransferCategoryViewSetList:
         """
         budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
-        for _ in range(2):
-            transfer_category_factory(budget=budget)
+        transfer_category_factory(budget=budget, owner=None)
+        transfer_category_factory(budget=budget, owner=base_user)
 
         response = api_client.get(categories_url(budget.id))
 
-        categories = TransferCategory.objects.filter(budget=budget)
+        categories = TransferCategory.objects.filter(budget=budget).annotate(owner_display=get_category_owner_display())
         serializer = TransferCategorySerializer(categories, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert len(serializer.data) == 2
@@ -153,6 +154,9 @@ class TestTransferCategoryViewSetList:
                 category["label"]
                 == f"{'📉' if category['category_type'] == CategoryType.EXPENSE else '📈'} {category['name']}"
             )
+            assert category["owner_display"] == categories.get(id=category["id"]).owner_display
+            assert category["priority_display"] == CategoryPriority(category["priority"]).label
+            assert category["category_type_display"] == CategoryType(category["category_type"]).label
 
     def test_categories_list_limited_to_budget(
         self,
@@ -173,7 +177,7 @@ class TestTransferCategoryViewSetList:
 
         response = api_client.get(categories_url(budget.id))
 
-        categories = TransferCategory.objects.filter(budget=budget)
+        categories = TransferCategory.objects.filter(budget=budget).annotate(owner_display=get_category_owner_display())
         serializer = TransferCategorySerializer(categories, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == len(serializer.data) == categories.count() == 1
@@ -199,7 +203,7 @@ class TestTransferCategoryViewSetList:
 
         response = api_client.get(categories_url(budget.id))
 
-        categories = TransferCategory.objects.filter(budget=budget)
+        categories = TransferCategory.objects.filter(budget=budget).annotate(owner_display=get_category_owner_display())
         serializer = TransferCategorySerializer(categories, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == len(serializer.data) == categories.count() == 1
@@ -319,6 +323,34 @@ class TestTransferCategoryViewSetCreate:
                 continue
             assert getattr(category, key) == payload[key]
         assert category.owner == base_user
+        serializer = TransferCategorySerializer(category)
+        assert response.data == serializer.data
+
+    def test_create_single_category_with_common_owner(
+        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Budget instance created in database. Valid payload prepared for TransferCategory.
+        WHEN: TransferCategoryViewSet called with POST by User belonging to Budget with valid payload and -1 value
+        for category owner.
+        THEN: TransferCategory object created in database with given payload. Owner value of Category is None.
+        """
+        budget = budget_factory(members=[base_user])
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["owner"] = -1
+
+        response = api_client.post(categories_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert TransferCategory.objects.filter(budget=budget).count() == 1
+        category = TransferCategory.objects.get(id=response.data["id"])
+        assert category.budget == budget
+        for key in payload:
+            if key == "owner":
+                continue
+            assert getattr(category, key) == payload[key]
+        assert category.owner is None
         serializer = TransferCategorySerializer(category)
         assert response.data == serializer.data
 
@@ -494,6 +526,7 @@ class TestTransferCategoryViewSetDetail:
         """
         budget = budget_factory(members=[base_user])
         category = transfer_category_factory(budget=budget)
+        setattr(category, "owner_display", getattr(getattr(category, "owner", None), "username", "🏦 Common"))
         api_client.force_authenticate(base_user)
         url = category_detail_url(budget.id, category.id)
 
@@ -518,6 +551,7 @@ class TestTransferCategoryViewSetDetail:
         """
         budget = budget_factory(members=[base_user])
         category = transfer_category_factory(budget=budget, owner=None)
+        setattr(category, "owner_display", getattr(getattr(category, "owner", None), "username", "🏦 Common"))
         api_client.force_authenticate(base_user)
         url = category_detail_url(budget.id, category.id)
 
@@ -659,6 +693,32 @@ class TestTransferCategoryViewSetUpdate:
         category.refresh_from_db()
         assert getattr(category, "category_type") == update_payload["category_type"]
         assert getattr(category, "priority") == update_payload["priority"]
+
+    @pytest.mark.django_db
+    def test_category_update_common_owner(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: TransferCategory instance for Budget created in database.
+        WHEN: TransferCategoryViewSet detail view called with PATCH by User belonging to Budget with -1 value
+        for 'owner' field.
+        THEN: HTTP 200, TransferCategory updated, "owner" value for Category is None.
+        """
+        budget = budget_factory(members=[base_user])
+        category = transfer_category_factory(budget=budget, **self.PAYLOAD)
+        update_payload = {"owner": -1}
+        api_client.force_authenticate(base_user)
+        url = category_detail_url(budget.id, category.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        category.refresh_from_db()
+        assert getattr(category, "owner") is None
 
     def test_error_on_category_name_update(
         self,
