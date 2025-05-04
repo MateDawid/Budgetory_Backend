@@ -177,7 +177,7 @@ class TestTransferCategoryViewSetList:
 
         response = api_client.get(categories_url(budget.id))
 
-        categories = TransferCategory.objects.filter(budget=budget)
+        categories = TransferCategory.objects.filter(budget=budget).annotate(owner_display=get_category_owner_display())
         serializer = TransferCategorySerializer(categories, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == len(serializer.data) == categories.count() == 1
@@ -203,7 +203,7 @@ class TestTransferCategoryViewSetList:
 
         response = api_client.get(categories_url(budget.id))
 
-        categories = TransferCategory.objects.filter(budget=budget)
+        categories = TransferCategory.objects.filter(budget=budget).annotate(owner_display=get_category_owner_display())
         serializer = TransferCategorySerializer(categories, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == len(serializer.data) == categories.count() == 1
@@ -526,6 +526,7 @@ class TestTransferCategoryViewSetDetail:
         """
         budget = budget_factory(members=[base_user])
         category = transfer_category_factory(budget=budget)
+        setattr(category, "owner_display", getattr(getattr(category, "owner", None), "username", "🏦 Common"))
         api_client.force_authenticate(base_user)
         url = category_detail_url(budget.id, category.id)
 
@@ -550,6 +551,7 @@ class TestTransferCategoryViewSetDetail:
         """
         budget = budget_factory(members=[base_user])
         category = transfer_category_factory(budget=budget, owner=None)
+        setattr(category, "owner_display", getattr(getattr(category, "owner", None), "username", "🏦 Common"))
         api_client.force_authenticate(base_user)
         url = category_detail_url(budget.id, category.id)
 
