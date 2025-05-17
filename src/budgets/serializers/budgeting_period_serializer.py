@@ -112,4 +112,6 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
         """
         representation = super().to_representation(instance)
         representation["status_display"] = PeriodStatus(representation["status"]).label
+        representation["value"] = instance.id
+        representation["label"] = instance.name
         return representation
