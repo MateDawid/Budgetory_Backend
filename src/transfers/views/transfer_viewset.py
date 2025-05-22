@@ -1,7 +1,13 @@
+from django.db import transaction
 from django.db.models import QuerySet
 from django_filters import rest_framework as filters
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
@@ -28,3 +34,32 @@ class TransferViewSet(ModelViewSet):
             .filter(period__budget__pk=self.kwargs.get("budget_pk"))
             .distinct()
         )
+
+    @swagger_auto_schema(
+        method="delete",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "objects_ids": openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Items(type=openapi.TYPE_INTEGER),
+                    description="List of IDs to delete",
+                )
+            },
+            required=["objects_ids"],
+        ),
+    )
+    @action(detail=False, methods=["delete"])
+    def bulk_delete(self, request, budget_pk: str) -> Response:
+        """
+        Removes multiple Transfer with given IDs at once.
+
+        Returns:
+            Response: Filtered TransferCategory QuerySet.
+        """
+        ids = request.data.get("objects_ids", None)
+        if not isinstance(ids, list):
+            return Response({"error": "objects_ids must be a list."}, status=status.HTTP_400_BAD_REQUEST)
+        with transaction.atomic():
+            self.serializer_class.Meta.model.objects.filter(period__budget__id=int(budget_pk), id__in=ids).delete()
+        return Response({}, status=status.HTTP_204_NO_CONTENT)
