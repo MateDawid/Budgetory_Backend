@@ -54,9 +54,22 @@ def transfer_bulk_delete_url(budget_id: int) -> str:
         budget_id (int): Budget ID.
 
     Returns:
-        str: Relative url to detail view.
+        str: Relative url to bulk delete view.
     """
     return reverse("budgets:expense-bulk-delete", args=[budget_id])
+
+
+def transfer_copy_url(budget_id: int) -> str:
+    """
+    Create and return an Expense copy URL.
+
+    Args:
+        budget_id (int): Budget ID.
+
+    Returns:
+        str: Relative url to copy view.
+    """
+    return reverse("budgets:expense-copy", args=[budget_id])
 
 
 @pytest.mark.django_db
@@ -1546,12 +1559,135 @@ class TestExpenseViewSetBulkDelete:
         """
         GIVEN: Budget created in database.
         WHEN: ExpenseViewSet bulk delete view called with DELETE by User belonging to Budget with invalid input.
-        THEN: No content HTTP 204, Expense deleted.
+        THEN: HTTP 400, Expenses not copied.
         """
         budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
         url = transfer_bulk_delete_url(budget.id)
 
         response = api_client.delete(url, data={"objects_ids": objects_ids}, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+class TestExpenseViewSetCopy:
+    """Tests for copy Expense on ExpenseViewSet."""
+
+    def test_auth_required(self, api_client: APIClient, base_user: AbstractUser, expense_factory: FactoryMetaClass):
+        """
+        GIVEN: Expense instance for Budget created in database.
+        WHEN: Expense copy view called with POST without authentication.
+        THEN: Unauthorized HTTP 401.
+        """
+        transfer = expense_factory()
+        url = transfer_copy_url(transfer.period.budget.id)
+
+        response = api_client.post(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_auth_with_jwt(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        budget_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
+        WHEN: ExpenseViewSet copy endpoint called with POST.
+        THEN: HTTP 201 returned.
+        """
+        budget = budget_factory(members=[base_user])
+        transfer = expense_factory(budget=budget)
+        url = transfer_copy_url(budget.id)
+        jwt_access_token = get_jwt_access_token(user=base_user)
+        response = api_client.post(
+            url, data={"objects_ids": [transfer.id]}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}", format="json"
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_user_not_budget_member(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Expense instance for Budget created in database.
+        WHEN: ExpenseViewSet copy view called with POST by User not belonging to Budget.
+        THEN: Forbidden HTTP 403 returned.
+        """
+        budget = budget_factory()
+        api_client.force_authenticate(base_user)
+        url = transfer_copy_url(budget.id)
+
+        response = api_client.post(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.data["detail"] == "User does not have access to Budget."
+
+    def test_copy_transfers(
+        self,
+        api_client: APIClient,
+        base_user: Any,
+        budget_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Expense instances for Budget created in database.
+        WHEN: ExpenseViewSet copy view called with POST by User belonging to Budget.
+        THEN: No content HTTP 201, Expenses copied.
+        """
+        budget = budget_factory(members=[base_user])
+        transfer_1 = expense_factory(budget=budget)
+        transfer_2 = expense_factory(budget=budget)
+        api_client.force_authenticate(base_user)
+        url = transfer_copy_url(budget.id)
+
+        assert Expense.objects.all().count() == 2
+
+        response = api_client.post(url, data={"objects_ids": [transfer_1.id, transfer_2.id]}, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        expenses = Expense.objects.all()
+        assert expenses.count() == 4
+        unique_expenses = set(
+            list(
+                expenses.values_list(
+                    *[field_name for field_name in ExpenseSerializer.Meta.fields if field_name != "id"]
+                )
+            )
+        )
+        assert len(unique_expenses) == 2
+
+    @pytest.mark.parametrize(
+        "objects_ids",
+        [
+            None,
+            [],
+            "1",
+            "1,2",
+            1,
+        ],
+    )
+    def test_error_copy_transfers_with_invalid_ids(
+        self,
+        api_client: APIClient,
+        base_user: Any,
+        budget_factory: FactoryMetaClass,
+        objects_ids: Any,
+    ):
+        """
+        GIVEN: Budget created in database.
+        WHEN: ExpenseViewSet copy view called with POST by User belonging to Budget with invalid input.
+        THEN: HTTP 400, Expenses not copied.
+        """
+        budget = budget_factory(members=[base_user])
+        api_client.force_authenticate(base_user)
+        url = transfer_copy_url(budget.id)
+
+        response = api_client.post(url, data={"objects_ids": objects_ids}, format="json")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
