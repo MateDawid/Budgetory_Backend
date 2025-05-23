@@ -1469,7 +1469,7 @@ class TestExpenseViewSetBulkDelete:
     ):
         """
         GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
-        WHEN: ExpenseViewSet detail endpoint called with DELETE.
+        WHEN: ExpenseViewSet bulk delete endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
         budget = budget_factory(members=[base_user])
@@ -1486,11 +1486,10 @@ class TestExpenseViewSetBulkDelete:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
-        expense_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Expense instance for Budget created in database.
-        WHEN: ExpenseViewSet detail view called with DELETE by User not belonging to Budget.
+        WHEN: ExpenseViewSet bulk delete view called with DELETE by User not belonging to Budget.
         THEN: Forbidden HTTP 403 returned.
         """
         budget = budget_factory()
@@ -1510,9 +1509,9 @@ class TestExpenseViewSetBulkDelete:
         expense_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Expense instance for Budget created in database.
-        WHEN: ExpenseViewSet detail view called with DELETE by User belonging to Budget.
-        THEN: No content HTTP 204, Expense deleted.
+        GIVEN: Expense instances for Budget created in database.
+        WHEN: ExpenseViewSet bulk delete view called with DELETE by User belonging to Budget.
+        THEN: No content HTTP 204, Expenses deleted.
         """
         budget = budget_factory(members=[base_user])
         transfer_1 = expense_factory(budget=budget)
@@ -1526,3 +1525,33 @@ class TestExpenseViewSetBulkDelete:
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
         assert not Expense.objects.all().exists()
+
+    @pytest.mark.parametrize(
+        "objects_ids",
+        [
+            None,
+            [],
+            "1",
+            "1,2",
+            1,
+        ],
+    )
+    def test_error_bulk_delete_transfers_with_invalid_ids(
+        self,
+        api_client: APIClient,
+        base_user: Any,
+        budget_factory: FactoryMetaClass,
+        objects_ids: Any,
+    ):
+        """
+        GIVEN: Budget created in database.
+        WHEN: ExpenseViewSet bulk delete view called with DELETE by User belonging to Budget with invalid input.
+        THEN: No content HTTP 204, Expense deleted.
+        """
+        budget = budget_factory(members=[base_user])
+        api_client.force_authenticate(base_user)
+        url = transfer_bulk_delete_url(budget.id)
+
+        response = api_client.delete(url, data={"objects_ids": objects_ids}, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
