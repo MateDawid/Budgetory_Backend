@@ -162,6 +162,8 @@ class TestBudgetingPeriodViewSetList:
         assert len(response.data) == len(serializer.data) == periods.count() == 2
         assert response.data == serializer.data
         for period in serializer.data:
+            assert period["value"] == period["id"]
+            assert period["label"] == period["name"]
             assert period["status_display"] == PeriodStatus(period["status"]).label
             assert period["incomes_sum"] == str(
                 Decimal(
