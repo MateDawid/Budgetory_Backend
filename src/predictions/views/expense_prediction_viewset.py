@@ -1,4 +1,5 @@
-from django.db.models import QuerySet
+from django.db.models import DecimalField, F, Func, Q, QuerySet, Sum, Value
+from django.db.models.functions import Coalesce
 from django_filters import rest_framework as filters
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
@@ -8,6 +9,24 @@ from app_infrastructure.permissions import UserBelongsToBudgetPermission
 from predictions.filtersets.expense_prediction_filterset import ExpensePredictionFilterSet
 from predictions.models.expense_prediction_model import ExpensePrediction
 from predictions.serializers.expense_prediction_serializer import ExpensePredictionSerializer
+
+
+def sum_period_transfers_with_category() -> Func:
+    """
+    Function for calculate Transfers values sum of given TransferCategory in particular BudgetingPeriod.
+
+    Returns:
+        Func: ORM function returning Sum of BudgetingPeriod Transfers values for specified TransferCategory.
+    """
+    return Coalesce(
+        Sum(
+            "period__transfers__value",
+            filter=Q(period__transfers__category=F("category")),
+            output_field=DecimalField(decimal_places=2),
+        ),
+        Value(0),
+        output_field=DecimalField(decimal_places=2),
+    )
 
 
 class ExpensePredictionViewSet(ModelViewSet):
@@ -21,7 +40,7 @@ class ExpensePredictionViewSet(ModelViewSet):
     serializer_class = ExpensePredictionSerializer
 
     filterset_class = ExpensePredictionFilterSet
-    ordering_fields = ("id", "period__name", "category__name", "category__priority", "initial_value", "current_value")
+    ordering_fields = ("id", "period__name", "category__name", "category__priority", "initial_plan", "current_plan")
 
     def get_queryset(self) -> QuerySet:
         """
@@ -30,6 +49,11 @@ class ExpensePredictionViewSet(ModelViewSet):
         Returns:
             QuerySet: Filtered ExpensePrediction QuerySet.
         """
-        return ExpensePrediction.objects.filter(period__budget__pk=self.kwargs.get("budget_pk")).prefetch_related(
-            "period", "category"
+        return (
+            ExpensePrediction.objects.filter(period__budget__pk=self.kwargs.get("budget_pk"))
+            .prefetch_related("period", "category")
+            .annotate(
+                current_result=sum_period_transfers_with_category(),
+                # previous_result=?
+            )
         )
