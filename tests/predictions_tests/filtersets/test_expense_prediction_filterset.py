@@ -34,10 +34,10 @@ class TestExpensePredictionFilterSetOrdering:
             "-category__name",
             "category__priority",
             "-category__priority",
-            "initial_value",
-            "-initial_value",
-            "current_value",
-            "-current_value",
+            "initial_plan",
+            "-initial_plan",
+            "current_plan",
+            "-current_plan",
         ),
     )
     def test_get_predictions_list_sorted_by_param(
@@ -64,18 +64,10 @@ class TestExpensePredictionFilterSetOrdering:
         category_2 = transfer_category_factory(
             budget=budget, name="Other", owner=None, priority=CategoryPriority.OTHERS
         )
-        expense_prediction_factory(
-            budget=budget, current_value=5, initial_value=5, period=period_1, category=category_1
-        )
-        expense_prediction_factory(
-            budget=budget, current_value=4, initial_value=4, period=period_2, category=category_2
-        )
-        expense_prediction_factory(
-            budget=budget, current_value=3, initial_value=3, period=period_2, category=category_1
-        )
-        expense_prediction_factory(
-            budget=budget, current_value=2, initial_value=2, period=period_1, category=category_2
-        )
+        expense_prediction_factory(budget=budget, current_plan=5, initial_plan=5, period=period_1, category=category_1)
+        expense_prediction_factory(budget=budget, current_plan=4, initial_plan=4, period=period_2, category=category_2)
+        expense_prediction_factory(budget=budget, current_plan=3, initial_plan=3, period=period_2, category=category_1)
+        expense_prediction_factory(budget=budget, current_plan=2, initial_plan=2, period=period_1, category=category_2)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(expense_prediction_url(budget.id), data={"ordering": sort_param})
@@ -167,7 +159,7 @@ class TestExpensePredictionFilterSetFiltering:
         assert response.data == serializer.data
         assert response.data[0]["id"] == prediction.id
 
-    @pytest.mark.parametrize("field", ("initial_value", "current_value"))
+    @pytest.mark.parametrize("field", ("initial_plan", "current_plan"))
     def test_get_predictions_list_filtered_by_value(
         self,
         api_client: APIClient,
@@ -203,7 +195,7 @@ class TestExpensePredictionFilterSetFiltering:
         assert response.data[0]["id"] == prediction.id
         assert response.data[0][field] == value
 
-    @pytest.mark.parametrize("field", ("initial_value", "current_value"))
+    @pytest.mark.parametrize("field", ("initial_plan", "current_plan"))
     def test_get_predictions_list_filtered_by_value_max(
         self,
         api_client: APIClient,
@@ -239,7 +231,7 @@ class TestExpensePredictionFilterSetFiltering:
         assert response.data[0]["id"] == prediction.id
         assert response.data[0][field] == value
 
-    @pytest.mark.parametrize("field", ("initial_value", "current_value"))
+    @pytest.mark.parametrize("field", ("initial_plan", "current_plan"))
     def test_get_predictions_list_filtered_by_value_min(
         self,
         api_client: APIClient,

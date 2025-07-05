@@ -15,7 +15,7 @@ class TestExpensePredictionModel:
     """Tests for ExpensePrediction model"""
 
     PAYLOAD = {
-        "current_value": Decimal("100.00"),
+        "current_plan": Decimal("100.00"),
         "description": "50.00 for X, 50.00 for Y",
     }
 
@@ -61,7 +61,7 @@ class TestExpensePredictionModel:
         assert not ExpensePrediction.objects.all().exists()
 
     @pytest.mark.django_db(transaction=True)
-    @pytest.mark.parametrize("field", ("initial_value", "current_value"))
+    @pytest.mark.parametrize("field", ("initial_plan", "current_plan"))
     def test_error_value_too_long(
         self,
         budget: Budget,
@@ -89,7 +89,7 @@ class TestExpensePredictionModel:
         assert not ExpensePrediction.objects.all().exists()
 
     @pytest.mark.django_db(transaction=True)
-    @pytest.mark.parametrize("field", ("initial_value", "current_value"))
+    @pytest.mark.parametrize("field", ("initial_plan", "current_plan"))
     @pytest.mark.parametrize("value", [Decimal("0.00"), Decimal("-0.01")])
     def test_error_value_too_low(
         self,

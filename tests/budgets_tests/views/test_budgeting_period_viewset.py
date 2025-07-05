@@ -1069,7 +1069,7 @@ class TestBudgetingPeriodViewSetUpdate:
         assert "status" in response.data["detail"]
         assert response.data["detail"]["status"][0] == "Active period already exists in Budget."
 
-    def test_update_predictions_initial_value_on_period_activating(
+    def test_update_predictions_initial_plan_on_period_activating(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -1090,8 +1090,8 @@ class TestBudgetingPeriodViewSetUpdate:
             date_end=date(2024, 1, 31),
             status=PeriodStatus.DRAFT,
         )
-        prediction_1 = expense_prediction_factory(period=period, current_value=123.00)
-        prediction_2 = expense_prediction_factory(period=period, current_value=321.00)
+        prediction_1 = expense_prediction_factory(period=period, current_plan=123.00)
+        prediction_2 = expense_prediction_factory(period=period, current_plan=321.00)
         payload = {"status": PeriodStatus.ACTIVE}
         url = period_detail_url(period.budget.id, period.id)
 
@@ -1102,7 +1102,7 @@ class TestBudgetingPeriodViewSetUpdate:
         assert period.status == PeriodStatus.ACTIVE
         for prediction in (prediction_1, prediction_2):
             prediction.refresh_from_db()
-            assert prediction.initial_value == prediction.current_value
+            assert prediction.initial_value == prediction.current_plan
 
 
 @pytest.mark.django_db

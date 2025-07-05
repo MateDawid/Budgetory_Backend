@@ -186,7 +186,7 @@ class TestExpensePredictionViewSetCreate:
     """Tests for create ExpensePrediction on ExpensePredictionViewSet."""
 
     PAYLOAD = {
-        "current_value": Decimal("100.00"),
+        "current_plan": Decimal("100.00"),
         "description": "Expense prediction.",
     }
 
@@ -270,7 +270,7 @@ class TestExpensePredictionViewSetCreate:
         prediction = ExpensePrediction.objects.get(id=response.data["id"])
         for key in self.PAYLOAD:
             assert getattr(prediction, key) == self.PAYLOAD[key]
-        assert getattr(prediction, "initial_value") is None
+        assert getattr(prediction, "initial_plan") is None
         assert prediction.category == category
         assert prediction.period == period
         serializer = ExpensePredictionSerializer(prediction)
@@ -303,7 +303,7 @@ class TestExpensePredictionViewSetCreate:
         )
         assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
 
-    @pytest.mark.parametrize("current_value", [Decimal("0.00"), Decimal("-0.01")])
+    @pytest.mark.parametrize("current_plan", [Decimal("0.00"), Decimal("-0.01")])
     def test_error_value_lower_than_min(
         self,
         api_client: APIClient,
@@ -311,11 +311,11 @@ class TestExpensePredictionViewSetCreate:
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
-        current_value: Decimal,
+        current_plan: Decimal,
     ):
         """
         GIVEN: Budget, BudgetingPeriod and TransferCategory instances created in database. Payload for ExpensePrediction
-        with current_value too low.
+        with current_plan too low.
         WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not created in database.
         """
@@ -326,13 +326,13 @@ class TestExpensePredictionViewSetCreate:
         payload = self.PAYLOAD.copy()
         payload["period"] = period.id
         payload["category"] = category.id
-        payload["current_value"] = current_value
+        payload["current_plan"] = current_plan
 
         response = api_client.post(expense_prediction_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "current_value" in response.data["detail"]
-        assert response.data["detail"]["current_value"][0] == "Value should be higher than 0.00."
+        assert "current_plan" in response.data["detail"]
+        assert response.data["detail"]["current_plan"][0] == "Value should be higher than 0.00."
         assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
 
     def test_error_category_not_with_expense_type(
@@ -557,7 +557,7 @@ class TestExpensePredictionViewSetUpdate:
     """Tests for update view on ExpensePredictionViewSet."""
 
     PAYLOAD = {
-        "current_value": Decimal("100.00"),
+        "current_plan": Decimal("100.00"),
         "description": "Expense prediction.",
     }
 
@@ -619,7 +619,7 @@ class TestExpensePredictionViewSetUpdate:
     @pytest.mark.parametrize(
         "param, value",
         [
-            ("current_value", Decimal("200.00")),
+            ("current_plan", Decimal("200.00")),
             ("description", "New description"),
         ],
     )
@@ -748,7 +748,7 @@ class TestExpensePredictionViewSetUpdate:
         prediction = expense_prediction_factory(period=period)
         period.status = PeriodStatus.CLOSED
         period.save()
-        payload = {"current_value": Decimal("123.45")}
+        payload = {"current_plan": Decimal("123.45")}
         api_client.force_authenticate(base_user)
         url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
 
@@ -777,10 +777,10 @@ class TestExpensePredictionViewSetUpdate:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, status=PeriodStatus.DRAFT)
-        prediction = expense_prediction_factory(period=period, current_value=Decimal("100.00"))
+        prediction = expense_prediction_factory(period=period, current_plan=Decimal("100.00"))
         period.status = PeriodStatus.ACTIVE
         period.save()
-        payload = {"current_value": Decimal("123.45")}
+        payload = {"current_plan": Decimal("123.45")}
         api_client.force_authenticate(base_user)
         url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
 
@@ -788,7 +788,7 @@ class TestExpensePredictionViewSetUpdate:
 
         assert response.status_code == status.HTTP_200_OK
         prediction.refresh_from_db()
-        assert prediction.current_value == Decimal("123.45")
+        assert prediction.current_plan == Decimal("123.45")
 
     def test_error_change_period_of_prediction(
         self,

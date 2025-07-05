@@ -84,7 +84,7 @@ class BudgetingPeriodViewSet(ModelViewSet):
 
     def update(self, request: Request, *args: list, **kwargs: dict) -> Response:
         """
-        Method extended with updating periods ExpensePredictions initial_value field on activating
+        Method extended with updating periods ExpensePredictions initial_plan field on activating
         BudgetingPeriod.
 
         Args:
@@ -97,7 +97,7 @@ class BudgetingPeriodViewSet(ModelViewSet):
         """
         with transaction.atomic():
             if int(request.data.get("status", 0)) == PeriodStatus.ACTIVE.value:
-                ExpensePrediction.objects.filter(period__id=kwargs.get("pk"), initial_value__isnull=True).update(
-                    initial_value=F("current_value")
+                ExpensePrediction.objects.filter(period__id=kwargs.get("pk"), initial_plan__isnull=True).update(
+                    initial_plan=F("current_plan")
                 )
             return super().update(request, *args, **kwargs)

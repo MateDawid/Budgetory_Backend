@@ -14,7 +14,7 @@ class ExpensePredictionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "predictions.ExpensePrediction"
 
-    current_value = factory.Faker("pyint", min_value=0, max_value=99999999)
+    current_plan = factory.Faker("pyint", min_value=0, max_value=99999999)
     description = factory.Faker("text", max_nb_chars=255)
 
     @factory.lazy_attribute
@@ -31,7 +31,7 @@ class ExpensePredictionFactory(factory.django.DjangoModelFactory):
         return BudgetingPeriodFactory(budget=budget)
 
     @factory.lazy_attribute
-    def initial_value(self, *args) -> float | None:
+    def initial_plan(self, *args) -> float | None:
         """
         Returns TransferCategory with the same Budget as prediction period and CategoryType.EXPENSE category_type field.
 
@@ -39,7 +39,7 @@ class ExpensePredictionFactory(factory.django.DjangoModelFactory):
             TransferCategory: Generated TransferCategory.
         """
         if self.period.status in (PeriodStatus.ACTIVE, PeriodStatus.CLOSED):
-            return self.current_value
+            return self.current_plan
         else:
             return None
 

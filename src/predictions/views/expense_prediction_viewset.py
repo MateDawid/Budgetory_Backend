@@ -54,6 +54,6 @@ class ExpensePredictionViewSet(ModelViewSet):
             .prefetch_related("period", "category")
             .annotate(
                 current_result=sum_period_transfers_with_category(),
-                # previous_result=?
+                # previous_result=? TODO
             )
         )
