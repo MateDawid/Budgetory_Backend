@@ -41,6 +41,15 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE, related_name="periods", to="budgets.budget"
                     ),
                 ),
+                ("previous_period",
+                 models.ForeignKey(
+                     blank=True,
+                     help_text="Reference to the previous budgeting period within the same budget",
+                     null=True,
+                     on_delete=django.db.models.deletion.SET_NULL,
+                     related_name="next_periods",
+                     to="budgets.budgetingperiod",
+                 )),
             ],
             options={
                 "unique_together": {("name", "budget")},
