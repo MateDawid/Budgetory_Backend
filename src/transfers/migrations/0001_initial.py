@@ -27,7 +27,9 @@ class Migration(migrations.Migration):
                 (
                     "category",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.PROTECT,
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
                         related_name="transfers",
                         to="categories.transfercategory",
                     ),
@@ -35,7 +37,9 @@ class Migration(migrations.Migration):
                 (
                     "deposit",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.PROTECT,
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
                         related_name="deposit_transfers",
                         to="entities.deposit",
                     ),
@@ -43,7 +47,9 @@ class Migration(migrations.Migration):
                 (
                     "entity",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.PROTECT,
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
                         related_name="entity_transfers",
                         to="entities.entity",
                     ),
@@ -51,7 +57,7 @@ class Migration(migrations.Migration):
                 (
                     "period",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.PROTECT,
+                        on_delete=django.db.models.deletion.CASCADE,
                         related_name="transfers",
                         to="budgets.budgetingperiod",
                     ),
