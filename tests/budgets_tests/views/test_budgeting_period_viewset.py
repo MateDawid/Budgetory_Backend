@@ -1102,7 +1102,7 @@ class TestBudgetingPeriodViewSetUpdate:
         assert period.status == PeriodStatus.ACTIVE
         for prediction in (prediction_1, prediction_2):
             prediction.refresh_from_db()
-            assert prediction.initial_value == prediction.current_plan
+            assert prediction.initial_plan == prediction.current_plan
 
 
 @pytest.mark.django_db
