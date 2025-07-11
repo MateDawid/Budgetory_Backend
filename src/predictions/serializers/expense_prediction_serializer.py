@@ -17,11 +17,23 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
     """Serializer for ExpensePrediction model."""
 
     current_result = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
+    previous_plan = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
+    previous_result = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
 
     class Meta:
         model: Model = ExpensePrediction
-        fields = ("id", "period", "category", "current_plan", "initial_plan", "description", "current_result")
-        read_only_fields = ("id", "initial_plan", "current_result")
+        fields = (
+            "id",
+            "period",
+            "category",
+            "current_plan",
+            "initial_plan",
+            "description",
+            "current_result",
+            "previous_plan",
+            "previous_result",
+        )
+        read_only_fields = ("id", "initial_plan", "current_result", "previous_result", "previous_plan")
 
     @staticmethod
     def validate_category(category: TransferCategory) -> TransferCategory:
@@ -113,7 +125,4 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
         representation["category_display"] = f"📉{instance.category.name}"
         representation["category_owner"] = getattr(instance.category.owner, "username", "🏦 Common")
         representation["category_priority"] = CategoryPriority(instance.category.priority).label
-
-        representation["previous_result"] = representation["current_plan"]
-
         return representation
