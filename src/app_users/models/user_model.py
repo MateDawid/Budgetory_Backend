@@ -35,4 +35,4 @@ class User(AbstractBaseUser, PermissionsMixin):
         Returns:
             bool: True if User is member of given Budget, False otherwise.
         """
-        return bool(self.budgets.filter(pk=budget_id).values("pk"))  # NOQA
+        return self.budgets.filter(pk=budget_id).exists()  # NOQA
