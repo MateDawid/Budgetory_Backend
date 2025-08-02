@@ -1,6 +1,6 @@
 from django.urls import path
 
-from predictions.views.users_results_viewset import UsersResultsAPIView
+from predictions.views.users_results_view import UsersResultsAPIView
 
 app_name = "predictions"
 
