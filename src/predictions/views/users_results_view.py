@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from django.db.models import DecimalField, Func, OuterRef, Q, Subquery, Sum, Value
+from django.db.models import DecimalField, Func, OuterRef, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -10,41 +10,19 @@ from rest_framework.views import APIView
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
 from budgets.models import Budget
 from categories.models.choices.category_priority import CategoryPriority
-from transfers.models import Expense, Transfer
-
-# def get_period_balance(period_ref: str) -> Func:
-#     """
-#     Function for calculate Transfers values sum of given TransferCategory in BudgetingPeriod.
-#
-#     Args:
-#         period_ref (string): Period field name for OuterRef.
-#
-#     Returns:
-#         Func: ORM function returning Sum of BudgetingPeriod Transfers values for specified TransferCategory.
-#     """
-#
-#     return Coalesce(
-#         Subquery(
-#             Transfer.objects.filter(period=OuterRef(period_ref))
-#             .values("period")
-#             .annotate(total=Sum("value"))
-#             .values("total")[:1],
-#             output_field=DecimalField(decimal_places=2),
-#             ),
-#         Value(0),
-#         output_field=DecimalField(decimal_places=2),
-#     )
+from predictions.models import ExpensePrediction
+from transfers.models import Expense
 
 
 def get_user_period_expenses(period_pk: int) -> Func:
     """
-    Function for calculate Transfers values sum of given TransferCategory in BudgetingPeriod.
+    Function for calculate Transfers values sum in BudgetingPeriod done by particular User.
 
     Args:
-        period_pk (string): Period field name for OuterRef.
+        period_pk (int): Period id.
 
     Returns:
-        Func: ORM function returning Sum of BudgetingPeriod Transfers values for specified TransferCategory.
+        Func: ORM function returning Sum of BudgetingPeriod Transfers values for specified User.
     """
 
     return Coalesce(
@@ -52,6 +30,30 @@ def get_user_period_expenses(period_pk: int) -> Func:
             Expense.objects.filter(period=period_pk, category__owner__pk=OuterRef("pk"))
             .values("period")
             .annotate(total=Sum("value"))
+            .values("total")[:1],
+            output_field=DecimalField(decimal_places=2),
+        ),
+        Value(0),
+        output_field=DecimalField(decimal_places=2),
+    )
+
+
+def get_user_period_expense_predictions(period_pk: int) -> Func:
+    """
+    Function for calculate ExpensePredictions current_plan values sum in BudgetingPeriod for particular User.
+
+    Args:
+        period_pk (int): Period id.
+
+    Returns:
+        Func: ORM function returning Sum of BudgetingPeriod ExpensePredictions current_plan values for specified User.
+    """
+
+    return Coalesce(
+        Subquery(
+            ExpensePrediction.objects.filter(period=period_pk, category__owner__pk=OuterRef("pk"))
+            .values("period")
+            .annotate(total=Sum("current_plan"))
             .values("total")[:1],
             output_field=DecimalField(decimal_places=2),
         ),
@@ -85,8 +87,11 @@ class UsersResultsAPIView(APIView):
         budget_members = (
             Budget.objects.get(pk=budget_pk)
             .members.all()
-            .annotate(period_expenses=get_user_period_expenses(period_pk))
-            .values("id", "username", "period_expenses")
+            .annotate(
+                predictions_sum=get_user_period_expense_predictions(period_pk),
+                period_expenses=get_user_period_expenses(period_pk),
+            )
+            .values("id", "username", "period_expenses", "predictions_sum")
         )
         # TODO - common user
         # {"id": None, "username": "🏦 Common"},
@@ -96,7 +101,7 @@ class UsersResultsAPIView(APIView):
                 "user_id": member["id"],
                 "user_username": member["username"],
                 "period_id": period_pk,
-                "predictions_sum": Decimal("10.00"),
+                "predictions_sum": member["predictions_sum"],
                 "period_balance": Decimal("10.00"),
                 "period_expenses": member["period_expenses"],
             }
