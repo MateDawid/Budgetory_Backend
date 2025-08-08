@@ -154,7 +154,6 @@ class UsersResultsAPIView(APIView):
         Returns:
             Response: Serialized UserResults in particular BudgetingPeriod.
         """
-        response = []
         budget_members = (
             Budget.objects.get(pk=budget_pk)
             .members.all()
@@ -189,15 +188,14 @@ class UsersResultsAPIView(APIView):
             )
             .values("id", "username", "period_expenses", "predictions_sum", "period_balance")
         )
-
-        all_members = budget_members.union(none_user_queryset).order_by("id")
-        for member in all_members:
-            user_data = {
-                "user_username": member["username"],
-                "period_id": period_pk,
-                "predictions_sum": member["predictions_sum"],
-                "period_balance": member["period_balance"],
-                "period_expenses": member["period_expenses"],
-            }
-            response.append(user_data)
-        return Response(response)
+        return Response(
+            [
+                {
+                    "user_username": member["username"],
+                    "predictions_sum": member["predictions_sum"],
+                    "period_balance": member["period_balance"],
+                    "period_expenses": member["period_expenses"],
+                }
+                for member in budget_members.union(none_user_queryset).order_by("id")
+            ]
+        )
