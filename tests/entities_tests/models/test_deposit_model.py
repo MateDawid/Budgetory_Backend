@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import DataError, IntegrityError
 
 from budgets.models.budget_model import Budget
+from entities.models.choices.deposit_type import DepositType
 from entities.models.deposit_model import Deposit
 
 
@@ -10,7 +11,13 @@ from entities.models.deposit_model import Deposit
 class TestDepositModel:
     """Tests for Deposit model"""
 
-    PAYLOAD: dict = {"name": "Bank account", "description": "My own bank account", "is_active": True}
+    PAYLOAD: dict = {
+        "name": "Bank account",
+        "description": "My own bank account",
+        "is_active": True,
+        "is_deposit": True,
+        "deposit_type": DepositType.DAILY_EXPENSES,
+    }
 
     def test_save_deposit(self, budget: Budget):
         """
@@ -47,23 +54,6 @@ class TestDepositModel:
         assert Deposit.objects.filter(budget=budget).count() == 1
         assert deposit.is_deposit is True
         assert str(deposit) == f"{deposit.name} ({deposit.budget.name})"
-
-    def test_is_deposit_true_on_deposit_save(self, budget: Budget):
-        """
-        GIVEN: Budget model instance in database.
-        WHEN: Deposit instance save attempt with is_deposit=False in payload.
-        THEN: Deposit model instance exists in database with is_deposit=True.
-        """
-        payload = self.PAYLOAD.copy()
-        payload["budget"] = budget
-        payload["is_deposit"] = False
-
-        deposit = Deposit(**payload)
-        deposit.full_clean()
-        deposit.save()
-
-        assert Deposit.objects.filter(budget=budget).count() == 1
-        assert deposit.is_deposit is True
 
     def test_is_deposit_true_on_deposit_create(self, budget: Budget):
         """

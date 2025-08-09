@@ -6,6 +6,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from entities.models import Entity
+from entities.models.choices.deposit_type import DepositType
 from entities.serializers.entity_serializer import EntitySerializer
 
 
@@ -160,8 +161,18 @@ class TestEntityFilterSetFiltering:
         matching "is_deposit" value.
         """
         budget = budget_factory(members=[base_user])
-        matching_entity = entity_factory(budget=budget, name="Some entity", is_deposit=filter_value)
-        entity_factory(budget=budget, name="Other one", is_deposit=not filter_value)
+        matching_entity = entity_factory(
+            budget=budget,
+            name="Some entity",
+            is_deposit=filter_value,
+            deposit_type=DepositType.DAILY_EXPENSES if filter_value else None,
+        )
+        entity_factory(
+            budget=budget,
+            name="Other one",
+            is_deposit=not filter_value,
+            deposit_type=None if filter_value else DepositType.DAILY_EXPENSES,
+        )
         api_client.force_authenticate(base_user)
 
         response = api_client.get(entities_url(budget.id), data={"is_deposit": filter_value})

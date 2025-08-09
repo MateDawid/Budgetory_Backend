@@ -12,6 +12,10 @@ from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from predictions.models import ExpensePrediction
 from predictions.serializers.expense_prediction_serializer import ExpensePredictionSerializer
+from predictions.views.expense_prediction_viewset import (
+    get_previous_period_prediction_plan,
+    sum_period_transfers_with_category,
+)
 
 
 def expense_prediction_url(budget_id: int):
@@ -76,6 +80,11 @@ class TestExpensePredictionFilterSetOrdering:
         predictions = (
             ExpensePrediction.objects.filter(period__budget__pk=budget.pk)
             .prefetch_related("period", "category")
+            .annotate(
+                current_result=sum_period_transfers_with_category(period_ref="period"),
+                previous_plan=get_previous_period_prediction_plan(),
+                previous_result=sum_period_transfers_with_category(period_ref="period__previous_period"),
+            )
             .order_by(sort_param)
         )
         serializer = ExpensePredictionSerializer(predictions, many=True)

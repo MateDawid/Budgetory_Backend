@@ -56,6 +56,6 @@ class DepositSerializer(EntitySerializer):
             OrderedDict: Dictionary containing overridden values.
         """
         representation = super().to_representation(instance)
-        representation["owner_display"] = getattr(instance, "owner_display", None)  # noqa
+        representation["owner_display"] = getattr(instance, "owner_display", "🏦 Common")  # noqa
         representation["deposit_type_display"] = DepositType(representation["deposit_type"]).label
         return representation
