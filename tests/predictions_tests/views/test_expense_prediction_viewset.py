@@ -157,7 +157,7 @@ class TestExpensePredictionViewSetList:
 
         response = api_client.get(expense_prediction_url(budget.id))
 
-        predictions = ExpensePrediction.objects.filter(period__budget=budget)
+        predictions = ExpensePrediction.objects.filter(period__budget=budget).order_by("id")
         serializer = ExpensePredictionSerializer(predictions, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert response.data == serializer.data
@@ -225,11 +225,15 @@ class TestExpensePredictionViewSetList:
 
         response = api_client.get(expense_prediction_url(budget.id))
 
-        predictions = ExpensePrediction.objects.annotate(
-            current_result=sum_period_transfers_with_category(period_ref="period"),
-            previous_plan=get_previous_period_prediction_plan(),
-            previous_result=sum_period_transfers_with_category(period_ref="period__previous_period"),
-        ).filter(period__budget=budget)
+        predictions = (
+            ExpensePrediction.objects.annotate(
+                current_result=sum_period_transfers_with_category(period_ref="period"),
+                previous_plan=get_previous_period_prediction_plan(),
+                previous_result=sum_period_transfers_with_category(period_ref="period__previous_period"),
+            )
+            .filter(period__budget=budget)
+            .order_by("id")
+        )
         serializer = ExpensePredictionSerializer(predictions, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert response.data == serializer.data
@@ -280,11 +284,15 @@ class TestExpensePredictionViewSetList:
 
         response = api_client.get(expense_prediction_url(budget.id))
 
-        predictions = ExpensePrediction.objects.annotate(
-            current_result=sum_period_transfers_with_category(period_ref="period"),
-            previous_plan=get_previous_period_prediction_plan(),
-            previous_result=sum_period_transfers_with_category(period_ref="period__previous_period"),
-        ).filter(period__budget=budget)
+        predictions = (
+            ExpensePrediction.objects.annotate(
+                current_result=sum_period_transfers_with_category(period_ref="period"),
+                previous_plan=get_previous_period_prediction_plan(),
+                previous_result=sum_period_transfers_with_category(period_ref="period__previous_period"),
+            )
+            .filter(period__budget=budget)
+            .order_by("id")
+        )
         serializer = ExpensePredictionSerializer(predictions, many=True)
 
         assert response.status_code == status.HTTP_200_OK

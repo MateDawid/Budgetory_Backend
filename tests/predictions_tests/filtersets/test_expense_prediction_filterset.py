@@ -85,6 +85,7 @@ class TestExpensePredictionFilterSetOrdering:
                 previous_plan=get_previous_period_prediction_plan(),
                 previous_result=sum_period_transfers_with_category(period_ref="period__previous_period"),
             )
+            .order_by("id")
             .order_by(sort_param)
         )
         serializer = ExpensePredictionSerializer(predictions, many=True)
