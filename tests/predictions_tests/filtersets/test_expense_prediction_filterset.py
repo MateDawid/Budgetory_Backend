@@ -77,17 +77,24 @@ class TestExpensePredictionFilterSetOrdering:
         response = api_client.get(expense_prediction_url(budget.id), data={"ordering": sort_param})
 
         assert response.status_code == status.HTTP_200_OK
-        predictions = (
+
+        # Get the base queryset (same as ViewSet)
+        base_queryset = (
             ExpensePrediction.objects.filter(period__budget__pk=budget.pk)
-            .prefetch_related("period", "category")
+            .select_related(
+                "period", "period__budget", "period__previous_period", "category", "category__budget", "category__owner"
+            )
             .annotate(
                 current_result=sum_period_transfers_with_category(period_ref="period"),
                 previous_plan=get_previous_period_prediction_plan(),
                 previous_result=sum_period_transfers_with_category(period_ref="period__previous_period"),
             )
-            .order_by("id")
-            .order_by(sort_param)
+            .order_by("id")  # Default ordering
         )
+
+        # Apply the same ordering logic as OrderingFilter
+        predictions = base_queryset.order_by(sort_param)  # This replaces the default ordering
+
         serializer = ExpensePredictionSerializer(predictions, many=True)
         assert response.data and serializer.data
         assert len(response.data) == len(serializer.data) == len(predictions) == 4
