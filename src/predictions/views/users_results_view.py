@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db.models import CharField, DecimalField, F, Func, OuterRef, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from rest_framework.permissions import IsAuthenticated
@@ -50,7 +52,7 @@ def get_user_period_expenses(budget_pk: int, period_pk: int, is_common_user: boo
             .values("total")[:1],
             output_field=DecimalField(decimal_places=2),
         ),
-        Value(0),
+        Value(Decimal("0.00")),
         output_field=DecimalField(decimal_places=2),
     )
 
@@ -79,7 +81,7 @@ def get_user_period_expense_predictions(budget_pk: int, period_pk: int, is_commo
             .values("total")[:1],
             output_field=DecimalField(decimal_places=2),
         ),
-        Value(0),
+        Value(Decimal("0.00")),
         output_field=DecimalField(decimal_places=2),
     )
 
@@ -110,14 +112,14 @@ def sum_period_and_previous_transfers(
                         "date_start" if category_type == CategoryType.EXPENSE else "date_end"
                     )[:1]
                 ),
-                **get_category_owner_filter(is_common_user)
+                **get_category_owner_filter(is_common_user),
             )
             .values("category__category_type")
             .annotate(total=Sum("value"))
             .values("total")[:1],
             output_field=DecimalField(decimal_places=2),
         ),
-        Value(0),
+        Value(Decimal("0.00")),
         output_field=DecimalField(decimal_places=2),
     )
 
@@ -130,7 +132,9 @@ def get_user_period_balance() -> Func:
         Func: ORM function returning Sum of BudgetingPeriod ExpensePredictions current_plan values for specified User.
     """
 
-    return Coalesce(F("incomes_sum") - F("expenses_sum"), Value(0), output_field=DecimalField(decimal_places=2))
+    return Coalesce(
+        F("incomes_sum") - F("expenses_sum"), Value(Decimal("0.00")), output_field=DecimalField(decimal_places=2)
+    )
 
 
 class UsersResultsAPIView(APIView):
@@ -188,13 +192,14 @@ class UsersResultsAPIView(APIView):
             )
             .values("id", "username", "period_expenses", "predictions_sum", "period_balance")
         )
+
         return Response(
             [
                 {
                     "user_username": member["username"],
-                    "predictions_sum": member["predictions_sum"],
-                    "period_balance": member["period_balance"],
-                    "period_expenses": member["period_expenses"],
+                    "predictions_sum": f"{Decimal(str(member['predictions_sum'])):.2f}",
+                    "period_balance": f"{Decimal(str(member['period_balance'])):.2f}",
+                    "period_expenses": f"{Decimal(str(member['period_expenses'])):.2f}",
                 }
                 for member in budget_members.union(none_user_queryset).order_by("id")
             ]

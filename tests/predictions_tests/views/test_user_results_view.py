@@ -102,15 +102,15 @@ class TestUsersResultsAPIView:
 
         # Check common user (should be first due to id=0)
         common_data = next(item for item in response.data if item["user_username"] == "🏦 Common")
-        assert common_data["predictions_sum"] == Decimal("0.00")
-        assert common_data["period_balance"] == Decimal("0.00")
-        assert common_data["period_expenses"] == Decimal("0.00")
+        assert common_data["predictions_sum"] == "0.00"
+        assert common_data["period_balance"] == "0.00"
+        assert common_data["period_expenses"] == "0.00"
 
         # Check regular user
         user_data = next(item for item in response.data if item["user_username"] == base_user.username)
-        assert user_data["predictions_sum"] == Decimal("0.00")
-        assert user_data["period_balance"] == Decimal("0.00")
-        assert user_data["period_expenses"] == Decimal("0.00")
+        assert user_data["predictions_sum"] == "0.00"
+        assert user_data["period_balance"] == "0.00"
+        assert user_data["period_expenses"] == "0.00"
 
     def test_get_users_results_with_multiple_members(
         self,
@@ -179,15 +179,15 @@ class TestUsersResultsAPIView:
 
         # Check user with prediction
         user_data = next(item for item in response.data if item["user_username"] == base_user.username)
-        assert user_data["predictions_sum"] == Decimal("200.00")
+        assert user_data["predictions_sum"] == "200.00"
 
         # Check common user with prediction
         common_data = next(item for item in response.data if item["user_username"] == "🏦 Common")
-        assert common_data["predictions_sum"] == Decimal("300.00")
+        assert common_data["predictions_sum"] == "300.00"
 
         # Check other user without predictions
         other_user_data = next(item for item in response.data if item["user_username"] == other_user.username)
-        assert other_user_data["predictions_sum"] == Decimal("0.00")
+        assert other_user_data["predictions_sum"] == "0.00"
 
     def test_get_users_results_with_period_expenses(
         self,
@@ -227,15 +227,15 @@ class TestUsersResultsAPIView:
 
         # Check user with expenses
         user_data = next(item for item in response.data if item["user_username"] == base_user.username)
-        assert user_data["period_expenses"] == Decimal("200.00")
+        assert user_data["period_expenses"] == "200.00"
 
         # Check common user with expenses
         common_data = next(item for item in response.data if item["user_username"] == "🏦 Common")
-        assert common_data["period_expenses"] == Decimal("300.00")
+        assert common_data["period_expenses"] == "300.00"
 
         # Check other user without expenses
         other_user_data = next(item for item in response.data if item["user_username"] == other_user.username)
-        assert other_user_data["period_expenses"] == Decimal("0.00")
+        assert other_user_data["period_expenses"] == "0.00"
 
     def test_get_users_results_with_transfers_and_balance(
         self,
@@ -275,7 +275,7 @@ class TestUsersResultsAPIView:
 
         # Check user balance (incomes - expenses)
         user_data = next(item for item in response.data if item["user_username"] == base_user.username)
-        assert user_data["period_balance"] == Decimal("700.00")  # 1000 - 300
+        assert user_data["period_balance"] == "700.00"  # 1000 - 300
 
     def test_get_users_results_response_structure(
         self,
@@ -298,17 +298,15 @@ class TestUsersResultsAPIView:
         assert response.status_code == status.HTTP_200_OK
         assert isinstance(response.data, list)
 
-        # Check that all items have required fields
         for item in response.data:
             assert "user_username" in item
             assert "predictions_sum" in item
             assert "period_balance" in item
             assert "period_expenses" in item
 
-            # Check that all values are properly formatted decimals
-            assert isinstance(item["predictions_sum"], Decimal)
-            assert isinstance(item["period_balance"], Decimal)
-            assert isinstance(item["period_expenses"], Decimal)
+            assert isinstance(item["predictions_sum"], str)
+            assert isinstance(item["period_balance"], str)
+            assert isinstance(item["period_expenses"], str)
 
     def test_get_users_results_common_user_format(
         self,
@@ -414,21 +412,21 @@ class TestUsersResultsAPIViewIntegration:
 
         # Check base_user data
         user_data = next(item for item in response.data if item["user_username"] == base_user.username)
-        assert user_data["predictions_sum"] == Decimal("400.00")  # User's prediction
-        assert user_data["period_expenses"] == Decimal("200.00")  # Current period expense
-        assert user_data["period_balance"] == Decimal("1200.00")  # 2000 income - 800 expense from previous
+        assert user_data["predictions_sum"] == "400.00"  # User's prediction
+        assert user_data["period_expenses"] == "200.00"  # Current period expense
+        assert user_data["period_balance"] == "1200.00"  # 2000 income - 800 expense from previous
 
         # Check other_user data
         other_data = next(item for item in response.data if item["user_username"] == other_user.username)
-        assert other_data["predictions_sum"] == Decimal("0.00")  # No predictions
-        assert other_data["period_expenses"] == Decimal("0.00")  # No current period expenses
-        assert other_data["period_balance"] == Decimal("1500.00")  # 1500 income from previous
+        assert other_data["predictions_sum"] == "0.00"  # No predictions
+        assert other_data["period_expenses"] == "0.00"  # No current period expenses
+        assert other_data["period_balance"] == "1500.00"  # 1500 income from previous
 
         # Check common data
         common_data = next(item for item in response.data if item["user_username"] == "🏦 Common")
-        assert common_data["predictions_sum"] == Decimal("500.00")  # Common prediction
-        assert common_data["period_expenses"] == Decimal("150.00")  # Common current period expense
-        assert common_data["period_balance"] == Decimal("0.00")  # No previous transfers
+        assert common_data["predictions_sum"] == "500.00"  # Common prediction
+        assert common_data["period_expenses"] == "150.00"  # Common current period expense
+        assert common_data["period_balance"] == "0.00"  # No previous transfers
 
     def test_decimal_precision_handling(
         self,
