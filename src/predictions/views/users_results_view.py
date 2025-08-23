@@ -139,7 +139,7 @@ def get_user_period_balance() -> Func:
 
 class UsersResultsAPIView(APIView):
     """
-    View returning CategoryPriority choices for TransferCategory.
+    View returning Users results in indicated Period - predictions, planned expenses and actual expenses.
     """
 
     choices = CategoryPriority.choices
