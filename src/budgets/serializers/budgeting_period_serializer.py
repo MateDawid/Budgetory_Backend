@@ -99,11 +99,12 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
         if colliding_periods.exists():
             raise ValidationError("Budgeting period date range collides with other period in Budget.")
 
-        newer_periods = BudgetingPeriod.objects.filter(budget__pk=budget_pk, date_start__gte=date_end).exclude(
-            pk=getattr(self.instance, "pk", None)
-        )
-        if newer_periods.exists():
-            raise ValidationError("New period date start has to be greater than previous period date end.")
+        if attrs.get("status", getattr(self.instance, "status", None)) == PeriodStatus.DRAFT:
+            newer_periods = BudgetingPeriod.objects.filter(budget__pk=budget_pk, date_start__gte=date_end).exclude(
+                pk=getattr(self.instance, "pk", None)
+            )
+            if newer_periods.exists():
+                raise ValidationError("New period date start has to be greater than previous period date end.")
 
         return super().validate(attrs)
 
