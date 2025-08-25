@@ -1,3 +1,4 @@
+from datetime import date
 from decimal import Decimal
 from typing import Any
 
@@ -16,6 +17,10 @@ from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from predictions.models.expense_prediction_model import ExpensePrediction
 from predictions.serializers.expense_prediction_serializer import ExpensePredictionSerializer
+from predictions.views.expense_prediction_viewset import (
+    get_previous_period_prediction_plan,
+    sum_period_transfers_with_category,
+)
 
 
 def expense_prediction_url(budget_id: int):
@@ -131,6 +136,7 @@ class TestExpensePredictionViewSetList:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
@@ -140,19 +146,26 @@ class TestExpensePredictionViewSetList:
         """
         api_client.force_authenticate(base_user)
         budget = budget_factory(members=[base_user])
-        for _ in range(2):
-            expense_prediction_factory(budget=budget)
+        expense_prediction_factory(
+            budget=budget,
+            category=transfer_category_factory(budget=budget, owner=base_user, category_type=CategoryType.EXPENSE),
+        )
+        expense_prediction_factory(
+            budget=budget,
+            category=transfer_category_factory(budget=budget, owner=None, category_type=CategoryType.EXPENSE),
+        )
 
         response = api_client.get(expense_prediction_url(budget.id))
 
-        predictions = ExpensePrediction.objects.filter(period__budget=budget)
+        predictions = ExpensePrediction.objects.filter(period__budget=budget).order_by("id")
         serializer = ExpensePredictionSerializer(predictions, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert response.data == serializer.data
         for prediction in serializer.data:
             category = TransferCategory.objects.get(id=prediction["category"])
-            assert prediction["category_display"] == category.name
+            assert prediction["category_display"] == f"📉{category.name}"
             assert prediction["category_priority"] == CategoryPriority(category.priority).label
+            assert prediction["category_owner"] == getattr(category.owner, "username", "🏦 Common")
 
     def test_prediction_list_limited_to_budget(
         self,
@@ -180,13 +193,130 @@ class TestExpensePredictionViewSetList:
         assert response.data == serializer.data
         assert response.data[0]["id"] == prediction.id
 
+    def test_previous_plan_field_in_list(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two ExpensePrediction model instances for consecutive Periods in database.
+        WHEN: ExpensePredictionViewSet called by one of Budgets owner.
+        THEN: Response with serialized ExpensePrediction list containing calculated "previous_plan" field returned.
+        """
+        api_client.force_authenticate(base_user)
+        budget = budget_factory(members=[base_user])
+        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        previous_period = budgeting_period_factory(
+            budget=budget, date_start=date(2025, 6, 1), date_end=date(2025, 6, 30)
+        )
+        current_period = budgeting_period_factory(
+            budget=budget, date_start=date(2025, 7, 1), date_end=date(2025, 7, 31)
+        )
+        previous_prediction = expense_prediction_factory(
+            budget=budget, period=previous_period, category=category, current_plan=Decimal("100.00")
+        )
+        current_prediction = expense_prediction_factory(
+            budget=budget, period=current_period, category=category, current_plan=Decimal("200.00")
+        )
+
+        response = api_client.get(expense_prediction_url(budget.id))
+
+        predictions = (
+            ExpensePrediction.objects.annotate(
+                current_result=sum_period_transfers_with_category(period_ref="period"),
+                previous_plan=get_previous_period_prediction_plan(),
+                previous_result=sum_period_transfers_with_category(period_ref="period__previous_period"),
+            )
+            .filter(period__budget=budget)
+            .order_by("id")
+        )
+        serializer = ExpensePredictionSerializer(predictions, many=True)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == serializer.data
+        assert serializer.data[0]["id"] == previous_prediction.id and serializer.data[0]["previous_plan"] == str(
+            Decimal(Decimal("0.00")).quantize(Decimal("0.00"))
+        )
+        assert serializer.data[1]["id"] == current_prediction.id and serializer.data[1]["previous_plan"] == str(
+            Decimal(Decimal("100.00")).quantize(Decimal("0.00"))
+        )
+
+    def test_current_result_and_previous_result_field_in_list(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two ExpensePrediction model instances for consecutive Periods in database.
+        Six Transfers (two matching current period, two matching previous period, two others) created too.
+        WHEN: ExpensePredictionViewSet called by one of Budgets owner.
+        THEN: Response with serialized ExpensePrediction list containing calculated "current_result"
+        and "previous_result" field returned.
+        """
+        api_client.force_authenticate(base_user)
+        budget = budget_factory(members=[base_user])
+        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        previous_period = budgeting_period_factory(
+            budget=budget, date_start=date(2025, 6, 1), date_end=date(2025, 6, 30)
+        )
+        current_period = budgeting_period_factory(
+            budget=budget, date_start=date(2025, 7, 1), date_end=date(2025, 7, 31)
+        )
+        previous_prediction = expense_prediction_factory(budget=budget, period=previous_period, category=category)
+        current_prediction = expense_prediction_factory(budget=budget, period=current_period, category=category)
+        # Transfer matching previous ExpensePrediction
+        expense_factory(budget=budget, category=category, period=previous_period, value=Decimal("1.00"))
+        expense_factory(budget=budget, category=category, period=previous_period, value=Decimal("2.00"))
+        # Transfer matching current ExpensePredicton
+        expense_factory(budget=budget, category=category, period=current_period, value=Decimal("10.00"))
+        expense_factory(budget=budget, category=category, period=current_period, value=Decimal("20.00"))
+        # Other Transfers
+        expense_factory(budget=budget, value=Decimal("100.00"))
+        expense_factory(budget=budget, value=Decimal("200.00"))
+
+        response = api_client.get(expense_prediction_url(budget.id))
+
+        predictions = (
+            ExpensePrediction.objects.annotate(
+                current_result=sum_period_transfers_with_category(period_ref="period"),
+                previous_plan=get_previous_period_prediction_plan(),
+                previous_result=sum_period_transfers_with_category(period_ref="period__previous_period"),
+            )
+            .filter(period__budget=budget)
+            .order_by("id")
+        )
+        serializer = ExpensePredictionSerializer(predictions, many=True)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == serializer.data
+        assert serializer.data[0]["id"] == previous_prediction.id and serializer.data[0]["previous_result"] == str(
+            Decimal(Decimal("0.00")).quantize(Decimal("0.00"))
+        )
+        assert serializer.data[0]["id"] == previous_prediction.id and serializer.data[0]["current_result"] == str(
+            Decimal(Decimal("3.00")).quantize(Decimal("0.00"))
+        )
+        assert serializer.data[1]["id"] == current_prediction.id and serializer.data[1]["previous_result"] == str(
+            Decimal(Decimal("3.00")).quantize(Decimal("0.00"))
+        )
+        assert serializer.data[1]["id"] == current_prediction.id and serializer.data[1]["current_result"] == str(
+            Decimal(Decimal("30.00")).quantize(Decimal("0.00"))
+        )
+
 
 @pytest.mark.django_db
 class TestExpensePredictionViewSetCreate:
     """Tests for create ExpensePrediction on ExpensePredictionViewSet."""
 
     PAYLOAD = {
-        "current_value": Decimal("100.00"),
+        "current_plan": Decimal("100.00"),
         "description": "Expense prediction.",
     }
 
@@ -270,7 +400,7 @@ class TestExpensePredictionViewSetCreate:
         prediction = ExpensePrediction.objects.get(id=response.data["id"])
         for key in self.PAYLOAD:
             assert getattr(prediction, key) == self.PAYLOAD[key]
-        assert getattr(prediction, "initial_value") is None
+        assert getattr(prediction, "initial_plan") is None
         assert prediction.category == category
         assert prediction.period == period
         serializer = ExpensePredictionSerializer(prediction)
@@ -303,7 +433,7 @@ class TestExpensePredictionViewSetCreate:
         )
         assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
 
-    @pytest.mark.parametrize("current_value", [Decimal("0.00"), Decimal("-0.01")])
+    @pytest.mark.parametrize("current_plan", [Decimal("0.00"), Decimal("-0.01")])
     def test_error_value_lower_than_min(
         self,
         api_client: APIClient,
@@ -311,11 +441,11 @@ class TestExpensePredictionViewSetCreate:
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
-        current_value: Decimal,
+        current_plan: Decimal,
     ):
         """
         GIVEN: Budget, BudgetingPeriod and TransferCategory instances created in database. Payload for ExpensePrediction
-        with current_value too low.
+        with current_plan too low.
         WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not created in database.
         """
@@ -326,13 +456,13 @@ class TestExpensePredictionViewSetCreate:
         payload = self.PAYLOAD.copy()
         payload["period"] = period.id
         payload["category"] = category.id
-        payload["current_value"] = current_value
+        payload["current_plan"] = current_plan
 
         response = api_client.post(expense_prediction_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "current_value" in response.data["detail"]
-        assert response.data["detail"]["current_value"][0] == "Value should be higher than 0.00."
+        assert "current_plan" in response.data["detail"]
+        assert response.data["detail"]["current_plan"][0] == "Value should be higher than 0.00."
         assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
 
     def test_error_category_not_with_expense_type(
@@ -557,7 +687,7 @@ class TestExpensePredictionViewSetUpdate:
     """Tests for update view on ExpensePredictionViewSet."""
 
     PAYLOAD = {
-        "current_value": Decimal("100.00"),
+        "current_plan": Decimal("100.00"),
         "description": "Expense prediction.",
     }
 
@@ -619,7 +749,7 @@ class TestExpensePredictionViewSetUpdate:
     @pytest.mark.parametrize(
         "param, value",
         [
-            ("current_value", Decimal("200.00")),
+            ("current_plan", Decimal("200.00")),
             ("description", "New description"),
         ],
     )
@@ -748,7 +878,7 @@ class TestExpensePredictionViewSetUpdate:
         prediction = expense_prediction_factory(period=period)
         period.status = PeriodStatus.CLOSED
         period.save()
-        payload = {"current_value": Decimal("123.45")}
+        payload = {"current_plan": Decimal("123.45")}
         api_client.force_authenticate(base_user)
         url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
 
@@ -777,10 +907,10 @@ class TestExpensePredictionViewSetUpdate:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, status=PeriodStatus.DRAFT)
-        prediction = expense_prediction_factory(period=period, current_value=Decimal("100.00"))
+        prediction = expense_prediction_factory(period=period, current_plan=Decimal("100.00"))
         period.status = PeriodStatus.ACTIVE
         period.save()
-        payload = {"current_value": Decimal("123.45")}
+        payload = {"current_plan": Decimal("123.45")}
         api_client.force_authenticate(base_user)
         url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
 
@@ -788,7 +918,7 @@ class TestExpensePredictionViewSetUpdate:
 
         assert response.status_code == status.HTTP_200_OK
         prediction.refresh_from_db()
-        assert prediction.current_value == Decimal("123.45")
+        assert prediction.current_plan == Decimal("123.45")
 
     def test_error_change_period_of_prediction(
         self,

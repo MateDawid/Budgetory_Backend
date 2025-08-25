@@ -32,33 +32,49 @@ class TestBudgetingPeriodModel:
             assert getattr(period, k) == v
         assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
         assert str(period) == f"{period.name} ({period.budget.name})"
+        assert period.previous_period is None
 
-    def test_create_two_periods_successful(self, budget: Budget):
+    def test_previous_period_assign(self, budget: Budget):
         """
-        GIVEN: Budget model instance in database.
-        WHEN: Two BudgetingPeriod instances create attempt with valid, not colliding data.
-        THEN: Two BudgetingPeriod instances existing in database.
+        GIVEN: Three BudgetingPeriod model instances for Budget in database
+        WHEN: BudgetingPeriod instance create attempt with valid data.
+        THEN: Latest of existing BudgetingPeriods saved as previous_period for created one..
         """
-        payload_1 = {
-            "name": "2023_01",
-            "budget": budget,
-            "status": PeriodStatus.ACTIVE,
-            "date_start": date(2023, 1, 1),
-            "date_end": date(2023, 1, 31),
-        }
-        payload_2 = {
-            "name": "2023_02",
-            "budget": budget,
-            "status": PeriodStatus.DRAFT,
-            "date_start": date(2023, 2, 1),
-            "date_end": date(2023, 2, 28),
-        }
-        budgeting_period_1 = BudgetingPeriod.objects.create(**payload_1)
-        budgeting_period_2 = BudgetingPeriod.objects.create(**payload_2)
-        for budgeting_period, payload in [(budgeting_period_1, payload_1), (budgeting_period_2, payload_2)]:
-            for k, v in payload.items():
-                assert getattr(budgeting_period, k) == v
-        assert BudgetingPeriod.objects.filter(budget=budget).count() == 2
+        BudgetingPeriod.objects.bulk_create(
+            [
+                BudgetingPeriod(
+                    name="2023_01",
+                    budget=budget,
+                    status=PeriodStatus.CLOSED,
+                    date_start=date(2023, 1, 1),
+                    date_end=date(2023, 1, 31),
+                ),
+                BudgetingPeriod(
+                    name="2023_02",
+                    budget=budget,
+                    status=PeriodStatus.CLOSED,
+                    date_start=date(2023, 2, 1),
+                    date_end=date(2023, 2, 28),
+                ),
+            ]
+        )
+        latest_period = BudgetingPeriod.objects.create(
+            name="2023_03",
+            budget=budget,
+            status=PeriodStatus.CLOSED,
+            date_start=date(2023, 3, 1),
+            date_end=date(2023, 3, 31),
+        )
+
+        new_period = BudgetingPeriod.objects.create(
+            name="2023_04",
+            budget=budget,
+            status=PeriodStatus.DRAFT,
+            date_start=date(2023, 4, 1),
+            date_end=date(2023, 4, 30),
+        )
+
+        assert new_period.previous_period == latest_period
 
     @pytest.mark.django_db(transaction=True)
     def test_error_name_too_long(self, budget: Budget):

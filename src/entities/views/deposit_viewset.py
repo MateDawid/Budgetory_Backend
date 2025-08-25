@@ -1,4 +1,4 @@
-from django.db.models import DecimalField, F, Func, Q, QuerySet, Sum, Value
+from django.db.models import CharField, DecimalField, F, Func, Q, QuerySet, Sum, Value
 from django.db.models.functions import Coalesce
 from django_filters import rest_framework as filters
 from rest_framework.filters import OrderingFilter
@@ -40,6 +40,20 @@ def sum_deposit_transfers(category_type: CategoryType) -> Func:
     )
 
 
+def get_deposit_owner_display() -> Func:
+    """
+    Function for generate display value of Deposit owner.
+
+    Returns:
+        Func: ORM function returning Deposit owner display value.
+    """
+    return Coalesce(
+        F("owner__username"),
+        Value("🏦 Common"),
+        output_field=CharField(),
+    )
+
+
 class DepositViewSet(ModelViewSet):
     """View for managing Deposits."""
 
@@ -61,6 +75,7 @@ class DepositViewSet(ModelViewSet):
             self.queryset.filter(budget__pk=self.kwargs.get("budget_pk"))
             .distinct()
             .annotate(
+                owner_display=get_deposit_owner_display(),
                 incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
                 expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
             )

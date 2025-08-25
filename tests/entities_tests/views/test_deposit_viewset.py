@@ -12,9 +12,10 @@ from rest_framework.test import APIClient
 from app_users.models import User
 from budgets.models.budget_model import Budget
 from categories.models.choices.category_type import CategoryType
+from entities.models.choices.deposit_type import DepositType
 from entities.models.deposit_model import Deposit
 from entities.serializers.deposit_serializer import DepositSerializer
-from entities.views.deposit_viewset import calculate_deposit_balance, sum_deposit_transfers
+from entities.views.deposit_viewset import calculate_deposit_balance, get_deposit_owner_display, sum_deposit_transfers
 from transfers.models import Transfer
 
 
@@ -138,6 +139,7 @@ class TestDepositViewSetList:
             .annotate(
                 incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
                 expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
+                owner_display=get_deposit_owner_display(),
             )
             .annotate(balance=calculate_deposit_balance())
             .filter(budget=budget)
@@ -179,7 +181,7 @@ class TestDepositViewSetList:
 
         response = api_client.get(deposits_url(budget.id))
 
-        deposits = Deposit.objects.filter(budget=budget)
+        deposits = Deposit.objects.filter(budget=budget).annotate(owner_display=get_deposit_owner_display())
         serializer = DepositSerializer(deposits, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == len(serializer.data) == deposits.count() == 1
@@ -195,6 +197,7 @@ class TestDepositViewSetCreate:
         "name": "Supermarket",
         "description": "Supermarket in which I buy food.",
         "is_active": True,
+        "deposit_type": DepositType.DAILY_EXPENSES,
     }
 
     def test_auth_required(self, api_client: APIClient, budget: Budget):

@@ -341,7 +341,7 @@ class TestBudgetingPeriodViewSetCreate:
         serializer = BudgetingPeriodSerializer(period)
         assert response.data == serializer.data
 
-    def test_create_two_periods_for_one_budget(
+    def test_error_create_two_draft_periods_for_one_budget(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -351,7 +351,7 @@ class TestBudgetingPeriodViewSetCreate:
         GIVEN: Budget in database created.
         WHEN: BudgetingPeriodViewSet list view for Budget id called by authenticated User by POST
         with valid data two times.
-        THEN: Two BudgetingPeriod for Budget created in database.
+        THEN: One DRAFT BudgetingPeriod for Budget created in database, second one not created.
         """
         budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
@@ -373,12 +373,9 @@ class TestBudgetingPeriodViewSetCreate:
         response_2 = api_client.post(url, payload_2)
 
         assert response_1.status_code == status.HTTP_201_CREATED
-        assert response_2.status_code == status.HTTP_201_CREATED
-        assert BudgetingPeriod.objects.filter(budget=budget).count() == 2
-        for response, payload in [(response_1, payload_1), (response_2, payload_2)]:
-            period = BudgetingPeriod.objects.get(id=response.data["id"])
-            for key in payload:
-                assert getattr(period, key) == payload[key]
+        assert response_2.status_code == status.HTTP_400_BAD_REQUEST
+        assert response_2.data["detail"]["status"][0] == "📝 Draft period already exists in Budget."
+        assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
 
     def test_create_same_period_for_two_budgets(
         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
@@ -596,7 +593,7 @@ class TestBudgetingPeriodViewSetCreate:
             (date(2023, 7, 31), date(2023, 8, 1)),
         ),
     )
-    def test_error_date_invalid(
+    def test_error_colliding_date(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -613,13 +610,13 @@ class TestBudgetingPeriodViewSetCreate:
         budget = budget_factory(members=[base_user])
         payload_1 = {
             "name": "2023_06",
-            "status": PeriodStatus.DRAFT,
+            "status": PeriodStatus.CLOSED,
             "date_start": date(2023, 6, 1),
             "date_end": date(2023, 6, 30),
         }
         payload_2 = {
             "name": "2023_07",
-            "status": PeriodStatus.DRAFT,
+            "status": PeriodStatus.ACTIVE,
             "date_start": date(2023, 7, 1),
             "date_end": date(2023, 7, 31),
         }
@@ -643,6 +640,54 @@ class TestBudgetingPeriodViewSetCreate:
             == "Budgeting period date range collides with other period in Budget."
         )
         assert BudgetingPeriod.objects.filter(budget=budget).count() == 2
+
+    @pytest.mark.parametrize(
+        "date_start, date_end",
+        (
+            (date(2023, 5, 1), date(2023, 5, 31)),
+            (date(2022, 6, 1), date(2022, 6, 30)),
+        ),
+    )
+    def test_error_on_create_period_in_past(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        date_start: date,
+        date_end: date,
+    ):
+        """
+        GIVEN: Two BudgetingPeriods for Budget in database created.
+        WHEN: BudgetingPeriodViewSet list view called for Budget by authenticated User by POST to create
+        BudgetingPeriod with dates earlier than any existing BudgetingPeriod.
+        THEN: Bad request 400 returned, no object in database created.
+        """
+        budget = budget_factory(members=[base_user])
+        payload = {
+            "name": "2023_06",
+            "status": PeriodStatus.CLOSED,
+            "date_start": date(2023, 6, 1),
+            "date_end": date(2023, 6, 30),
+        }
+        payload_invalid = {
+            "name": "invalid",
+            "status": PeriodStatus.DRAFT,
+            "date_start": date_start,
+            "date_end": date_end,
+        }
+        BudgetingPeriod.objects.create(budget=budget, **payload)
+        api_client.force_authenticate(base_user)
+        url = periods_url(budget.id)
+
+        response = api_client.post(url, payload_invalid)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "non_field_errors" in response.data["detail"]
+        assert (
+            response.data["detail"]["non_field_errors"][0]
+            == "New period date start has to be greater than previous period date end."
+        )
+        assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
 
 
 @pytest.mark.django_db
@@ -1067,9 +1112,9 @@ class TestBudgetingPeriodViewSetUpdate:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "status" in response.data["detail"]
-        assert response.data["detail"]["status"][0] == "Active period already exists in Budget."
+        assert response.data["detail"]["status"][0] == "🟢 Active period already exists in Budget."
 
-    def test_update_predictions_initial_value_on_period_activating(
+    def test_update_predictions_initial_plan_on_period_activating(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
@@ -1090,8 +1135,8 @@ class TestBudgetingPeriodViewSetUpdate:
             date_end=date(2024, 1, 31),
             status=PeriodStatus.DRAFT,
         )
-        prediction_1 = expense_prediction_factory(period=period, current_value=123.00)
-        prediction_2 = expense_prediction_factory(period=period, current_value=321.00)
+        prediction_1 = expense_prediction_factory(period=period, current_plan=123.00)
+        prediction_2 = expense_prediction_factory(period=period, current_plan=321.00)
         payload = {"status": PeriodStatus.ACTIVE}
         url = period_detail_url(period.budget.id, period.id)
 
@@ -1102,7 +1147,7 @@ class TestBudgetingPeriodViewSetUpdate:
         assert period.status == PeriodStatus.ACTIVE
         for prediction in (prediction_1, prediction_2):
             prediction.refresh_from_db()
-            assert prediction.initial_value == prediction.current_value
+            assert prediction.initial_plan == prediction.current_plan
 
 
 @pytest.mark.django_db

@@ -267,31 +267,6 @@ class TestEntityViewSetCreate:
         serializer = EntitySerializer(entity)
         assert response.data == serializer.data
 
-    def test_create_single_deposit(
-        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
-    ):
-        """
-        GIVEN: Budget instance created in database. Valid payload with is_deposit=True prepared for Entity.
-        WHEN: EntityViewSet called with POST by User belonging to Budget with valid payload.
-        THEN: Entity object with is_deposit=True created in database with given payload
-        """
-        budget = budget_factory(members=[base_user])
-        api_client.force_authenticate(base_user)
-        payload = self.PAYLOAD.copy()
-        payload["is_deposit"] = True
-
-        response = api_client.post(entities_url(budget.id), payload)
-
-        assert response.status_code == status.HTTP_201_CREATED
-        assert Entity.objects.filter(budget=budget).count() == 1
-        assert Entity.deposits.filter(budget=budget).count() == 1
-        entity = Entity.objects.get(id=response.data["id"])
-        assert entity.budget == budget
-        for key in payload:
-            assert getattr(entity, key) == payload[key]
-        serializer = EntitySerializer(entity)
-        assert response.data == serializer.data
-
     @pytest.mark.parametrize("field_name", ["name", "description"])
     def test_error_value_too_long(
         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass, field_name: str
@@ -478,7 +453,6 @@ class TestEntityViewSetUpdate:
             ("name", "New name"),
             ("description", "New description"),
             ("is_active", not PAYLOAD["is_active"]),
-            ("is_deposit", not PAYLOAD["is_deposit"]),
         ],
     )
     @pytest.mark.django_db
@@ -558,7 +532,6 @@ class TestEntityViewSetUpdate:
             "name": "Some market",
             "description": "Updated supermarket description.",
             "is_active": False,
-            "is_deposit": True,
         }
         url = entity_detail_url(entity.budget.id, entity.id)
 

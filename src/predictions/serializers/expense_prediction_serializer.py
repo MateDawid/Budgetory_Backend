@@ -16,10 +16,24 @@ from predictions.models.expense_prediction_model import ExpensePrediction
 class ExpensePredictionSerializer(serializers.ModelSerializer):
     """Serializer for ExpensePrediction model."""
 
+    current_result = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
+    previous_plan = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
+    previous_result = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
+
     class Meta:
         model: Model = ExpensePrediction
-        fields = ("id", "period", "category", "current_value", "initial_value", "description")
-        read_only_fields = ("id", "initial_value")
+        fields = (
+            "id",
+            "period",
+            "category",
+            "current_plan",
+            "initial_plan",
+            "description",
+            "current_result",
+            "previous_plan",
+            "previous_result",
+        )
+        read_only_fields = ("id", "initial_plan", "current_result", "previous_result", "previous_plan")
 
     @staticmethod
     def validate_category(category: TransferCategory) -> TransferCategory:
@@ -63,22 +77,22 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
         return period
 
     @staticmethod
-    def validate_current_value(current_value: Decimal) -> Decimal:
+    def validate_current_plan(current_plan: Decimal) -> Decimal:
         """
-        Validates "current_value" field.
+        Validates "current_plan" field.
 
         Args:
-            current_value [Decimal]: current_value of given ExpensePrediction.
+            current_plan [Decimal]: current_plan of given ExpensePrediction.
 
         Returns:
-            Decimal: Validated current_value of ExpensePrediction.
+            Decimal: Validated current_plan of ExpensePrediction.
 
         Raises:
-            ValidationError: Raised when "current_value" is lower than 0.01.
+            ValidationError: Raised when "current_plan" is lower than 0.01.
         """
-        if current_value <= Decimal("0.00"):
+        if current_plan <= Decimal("0.00"):
             raise ValidationError("Value should be higher than 0.00.")
-        return current_value
+        return current_plan
 
     def validate(self, attrs: OrderedDict) -> OrderedDict:
         """
@@ -108,6 +122,7 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
             OrderedDict: Dictionary containing overridden values.
         """
         representation = super().to_representation(instance)
-        representation["category_display"] = instance.category.name
+        representation["category_display"] = f"📉{instance.category.name}"
+        representation["category_owner"] = getattr(instance.category.owner, "username", "🏦 Common")
         representation["category_priority"] = CategoryPriority(instance.category.priority).label
         return representation

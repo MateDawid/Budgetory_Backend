@@ -14,7 +14,7 @@ class EntityViewSet(ModelViewSet):
     """View for managing Entities."""
 
     serializer_class = EntitySerializer
-    queryset = Entity.objects.all()
+    queryset = Entity.objects.all().defer("is_deposit", "owner", "deposit_type")
     permission_classes = [IsAuthenticated, UserBelongsToBudgetPermission]
     filterset_class = EntityFilterSet
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)

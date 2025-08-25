@@ -143,7 +143,12 @@ class TestTransferCategoryViewSetList:
 
         response = api_client.get(categories_url(budget.id))
 
-        categories = TransferCategory.objects.filter(budget=budget).annotate(owner_display=get_category_owner_display())
+        categories = (
+            TransferCategory.objects.prefetch_related("budget", "owner")
+            .filter(budget=budget)
+            .distinct()
+            .annotate(owner_display=get_category_owner_display())
+        )
         serializer = TransferCategorySerializer(categories, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert len(serializer.data) == 2

@@ -14,10 +14,16 @@ class Transfer(models.Model):
     description = models.CharField(max_length=255, blank=True, null=True)
     value = models.DecimalField(max_digits=10, decimal_places=2)
     date = models.DateField(null=False, blank=False)
-    period = models.ForeignKey("budgets.BudgetingPeriod", on_delete=models.PROTECT, related_name="transfers")
-    entity = models.ForeignKey("entities.Entity", on_delete=models.PROTECT, related_name="entity_transfers")
-    deposit = models.ForeignKey("entities.Deposit", on_delete=models.PROTECT, related_name="deposit_transfers")
-    category = models.ForeignKey("categories.TransferCategory", on_delete=models.PROTECT, related_name="transfers")
+    period = models.ForeignKey("budgets.BudgetingPeriod", on_delete=models.CASCADE, related_name="transfers")
+    entity = models.ForeignKey(
+        "entities.Entity", on_delete=models.SET_NULL, blank=True, null=True, related_name="entity_transfers"
+    )
+    deposit = models.ForeignKey(
+        "entities.Deposit", on_delete=models.SET_NULL, blank=True, null=True, related_name="deposit_transfers"
+    )
+    category = models.ForeignKey(
+        "categories.TransferCategory", on_delete=models.SET_NULL, blank=True, null=True, related_name="transfers"
+    )
 
     objects = models.Manager()
     incomes = IncomeManager()

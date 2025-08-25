@@ -62,12 +62,12 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
             raise ValidationError("Draft period cannot be closed. It has to be active first.")
         elif instance_status == PeriodStatus.ACTIVE and status == PeriodStatus.DRAFT:
             raise ValidationError("Active period cannot be moved back to Draft status.")
-        elif status == PeriodStatus.ACTIVE:
-            active_periods = BudgetingPeriod.objects.filter(
-                budget__pk=self.context["view"].kwargs["budget_pk"], status=PeriodStatus.ACTIVE
+        elif status in (PeriodStatus.ACTIVE, PeriodStatus.DRAFT):
+            periods_in_status = BudgetingPeriod.objects.filter(
+                budget__pk=self.context["view"].kwargs["budget_pk"], status=status
             ).exclude(pk=getattr(self.instance, "pk", None))
-            if active_periods.exists():
-                raise ValidationError("Active period already exists in Budget.")
+            if periods_in_status.exists():
+                raise ValidationError(f"{PeriodStatus(status).label} period already exists in Budget.")
         return status
 
     def validate(self, attrs: OrderedDict) -> OrderedDict:
@@ -90,6 +90,7 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
             raise ValidationError("Start date should be earlier than end date.")
 
         budget_pk = self.context["view"].kwargs["budget_pk"]
+
         colliding_periods = BudgetingPeriod.objects.filter(
             Q(budget__pk=budget_pk, date_start__lte=date_start, date_end__gte=date_start)
             | Q(budget__pk=budget_pk, date_start__lte=date_end, date_end__gte=date_end)
@@ -97,6 +98,13 @@ class BudgetingPeriodSerializer(serializers.ModelSerializer):
         ).exclude(pk=getattr(self.instance, "pk", None))
         if colliding_periods.exists():
             raise ValidationError("Budgeting period date range collides with other period in Budget.")
+
+        if attrs.get("status", getattr(self.instance, "status", None)) == PeriodStatus.DRAFT:
+            newer_periods = BudgetingPeriod.objects.filter(budget__pk=budget_pk, date_start__gte=date_end).exclude(
+                pk=getattr(self.instance, "pk", None)
+            )
+            if newer_periods.exists():
+                raise ValidationError("New period date start has to be greater than previous period date end.")
 
         return super().validate(attrs)
 

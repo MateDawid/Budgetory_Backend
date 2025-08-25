@@ -178,12 +178,12 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "standard_formatter": {
-            "format": "%(asctime)s [%(process)d] [%(levelname)s] [API]: %(message)s",
-            "datefmt": "[%Y-%m-%d %H:%M:%S %z]",
+            "format": "[%(asctime)s] [%(process)d] API | %(levelname)s | %(message)s",
+            "datefmt": "%d/%b/%Y %H:%M:%S",
         },
         "db_connection_formatter": {
-            "format": "%(asctime)s [%(process)d] [%(levelname)s] [DATABASE]: %(message)s",
-            "datefmt": "[%Y-%m-%d %H:%M:%S %z]",
+            "format": "[%(asctime)s] [%(process)d] DATABASE | %(levelname)s | %(message)s",
+            "datefmt": "%d/%b/%Y %H:%M:%S",
         },
     },
     "handlers": {

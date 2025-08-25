@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import DataError, IntegrityError
 
 from budgets.models.budget_model import Budget
+from entities.models.choices.deposit_type import DepositType
 from entities.models.entity_model import Entity
 
 
@@ -64,6 +65,7 @@ class TestEntityModel:
         payload = self.PAYLOAD.copy()
         payload["budget"] = budget
         payload["is_deposit"] = True
+        payload["deposit_type"] = DepositType.DAILY_EXPENSES
 
         entity = Entity(**payload)
         entity.full_clean()
@@ -85,6 +87,7 @@ class TestEntityModel:
         payload = self.PAYLOAD.copy()
         payload["budget"] = budget
         payload["is_deposit"] = True
+        payload["deposit_type"] = DepositType.DAILY_EXPENSES
 
         entity = Entity.objects.create(**payload)
 

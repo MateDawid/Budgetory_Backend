@@ -20,3 +20,8 @@ API for Budget Manager application.
    ```shell
    pre-commit install
    ```
+
+6. Packages update
+   ```shell
+   poetry update
+   ```
