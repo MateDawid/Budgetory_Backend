@@ -13,6 +13,9 @@ from app_users.serializers.user_serializer import UserSerializer
 from budgets.filtersets.budget_filterset import BudgetFilterSet
 from budgets.models import Budget
 from budgets.serializers.budget_serializer import BudgetSerializer
+from categories.models import TransferCategory
+from categories.models.choices.category_priority import CategoryPriority
+from categories.models.choices.category_type import CategoryType
 
 
 class BudgetViewSet(ModelViewSet):
@@ -66,3 +69,15 @@ class BudgetViewSet(ModelViewSet):
         with transaction.atomic():
             budget = serializer.save()
             budget.members.add(self.request.user)
+            TransferCategory.objects.create(
+                budget=budget,
+                name="Deposit Incomes",
+                category_type=CategoryType.INCOME,
+                priority=CategoryPriority.DEPOSIT_INCOME,
+            )
+            TransferCategory.objects.create(
+                budget=budget,
+                name="Deposit Expense",
+                category_type=CategoryType.EXPENSE,
+                priority=CategoryPriority.DEPOSIT_EXPENSE,
+            )
