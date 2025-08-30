@@ -27,7 +27,7 @@ class TransferFilterSet(filters.FilterSet):
     value = filters.NumberFilter()
     value_min = filters.NumberFilter(field_name="value", lookup_expr="gte")
     value_max = filters.NumberFilter(field_name="value", lookup_expr="lte")
-    deposit_transfers_only = filters.BooleanFilter(field_name="entity__is_deposit", lookup_expr="exact")
+    is_entity_deposit = filters.BooleanFilter(field_name="entity__is_deposit", lookup_expr="exact")
 
     @staticmethod
     def get_budget_pk(request: Request) -> int:
