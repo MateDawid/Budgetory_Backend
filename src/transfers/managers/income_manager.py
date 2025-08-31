@@ -1,26 +1,12 @@
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Model, QuerySet
+from django.db.models import QuerySet
 
 from categories.models.choices.category_type import CategoryType
 
 
 class IncomeQuerySet(QuerySet):
     """Custom IncomeQuerySet for validating input data for Income instances create and update."""
-
-    def create(self, **kwargs) -> Model:
-        """
-        Method extended with additional check of "category" field.
-
-        Returns:
-            Model: Income model instance.
-
-        Raises:
-            ValidationError: Raised on category.category_type different from CategoryType.INCOME.
-        """
-        if not getattr(kwargs.get("category"), "category_type", None) == CategoryType.INCOME:
-            raise ValidationError("Income model instance can not be created with ExpenseCategory.")
-        return super().create(**kwargs)
 
     def update(self, **kwargs) -> int:
         """
