@@ -24,6 +24,10 @@ class Transfer(models.Model):
     category = models.ForeignKey(
         "categories.TransferCategory", on_delete=models.SET_NULL, blank=True, null=True, related_name="transfers"
     )
+    # Connection between related Deposit INCOME and EXPENSE.
+    deposit_income = models.OneToOneField(
+        "self", on_delete=models.SET_NULL, blank=True, null=True, related_name="deposit_expense"
+    )
 
     objects = models.Manager()
     incomes = IncomeManager()
