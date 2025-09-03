@@ -26,7 +26,7 @@ class Transfer(models.Model):
     )
     # Connection between related Deposit INCOME and EXPENSE.
     deposit_income = models.OneToOneField(
-        "self", on_delete=models.SET_NULL, blank=True, null=True, related_name="deposit_expense"
+        "self", on_delete=models.CASCADE, blank=True, null=True, related_name="deposit_expense"
     )
 
     objects = models.Manager()
