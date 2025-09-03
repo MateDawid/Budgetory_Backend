@@ -32,6 +32,10 @@ class Expense(Transfer):
         if not getattr(self.entity, "is_deposit", False):
             super().save(*args, **kwargs)
             return
+        if self.entity == self.deposit:
+            # Triggering IntegrityError raised by database constraint.
+            super().save(*args, **kwargs)
+            return
         # Handling Transfer between deposits
         with transaction.atomic():
             try:
