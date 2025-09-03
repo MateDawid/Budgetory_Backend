@@ -23,6 +23,10 @@ class Expense(Transfer):
         verbose_name_plural = "expenses"
 
     def save(self, *args, **kwargs) -> None:
+        """
+        Save method overridden to validate category_type of Expense.category
+        and handle creating Transfer between Deposits.
+        """
         if not self.category.category_type == CategoryType.EXPENSE:
             raise ValidationError("Expense model instance can not be created with IncomeCategory.")
         if not getattr(self.entity, "is_deposit", False):
@@ -34,7 +38,7 @@ class Expense(Transfer):
                 deposit_income = Income.objects.create(
                     name=self.name,
                     description=self.description,
-                    value=None,
+                    value=self.value,
                     date=self.date,
                     period=self.period,
                     entity=self.deposit,
@@ -49,3 +53,16 @@ class Expense(Transfer):
                 super().save(*args, **kwargs)
             except Exception as e:
                 logger.error(f"Creating Deposit Transfers failed. | Reason: {str(e)}")
+                raise e
+
+    def delete(self, using=None, keep_parents=False) -> None:
+        """
+        Delete method overridden handle deleting Transfer between Deposits.
+        """
+        with transaction.atomic():
+            try:
+                super().delete(using, keep_parents)
+                Income.objects.filter(id=getattr(self.deposit_income, "id", None)).delete()
+            except Exception as e:
+                logger.error(f"Deleting Deposit Transfers failed. | Reason: {str(e)}")
+                raise e
