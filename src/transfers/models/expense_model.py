@@ -35,24 +35,31 @@ class Expense(Transfer):
         # Handling Transfer between deposits
         with transaction.atomic():
             try:
-                deposit_income = Income.objects.create(
-                    name=self.name,
-                    description=self.description,
-                    value=self.value,
-                    date=self.date,
-                    period=self.period,
-                    entity=self.deposit,
-                    deposit=self.entity,
-                    category=TransferCategory.objects.get(
+                deposit_income_payload = {
+                    "name": self.name,
+                    "description": self.description,
+                    "value": self.value,
+                    "date": self.date,
+                    "period": self.period,
+                    "entity": self.deposit,
+                    "deposit": self.entity,
+                    "category": TransferCategory.objects.get(
                         budget=self.period.budget,
                         category_type=CategoryType.INCOME,
                         priority=CategoryPriority.DEPOSIT_INCOME,
                     ),
-                )
-                setattr(self, "deposit_income", deposit_income)
+                }
+                if self._state.adding:
+                    deposit_income = Income.objects.create(**deposit_income_payload)
+                    setattr(self, "deposit_income", deposit_income)
+                else:
+                    Income.objects.filter(id=self.deposit_income.id).update(**deposit_income_payload)
                 super().save(*args, **kwargs)
             except Exception as e:
-                logger.error(f"Creating Deposit Transfers failed. | Reason: {str(e)}")
+                logger.error(
+                    f"{'Creating' if self._state.adding else 'Updating'} Deposit Transfers failed. "
+                    f"{f'Expense id: {self.id}' if self.id else ''} | Reason: {str(e)}"
+                )
                 raise e
 
     def delete(self, using=None, keep_parents=False) -> None:
