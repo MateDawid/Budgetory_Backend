@@ -7,7 +7,6 @@ from rest_framework.viewsets import ModelViewSet
 
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
 from categories.filtersets.transfer_category_filterset import TransferCategoryFilterSet
-from categories.models.choices.category_priority import CategoryPriority
 from categories.serializers.transfer_category_serializer import TransferCategorySerializer
 
 
@@ -44,7 +43,6 @@ class TransferCategoryViewSet(ModelViewSet):
         return (
             self.serializer_class.Meta.model.objects.prefetch_related("budget", "owner")
             .filter(budget__pk=self.kwargs.get("budget_pk"))
-            .exclude(priority__in=(CategoryPriority.DEPOSIT_INCOME, CategoryPriority.DEPOSIT_EXPENSE))
             .distinct()
             .annotate(owner_display=get_category_owner_display())
         )
