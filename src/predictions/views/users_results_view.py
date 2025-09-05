@@ -11,22 +11,24 @@ from app_infrastructure.permissions import UserBelongsToBudgetPermission
 from budgets.models import Budget, BudgetingPeriod
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
+from entities.models.choices.deposit_type import DepositType
 from predictions.models import ExpensePrediction
 from transfers.models import Expense, Transfer
 
 
-def get_category_owner_filter(is_common_user: bool) -> dict:
+def get_owner_filter(param_name: str, is_common_user: bool) -> dict:
     """
     Returns category filter depending on type of TransferCategory User.
 
     Args:
+        param_name (str): Name of param, from which owner will be collected, like 'deposit' and 'category'.
         is_common_user (bool): Indicates if TransferCategory is owned by particular
         User or is common one (without User assigned).
 
     Returns:
         dict: Filters for QuerySet.
     """
-    return {"category__owner__isnull": True} if is_common_user else {"category__owner__pk": OuterRef("pk")}
+    return {f"{param_name}__owner__isnull": True} if is_common_user else {f"{param_name}__owner__pk": OuterRef("pk")}
 
 
 def get_user_period_expenses(budget_pk: int, period_pk: int, is_common_user: bool = False) -> Func:
@@ -45,7 +47,10 @@ def get_user_period_expenses(budget_pk: int, period_pk: int, is_common_user: boo
     return Coalesce(
         Subquery(
             Expense.objects.filter(
-                period__budget__pk=budget_pk, period=period_pk, **get_category_owner_filter(is_common_user)
+                period__budget__pk=budget_pk,
+                period=period_pk,
+                deposit__deposit_type=DepositType.DAILY_EXPENSES,
+                **get_owner_filter("deposit", is_common_user),
             )
             .values("period")
             .annotate(total=Sum("value"))
@@ -74,7 +79,7 @@ def get_user_period_expense_predictions(budget_pk: int, period_pk: int, is_commo
     return Coalesce(
         Subquery(
             ExpensePrediction.objects.filter(
-                period__budget__pk=budget_pk, period=period_pk, **get_category_owner_filter(is_common_user)
+                period__budget__pk=budget_pk, period=period_pk, **get_owner_filter("category", is_common_user)
             )
             .values("period")
             .annotate(total=Sum("current_plan"))
@@ -95,6 +100,7 @@ def sum_period_and_previous_transfers(
     Args:
         budget_pk (int): Budget id.
         period_pk (int): Period id.
+        category_type (CategoryType): Category type, like 'Income' or 'Expense'.
         is_common_user (bool): Indicates if TransferCategory is owned by particular
         User or is common one (without User assigned).
 
@@ -112,7 +118,8 @@ def sum_period_and_previous_transfers(
                         "date_start" if category_type == CategoryType.EXPENSE else "date_end"
                     )[:1]
                 ),
-                **get_category_owner_filter(is_common_user),
+                deposit__deposit_type=DepositType.DAILY_EXPENSES,
+                **get_owner_filter("deposit", is_common_user),
             )
             .values("category__category_type")
             .annotate(total=Sum("value"))
