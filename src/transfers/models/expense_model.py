@@ -15,6 +15,9 @@ class Expense(Transfer):
         verbose_name_plural = "expenses"
 
     def save(self, *args, **kwargs) -> None:
+        """
+        Save method overridden to validate category_type of Expense.category.
+        """
         if not self.category.category_type == CategoryType.EXPENSE:
             raise ValidationError("Expense model instance can not be created with IncomeCategory.")
         super().save(*args, **kwargs)

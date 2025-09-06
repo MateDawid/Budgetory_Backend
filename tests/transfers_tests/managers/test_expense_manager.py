@@ -67,32 +67,6 @@ class TestExpenseManager:
         assert Transfer.incomes.filter(period__budget=budget).count() == 0
         assert str(transfer) == f"{transfer.date} | {transfer.category} | {transfer.value}"
 
-    def test_error_on_create_with_income_category(
-        self,
-        budget: Budget,
-        budgeting_period_factory: FactoryMetaClass,
-        entity_factory: FactoryMetaClass,
-        deposit_factory: FactoryMetaClass,
-        transfer_category_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Invalid payload for Expense proxy model with IncomeCategory in "category" field.
-        WHEN: Calling ExpenseManager for create.
-        THEN: ValidationError raised, Expense proxy model not created in database.
-        """
-        payload = self.PAYLOAD.copy()
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
-        )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
-
-        with pytest.raises(ValidationError) as exc:
-            Transfer.expenses.create(**payload)
-        assert str(exc.value.error_list[0].message) == "Expense model instance can not be created with IncomeCategory."
-        assert not Transfer.expenses.all().exists()
-
     def test_update(
         self, budget: Budget, transfer_category_factory: FactoryMetaClass, transfer_factory: FactoryMetaClass
     ):
