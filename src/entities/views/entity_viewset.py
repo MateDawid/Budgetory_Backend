@@ -18,7 +18,7 @@ class EntityViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, UserBelongsToBudgetPermission]
     filterset_class = EntityFilterSet
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
-    ordering_fields = ("id", "name")
+    ordering_fields = ("id", "name", "is_deposit")
 
     def get_queryset(self) -> QuerySet:
         """
