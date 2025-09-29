@@ -12,34 +12,34 @@ def create_initial_categories_for_budget_pk(budget_pk: int) -> None:
     """
     initial_categories = [
         TransferCategory(
-            budget_pk=budget_pk, name="Salary", category_type=CategoryType.INCOME, priority=CategoryPriority.REGULAR
+            budget_id=budget_pk, name="Salary", category_type=CategoryType.INCOME, priority=CategoryPriority.REGULAR
         ),
         TransferCategory(
-            budget_pk=budget_pk, name="Sell", category_type=CategoryType.INCOME, priority=CategoryPriority.IRREGULAR
+            budget_id=budget_pk, name="Sell", category_type=CategoryType.INCOME, priority=CategoryPriority.IRREGULAR
         ),
         TransferCategory(
-            budget_pk=budget_pk,
+            budget_id=budget_pk,
             name="Bills",
             category_type=CategoryType.EXPENSE,
             priority=CategoryPriority.MOST_IMPORTANT,
         ),
         TransferCategory(
-            budget_pk=budget_pk,
+            budget_id=budget_pk,
             name="Food",
             category_type=CategoryType.EXPENSE,
             priority=CategoryPriority.MOST_IMPORTANT,
         ),
         TransferCategory(
-            budget_pk=budget_pk,
+            budget_id=budget_pk,
             name="Mortgage",
             category_type=CategoryType.EXPENSE,
             priority=CategoryPriority.DEBTS,
         ),
         TransferCategory(
-            budget_pk=budget_pk, name="Savings", category_type=CategoryType.EXPENSE, priority=CategoryPriority.SAVINGS
+            budget_id=budget_pk, name="Savings", category_type=CategoryType.EXPENSE, priority=CategoryPriority.SAVINGS
         ),
         TransferCategory(
-            budget_pk=budget_pk,
+            budget_id=budget_pk,
             name="Entertainment",
             category_type=CategoryType.EXPENSE,
             priority=CategoryPriority.OTHERS,
