@@ -10,12 +10,10 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from app_users.serializers.user_serializer import UserSerializer
+from app_users.utils import create_initial_categories_for_budget_pk
 from budgets.filtersets.budget_filterset import BudgetFilterSet
 from budgets.models import Budget
 from budgets.serializers.budget_serializer import BudgetSerializer
-from categories.models import TransferCategory
-from categories.models.choices.category_priority import CategoryPriority
-from categories.models.choices.category_type import CategoryType
 
 
 class BudgetViewSet(ModelViewSet):
@@ -69,39 +67,4 @@ class BudgetViewSet(ModelViewSet):
         with transaction.atomic():
             budget = serializer.save()
             budget.members.add(self.request.user)
-            initial_categories = [
-                TransferCategory(
-                    budget=budget, name="Salary", category_type=CategoryType.INCOME, priority=CategoryPriority.REGULAR
-                ),
-                TransferCategory(
-                    budget=budget, name="Sell", category_type=CategoryType.INCOME, priority=CategoryPriority.IRREGULAR
-                ),
-                TransferCategory(
-                    budget=budget,
-                    name="Bills",
-                    category_type=CategoryType.EXPENSE,
-                    priority=CategoryPriority.MOST_IMPORTANT,
-                ),
-                TransferCategory(
-                    budget=budget,
-                    name="Food",
-                    category_type=CategoryType.EXPENSE,
-                    priority=CategoryPriority.MOST_IMPORTANT,
-                ),
-                TransferCategory(
-                    budget=budget,
-                    name="Mortgage loan",
-                    category_type=CategoryType.EXPENSE,
-                    priority=CategoryPriority.DEBTS,
-                ),
-                TransferCategory(
-                    budget=budget, name="Savings", category_type=CategoryType.EXPENSE, priority=CategoryPriority.SAVINGS
-                ),
-                TransferCategory(
-                    budget=budget,
-                    name="Entertainment",
-                    category_type=CategoryType.EXPENSE,
-                    priority=CategoryPriority.OTHERS,
-                ),
-            ]
-            TransferCategory.objects.bulk_create(initial_categories)
+            create_initial_categories_for_budget_pk(budget_pk=budget.pk)
