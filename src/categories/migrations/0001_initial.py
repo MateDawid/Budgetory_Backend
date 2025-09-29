@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
                             (2, "📈 02. Irregular"),
                             (3, "📉 01. Most important"),
                             (4, "📉 02. Debts"),
-                            (5, "📉 03. Savings"),
+                            (5, "📉 03. Savings and investments"),
                             (6, "📉 04. Others"),
                         ]
                     ),

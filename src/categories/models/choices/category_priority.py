@@ -8,7 +8,7 @@ class CategoryPriority(models.IntegerChoices):
     IRREGULAR = 2, "📈 02. Irregular"
     MOST_IMPORTANT = 3, "📉 01. Most important"
     DEBTS = 4, "📉 02. Debts"
-    SAVINGS = 5, "📉 03. Savings"
+    SAVINGS = 5, "📉 03. Savings and investments"
     OTHERS = 6, "📉 04. Others"
 
     @classmethod
