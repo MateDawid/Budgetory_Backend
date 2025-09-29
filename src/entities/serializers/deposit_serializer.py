@@ -14,6 +14,7 @@ class DepositSerializer(EntitySerializer):
     incomes_sum = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
     expenses_sum = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
     balance = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
+    deposit_type = serializers.ChoiceField(choices=DepositType.choices)
 
     class Meta:
         model = Deposit
