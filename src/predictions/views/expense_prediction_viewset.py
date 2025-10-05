@@ -1,4 +1,16 @@
-from django.db.models import DecimalField, Func, OuterRef, QuerySet, Subquery, Sum, Value
+from django.db.models import (
+    Case,
+    DecimalField,
+    ExpressionWrapper,
+    F,
+    Func,
+    OuterRef,
+    QuerySet,
+    Subquery,
+    Sum,
+    Value,
+    When,
+)
 from django.db.models.functions import Coalesce
 from django_filters import rest_framework as filters
 from rest_framework.filters import OrderingFilter
@@ -83,6 +95,21 @@ class ExpensePredictionViewSet(ModelViewSet):
                 current_result=sum_period_transfers_with_category(period_ref="period"),
                 previous_plan=get_previous_period_prediction_plan(),
                 previous_result=sum_period_transfers_with_category(period_ref="period__previous_period"),
+            )
+            .annotate(
+                current_funds_left=ExpressionWrapper(
+                    F("current_plan") - F("current_result"), output_field=DecimalField(decimal_places=2)
+                ),
+                current_progress=Case(
+                    When(current_plan=0, then=Value(0)),
+                    default=ExpressionWrapper(
+                        F("current_result") / F("current_plan") * 100, output_field=DecimalField(decimal_places=2)
+                    ),
+                    output_field=DecimalField(decimal_places=2),
+                ),
+                previous_funds_left=ExpressionWrapper(
+                    F("previous_plan") - F("previous_result"), output_field=DecimalField(decimal_places=2)
+                ),
             )
             .order_by("id")
         )
