@@ -14,7 +14,7 @@ class ExpensePrediction(models.Model):
     )
     initial_plan = models.DecimalField(max_digits=10, decimal_places=2, default=None, blank=True, null=True)
     current_plan = models.DecimalField(max_digits=10, decimal_places=2)
-    description = models.CharField(max_length=255, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
 
     class Meta:
         unique_together = ("period", "category")

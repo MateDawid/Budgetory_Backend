@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("initial_plan", models.DecimalField(decimal_places=2, max_digits=10, default=None, blank=True, null=True)),
                 ("current_plan", models.DecimalField(decimal_places=2, max_digits=10)),
-                ("description", models.CharField(blank=True, max_length=255, null=True)),
+                ("description", models.TextField(blank=True, null=True)),
                 (
                     "category",
                     models.ForeignKey(
