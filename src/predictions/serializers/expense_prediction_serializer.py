@@ -17,8 +17,11 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
     """Serializer for ExpensePrediction model."""
 
     current_result = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
+    current_funds_left = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
+    current_progress = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
     previous_plan = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
     previous_result = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
+    previous_funds_left = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
 
     class Meta:
         model: Model = ExpensePrediction
@@ -26,14 +29,26 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
             "id",
             "period",
             "category",
-            "current_plan",
-            "initial_plan",
             "description",
+            "initial_plan",
+            "current_plan",
             "current_result",
+            "current_funds_left",
+            "current_progress",
             "previous_plan",
             "previous_result",
+            "previous_funds_left",
         )
-        read_only_fields = ("id", "initial_plan", "current_result", "previous_result", "previous_plan")
+        read_only_fields = (
+            "id",
+            "initial_plan",
+            "current_result",
+            "previous_result",
+            "previous_plan",
+            "current_funds_left",
+            "previous_funds_left",
+            "current_progress",
+        )
 
     @staticmethod
     def validate_category(category: TransferCategory) -> TransferCategory:
@@ -123,6 +138,7 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
         """
         representation = super().to_representation(instance)
         representation["category_display"] = f"📉{instance.category.name}"
+        representation["category_owner_id"] = getattr(instance.category.owner, "id", None)
         representation["category_owner"] = getattr(instance.category.owner, "username", "🏦 Common")
         representation["category_priority"] = CategoryPriority(instance.category.priority).label
         return representation
