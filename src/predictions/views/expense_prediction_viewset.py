@@ -66,6 +66,45 @@ def get_previous_period_prediction_plan() -> Func:
     )
 
 
+def get_current_funds_left() -> ExpressionWrapper:
+    """
+    Function for calculate funds left for given TransferCategory in particular BudgetingPeriod.
+
+    Returns:
+        ExpressionWrapper: ORM function returning calculating funds left for specified
+        TransferCategory in particular BudgetingPeriod.
+    """
+    return ExpressionWrapper(F("current_plan") - F("current_result"), output_field=DecimalField(decimal_places=2))
+
+
+def get_current_progress() -> Case:
+    """
+    Function for calculate current percentage progress of given TransferCategory in particular BudgetingPeriod.
+
+    Returns:
+        Case: ORM function returning percentage progress of specified
+        TransferCategory in particular BudgetingPeriod.
+    """
+    return Case(
+        When(current_plan=0, then=Value(0)),
+        default=ExpressionWrapper(
+            F("current_result") / F("current_plan") * 100, output_field=DecimalField(decimal_places=2)
+        ),
+        output_field=DecimalField(decimal_places=2),
+    )
+
+
+def get_previous_funds_left() -> ExpressionWrapper:
+    """
+    Function for calculate funds left for given TransferCategory in previous BudgetingPeriod.
+
+    Returns:
+        ExpressionWrapper: ORM function returning calculating funds left for specified
+        TransferCategory in previous BudgetingPeriod.
+    """
+    return ExpressionWrapper(F("previous_plan") - F("previous_result"), output_field=DecimalField(decimal_places=2))
+
+
 class ExpensePredictionViewSet(ModelViewSet):
     """Base view for managing ExpensePredictions."""
 
@@ -97,19 +136,9 @@ class ExpensePredictionViewSet(ModelViewSet):
                 previous_result=sum_period_transfers_with_category(period_ref="period__previous_period"),
             )
             .annotate(
-                current_funds_left=ExpressionWrapper(
-                    F("current_plan") - F("current_result"), output_field=DecimalField(decimal_places=2)
-                ),
-                current_progress=Case(
-                    When(current_plan=0, then=Value(0)),
-                    default=ExpressionWrapper(
-                        F("current_result") / F("current_plan") * 100, output_field=DecimalField(decimal_places=2)
-                    ),
-                    output_field=DecimalField(decimal_places=2),
-                ),
-                previous_funds_left=ExpressionWrapper(
-                    F("previous_plan") - F("previous_result"), output_field=DecimalField(decimal_places=2)
-                ),
+                current_funds_left=get_current_funds_left(),
+                current_progress=get_current_progress(),
+                previous_funds_left=get_previous_funds_left(),
             )
             .order_by("id")
         )
