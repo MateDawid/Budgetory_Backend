@@ -6,6 +6,7 @@ from django_filters import rest_framework as filters
 from budgets.models import BudgetingPeriod
 from budgets.utils import get_budget_pk
 from categories.models import TransferCategory
+from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from predictions.views.prediction_progress_status_view import PredictionProgressStatus
 
@@ -21,17 +22,18 @@ class ExpensePredictionFilterSet(filters.FilterSet):
             budget__pk=get_budget_pk(request), category_type=CategoryType.EXPENSE
         )
     )
-    owner = filters.NumberFilter(method="get_owner")
+    category_priority = filters.NumberFilter(method="filter_by_category_priority")
+    owner = filters.NumberFilter(method="filter_by_owner")
     initial_plan = filters.NumberFilter()
     initial_plan_min = filters.NumberFilter(field_name="initial_plan", lookup_expr="gte")
     initial_plan_max = filters.NumberFilter(field_name="initial_plan", lookup_expr="lte")
     current_plan = filters.NumberFilter()
     current_plan_min = filters.NumberFilter(field_name="current_plan", lookup_expr="gte")
     current_plan_max = filters.NumberFilter(field_name="current_plan", lookup_expr="lte")
-    progress_status = filters.NumberFilter(method="get_progress_status")
+    progress_status = filters.NumberFilter(method="filter_by_progress_status")
 
     @staticmethod
-    def get_owner(queryset: QuerySet, name: str, value: Decimal) -> QuerySet:
+    def filter_by_owner(queryset: QuerySet, name: str, value: Decimal) -> QuerySet:
         """
         Filters ExpensePredictions queryset by Transfer Category owner field value.
 
@@ -48,7 +50,7 @@ class ExpensePredictionFilterSet(filters.FilterSet):
         return queryset.filter(category__owner__id=value)
 
     @staticmethod
-    def get_progress_status(queryset: QuerySet, name: str, value: Decimal) -> QuerySet:
+    def filter_by_progress_status(queryset: QuerySet, name: str, value: Decimal) -> QuerySet:
         """
         Filters ExpensePredictions queryset by Transfer Category progress_status field value.
 
@@ -71,3 +73,20 @@ class ExpensePredictionFilterSet(filters.FilterSet):
                 return queryset.filter(current_funds_left__lt=0)
             case _:
                 return queryset
+
+    @staticmethod
+    def filter_by_category_priority(queryset: QuerySet, name: str, value: Decimal) -> QuerySet:
+        """
+        Filters ExpensePredictions queryset by Transfer Category priority value.
+
+        Args:
+            queryset [QuerySet]: Input QuerySet
+            name [str]: Name of filtered param
+            value [Decimal]: Value of filtered param
+
+        Returns:
+            QuerySet: Filtered QuerySet.
+        """
+        if value in CategoryPriority.values:
+            return queryset.filter(category__priority=value)
+        return queryset
