@@ -1,6 +1,5 @@
 from typing import Callable
 
-from django.utils.functional import _StrPromise
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,7 +10,7 @@ from categories.models.choices.category_type import CategoryType
 
 def format_typed_priorities(
     priorities: tuple[CategoryPriority, ...]
-) -> list[tuple[Callable[[], int], Callable[[], str | _StrPromise]]]:
+) -> list[tuple[Callable[[], int], Callable[[], str]]]:
     """
     Function to prepare select choices of CategoryPriority filtered values on frontend.
     Args:
