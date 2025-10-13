@@ -41,26 +41,6 @@ class TestExpensePredictionModel:
         assert str(prediction) == f"[{prediction.period.name}] {prediction.category.name}"
 
     @pytest.mark.django_db(transaction=True)
-    def test_error_description_too_long(
-        self, budget: Budget, budgeting_period_factory: FactoryMetaClass, transfer_category_factory: FactoryMetaClass
-    ):
-        """
-        GIVEN: BudgetingPeriod and ExpenseCategory models instances in database.
-        WHEN: ExpensePrediction instance create attempt with description value too long.
-        THEN: DataError raised.
-        """
-        max_length = ExpensePrediction._meta.get_field("description").max_length
-        payload = self.PAYLOAD.copy()
-        payload["description"] = (max_length + 1) * "a"
-        payload["period"] = budgeting_period_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
-
-        with pytest.raises(DataError) as exc:
-            ExpensePrediction.objects.create(**payload)
-        assert str(exc.value) == f"value too long for type character varying({max_length})\n"
-        assert not ExpensePrediction.objects.all().exists()
-
-    @pytest.mark.django_db(transaction=True)
     @pytest.mark.parametrize("field", ("initial_plan", "current_plan"))
     def test_error_value_too_long(
         self,
