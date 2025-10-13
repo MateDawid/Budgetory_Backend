@@ -3,9 +3,9 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth.models import AbstractUser
-from django.db.models import QuerySet
 from django.urls import reverse
 from factory.base import FactoryMetaClass
+from predictions_tests.utils import annotate_expense_prediction_queryset
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -13,31 +13,12 @@ from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from predictions.models import ExpensePrediction
 from predictions.serializers.expense_prediction_serializer import ExpensePredictionSerializer
-from predictions.views.expense_prediction_viewset import (
-    get_current_funds_left,
-    get_current_progress,
-    get_previous_funds_left,
-    get_previous_period_prediction_plan,
-    sum_period_transfers_with_category,
-)
 from predictions.views.prediction_progress_status_view import PredictionProgressStatus
 
 
 def expense_prediction_url(budget_id: int):
     """Create and return an ExpensePrediction list URL."""
     return reverse("budgets:expense_prediction-list", args=[budget_id])
-
-
-def annotate_queryset(queryset: QuerySet) -> QuerySet:
-    return queryset.annotate(
-        current_result=sum_period_transfers_with_category(period_ref="period"),
-        previous_plan=get_previous_period_prediction_plan(),
-        previous_result=sum_period_transfers_with_category(period_ref="period__previous_period"),
-    ).annotate(
-        current_funds_left=get_current_funds_left(),
-        current_progress=get_current_progress(),
-        previous_funds_left=get_previous_funds_left(),
-    )
 
 
 @pytest.mark.django_db
@@ -96,7 +77,7 @@ class TestExpensePredictionFilterSetOrdering:
         assert response.status_code == status.HTTP_200_OK
 
         # Get the base queryset (same as ViewSet)
-        base_queryset = annotate_queryset(
+        base_queryset = annotate_expense_prediction_queryset(
             ExpensePrediction.objects.filter(period__budget__pk=budget.pk).select_related(
                 "period", "period__budget", "period__previous_period", "category", "category__budget", "category__owner"
             )
@@ -140,7 +121,7 @@ class TestExpensePredictionFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert ExpensePrediction.objects.all().count() == 2
-        predictions = annotate_queryset(
+        predictions = annotate_expense_prediction_queryset(
             ExpensePrediction.objects.filter(period__budget=budget, period__id=period.id)
         ).order_by("id")
         serializer = ExpensePredictionSerializer(
@@ -179,7 +160,7 @@ class TestExpensePredictionFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert ExpensePrediction.objects.all().count() == 2
-        predictions = annotate_queryset(
+        predictions = annotate_expense_prediction_queryset(
             ExpensePrediction.objects.filter(period__budget=budget, category__id=category.id)
         )
         serializer = ExpensePredictionSerializer(
@@ -222,7 +203,7 @@ class TestExpensePredictionFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert ExpensePrediction.objects.all().count() == 2
-        predictions = annotate_queryset(
+        predictions = annotate_expense_prediction_queryset(
             ExpensePrediction.objects.filter(period__budget=budget, category__owner__id=owner.id)
         )
         serializer = ExpensePredictionSerializer(
@@ -264,7 +245,7 @@ class TestExpensePredictionFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert ExpensePrediction.objects.all().count() == 2
-        predictions = annotate_queryset(
+        predictions = annotate_expense_prediction_queryset(
             ExpensePrediction.objects.filter(period__budget=budget, category__owner__isnull=True)
         )
         serializer = ExpensePredictionSerializer(
@@ -366,7 +347,7 @@ class TestExpensePredictionFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert ExpensePrediction.objects.all().count() == 2
-        predictions = annotate_queryset(ExpensePrediction.objects.filter(**{field: value}))
+        predictions = annotate_expense_prediction_queryset(ExpensePrediction.objects.filter(**{field: value}))
         serializer = ExpensePredictionSerializer(
             predictions,
             many=True,
@@ -402,7 +383,7 @@ class TestExpensePredictionFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert ExpensePrediction.objects.all().count() == 2
-        predictions = annotate_queryset(ExpensePrediction.objects.filter(**{f"{field}__lte": value}))
+        predictions = annotate_expense_prediction_queryset(ExpensePrediction.objects.filter(**{f"{field}__lte": value}))
         serializer = ExpensePredictionSerializer(
             predictions,
             many=True,
@@ -438,7 +419,7 @@ class TestExpensePredictionFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert ExpensePrediction.objects.all().count() == 2
-        predictions = annotate_queryset(ExpensePrediction.objects.filter(**{f"{field}__gte": value}))
+        predictions = annotate_expense_prediction_queryset(ExpensePrediction.objects.filter(**{f"{field}__gte": value}))
         serializer = ExpensePredictionSerializer(
             predictions,
             many=True,

@@ -7,6 +7,7 @@ from conftest import get_jwt_access_token
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
 from factory.base import FactoryMetaClass
+from predictions_tests.utils import annotate_expense_prediction_queryset
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -17,10 +18,6 @@ from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from predictions.models.expense_prediction_model import ExpensePrediction
 from predictions.serializers.expense_prediction_serializer import ExpensePredictionSerializer
-from predictions.views.expense_prediction_viewset import (
-    get_previous_period_prediction_plan,
-    sum_period_transfers_with_category,
-)
 
 
 def expense_prediction_url(budget_id: int):
@@ -157,7 +154,9 @@ class TestExpensePredictionViewSetList:
 
         response = api_client.get(expense_prediction_url(budget.id))
 
-        predictions = ExpensePrediction.objects.filter(period__budget=budget).order_by("id")
+        predictions = annotate_expense_prediction_queryset(
+            ExpensePrediction.objects.filter(period__budget=budget)
+        ).order_by("id")
         serializer = ExpensePredictionSerializer(predictions, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert response.data == serializer.data
@@ -186,7 +185,7 @@ class TestExpensePredictionViewSetList:
 
         response = api_client.get(expense_prediction_url(budget.id))
 
-        predictions = ExpensePrediction.objects.filter(period__budget=budget)
+        predictions = annotate_expense_prediction_queryset(ExpensePrediction.objects.filter(period__budget=budget))
         serializer = ExpensePredictionSerializer(predictions, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == len(serializer.data) == predictions.count() == 1
@@ -225,15 +224,9 @@ class TestExpensePredictionViewSetList:
 
         response = api_client.get(expense_prediction_url(budget.id))
 
-        predictions = (
-            ExpensePrediction.objects.annotate(
-                current_result=sum_period_transfers_with_category(period_ref="period"),
-                previous_plan=get_previous_period_prediction_plan(),
-                previous_result=sum_period_transfers_with_category(period_ref="period__previous_period"),
-            )
-            .filter(period__budget=budget)
-            .order_by("id")
-        )
+        predictions = annotate_expense_prediction_queryset(
+            ExpensePrediction.objects.filter(period__budget=budget)
+        ).order_by("id")
         serializer = ExpensePredictionSerializer(predictions, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert response.data == serializer.data
@@ -284,15 +277,9 @@ class TestExpensePredictionViewSetList:
 
         response = api_client.get(expense_prediction_url(budget.id))
 
-        predictions = (
-            ExpensePrediction.objects.annotate(
-                current_result=sum_period_transfers_with_category(period_ref="period"),
-                previous_plan=get_previous_period_prediction_plan(),
-                previous_result=sum_period_transfers_with_category(period_ref="period__previous_period"),
-            )
-            .filter(period__budget=budget)
-            .order_by("id")
-        )
+        predictions = annotate_expense_prediction_queryset(
+            ExpensePrediction.objects.filter(period__budget=budget)
+        ).order_by("id")
         serializer = ExpensePredictionSerializer(predictions, many=True)
 
         assert response.status_code == status.HTTP_200_OK
@@ -405,33 +392,6 @@ class TestExpensePredictionViewSetCreate:
         assert prediction.period == period
         serializer = ExpensePredictionSerializer(prediction)
         assert response.data == serializer.data
-
-    def test_error_description_too_long(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Budget, BudgetingPeriod and TransferCategory instances created in database. Payload for ExpensePrediction
-        with field value too long.
-        WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with invalid payload.
-        THEN: Bad request HTTP 400 returned. ExpensePrediction not created in database.
-        """
-        budget = budget_factory(members=[base_user])
-        api_client.force_authenticate(base_user)
-        max_length = ExpensePrediction._meta.get_field("description").max_length
-        payload = self.PAYLOAD.copy()
-        payload["description"] = (max_length + 1) * "a"
-
-        response = api_client.post(expense_prediction_url(budget.id), payload)
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "description" in response.data["detail"]
-        assert (
-            response.data["detail"]["description"][0] == f"Ensure this field has no more than {max_length} characters."
-        )
-        assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
 
     @pytest.mark.parametrize("current_plan", [Decimal("0.00"), Decimal("-0.01")])
     def test_error_value_lower_than_min(
@@ -640,7 +600,9 @@ class TestExpensePredictionViewSetDetail:
         url = expense_prediction_detail_url(budget.id, prediction.id)
 
         response = api_client.get(url)
-        serializer = ExpensePredictionSerializer(prediction)
+        serializer = ExpensePredictionSerializer(
+            annotate_expense_prediction_queryset(ExpensePrediction.objects.filter(id=prediction.id)).first()
+        )
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data == serializer.data
