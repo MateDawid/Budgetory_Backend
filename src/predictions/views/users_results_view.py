@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from django.db.models import CharField, DecimalField, F, Func, OuterRef, Subquery, Sum, Value
+from django.db.models import CharField, DecimalField, ExpressionWrapper, F, Func, OuterRef, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -144,6 +144,28 @@ def get_user_period_balance() -> Func:
     )
 
 
+def get_funds_left_for_predictions() -> ExpressionWrapper:
+    """
+    Function for calculate funds left for given TransferCategory in particular BudgetingPeriod.
+
+    Returns:
+        ExpressionWrapper: ORM function returning calculating funds left for specified
+        TransferCategory in particular BudgetingPeriod.
+    """
+    return ExpressionWrapper(F("period_balance") - F("predictions_sum"), output_field=DecimalField(decimal_places=2))
+
+
+def get_funds_left_for_expenses() -> ExpressionWrapper:
+    """
+    Function for calculate funds left for given TransferCategory in particular BudgetingPeriod.
+
+    Returns:
+        ExpressionWrapper: ORM function returning calculating funds left for specified
+        TransferCategory in particular BudgetingPeriod.
+    """
+    return ExpressionWrapper(F("predictions_sum") - F("period_expenses"), output_field=DecimalField(decimal_places=2))
+
+
 class UsersResultsAPIView(APIView):
     """
     View returning Users results in indicated Period - predictions, planned expenses and actual expenses.
@@ -177,7 +199,19 @@ class UsersResultsAPIView(APIView):
                 period_expenses=get_user_period_expenses(budget_pk, period_pk),
                 period_balance=get_user_period_balance(),
             )
-            .values("id", "username", "period_expenses", "predictions_sum", "period_balance")
+            .annotate(
+                funds_left_for_predictions=get_funds_left_for_predictions(),
+                funds_left_for_expenses=get_funds_left_for_expenses(),
+            )
+            .values(
+                "id",
+                "username",
+                "period_expenses",
+                "predictions_sum",
+                "period_balance",
+                "funds_left_for_predictions",
+                "funds_left_for_expenses",
+            )
         )
 
         none_user_queryset = (
@@ -197,7 +231,19 @@ class UsersResultsAPIView(APIView):
                 period_expenses=get_user_period_expenses(budget_pk, period_pk, is_common_user=True),
                 period_balance=get_user_period_balance(),
             )
-            .values("id", "username", "period_expenses", "predictions_sum", "period_balance")
+            .annotate(
+                funds_left_for_predictions=get_funds_left_for_predictions(),
+                funds_left_for_expenses=get_funds_left_for_expenses(),
+            )
+            .values(
+                "id",
+                "username",
+                "period_expenses",
+                "predictions_sum",
+                "period_balance",
+                "funds_left_for_predictions",
+                "funds_left_for_expenses",
+            )
         )
 
         return Response(
@@ -207,6 +253,8 @@ class UsersResultsAPIView(APIView):
                     "predictions_sum": f"{Decimal(str(member['predictions_sum'])):.2f}",
                     "period_balance": f"{Decimal(str(member['period_balance'])):.2f}",
                     "period_expenses": f"{Decimal(str(member['period_expenses'])):.2f}",
+                    "funds_left_for_predictions": f"{Decimal(str(member['funds_left_for_predictions'])):.2f}",
+                    "funds_left_for_expenses": f"{Decimal(str(member['funds_left_for_expenses'])):.2f}",
                 }
                 for member in budget_members.union(none_user_queryset).order_by("id")
             ]
