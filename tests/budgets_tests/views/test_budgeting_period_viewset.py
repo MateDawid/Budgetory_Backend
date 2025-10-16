@@ -244,6 +244,33 @@ class TestBudgetingPeriodViewSetList:
         assert periods.first() == period
         assert response.data == serializer.data
 
+    def test_ordering_by_date_start(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Three BudgetingPeriods for Budget in database created.
+        WHEN: BudgetingPeriodViewSet list view called with ordering parameter.
+        THEN: List of BudgetingPeriods ordered by date_start returned.
+        """
+        budget = budget_factory(members=[base_user])
+        api_client.force_authenticate(base_user)
+        budgeting_period_factory(budget=budget, date_start=date(2023, 3, 1), date_end=date(2023, 3, 31))
+        budgeting_period_factory(budget=budget, date_start=date(2023, 1, 1), date_end=date(2023, 1, 31))
+        budgeting_period_factory(budget=budget, date_start=date(2023, 2, 1), date_end=date(2023, 2, 28))
+        url = periods_url(budget.id)
+
+        response = api_client.get(url, data={"ordering": "date_start"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 3
+        assert response.data[0]["date_start"] == "2023-01-01"
+        assert response.data[1]["date_start"] == "2023-02-01"
+        assert response.data[2]["date_start"] == "2023-03-01"
+
 
 @pytest.mark.django_db
 class TestBudgetingPeriodViewSetCreate:
@@ -688,6 +715,34 @@ class TestBudgetingPeriodViewSetCreate:
             == "New period date start has to be greater than previous period date end."
         )
         assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
+
+    def test_error_create_period_for_not_accessible_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget in database created.
+        WHEN: BudgetingPeriodViewSet list view called by authenticated User (not Budget owner nor member).
+        THEN: Forbidden HTTP 403 returned.
+        """
+        other_user = user_factory()
+        budget = budget_factory(members=[other_user])
+        api_client.force_authenticate(base_user)
+        payload = {
+            "name": "2023_01",
+            "status": PeriodStatus.DRAFT,
+            "date_start": date(2023, 1, 1),
+            "date_end": date(2023, 1, 31),
+        }
+        url = periods_url(budget.id)
+
+        response = api_client.post(url, payload)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert not BudgetingPeriod.objects.filter(budget=budget).exists()
 
 
 @pytest.mark.django_db
@@ -1148,6 +1203,73 @@ class TestBudgetingPeriodViewSetUpdate:
         for prediction in (prediction_1, prediction_2):
             prediction.refresh_from_db()
             assert prediction.initial_plan == prediction.current_plan
+
+    def test_create_zero_predictions_for_unpredicted_categories_on_activation(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: BudgetingPeriod with one ExpensePrediction and two expense categories created in database.
+        WHEN: BudgetingPeriodViewSet detail view called to activate period.
+        THEN: ExpensePrediction with zero value created for unpredicted category.
+        """
+        from predictions.models import ExpensePrediction
+
+        api_client.force_authenticate(base_user)
+        budget = budget_factory(members=[base_user])
+        period = budgeting_period_factory(
+            budget=budget,
+            date_start=date(2024, 1, 1),
+            date_end=date(2024, 1, 31),
+            status=PeriodStatus.DRAFT,
+        )
+        category_1 = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        category_2 = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        expense_prediction_factory(period=period, category=category_1, current_plan=100.00)
+
+        payload = {"status": PeriodStatus.ACTIVE}
+        url = period_detail_url(period.budget.id, period.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        predictions = ExpensePrediction.objects.filter(period=period)
+        assert predictions.count() == 2
+        zero_prediction = predictions.filter(category=category_2).first()
+        assert zero_prediction is not None
+        assert zero_prediction.initial_plan == Decimal("0.00")
+        assert zero_prediction.current_plan == Decimal("0.00")
+
+    def test_error_update_period_for_not_accessible_budget(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: BudgetingPeriod created in database.
+        WHEN: BudgetingPeriodViewSet detail view called by authenticated User (not Budget owner nor member).
+        THEN: Forbidden HTTP 403 returned.
+        """
+        other_user = user_factory()
+        budget = budget_factory(members=[other_user])
+        period = budgeting_period_factory(budget=budget, status=PeriodStatus.DRAFT)
+        api_client.force_authenticate(base_user)
+        payload = {"name": "Updated Name"}
+        url = period_detail_url(budget.id, period.id)
+
+        response = api_client.patch(url, payload)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        period.refresh_from_db()
+        assert period.name != "Updated Name"
 
 
 @pytest.mark.django_db

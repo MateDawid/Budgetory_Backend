@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import transaction
 from django.db.models import DecimalField, F, Func, Q, QuerySet, Sum, Value
 from django.db.models.functions import Coalesce
@@ -13,6 +15,7 @@ from budgets.filtersets.budgeting_period_filterset import BudgetingPeriodFilterS
 from budgets.models import BudgetingPeriod
 from budgets.models.choices.period_status import PeriodStatus
 from budgets.serializers.budgeting_period_serializer import BudgetingPeriodSerializer
+from categories.models import TransferCategory
 from categories.models.choices.category_type import CategoryType
 from predictions.models import ExpensePrediction
 
@@ -33,6 +36,42 @@ def sum_period_transfers(category_type: CategoryType) -> Func:
         Value(0),
         output_field=DecimalField(decimal_places=2),
     )
+
+
+def prepare_predictions_on_period_activation(budget_pk: str, period_pk: str) -> None:
+    """
+    Function for updating ExpensePrediction data on Period activation.
+
+    Args:
+        budget_pk (str): Budget ID.
+        period_pk (str): Period ID.
+    """
+    if not all((budget_pk, period_pk)):
+        return
+    # Set initial_value for predictions create by User
+    ExpensePrediction.objects.filter(period__id=period_pk, initial_plan__isnull=True).update(
+        initial_plan=F("current_plan")
+    )
+    # Create predictions with 0 value for not predicted categories
+    predicted_categories_ids = ExpensePrediction.objects.filter(
+        period__id=period_pk, period__budget__id=budget_pk
+    ).values_list("category", flat=True)
+
+    unpredicted_categories_ids = TransferCategory.objects.filter(
+        ~Q(id__in=predicted_categories_ids),
+        category_type=CategoryType.EXPENSE,
+    ).values_list("id", flat=True)
+
+    zero_predictions = [
+        ExpensePrediction(
+            period_id=period_pk,
+            category_id=category_id,
+            initial_plan=Decimal("0.00"),
+            current_plan=Decimal("0.00"),
+        )
+        for category_id in unpredicted_categories_ids
+    ]
+    ExpensePrediction.objects.bulk_create(zero_predictions)
 
 
 class BudgetingPeriodViewSet(ModelViewSet):
@@ -97,7 +136,7 @@ class BudgetingPeriodViewSet(ModelViewSet):
         """
         with transaction.atomic():
             if int(request.data.get("status", 0)) == PeriodStatus.ACTIVE.value:
-                ExpensePrediction.objects.filter(period__id=kwargs.get("pk"), initial_plan__isnull=True).update(
-                    initial_plan=F("current_plan")
+                prepare_predictions_on_period_activation(
+                    budget_pk=kwargs.get("budget_pk", "0"), period_pk=kwargs.get("pk", "0")
                 )
             return super().update(request, *args, **kwargs)
