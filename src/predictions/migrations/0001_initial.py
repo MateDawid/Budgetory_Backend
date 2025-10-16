@@ -43,13 +43,13 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="expenseprediction",
             constraint=models.CheckConstraint(
-                check=models.Q(("initial_plan__gt", Decimal("0.00"))), name="initial_plan_gte_0"
+                check=models.Q(("initial_plan__gte", Decimal("0.00"))), name="initial_plan_gte_0"
             ),
         ),
         migrations.AddConstraint(
             model_name="expenseprediction",
             constraint=models.CheckConstraint(
-                check=models.Q(("current_plan__gt", Decimal("0.00"))), name="current_plan_gte_0"
+                check=models.Q(("current_plan__gte", Decimal("0.00"))), name="current_plan_gte_0"
             ),
         ),
         migrations.AlterUniqueTogether(

@@ -20,11 +20,11 @@ class ExpensePrediction(models.Model):
         unique_together = ("period", "category")
         constraints = (
             CheckConstraint(
-                check=Q(initial_plan__gt=Decimal("0.00")),
+                check=Q(initial_plan__gte=Decimal("0.00")),
                 name="initial_plan_gte_0",
             ),
             CheckConstraint(
-                check=Q(current_plan__gt=Decimal("0.00")),
+                check=Q(current_plan__gte=Decimal("0.00")),
                 name="current_plan_gte_0",
             ),
         )
