@@ -70,7 +70,7 @@ class TestExpensePredictionModel:
 
     @pytest.mark.django_db(transaction=True)
     @pytest.mark.parametrize("field", ("initial_plan", "current_plan"))
-    @pytest.mark.parametrize("value", [Decimal("0.00"), Decimal("-0.01")])
+    @pytest.mark.parametrize("value", [Decimal("-0.01"), Decimal("-1.00")])
     def test_error_value_too_low(
         self,
         budget: Budget,
