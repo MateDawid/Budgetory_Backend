@@ -7,6 +7,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 from app_infrastructure.views.healthcheck_view import HealthcheckView
+from predictions.views.prediction_progress_status_view import PredictionProgressStatusView
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -34,6 +35,9 @@ urlpatterns = [
     path("api/budgets/<int:budget_pk>/", include("predictions.urls")),
     path("api/categories/", include("categories.urls")),
     path("api/", include("entities.urls")),
+    path(
+        "api/predictions/progress_statuses/", PredictionProgressStatusView.as_view(), name="prediction-progress-status"
+    ),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

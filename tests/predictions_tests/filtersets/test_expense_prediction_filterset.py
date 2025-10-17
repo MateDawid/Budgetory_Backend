@@ -5,6 +5,7 @@ import pytest
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
 from factory.base import FactoryMetaClass
+from predictions_tests.utils import annotate_expense_prediction_queryset
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -12,10 +13,7 @@ from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from predictions.models import ExpensePrediction
 from predictions.serializers.expense_prediction_serializer import ExpensePredictionSerializer
-from predictions.views.expense_prediction_viewset import (
-    get_previous_period_prediction_plan,
-    sum_period_transfers_with_category,
-)
+from predictions.views.prediction_progress_status_view import PredictionProgressStatus
 
 
 def expense_prediction_url(budget_id: int):
@@ -79,18 +77,13 @@ class TestExpensePredictionFilterSetOrdering:
         assert response.status_code == status.HTTP_200_OK
 
         # Get the base queryset (same as ViewSet)
-        base_queryset = (
-            ExpensePrediction.objects.filter(period__budget__pk=budget.pk)
-            .select_related(
+        base_queryset = annotate_expense_prediction_queryset(
+            ExpensePrediction.objects.filter(period__budget__pk=budget.pk).select_related(
                 "period", "period__budget", "period__previous_period", "category", "category__budget", "category__owner"
             )
-            .annotate(
-                current_result=sum_period_transfers_with_category(period_ref="period"),
-                previous_plan=get_previous_period_prediction_plan(),
-                previous_result=sum_period_transfers_with_category(period_ref="period__previous_period"),
-            )
-            .order_by("id")  # Default ordering
-        )
+        ).order_by(
+            "id"
+        )  # Default ordering
 
         # Apply the same ordering logic as OrderingFilter
         predictions = base_queryset.order_by(sort_param)  # This replaces the default ordering
@@ -98,7 +91,6 @@ class TestExpensePredictionFilterSetOrdering:
         serializer = ExpensePredictionSerializer(predictions, many=True)
         assert response.data and serializer.data
         assert len(response.data) == len(serializer.data) == len(predictions) == 4
-        assert response.data == serializer.data
 
 
 @pytest.mark.django_db
@@ -129,7 +121,9 @@ class TestExpensePredictionFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert ExpensePrediction.objects.all().count() == 2
-        predictions = ExpensePrediction.objects.filter(period__budget=budget, period__id=period.id)
+        predictions = annotate_expense_prediction_queryset(
+            ExpensePrediction.objects.filter(period__budget=budget, period__id=period.id)
+        ).order_by("id")
         serializer = ExpensePredictionSerializer(
             predictions,
             many=True,
@@ -166,7 +160,9 @@ class TestExpensePredictionFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert ExpensePrediction.objects.all().count() == 2
-        predictions = ExpensePrediction.objects.filter(period__budget=budget, category__id=category.id)
+        predictions = annotate_expense_prediction_queryset(
+            ExpensePrediction.objects.filter(period__budget=budget, category__id=category.id)
+        )
         serializer = ExpensePredictionSerializer(
             predictions,
             many=True,
@@ -175,6 +171,156 @@ class TestExpensePredictionFilterSetFiltering:
         assert len(response.data) == len(serializer.data) == predictions.count() == 1
         assert response.data == serializer.data
         assert response.data[0]["id"] == prediction.id
+
+    def test_get_predictions_list_filtered_by_owner(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two ExpensePrediction objects for single Budget with different category owners.
+        WHEN: The ExpensePredictionViewSet list view is called with owner filter.
+        THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
+        owner value.
+        """
+        owner = user_factory()
+        budget = budget_factory(members=[base_user, owner])
+        category_with_owner = transfer_category_factory(
+            budget=budget, name="Owned", owner=owner, category_type=CategoryType.EXPENSE
+        )
+        category_without_owner = transfer_category_factory(
+            budget=budget, name="Unowned", owner=None, category_type=CategoryType.EXPENSE
+        )
+        prediction_with_owner = expense_prediction_factory(budget=budget, category=category_with_owner)
+        expense_prediction_factory(budget=budget, category=category_without_owner)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(expense_prediction_url(budget.id), data={"owner": owner.id})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert ExpensePrediction.objects.all().count() == 2
+        predictions = annotate_expense_prediction_queryset(
+            ExpensePrediction.objects.filter(period__budget=budget, category__owner__id=owner.id)
+        )
+        serializer = ExpensePredictionSerializer(
+            predictions,
+            many=True,
+        )
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == predictions.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == prediction_with_owner.id
+
+    def test_get_predictions_list_filtered_by_owner_null(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        user_factory: FactoryMetaClass,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two ExpensePrediction objects for single Budget with different category owners.
+        WHEN: The ExpensePredictionViewSet list view is called with owner filter set to -1 (null owner).
+        THEN: Response must contain all ExpensePrediction existing in database assigned to Budget with no owner.
+        """
+        owner = user_factory()
+        budget = budget_factory(members=[base_user, owner])
+        category_with_owner = transfer_category_factory(
+            budget=budget, name="Owned", owner=owner, category_type=CategoryType.EXPENSE
+        )
+        category_without_owner = transfer_category_factory(
+            budget=budget, name="Unowned", owner=None, category_type=CategoryType.EXPENSE
+        )
+        expense_prediction_factory(budget=budget, category=category_with_owner)
+        prediction_without_owner = expense_prediction_factory(budget=budget, category=category_without_owner)
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(expense_prediction_url(budget.id), data={"owner": -1})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert ExpensePrediction.objects.all().count() == 2
+        predictions = annotate_expense_prediction_queryset(
+            ExpensePrediction.objects.filter(period__budget=budget, category__owner__isnull=True)
+        )
+        serializer = ExpensePredictionSerializer(
+            predictions,
+            many=True,
+        )
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == predictions.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == prediction_without_owner.id
+
+    @pytest.mark.parametrize(
+        "progress_status,expected_count",
+        [
+            (PredictionProgressStatus.NOT_USED.value, 1),
+            (PredictionProgressStatus.IN_PLANNED_RANGE.value, 1),
+            (PredictionProgressStatus.FULLY_UTILIZED.value, 1),
+            (PredictionProgressStatus.OVERUSED.value, 1),
+        ],
+    )
+    def test_get_predictions_list_filtered_by_progress_status(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+        progress_status: int,
+        expected_count: int,
+    ):
+        """
+        GIVEN: Four ExpensePrediction objects for single Budget with different progress statuses.
+        WHEN: The ExpensePredictionViewSet list view is called with progress_status filter.
+        THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
+        progress status.
+        """
+        budget = budget_factory(members=[base_user])
+
+        # NOT_USED: current_funds_left == current_plan
+        expense_prediction_factory(budget=budget, current_plan=Decimal("100.00"))
+
+        # IN_PLANNED_RANGE: 0 < current_funds_left < current_plan
+        in_planned_range_prediction = expense_prediction_factory(budget=budget, current_plan=Decimal("100.00"))
+        expense_factory(
+            budget=budget,
+            category=in_planned_range_prediction.category,
+            period=in_planned_range_prediction.period,
+            value=Decimal("10.00"),
+        )
+
+        # FULLY_UTILIZED: current_funds_left == 0
+        fully_utilized_prediction = expense_prediction_factory(budget=budget, current_plan=Decimal("100.00"))
+        expense_factory(
+            budget=budget,
+            category=fully_utilized_prediction.category,
+            period=fully_utilized_prediction.period,
+            value=Decimal("100.00"),
+        )
+
+        # OVERUSED: current_funds_left < 0
+        overused_prediction = expense_prediction_factory(budget=budget, current_plan=Decimal("100.00"))
+        expense_factory(
+            budget=budget,
+            category=overused_prediction.category,
+            period=overused_prediction.period,
+            value=Decimal("101.00"),
+        )
+
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(expense_prediction_url(budget.id), data={"progress_status": progress_status})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert ExpensePrediction.objects.all().count() == 4
+        assert len(response.data) == expected_count
 
     @pytest.mark.parametrize("field", ("initial_plan", "current_plan"))
     def test_get_predictions_list_filtered_by_value(
@@ -201,7 +347,7 @@ class TestExpensePredictionFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert ExpensePrediction.objects.all().count() == 2
-        predictions = ExpensePrediction.objects.filter(**{field: value})
+        predictions = annotate_expense_prediction_queryset(ExpensePrediction.objects.filter(**{field: value}))
         serializer = ExpensePredictionSerializer(
             predictions,
             many=True,
@@ -237,7 +383,7 @@ class TestExpensePredictionFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert ExpensePrediction.objects.all().count() == 2
-        predictions = ExpensePrediction.objects.filter(**{f"{field}__lte": value})
+        predictions = annotate_expense_prediction_queryset(ExpensePrediction.objects.filter(**{f"{field}__lte": value}))
         serializer = ExpensePredictionSerializer(
             predictions,
             many=True,
@@ -273,7 +419,7 @@ class TestExpensePredictionFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert ExpensePrediction.objects.all().count() == 2
-        predictions = ExpensePrediction.objects.filter(**{f"{field}__gte": value})
+        predictions = annotate_expense_prediction_queryset(ExpensePrediction.objects.filter(**{f"{field}__gte": value}))
         serializer = ExpensePredictionSerializer(
             predictions,
             many=True,

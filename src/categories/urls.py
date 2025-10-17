@@ -6,6 +6,6 @@ from categories.views.category_type_view import CategoryTypeView
 app_name = "categories"
 
 urlpatterns = [
-    path("priorities", CategoryPriorityView.as_view(), name="category-priority"),
+    path("priorities/", CategoryPriorityView.as_view(), name="category-priority"),
     path("types", CategoryTypeView.as_view(), name="category-type"),
 ]
