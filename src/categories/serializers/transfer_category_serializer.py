@@ -1,4 +1,3 @@
-import copy
 from collections import OrderedDict
 
 from django.db.models import Model
@@ -15,7 +14,7 @@ class TransferCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model: Model = TransferCategory
-        fields: tuple[str] = ("id", "category_type", "priority", "name", "description", "is_active", "owner")
+        fields: tuple[str] = ("id", "category_type", "priority", "name", "description", "is_active", "deposit")
         read_only_fields: tuple[str] = ("id",)
 
     def validate(self, attrs: OrderedDict) -> OrderedDict:
@@ -57,28 +56,25 @@ class TransferCategorySerializer(serializers.ModelSerializer):
 
     def _validate_category_uniqueness(self, attrs: OrderedDict) -> None:
         """
-        Checks if TransferCategory name is unique in for specified owner value.
+        Checks if TransferCategory name is unique in for specified deposit value.
 
         Args:
             attrs (OrderedDict): Input parameters.
 
         Raises:
-            ValidationError: Raised when TransferCategory name already used for specified owner in given Budget.
+            ValidationError: Raised when TransferCategory name already used for specified deposit in given Budget.
         """
         payload = {
             "budget_id": getattr(self.context.get("view"), "kwargs", {}).get("budget_pk"),
             "name": attrs.get("name") or getattr(self.instance, "name", None),
         }
-        if owner_id := (attrs.get("owner") or getattr(self.instance, "owner", None)):
-            payload["owner"] = owner_id
+        if deposit_id := (attrs.get("deposit") or getattr(self.instance, "deposit", None)):
+            payload["deposit"] = deposit_id
         if self.Meta.model.objects.filter(**payload).exclude(id=getattr(self.instance, "id", None)).exists():
-            raise ValidationError(
-                f"{'Personal' if owner_id else 'Common'} Category with given " f"name already exists in Budget."
-            )
+            raise ValidationError("Transfer Category for Deposit with given name already exists.")
 
     def to_representation(self, instance: TransferCategory) -> OrderedDict:
         """
-        Overrides "owner" field representation for None value for Frontend proper display.
         Extends model representation with "value" and "label" fields for React MUI DataGrid filtering purposes.
 
         Attributes:
@@ -88,25 +84,9 @@ class TransferCategorySerializer(serializers.ModelSerializer):
             OrderedDict: Dictionary containing overridden values.
         """
         representation = super().to_representation(instance)
-        representation["owner"] = getattr(instance.owner, "id", -1)
         representation["value"] = instance.id
         representation["label"] = f"{'📉' if instance.category_type == CategoryType.EXPENSE else '📈'} {instance.name}"
-        representation["owner_display"] = getattr(instance, "owner_display", None)  # noqa
+        representation["deposit_display"] = getattr(instance, "deposit_display", None)  # noqa
         representation["priority_display"] = CategoryPriority(representation["priority"]).label
         representation["category_type_display"] = CategoryType(representation["category_type"]).label
         return representation
-
-    def to_internal_value(self, data: OrderedDict) -> OrderedDict:
-        """
-        Additionally handles "-1" value for owner sent by Frontend in case of selecting None owner value.
-
-        Attributes:
-            data [dict]: Input data.
-
-        Returns:
-            dict: Dictionary containing overridden values.
-        """
-        updated_data = copy.deepcopy(data)
-        if str(updated_data.get("owner")) == "-1":
-            updated_data["owner"] = None
-        return super().to_internal_value(updated_data)
