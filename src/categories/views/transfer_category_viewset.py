@@ -1,5 +1,4 @@
-from django.db.models import CharField, F, Func, QuerySet, Value
-from django.db.models.functions import Coalesce
+from django.db.models import F, QuerySet
 from django_filters import rest_framework as filters
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
@@ -10,20 +9,6 @@ from categories.filtersets.transfer_category_filterset import TransferCategoryFi
 from categories.serializers.transfer_category_serializer import TransferCategorySerializer
 
 
-def get_category_owner_display() -> Func:
-    """
-    Function for generate display value of TransferCategory owner.
-
-    Returns:
-        Func: ORM function returning Sum of Deposit Transfers values.
-    """
-    return Coalesce(
-        F("owner__username"),
-        Value("🏦 Common"),
-        output_field=CharField(),
-    )
-
-
 class TransferCategoryViewSet(ModelViewSet):
     """Base ViewSet for managing TransferCategories."""
 
@@ -31,7 +16,7 @@ class TransferCategoryViewSet(ModelViewSet):
     filterset_class = TransferCategoryFilterSet
     permission_classes = (IsAuthenticated, UserBelongsToBudgetPermission)
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
-    ordering_fields = ("id", "name", "category_type", "priority", "owner")
+    ordering_fields = ("id", "name", "category_type", "priority", "deposit")
 
     def get_queryset(self) -> QuerySet:
         """
@@ -41,10 +26,10 @@ class TransferCategoryViewSet(ModelViewSet):
             QuerySet: Filtered TransferCategory QuerySet.
         """
         return (
-            self.serializer_class.Meta.model.objects.prefetch_related("budget", "owner")
+            self.serializer_class.Meta.model.objects.prefetch_related("budget", "deposit")
             .filter(budget__pk=self.kwargs.get("budget_pk"))
             .distinct()
-            .annotate(owner_display=get_category_owner_display())
+            .annotate(deposit_display=F("deposit__name"))
         )
 
     def perform_create(self, serializer: TransferCategorySerializer) -> None:
