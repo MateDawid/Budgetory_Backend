@@ -30,12 +30,6 @@ def create_initial_categories_for_budget_pk(budget_pk: int) -> None:
             priority=CategoryPriority.MOST_IMPORTANT,
         ),
         TransferCategory(
-            budget_id=budget_pk,
-            name="Mortgage",
-            category_type=CategoryType.EXPENSE,
-            priority=CategoryPriority.DEBTS,
-        ),
-        TransferCategory(
             budget_id=budget_pk, name="Savings", category_type=CategoryType.EXPENSE, priority=CategoryPriority.SAVINGS
         ),
         TransferCategory(
