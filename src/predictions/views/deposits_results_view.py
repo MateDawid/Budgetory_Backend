@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from django.db.models import CharField, DecimalField, ExpressionWrapper, F, Func, OuterRef, Subquery, Sum, Value
+from django.db.models import DecimalField, ExpressionWrapper, F, Func, OuterRef, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -16,42 +16,20 @@ from predictions.models import ExpensePrediction
 from transfers.models import Expense, Transfer
 
 
-def get_owner_filter(param_name: str, is_common_user: bool) -> dict:
+def get_deposit_period_expenses(budget_pk: int, period_pk: int) -> Func:
     """
-    Returns category filter depending on type of TransferCategory User.
-
-    Args:
-        param_name (str): Name of param, from which owner will be collected, like 'deposit' and 'category'.
-        is_common_user (bool): Indicates if TransferCategory is owned by particular
-        User or is common one (without User assigned).
-
-    Returns:
-        dict: Filters for QuerySet.
-    """
-    return {f"{param_name}__owner__isnull": True} if is_common_user else {f"{param_name}__owner__pk": OuterRef("pk")}
-
-
-def get_user_period_expenses(budget_pk: int, period_pk: int, is_common_user: bool = False) -> Func:
-    """
-    Function for calculate Transfers values sum in BudgetingPeriod done by particular User.
+    Function for calculate Transfers values sum in BudgetingPeriod done by particular Deposit.
 
     Args:
         period_pk (int): Period id.
         budget_pk (int): Budget id.
-        is_common_user (bool): Indicates if TransferCategory is owned by particular
-        User or is common one (without User assigned).
 
     Returns:
-        Func: ORM function returning Sum of BudgetingPeriod Transfers values for specified User.
+        Func: ORM function returning Sum of BudgetingPeriod Transfers values for specified Deposit.
     """
     return Coalesce(
         Subquery(
-            Expense.objects.filter(
-                period__budget__pk=budget_pk,
-                period=period_pk,
-                deposit__deposit_type=DepositType.DAILY_EXPENSES,
-                **get_owner_filter("deposit", is_common_user),
-            )
+            Expense.objects.filter(period__budget__pk=budget_pk, period=period_pk, deposit__id=OuterRef("pk"))
             .values("period")
             .annotate(total=Sum("value"))
             .values("total")[:1],
@@ -62,24 +40,23 @@ def get_user_period_expenses(budget_pk: int, period_pk: int, is_common_user: boo
     )
 
 
-def get_user_period_expense_predictions(budget_pk: int, period_pk: int, is_common_user: bool = False) -> Func:
+def get_deposit_period_expense_predictions(budget_pk: int, period_pk: int) -> Func:
     """
-    Function for calculate ExpensePredictions current_plan values sum in BudgetingPeriod for particular User.
+    Function for calculate ExpensePredictions current_plan values sum in BudgetingPeriod for particular Deposit.
 
     Args:
         period_pk (int): Period id.
         budget_pk (int): Budget id.
-        is_common_user (bool): Indicates if TransferCategory is owned by particular
-        User or is common one (without User assigned).
 
     Returns:
-        Func: ORM function returning Sum of BudgetingPeriod ExpensePredictions current_plan values for specified User.
+        Func: ORM function returning Sum of BudgetingPeriod ExpensePredictions current_plan values
+        for specified Deposit.
     """
 
     return Coalesce(
         Subquery(
             ExpensePrediction.objects.filter(
-                period__budget__pk=budget_pk, period=period_pk, **get_owner_filter("category", is_common_user)
+                period__budget__pk=budget_pk, period=period_pk, category__deposit__id=OuterRef("pk")
             )
             .values("period")
             .annotate(total=Sum("current_plan"))
@@ -91,21 +68,18 @@ def get_user_period_expense_predictions(budget_pk: int, period_pk: int, is_commo
     )
 
 
-def sum_period_and_previous_transfers(
-    budget_pk: int, period_pk: int, category_type: CategoryType, is_common_user: bool = False
-) -> Func:
+def sum_period_and_previous_transfers(budget_pk: int, period_pk: int, category_type: CategoryType) -> Func:
     """
-    Function for calculate Transfers sum of specified type from given and previous BudgetingPeriods for particular User.
+    Function for calculate Transfers sum of specified type from given and previous BudgetingPeriods
+    for particular Deposit.
 
     Args:
         budget_pk (int): Budget id.
         period_pk (int): Period id.
         category_type (CategoryType): Category type, like 'Income' or 'Expense'.
-        is_common_user (bool): Indicates if TransferCategory is owned by particular
-        User or is common one (without User assigned).
 
     Returns:
-        Func: ORM function returning Sum of BudgetingPeriod Transfers (Incomes or Expenses) values for specified User
+        Func: ORM function returning Sum of BudgetingPeriod Transfers (Incomes or Expenses) values for specified Deposit
         from given and previous BudgetingPeriods.
     """
     return Coalesce(
@@ -118,8 +92,7 @@ def sum_period_and_previous_transfers(
                         "date_start" if category_type == CategoryType.EXPENSE else "date_end"
                     )[:1]
                 ),
-                deposit__deposit_type=DepositType.DAILY_EXPENSES,
-                **get_owner_filter("deposit", is_common_user),
+                deposit__id=OuterRef("pk"),
             )
             .values("category__category_type")
             .annotate(total=Sum("value"))
@@ -131,12 +104,13 @@ def sum_period_and_previous_transfers(
     )
 
 
-def get_user_period_balance() -> Func:
+def get_deposit_period_balance() -> Func:
     """
-    Function for calculate ExpensePredictions current_plan values sum in BudgetingPeriod for particular User.
+    Function for calculate ExpensePredictions current_plan values sum in BudgetingPeriod for particular Deposit.
 
     Returns:
-        Func: ORM function returning Sum of BudgetingPeriod ExpensePredictions current_plan values for specified User.
+        Func: ORM function returning Sum of BudgetingPeriod ExpensePredictions current_plan values
+        for specified Deposit.
     """
 
     return Coalesce(
@@ -166,9 +140,9 @@ def get_funds_left_for_expenses() -> ExpressionWrapper:
     return ExpressionWrapper(F("predictions_sum") - F("period_expenses"), output_field=DecimalField(decimal_places=2))
 
 
-class UsersResultsAPIView(APIView):
+class DepositsResultsAPIView(APIView):
     """
-    View returning Users results in indicated Period - predictions, planned expenses and actual expenses.
+    View returning Deposits results in indicated Period - predictions, planned expenses and actual expenses.
     """
 
     choices = CategoryPriority.choices
@@ -179,25 +153,25 @@ class UsersResultsAPIView(APIView):
 
     def get(self, request: Request, budget_pk: int, period_pk: int) -> Response:
         """
-        Returns serialized UserResults in particular BudgetingPeriod.
+        Returns serialized DepositResults in particular BudgetingPeriod.
 
         Args:
-            request [Request]: User request.
+            request [Request]: Deposit request.
 
         Returns:
-            Response: Serialized UserResults in particular BudgetingPeriod.
+            Response: Serialized DepositResults in particular BudgetingPeriod.
         """
-        budget_members = (
+        deposits = (
             Budget.objects.get(pk=budget_pk)
-            .members.all()
+            .entities.filter(is_deposit=True, deposit_type=DepositType.DAILY_EXPENSES)
             .annotate(
-                predictions_sum=get_user_period_expense_predictions(budget_pk, period_pk),
+                predictions_sum=get_deposit_period_expense_predictions(budget_pk, period_pk),
                 incomes_sum=sum_period_and_previous_transfers(budget_pk, period_pk, CategoryType.INCOME),
                 expenses_sum=sum_period_and_previous_transfers(budget_pk, period_pk, CategoryType.EXPENSE),
             )
             .annotate(
-                period_expenses=get_user_period_expenses(budget_pk, period_pk),
-                period_balance=get_user_period_balance(),
+                period_expenses=get_deposit_period_expenses(budget_pk, period_pk),
+                period_balance=get_deposit_period_balance(),
             )
             .annotate(
                 funds_left_for_predictions=get_funds_left_for_predictions(),
@@ -205,39 +179,7 @@ class UsersResultsAPIView(APIView):
             )
             .values(
                 "id",
-                "username",
-                "period_expenses",
-                "predictions_sum",
-                "period_balance",
-                "funds_left_for_predictions",
-                "funds_left_for_expenses",
-            )
-        )
-
-        none_user_queryset = (
-            Budget.objects.filter(pk=budget_pk)
-            .extra(select={"id": "0"})
-            .annotate(
-                username=Value("🏦 Common", output_field=CharField()),
-                predictions_sum=get_user_period_expense_predictions(budget_pk, period_pk, is_common_user=True),
-                incomes_sum=sum_period_and_previous_transfers(
-                    budget_pk, period_pk, CategoryType.INCOME, is_common_user=True
-                ),
-                expenses_sum=sum_period_and_previous_transfers(
-                    budget_pk, period_pk, CategoryType.EXPENSE, is_common_user=True
-                ),
-            )
-            .annotate(
-                period_expenses=get_user_period_expenses(budget_pk, period_pk, is_common_user=True),
-                period_balance=get_user_period_balance(),
-            )
-            .annotate(
-                funds_left_for_predictions=get_funds_left_for_predictions(),
-                funds_left_for_expenses=get_funds_left_for_expenses(),
-            )
-            .values(
-                "id",
-                "username",
+                "name",
                 "period_expenses",
                 "predictions_sum",
                 "period_balance",
@@ -249,13 +191,13 @@ class UsersResultsAPIView(APIView):
         return Response(
             [
                 {
-                    "user_username": member["username"],
-                    "predictions_sum": f"{Decimal(str(member['predictions_sum'])):.2f}",
-                    "period_balance": f"{Decimal(str(member['period_balance'])):.2f}",
-                    "period_expenses": f"{Decimal(str(member['period_expenses'])):.2f}",
-                    "funds_left_for_predictions": f"{Decimal(str(member['funds_left_for_predictions'])):.2f}",
-                    "funds_left_for_expenses": f"{Decimal(str(member['funds_left_for_expenses'])):.2f}",
+                    "deposit_name": deposit["name"],
+                    "predictions_sum": f"{Decimal(str(deposit['predictions_sum'])):.2f}",
+                    "period_balance": f"{Decimal(str(deposit['period_balance'])):.2f}",
+                    "period_expenses": f"{Decimal(str(deposit['period_expenses'])):.2f}",
+                    "funds_left_for_predictions": f"{Decimal(str(deposit['funds_left_for_predictions'])):.2f}",
+                    "funds_left_for_expenses": f"{Decimal(str(deposit['funds_left_for_expenses'])):.2f}",
                 }
-                for member in budget_members.union(none_user_queryset).order_by("id")
+                for deposit in deposits.order_by("id")
             ]
         )
