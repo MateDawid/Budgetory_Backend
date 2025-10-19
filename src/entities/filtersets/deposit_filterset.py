@@ -1,5 +1,7 @@
 from django_filters import rest_framework as filters
 
+from entities.models.choices.deposit_type import DepositType
+
 
 class DepositFilterSet(filters.FilterSet):
     """FilterSet for Deposit endpoint."""
@@ -10,3 +12,4 @@ class DepositFilterSet(filters.FilterSet):
     balance = filters.NumberFilter()
     balance_min = filters.NumberFilter(field_name="balance", lookup_expr="gte")
     balance_max = filters.NumberFilter(field_name="balance", lookup_expr="lte")
+    deposit_type = filters.ChoiceFilter(choices=DepositType.choices)
