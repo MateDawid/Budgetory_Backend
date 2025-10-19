@@ -1,7 +1,11 @@
 from typing import Any
 
 import pytest
-from categories_tests.utils import INVALID_TYPE_AND_PRIORITY_COMBINATIONS, VALID_TYPE_AND_PRIORITY_COMBINATIONS
+from categories_tests.utils import (
+    INVALID_TYPE_AND_PRIORITY_COMBINATIONS,
+    VALID_TYPE_AND_PRIORITY_COMBINATIONS,
+    annotate_transfer_category_queryset,
+)
 from conftest import get_jwt_access_token
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
@@ -15,7 +19,6 @@ from categories.models import TransferCategory
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from categories.serializers.transfer_category_serializer import TransferCategorySerializer
-from categories.views.transfer_category_viewset import get_category_owner_display
 
 
 def categories_url(budget_id):
@@ -143,12 +146,9 @@ class TestTransferCategoryViewSetList:
 
         response = api_client.get(categories_url(budget.id))
 
-        categories = (
-            TransferCategory.objects.prefetch_related("budget", "owner")
-            .filter(budget=budget)
-            .distinct()
-            .annotate(owner_display=get_category_owner_display())
-        )
+        categories = annotate_transfer_category_queryset(
+            TransferCategory.objects.prefetch_related("budget", "owner").filter(budget=budget)
+        ).distinct()
         serializer = TransferCategorySerializer(categories, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert len(serializer.data) == 2
@@ -182,7 +182,7 @@ class TestTransferCategoryViewSetList:
 
         response = api_client.get(categories_url(budget.id))
 
-        categories = TransferCategory.objects.filter(budget=budget).annotate(owner_display=get_category_owner_display())
+        categories = annotate_transfer_category_queryset(TransferCategory.objects.filter(budget=budget))
         serializer = TransferCategorySerializer(categories, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == len(serializer.data) == categories.count() == 1
@@ -208,7 +208,7 @@ class TestTransferCategoryViewSetList:
 
         response = api_client.get(categories_url(budget.id))
 
-        categories = TransferCategory.objects.filter(budget=budget).annotate(owner_display=get_category_owner_display())
+        categories = annotate_transfer_category_queryset(TransferCategory.objects.filter(budget=budget))
         serializer = TransferCategorySerializer(categories, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == len(serializer.data) == categories.count() == 1
@@ -640,7 +640,7 @@ class TestTransferCategoryViewSetUpdate:
             ("name", "New name"),
             ("description", "New description"),
             ("is_active", not PAYLOAD["is_active"]),
-            ("priority", CategoryPriority.DEBTS),
+            ("priority", CategoryPriority.OTHERS),
         ],
     )
     @pytest.mark.django_db
@@ -828,7 +828,7 @@ class TestTransferCategoryViewSetUpdate:
             "name": "Some transfer",
             "description": "Updated transfer description.",
             "is_active": True,
-            "priority": CategoryPriority.DEBTS,
+            "priority": CategoryPriority.OTHERS,
             "owner": base_user.pk,
         }
 

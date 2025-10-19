@@ -1,4 +1,5 @@
 import pytest
+from categories_tests.utils import annotate_transfer_category_queryset
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
 from factory.base import FactoryMetaClass
@@ -9,7 +10,6 @@ from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from categories.models.transfer_category_model import TransferCategory
 from categories.serializers.transfer_category_serializer import TransferCategorySerializer
-from categories.views.transfer_category_viewset import get_category_owner_display
 
 
 def categories_url(budget_id):
@@ -66,10 +66,8 @@ class TestTransferCategoryFilterSetOrdering:
         response = api_client.get(categories_url(budget.id), data={"ordering": sort_param})
 
         assert response.status_code == status.HTTP_200_OK
-        categories = (
-            TransferCategory.objects.all()
-            .annotate(owner_display=get_category_owner_display())
-            .order_by(*sort_param.split(","))
+        categories = annotate_transfer_category_queryset(TransferCategory.objects.all()).order_by(
+            *sort_param.split(",")
         )
         serializer = TransferCategorySerializer(categories, many=True)
         assert response.data and serializer.data
@@ -124,8 +122,8 @@ class TestTransferCategoryFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert TransferCategory.objects.all().count() == 2
-        categories = TransferCategory.objects.filter(budget=budget, id=matching_category.id).annotate(
-            owner_display=get_category_owner_display()
+        categories = annotate_transfer_category_queryset(
+            TransferCategory.objects.filter(budget=budget, id=matching_category.id)
         )
         serializer = TransferCategorySerializer(
             categories,
@@ -158,8 +156,8 @@ class TestTransferCategoryFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert TransferCategory.objects.all().count() == 2
-        categories = TransferCategory.objects.filter(budget=budget, id=matching_category.id).annotate(
-            owner_display=get_category_owner_display()
+        categories = annotate_transfer_category_queryset(
+            TransferCategory.objects.filter(budget=budget, id=matching_category.id)
         )
         serializer = TransferCategorySerializer(
             categories,
@@ -192,8 +190,8 @@ class TestTransferCategoryFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert TransferCategory.objects.all().count() == 2
-        categories = TransferCategory.objects.filter(budget=budget, id=matching_category.id).annotate(
-            owner_display=get_category_owner_display()
+        categories = annotate_transfer_category_queryset(
+            TransferCategory.objects.filter(budget=budget, id=matching_category.id)
         )
         serializer = TransferCategorySerializer(
             categories,
@@ -228,8 +226,8 @@ class TestTransferCategoryFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert TransferCategory.objects.all().count() == 2
-        categories = TransferCategory.objects.filter(budget=budget, id=matching_category.id).annotate(
-            owner_display=get_category_owner_display()
+        categories = annotate_transfer_category_queryset(
+            TransferCategory.objects.filter(budget=budget, id=matching_category.id)
         )
         serializer = TransferCategorySerializer(
             categories,
@@ -264,8 +262,8 @@ class TestTransferCategoryFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert TransferCategory.objects.all().count() == 2
-        categories = TransferCategory.objects.filter(budget=budget, id=matching_category.id).annotate(
-            owner_display=get_category_owner_display()
+        categories = annotate_transfer_category_queryset(
+            TransferCategory.objects.filter(budget=budget, id=matching_category.id)
         )
         serializer = TransferCategorySerializer(
             categories,
@@ -293,15 +291,15 @@ class TestTransferCategoryFilterSetFiltering:
         matching_category = transfer_category_factory(
             budget=budget, name="Some category", priority=CategoryPriority.MOST_IMPORTANT
         )
-        transfer_category_factory(budget=budget, name="Other one", priority=CategoryPriority.DEBTS)
+        transfer_category_factory(budget=budget, name="Other one", priority=CategoryPriority.OTHERS)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(categories_url(budget.id), data={"priority": CategoryPriority.MOST_IMPORTANT.value})
 
         assert response.status_code == status.HTTP_200_OK
         assert TransferCategory.objects.all().count() == 2
-        categories = TransferCategory.objects.filter(budget=budget, id=matching_category.id).annotate(
-            owner_display=get_category_owner_display()
+        categories = annotate_transfer_category_queryset(
+            TransferCategory.objects.filter(budget=budget, id=matching_category.id)
         )
         serializer = TransferCategorySerializer(
             categories,
