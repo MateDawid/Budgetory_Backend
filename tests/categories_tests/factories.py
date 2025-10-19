@@ -10,7 +10,6 @@ from categories.models.choices.category_type import CategoryType
 INCOME_CATEGORY_PRIORITIES = (CategoryPriority.REGULAR, CategoryPriority.IRREGULAR)
 EXPENSE_CATEGORY_PRIORITIES = (
     CategoryPriority.MOST_IMPORTANT,
-    CategoryPriority.DEBTS,
     CategoryPriority.SAVINGS,
     CategoryPriority.OTHERS,
 )
