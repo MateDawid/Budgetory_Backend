@@ -1113,7 +1113,7 @@ class TestExpenseViewSetUpdate:
         payload["deposit"] = deposit_factory(budget=budget)
         payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
         transfer = expense_factory(budget=budget, **payload)
-        new_category = transfer_category_factory(budget=budget, priority=CategoryPriority.DEBTS)
+        new_category = transfer_category_factory(budget=budget, priority=CategoryPriority.OTHERS)
         update_payload = {"category": new_category.pk}
         api_client.force_authenticate(base_user)
         url = transfer_detail_url(budget.id, transfer.id)
@@ -1200,7 +1200,7 @@ class TestExpenseViewSetUpdate:
             ).pk,
             "entity": entity_factory(budget=budget).pk,
             "deposit": deposit_factory(budget=budget).pk,
-            "category": transfer_category_factory(budget=budget, priority=CategoryPriority.DEBTS).pk,
+            "category": transfer_category_factory(budget=budget, priority=CategoryPriority.OTHERS).pk,
         }
         api_client.force_authenticate(base_user)
         url = transfer_detail_url(budget.id, transfer.id)
