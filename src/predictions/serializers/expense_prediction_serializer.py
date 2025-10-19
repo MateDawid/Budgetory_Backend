@@ -138,7 +138,6 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
         """
         representation = super().to_representation(instance)
         representation["category_display"] = f"📉{instance.category.name}"
-        representation["category_owner_id"] = getattr(instance.category.owner, "id", None)
-        representation["category_owner"] = getattr(instance.category.owner, "username", "🏦 Common")
+        representation["category_deposit"] = getattr(instance.category.deposit, "name", None)
         representation["category_priority"] = CategoryPriority(instance.category.priority).label
         return representation
