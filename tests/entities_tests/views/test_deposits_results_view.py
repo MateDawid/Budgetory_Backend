@@ -340,11 +340,9 @@ class TestDepositsResultsAPIView:
                 name=f"Account {i+1}",
                 deposit_type=DepositType.DAILY_EXPENSES if i % 2 == 0 else DepositType.SAVINGS,
             )
+            transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
+            transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
             deposits.append(deposit)
-
-        # Create categories
-        income_category = transfer_category_factory(budget=budget, owner=base_user, category_type=CategoryType.INCOME)
-        expense_category = transfer_category_factory(budget=budget, owner=base_user, category_type=CategoryType.EXPENSE)
 
         # Create transfers for each period and deposit combination (realistic scenario)
         base_income = 1000
@@ -356,10 +354,16 @@ class TestDepositsResultsAPIView:
                 expense_amount = base_expense + (i * 10) + (j * 20)
 
                 transfer_factory(
-                    period=period, category=income_category, value=Decimal(str(income_amount)), deposit=deposit
+                    period=period,
+                    category=deposit.transfer_categories.get(category_type=CategoryType.INCOME),
+                    value=Decimal(str(income_amount)),
+                    deposit=deposit,
                 )
                 transfer_factory(
-                    period=period, category=expense_category, value=Decimal(str(expense_amount)), deposit=deposit
+                    period=period,
+                    category=deposit.transfer_categories.get(category_type=CategoryType.EXPENSE),
+                    value=Decimal(str(expense_amount)),
+                    deposit=deposit,
                 )
 
         api_client.force_authenticate(base_user)
@@ -397,22 +401,52 @@ class TestDepositsResultsAPIView:
         period2 = budgeting_period_factory(budget=budget, name="Period 2")
 
         # Deposits with different scenarios
-        deposit_factory(budget=budget, owner=base_user, name="Zero Balance")
-        negative_deposit = deposit_factory(budget=budget, owner=base_user, name="Negative Balance")
-        normal_deposit = deposit_factory(budget=budget, owner=base_user, name="Normal Balance")
+        zero_balance_deposit = deposit_factory(budget=budget, owner=base_user, name="Zero Balance")
+        transfer_category_factory(budget=budget, deposit=zero_balance_deposit, category_type=CategoryType.EXPENSE)
+        transfer_category_factory(budget=budget, deposit=zero_balance_deposit, category_type=CategoryType.INCOME)
 
-        expense_category = transfer_category_factory(budget=budget, owner=base_user, category_type=CategoryType.EXPENSE)
-        income_category = transfer_category_factory(budget=budget, owner=base_user, category_type=CategoryType.INCOME)
+        negative_deposit = deposit_factory(budget=budget, owner=base_user, name="Negative Balance")
+        transfer_category_factory(budget=budget, deposit=negative_deposit, category_type=CategoryType.EXPENSE)
+        transfer_category_factory(budget=budget, deposit=negative_deposit, category_type=CategoryType.INCOME)
+
+        normal_deposit = deposit_factory(budget=budget, owner=base_user, name="Normal Balance")
+        transfer_category_factory(budget=budget, deposit=normal_deposit, category_type=CategoryType.EXPENSE)
+        transfer_category_factory(budget=budget, deposit=normal_deposit, category_type=CategoryType.INCOME)
 
         # Zero deposit: no transactions (should remain 0)
         # Negative deposit: only expenses
-        transfer_factory(period=period1, category=expense_category, value=Decimal("500.00"), deposit=negative_deposit)
-        transfer_factory(period=period2, category=expense_category, value=Decimal("300.00"), deposit=negative_deposit)
+        transfer_factory(
+            period=period1,
+            category=negative_deposit.transfer_categories.get(category_type=CategoryType.EXPENSE),
+            value=Decimal("500.00"),
+            deposit=negative_deposit,
+        )
+        transfer_factory(
+            period=period2,
+            category=negative_deposit.transfer_categories.get(category_type=CategoryType.EXPENSE),
+            value=Decimal("300.00"),
+            deposit=negative_deposit,
+        )
 
         # Normal deposit: income and expenses
-        transfer_factory(period=period1, category=income_category, value=Decimal("1000.00"), deposit=normal_deposit)
-        transfer_factory(period=period1, category=expense_category, value=Decimal("200.00"), deposit=normal_deposit)
-        transfer_factory(period=period2, category=income_category, value=Decimal("500.00"), deposit=normal_deposit)
+        transfer_factory(
+            period=period1,
+            category=normal_deposit.transfer_categories.get(category_type=CategoryType.INCOME),
+            value=Decimal("1000.00"),
+            deposit=normal_deposit,
+        )
+        transfer_factory(
+            period=period1,
+            category=normal_deposit.transfer_categories.get(category_type=CategoryType.EXPENSE),
+            value=Decimal("200.00"),
+            deposit=normal_deposit,
+        )
+        transfer_factory(
+            period=period2,
+            category=normal_deposit.transfer_categories.get(category_type=CategoryType.INCOME),
+            value=Decimal("500.00"),
+            deposit=normal_deposit,
+        )
 
         api_client.force_authenticate(base_user)
 
