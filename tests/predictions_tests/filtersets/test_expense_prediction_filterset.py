@@ -193,11 +193,15 @@ class TestExpensePredictionFilterSetFiltering:
         budget = budget_factory(members=[base_user])
         deposit = deposit_factory(budget=budget)
         matching_category = transfer_category_factory(
-            budget=budget, name="Matching", category_type=CategoryType.EXPENSE
+            budget=budget, name="Matching", deposit=deposit, category_type=CategoryType.EXPENSE
         )
-        transfer_category_factory(budget=budget, name="Other", category_type=CategoryType.EXPENSE)
         prediction = expense_prediction_factory(budget=budget, category=matching_category)
-        expense_prediction_factory(budget=budget, category=matching_category)
+        expense_prediction_factory(
+            budget=budget,
+            category=transfer_category_factory(
+                budget=budget, name="Other", deposit=deposit_factory(budget=budget), category_type=CategoryType.EXPENSE
+            ),
+        )
         api_client.force_authenticate(base_user)
 
         response = api_client.get(expense_prediction_url(budget.id), data={"deposit": deposit.id})
