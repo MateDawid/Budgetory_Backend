@@ -7,6 +7,7 @@ from rest_framework.exceptions import ValidationError
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from categories.models.transfer_category_model import TransferCategory
+from entities.models import Deposit
 
 
 class TransferCategorySerializer(serializers.ModelSerializer):
@@ -33,6 +34,19 @@ class TransferCategorySerializer(serializers.ModelSerializer):
         )
         self._validate_category_uniqueness(attrs)
         return attrs
+
+    def validate_deposit(self, deposit: Deposit) -> None:
+        """
+        Checks if Deposit Budget and Category Budget are the same.
+
+        Args:
+            deposit (Deposit): Input Deposit.
+
+        Raises:
+            ValidationError: Raised when input Deposit Budget id different than request one.
+        """
+        if deposit.budget.id != getattr(self.context.get("view"), "kwargs", {}).get("budget_pk"):
+            raise ValidationError("Deposit Budget invalid.", code="deposit-budget-invalid")
 
     @staticmethod
     def _validate_type_and_priority(category_type: CategoryType, priority: CategoryPriority) -> None:
