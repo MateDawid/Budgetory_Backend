@@ -140,7 +140,7 @@ def get_funds_left_for_expenses() -> ExpressionWrapper:
     return ExpressionWrapper(F("predictions_sum") - F("period_expenses"), output_field=DecimalField(decimal_places=2))
 
 
-class DepositsResultsAPIView(APIView):
+class DepositsPredictionsResultsAPIView(APIView):
     """
     View returning Deposits results in indicated Period - predictions, planned expenses and actual expenses.
     """
