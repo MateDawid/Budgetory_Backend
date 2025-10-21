@@ -35,6 +35,7 @@ class TestDepositFilterSetOrdering:
         user_factory: FactoryMetaClass,
         budget_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         sort_param: str,
     ):
@@ -48,8 +49,9 @@ class TestDepositFilterSetOrdering:
         budget = budget_factory(members=[member_1, member_2])
         for _ in range(3):
             deposit = deposit_factory(budget=budget)
+            category = transfer_category_factory(budget=budget, deposit=deposit)
             for _ in range(3):
-                transfer_factory(budget=budget, deposit=deposit)
+                transfer_factory(budget=budget, deposit=deposit, category=category)
         api_client.force_authenticate(member_1)
 
         response = api_client.get(deposits_url(budget.id), data={"ordering": sort_param})
@@ -185,7 +187,7 @@ class TestDepositFilterSetFiltering:
         budget = budget_factory(members=[base_user])
         balance = "123.45"
         target_deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
+        category = transfer_category_factory(budget=budget, deposit=target_deposit, category_type=CategoryType.INCOME)
         transfer_factory(
             budget=budget, deposit=target_deposit, category=category, value=Decimal(balance).quantize(Decimal("0.00"))
         )
@@ -235,7 +237,7 @@ class TestDepositFilterSetFiltering:
         budget = budget_factory(members=[base_user])
         balance = "123.45"
         target_deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
+        category = transfer_category_factory(budget=budget, deposit=target_deposit, category_type=CategoryType.INCOME)
         transfer_factory(
             budget=budget, deposit=target_deposit, category=category, value=Decimal(balance).quantize(Decimal("0.00"))
         )
@@ -285,7 +287,7 @@ class TestDepositFilterSetFiltering:
         budget = budget_factory(members=[base_user])
         balance = "234.56"
         target_deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
+        category = transfer_category_factory(budget=budget, deposit=target_deposit, category_type=CategoryType.INCOME)
         transfer_factory(
             budget=budget, deposit=target_deposit, category=category, value=Decimal(balance).quantize(Decimal("0.00"))
         )

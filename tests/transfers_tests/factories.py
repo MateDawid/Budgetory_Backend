@@ -71,7 +71,7 @@ class TransferFactory(factory.django.DjangoModelFactory):
         budget = self._Resolver__step.builder.extras.get("budget")
         if not budget:
             budget = self.period.budget
-        return DepositFactory(budget=budget, owner=getattr(self.category, "owner", None))
+        return DepositFactory(budget=budget)
 
     @factory.lazy_attribute
     def category(self, *args) -> TransferCategory:

@@ -1,11 +1,12 @@
 import random
 
 import factory.fuzzy
-from app_users_tests.factories import UserFactory
 from budgets_tests.factories import BudgetFactory
+from entities_tests.factories import DepositFactory
 
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
+from entities.models import Deposit
 
 INCOME_CATEGORY_PRIORITIES = (CategoryPriority.REGULAR, CategoryPriority.IRREGULAR)
 EXPENSE_CATEGORY_PRIORITIES = (
@@ -27,10 +28,17 @@ class TransferCategoryFactory(factory.django.DjangoModelFactory):
     is_active = factory.Faker("boolean")
 
     @factory.lazy_attribute
-    def owner(self) -> str:
-        """Generates user field value - User model instance or None."""
-        options = [UserFactory(), None]
-        return random.choice(options)
+    def deposit(self, *args) -> Deposit:
+        """
+        Creates Deposit if not passed to factory.
+
+        Returns:
+            Deposit: Deposit instance for Budget.
+        """
+        budget = self._Resolver__step.builder.extras.get("budget")
+        if not budget:
+            budget = self.budget
+        return DepositFactory(budget=budget)
 
     @factory.lazy_attribute
     def category_type(self, *args) -> CategoryType:

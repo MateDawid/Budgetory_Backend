@@ -78,7 +78,6 @@ class TestDepositsResultsAPIView:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Budget with no periods and no deposits in database.
@@ -165,13 +164,12 @@ class TestDepositsResultsAPIView:
         assert len(response.data["series"]) == 1
         assert response.data["series"][0]["label"] == "Checking Account"
         assert response.data["series"][0]["data"] == [0.0, 0.0]
-        assert "rgba(" in response.data["series"][0]["color"]  # Check color format
+        assert "rgba(" in response.data["series"][0]["color"]
 
     def test_get_deposits_results_with_transfers(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        user_factory: FactoryMetaClass,  # Added missing factory
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
@@ -183,10 +181,7 @@ class TestDepositsResultsAPIView:
         WHEN: DepositsResultsAPIView called by Budget member.
         THEN: HTTP 200 - Response with correct cumulative balance calculations.
         """
-        # Create other_user
-        other_user = user_factory(username="otheruser")
-
-        budget = budget_factory(members=[base_user, other_user])
+        budget = budget_factory(members=[base_user])
         period1 = budgeting_period_factory(
             budget=budget, name="Jan 2024", date_start=date(2024, 1, 1), date_end=date(2024, 1, 31)
         )
@@ -198,42 +193,70 @@ class TestDepositsResultsAPIView:
         )
 
         # Create deposits with different types and owners
-        daily_user = deposit_factory(
-            budget=budget, owner=base_user, name="User Daily", deposit_type=DepositType.DAILY_EXPENSES
+        user_daily_expenses_deposit = deposit_factory(
+            budget=budget, owner=base_user, name="User Daily Expenses", deposit_type=DepositType.DAILY_EXPENSES
         )
-        savings_user = deposit_factory(
-            budget=budget, owner=base_user, name="User Savings", deposit_type=DepositType.SAVINGS
+        common_daily_expenses_deposit = deposit_factory(
+            budget=budget, owner=None, name="Common Daily Expenses", deposit_type=DepositType.DAILY_EXPENSES
         )
-        daily_other = deposit_factory(
-            budget=budget, owner=other_user, name="Other Daily", deposit_type=DepositType.DAILY_EXPENSES
-        )
-        common_savings = deposit_factory(
-            budget=budget, owner=None, name="Common Savings", deposit_type=DepositType.SAVINGS
-        )
+        deposit_factory(budget=budget, owner=None, name="Common Other", deposit_type=DepositType.OTHER)
+        deposit_factory(budget=budget, owner=base_user, name="User Savings", deposit_type=DepositType.SAVINGS)
 
         # Create categories
-        user_income = transfer_category_factory(budget=budget, owner=base_user, category_type=CategoryType.INCOME)
-        user_expense = transfer_category_factory(budget=budget, owner=base_user, category_type=CategoryType.EXPENSE)
-        other_income = transfer_category_factory(budget=budget, owner=other_user, category_type=CategoryType.INCOME)
-        common_expense = transfer_category_factory(budget=budget, owner=None, category_type=CategoryType.EXPENSE)
+        user_income = transfer_category_factory(
+            budget=budget, deposit=user_daily_expenses_deposit, category_type=CategoryType.INCOME
+        )
+        user_expense = transfer_category_factory(
+            budget=budget, deposit=user_daily_expenses_deposit, category_type=CategoryType.EXPENSE
+        )
+        common_income = transfer_category_factory(
+            budget=budget, deposit=common_daily_expenses_deposit, category_type=CategoryType.INCOME
+        )
+        common_expense = transfer_category_factory(
+            budget=budget, deposit=common_daily_expenses_deposit, category_type=CategoryType.EXPENSE
+        )
 
-        # Create complex transfer patterns
-        # Period 1: Initial setup
-        transfer_factory(period=period1, category=user_income, value=Decimal("2000.00"), deposit=daily_user)
-        transfer_factory(period=period1, category=user_expense, value=Decimal("500.00"), deposit=daily_user)
-        transfer_factory(period=period1, category=user_income, value=Decimal("5000.00"), deposit=savings_user)
-        transfer_factory(period=period1, category=other_income, value=Decimal("1500.00"), deposit=daily_other)
-        transfer_factory(period=period1, category=common_expense, value=Decimal("200.00"), deposit=common_savings)
+        # Transfers for Period 1
+        transfer_factory(
+            period=period1, category=user_income, value=Decimal("200.00"), deposit=user_daily_expenses_deposit
+        )
+        transfer_factory(
+            period=period1, category=user_expense, value=Decimal("100.00"), deposit=user_daily_expenses_deposit
+        )
+        transfer_factory(
+            period=period1, category=common_income, value=Decimal("400.00"), deposit=common_daily_expenses_deposit
+        )
+        transfer_factory(
+            period=period1, category=common_expense, value=Decimal("200.00"), deposit=common_daily_expenses_deposit
+        )
 
-        # Period 2: Additional transactions
-        transfer_factory(period=period2, category=user_income, value=Decimal("1000.00"), deposit=daily_user)
-        transfer_factory(period=period2, category=user_expense, value=Decimal("300.00"), deposit=daily_user)
-        transfer_factory(period=period2, category=user_income, value=Decimal("1000.00"), deposit=savings_user)
-        transfer_factory(period=period2, category=other_income, value=Decimal("800.00"), deposit=daily_other)
+        # Transfers for Period 2
+        transfer_factory(
+            period=period2, category=user_income, value=Decimal("200.00"), deposit=user_daily_expenses_deposit
+        )
+        transfer_factory(
+            period=period2, category=user_expense, value=Decimal("100.00"), deposit=user_daily_expenses_deposit
+        )
+        transfer_factory(
+            period=period2, category=common_income, value=Decimal("400.00"), deposit=common_daily_expenses_deposit
+        )
+        transfer_factory(
+            period=period2, category=common_expense, value=Decimal("200.00"), deposit=common_daily_expenses_deposit
+        )
 
-        # Period 3: Final transactions
-        transfer_factory(period=period3, category=user_expense, value=Decimal("400.00"), deposit=daily_user)
-        transfer_factory(period=period3, category=common_expense, value=Decimal("100.00"), deposit=common_savings)
+        # Transfers for Period 3
+        transfer_factory(
+            period=period3, category=user_income, value=Decimal("200.00"), deposit=user_daily_expenses_deposit
+        )
+        transfer_factory(
+            period=period3, category=user_expense, value=Decimal("100.00"), deposit=user_daily_expenses_deposit
+        )
+        transfer_factory(
+            period=period3, category=common_income, value=Decimal("400.00"), deposit=common_daily_expenses_deposit
+        )
+        transfer_factory(
+            period=period3, category=common_expense, value=Decimal("200.00"), deposit=common_daily_expenses_deposit
+        )
 
         api_client.force_authenticate(base_user)
 
@@ -245,23 +268,16 @@ class TestDepositsResultsAPIView:
         assert len(response.data["series"]) == 4
 
         # Find specific deposits in response
-        daily_user_series = next(s for s in response.data["series"] if s["label"] == "User Daily")
-        savings_user_series = next(s for s in response.data["series"] if s["label"] == "User Savings")
-        daily_other_series = next(s for s in response.data["series"] if s["label"] == "Other Daily")
-        common_savings_series = next(s for s in response.data["series"] if s["label"] == "Common Savings")
+        user_daily_expenses_series = next(s for s in response.data["series"] if s["label"] == "User Daily Expenses")
+        user_savings_series = next(s for s in response.data["series"] if s["label"] == "User Savings")
+        common_daily_expenses_series = next(s for s in response.data["series"] if s["label"] == "Common Daily Expenses")
+        common_other_series = next(s for s in response.data["series"] if s["label"] == "Common Other")
 
-        # Verify cumulative calculations
-        # User Daily: P1(2000-500=1500), P2(1500+1000-300=2200), P3(2200-400=1800)
-        assert daily_user_series["data"] == [1500.0, 2200.0, 1800.0]
-
-        # User Savings: P1(5000), P2(5000+1000=6000), P3(6000)
-        assert savings_user_series["data"] == [5000.0, 6000.0, 6000.0]
-
-        # Other Daily: P1(1500), P2(1500+800=2300), P3(2300)
-        assert daily_other_series["data"] == [1500.0, 2300.0, 2300.0]
-
-        # Common Savings: P1(-200), P2(-200), P3(-200-100=-300)
-        assert common_savings_series["data"] == [-200.0, -200.0, -300.0]
+        # Verify calculations
+        assert user_daily_expenses_series["data"] == [100.0, 200.0, 300.0]
+        assert user_savings_series["data"] == [0.0, 0.0, 0.0]
+        assert common_daily_expenses_series["data"] == [200.0, 400.0, 600.0]
+        assert common_other_series["data"] == [0.0, 0.0, 0.0]
 
         # Test with deposit type filtering
         response = api_client.get(deposits_results_url(budget.id), {"deposit_type": DepositType.DAILY_EXPENSES})
@@ -269,10 +285,10 @@ class TestDepositsResultsAPIView:
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data["series"]) == 2  # Only daily expenses deposits
         deposit_labels = [s["label"] for s in response.data["series"]]
-        assert "User Daily" in deposit_labels
-        assert "Other Daily" in deposit_labels
+        assert "User Daily Expenses" in deposit_labels
         assert "User Savings" not in deposit_labels
-        assert "Common Savings" not in deposit_labels
+        assert "Common Daily Expenses" in deposit_labels
+        assert "Common Other" not in deposit_labels
 
         # Test with period filtering
         response = api_client.get(deposits_results_url(budget.id), {"period_from": period2.id, "period_to": period3.id})
@@ -281,11 +297,11 @@ class TestDepositsResultsAPIView:
         assert response.data["xAxis"] == ["Feb 2024", "Mar 2024"]
 
         # Test with specific deposit filtering
-        response = api_client.get(deposits_results_url(budget.id), {"deposit": savings_user.id})
+        response = api_client.get(deposits_results_url(budget.id), {"deposit": user_daily_expenses_deposit.id})
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data["series"]) == 1
-        assert response.data["series"][0]["label"] == "User Savings"
+        assert response.data["series"][0]["label"] == "User Daily Expenses"
 
     def test_large_dataset_performance_simulation(
         self,

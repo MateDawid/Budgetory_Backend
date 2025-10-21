@@ -61,11 +61,9 @@ class TestExpensePredictionFilterSetOrdering:
         period_1 = budgeting_period_factory(budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
         period_2 = budgeting_period_factory(budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 28))
         category_1 = transfer_category_factory(
-            budget=budget, name="Most important", owner=None, priority=CategoryPriority.MOST_IMPORTANT
+            budget=budget, name="Most important", priority=CategoryPriority.MOST_IMPORTANT
         )
-        category_2 = transfer_category_factory(
-            budget=budget, name="Other", owner=None, priority=CategoryPriority.OTHERS
-        )
+        category_2 = transfer_category_factory(budget=budget, name="Other", priority=CategoryPriority.OTHERS)
         expense_prediction_factory(budget=budget, current_plan=5, initial_plan=5, period=period_1, category=category_1)
         expense_prediction_factory(budget=budget, current_plan=4, initial_plan=4, period=period_2, category=category_2)
         expense_prediction_factory(budget=budget, current_plan=3, initial_plan=3, period=period_2, category=category_1)
@@ -79,7 +77,12 @@ class TestExpensePredictionFilterSetOrdering:
         # Get the base queryset (same as ViewSet)
         base_queryset = annotate_expense_prediction_queryset(
             ExpensePrediction.objects.filter(period__budget__pk=budget.pk).select_related(
-                "period", "period__budget", "period__previous_period", "category", "category__budget", "category__owner"
+                "period",
+                "period__budget",
+                "period__previous_period",
+                "category",
+                "category__budget",
+                "category__deposit",
             )
         ).order_by(
             "id"
@@ -172,39 +175,37 @@ class TestExpensePredictionFilterSetFiltering:
         assert response.data == serializer.data
         assert response.data[0]["id"] == prediction.id
 
-    def test_get_predictions_list_filtered_by_owner(
+    def test_get_predictions_list_filtered_by_deposit(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        user_factory: FactoryMetaClass,
         budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Two ExpensePrediction objects for single Budget with different category owners.
-        WHEN: The ExpensePredictionViewSet list view is called with owner filter.
+        GIVEN: Two ExpensePrediction objects for single Budget with different category deposits.
+        WHEN: The ExpensePredictionViewSet list view is called with deposit filter.
         THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
-        owner value.
+        deposit value.
         """
-        owner = user_factory()
-        budget = budget_factory(members=[base_user, owner])
-        category_with_owner = transfer_category_factory(
-            budget=budget, name="Owned", owner=owner, category_type=CategoryType.EXPENSE
+        budget = budget_factory(members=[base_user])
+        deposit = deposit_factory(budget=budget)
+        matching_category = transfer_category_factory(
+            budget=budget, name="Matching", category_type=CategoryType.EXPENSE
         )
-        category_without_owner = transfer_category_factory(
-            budget=budget, name="Unowned", owner=None, category_type=CategoryType.EXPENSE
-        )
-        prediction_with_owner = expense_prediction_factory(budget=budget, category=category_with_owner)
-        expense_prediction_factory(budget=budget, category=category_without_owner)
+        transfer_category_factory(budget=budget, name="Other", category_type=CategoryType.EXPENSE)
+        prediction = expense_prediction_factory(budget=budget, category=matching_category)
+        expense_prediction_factory(budget=budget, category=matching_category)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(expense_prediction_url(budget.id), data={"owner": owner.id})
+        response = api_client.get(expense_prediction_url(budget.id), data={"deposit": deposit.id})
 
         assert response.status_code == status.HTTP_200_OK
         assert ExpensePrediction.objects.all().count() == 2
         predictions = annotate_expense_prediction_queryset(
-            ExpensePrediction.objects.filter(period__budget=budget, category__owner__id=owner.id)
+            ExpensePrediction.objects.filter(period__budget=budget, category__deposit__id=deposit.id)
         )
         serializer = ExpensePredictionSerializer(
             predictions,
@@ -213,49 +214,7 @@ class TestExpensePredictionFilterSetFiltering:
         assert response.data and serializer.data
         assert len(response.data) == len(serializer.data) == predictions.count() == 1
         assert response.data == serializer.data
-        assert response.data[0]["id"] == prediction_with_owner.id
-
-    def test_get_predictions_list_filtered_by_owner_null(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        user_factory: FactoryMetaClass,
-        budget_factory: FactoryMetaClass,
-        transfer_category_factory: FactoryMetaClass,
-        expense_prediction_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Two ExpensePrediction objects for single Budget with different category owners.
-        WHEN: The ExpensePredictionViewSet list view is called with owner filter set to -1 (null owner).
-        THEN: Response must contain all ExpensePrediction existing in database assigned to Budget with no owner.
-        """
-        owner = user_factory()
-        budget = budget_factory(members=[base_user, owner])
-        category_with_owner = transfer_category_factory(
-            budget=budget, name="Owned", owner=owner, category_type=CategoryType.EXPENSE
-        )
-        category_without_owner = transfer_category_factory(
-            budget=budget, name="Unowned", owner=None, category_type=CategoryType.EXPENSE
-        )
-        expense_prediction_factory(budget=budget, category=category_with_owner)
-        prediction_without_owner = expense_prediction_factory(budget=budget, category=category_without_owner)
-        api_client.force_authenticate(base_user)
-
-        response = api_client.get(expense_prediction_url(budget.id), data={"owner": -1})
-
-        assert response.status_code == status.HTTP_200_OK
-        assert ExpensePrediction.objects.all().count() == 2
-        predictions = annotate_expense_prediction_queryset(
-            ExpensePrediction.objects.filter(period__budget=budget, category__owner__isnull=True)
-        )
-        serializer = ExpensePredictionSerializer(
-            predictions,
-            many=True,
-        )
-        assert response.data and serializer.data
-        assert len(response.data) == len(serializer.data) == predictions.count() == 1
-        assert response.data == serializer.data
-        assert response.data[0]["id"] == prediction_without_owner.id
+        assert response.data[0]["id"] == prediction.id
 
     @pytest.mark.parametrize(
         "progress_status,expected_count",

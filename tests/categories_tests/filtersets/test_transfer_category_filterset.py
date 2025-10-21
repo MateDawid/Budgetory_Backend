@@ -37,8 +37,8 @@ class TestTransferCategoryFilterSetOrdering:
             "-category_type",
             "priority",
             "-priority",
-            "owner",
-            "-owner",
+            "deposit",
+            "-deposit",
             "priority,name",
         ),
     )
@@ -58,9 +58,9 @@ class TestTransferCategoryFilterSetOrdering:
         member_1 = user_factory(email="bob@bob.com")
         member_2 = user_factory(email="alice@alice.com")
         budget = budget_factory(members=[member_1, member_2])
-        transfer_category_factory(budget=budget, name="Aaa", owner=member_2, priority=CategoryPriority.MOST_IMPORTANT)
-        transfer_category_factory(budget=budget, name="Bbb", owner=member_1, priority=CategoryPriority.OTHERS)
-        transfer_category_factory(budget=budget, name="Ccc", owner=None, priority=CategoryPriority.REGULAR)
+        transfer_category_factory(budget=budget, name="Aaa", priority=CategoryPriority.MOST_IMPORTANT)
+        transfer_category_factory(budget=budget, name="Bbb", priority=CategoryPriority.OTHERS)
+        transfer_category_factory(budget=budget, name="Ccc", priority=CategoryPriority.REGULAR)
         api_client.force_authenticate(member_1)
 
         response = api_client.get(categories_url(budget.id), data={"ordering": sort_param})
@@ -134,59 +134,27 @@ class TestTransferCategoryFilterSetFiltering:
         assert response.data == serializer.data
         assert response.data[0]["id"] == matching_category.id
 
-    def test_get_categories_list_filtered_by_owner(
+    def test_get_categories_list_filtered_by_deposit(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Two TransferCategory objects for single Budget - one with owner set, one without an owner.
-        WHEN: The TransferCategoryViewSet list view is called with "owner" filter.
+        GIVEN: Two TransferCategory objects for single Budget - one with deposit set, one without.
+        WHEN: The TransferCategoryViewSet list view is called with "deposit" filter.
         THEN: Response must contain all TransferCategory existing in database assigned to Budget with
-        matching "owner" value.
+        matching "deposit" value.
         """
         budget = budget_factory(members=[base_user])
-        matching_category = transfer_category_factory(budget=budget, name="Some category", owner=base_user)
-        transfer_category_factory(budget=budget, name="Other one", owner=None)
+        deposit = deposit_factory(budget=budget)
+        matching_category = transfer_category_factory(budget=budget, name="Some category", deposit=deposit)
+        transfer_category_factory(budget=budget, name="Other one")
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(categories_url(budget.id), data={"owner": base_user.id})
-
-        assert response.status_code == status.HTTP_200_OK
-        assert TransferCategory.objects.all().count() == 2
-        categories = annotate_transfer_category_queryset(
-            TransferCategory.objects.filter(budget=budget, id=matching_category.id)
-        )
-        serializer = TransferCategorySerializer(
-            categories,
-            many=True,
-        )
-        assert response.data and serializer.data
-        assert len(response.data) == len(serializer.data) == categories.count() == 1
-        assert response.data == serializer.data
-        assert response.data[0]["id"] == matching_category.id
-
-    def test_get_categories_list_filtered_by_empty_owner(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        transfer_category_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Two TransferCategory objects for single Budget - one with owner set, one without an owner.
-        WHEN: The TransferCategoryViewSet list view is called with -1 value for "owner" filter.
-        THEN: Response must contain all TransferCategory existing in database assigned to Budget with
-        None value for "owner" field.
-        """
-        budget = budget_factory(members=[base_user])
-        matching_category = transfer_category_factory(budget=budget, name="Some category", owner=None)
-        transfer_category_factory(budget=budget, name="Other one", owner=base_user)
-        api_client.force_authenticate(base_user)
-
-        response = api_client.get(categories_url(budget.id), data={"owner": -1})
+        response = api_client.get(categories_url(budget.id), data={"deposit": deposit.id})
 
         assert response.status_code == status.HTTP_200_OK
         assert TransferCategory.objects.all().count() == 2

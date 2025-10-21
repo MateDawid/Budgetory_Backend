@@ -14,27 +14,27 @@ from categories.models.choices.category_type import CategoryType
 from entities.models.choices.deposit_type import DepositType
 
 
-def users_results_url(budget_id: int, period_id: int):
+def deposits_predictions_results_url(budget_id: int, period_id: int):
     """Create and return a users results URL."""
-    return reverse("predictions:users-results", args=[budget_id, period_id])
+    return reverse("predictions:deposits-predictions-results", args=[budget_id, period_id])
 
 
 @pytest.mark.django_db
-class TestUsersResultsAPIView:
-    """Tests for UsersResultsAPIView."""
+class TestDepositsPredictionsResultsAPIView:
+    """Tests for DepositsPredictionsResultsAPIView."""
 
     def test_auth_required(
         self, api_client: APIClient, budget_factory: FactoryMetaClass, budgeting_period_factory: FactoryMetaClass
     ):
         """
         GIVEN: Budget and BudgetingPeriod instances in database.
-        WHEN: UsersResultsAPIView called with GET without authentication.
+        WHEN: DepositsPredictionsResultsAPIView called with GET without authentication.
         THEN: Unauthorized HTTP 401 returned.
         """
         budget = budget_factory()
         period = budgeting_period_factory(budget=budget)
 
-        response = api_client.get(users_results_url(budget.id, period.id))
+        response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -47,12 +47,12 @@ class TestUsersResultsAPIView:
     ):
         """
         GIVEN: User's JWT in request headers as HTTP_AUTHORIZATION.
-        WHEN: UsersResultsAPIView endpoint called with GET.
+        WHEN: DepositsPredictionsResultsAPIView endpoint called with GET.
         THEN: HTTP 200 returned.
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
-        url = users_results_url(budget.id, period.id)
+        url = deposits_predictions_results_url(budget.id, period.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
 
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -68,14 +68,14 @@ class TestUsersResultsAPIView:
     ):
         """
         GIVEN: Budget and BudgetingPeriod instances in database.
-        WHEN: UsersResultsAPIView called with GET by User not belonging to given Budget.
+        WHEN: DepositsPredictionsResultsAPIView called with GET by User not belonging to given Budget.
         THEN: Forbidden HTTP 403 returned.
         """
         budget = budget_factory()
         period = budgeting_period_factory(budget=budget)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(users_results_url(budget.id, period.id))
+        response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
         assert response.data["detail"] == "User does not have access to Budget."
@@ -89,14 +89,14 @@ class TestUsersResultsAPIView:
     ):
         """
         GIVEN: Budget with single member and BudgetingPeriod in database with no transfers or predictions.
-        WHEN: UsersResultsAPIView called by Budget member.
+        WHEN: DepositsPredictionsResultsAPIView called by Budget member.
         THEN: HTTP 200 - Response with user and common user data containing zero values returned.
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(users_results_url(budget.id, period.id))
+        response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == 2  # Common user + base_user
@@ -123,7 +123,7 @@ class TestUsersResultsAPIView:
     ):
         """
         GIVEN: Budget with multiple members and BudgetingPeriod in database.
-        WHEN: UsersResultsAPIView called by Budget member.
+        WHEN: DepositsPredictionsResultsAPIView called by Budget member.
         THEN: HTTP 200 - Response with all budget members and common user data returned.
         """
         other_user = user_factory(username="otheruser")
@@ -132,7 +132,7 @@ class TestUsersResultsAPIView:
         period = budgeting_period_factory(budget=budget)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(users_results_url(budget.id, period.id))
+        response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == 4  # Common user + 3 members
@@ -155,7 +155,7 @@ class TestUsersResultsAPIView:
     ):
         """
         GIVEN: Budget with members, BudgetingPeriod and ExpensePredictions for different users in database.
-        WHEN: UsersResultsAPIView called by Budget member.
+        WHEN: DepositsPredictionsResultsAPIView called by Budget member.
         THEN: HTTP 200 - Response with correct predictions_sum values for each user returned.
         """
         other_user = user_factory(username="otheruser")
@@ -174,7 +174,7 @@ class TestUsersResultsAPIView:
 
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(users_results_url(budget.id, period.id))
+        response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
 
         assert response.status_code == status.HTTP_200_OK
 
@@ -203,7 +203,7 @@ class TestUsersResultsAPIView:
     ):
         """
         GIVEN: Budget with members, BudgetingPeriod and Expenses for different users with different deposit types.
-        WHEN: UsersResultsAPIView called by Budget member.
+        WHEN: DepositsPredictionsResultsAPIView called by Budget member.
         THEN: HTTP 200 - Response with correct period_expenses values (only DAILY_EXPENSES deposits counted).
         """
         other_user = user_factory(username="otheruser")
@@ -228,7 +228,7 @@ class TestUsersResultsAPIView:
 
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(users_results_url(budget.id, period.id))
+        response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
 
         assert response.status_code == status.HTTP_200_OK
 
@@ -256,7 +256,7 @@ class TestUsersResultsAPIView:
     ):
         """
         GIVEN: Budget with member, multiple BudgetingPeriods and Transfers with different dates.
-        WHEN: UsersResultsAPIView called by Budget member.
+        WHEN: DepositsPredictionsResultsAPIView called by Budget member.
         THEN: HTTP 200 - Response with correct period_balance calculation based on date filtering.
         """
         budget = budget_factory(members=[base_user])
@@ -295,7 +295,7 @@ class TestUsersResultsAPIView:
 
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(users_results_url(budget.id, current_period.id))
+        response = api_client.get(deposits_predictions_results_url(budget.id, current_period.id))
 
         assert response.status_code == status.HTTP_200_OK
 
@@ -318,7 +318,7 @@ class TestUsersResultsAPIView:
     ):
         """
         GIVEN: Budget with member, BudgetingPeriods and Transfers with different deposit types.
-        WHEN: UsersResultsAPIView called by Budget member.
+        WHEN: DepositsPredictionsResultsAPIView called by Budget member.
         THEN: HTTP 200 - Response with period_balance calculation only including DAILY_EXPENSES deposits.
         """
         budget = budget_factory(members=[base_user])
@@ -353,7 +353,7 @@ class TestUsersResultsAPIView:
 
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(users_results_url(budget.id, current_period.id))
+        response = api_client.get(deposits_predictions_results_url(budget.id, current_period.id))
 
         assert response.status_code == status.HTTP_200_OK
 
@@ -370,14 +370,14 @@ class TestUsersResultsAPIView:
     ):
         """
         GIVEN: Budget with member and BudgetingPeriod in database.
-        WHEN: UsersResultsAPIView called by Budget member.
+        WHEN: DepositsPredictionsResultsAPIView called by Budget member.
         THEN: HTTP 200 - Response with correct structure for each user returned.
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(users_results_url(budget.id, period.id))
+        response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert isinstance(response.data, list)
@@ -407,14 +407,14 @@ class TestUsersResultsAPIView:
     ):
         """
         GIVEN: Budget with member and BudgetingPeriod in database.
-        WHEN: UsersResultsAPIView called by Budget member.
+        WHEN: DepositsPredictionsResultsAPIView called by Budget member.
         THEN: HTTP 200 - Response includes common user with correct username format.
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(users_results_url(budget.id, period.id))
+        response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
 
         assert response.status_code == status.HTTP_200_OK
 
@@ -433,7 +433,7 @@ class TestUsersResultsAPIView:
     ):
         """
         GIVEN: Budget with multiple members and BudgetingPeriod in database.
-        WHEN: UsersResultsAPIView called by Budget member.
+        WHEN: DepositsPredictionsResultsAPIView called by Budget member.
         THEN: HTTP 200 - Response with users ordered by ID (common user first with id=0).
         """
         other_user = user_factory(
@@ -443,7 +443,7 @@ class TestUsersResultsAPIView:
         period = budgeting_period_factory(budget=budget)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(users_results_url(budget.id, period.id))
+        response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) >= 3
@@ -459,14 +459,14 @@ class TestUsersResultsAPIView:
     ):
         """
         GIVEN: Budget in database but BudgetingPeriod does not exist.
-        WHEN: UsersResultsAPIView called with non-existent period_pk.
+        WHEN: DepositsPredictionsResultsAPIView called with non-existent period_pk.
         THEN: HTTP 200 returned with zero values.
         """
         budget = budget_factory(members=[base_user])
         non_existent_period_id = 99999
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(users_results_url(budget.id, non_existent_period_id))
+        response = api_client.get(deposits_predictions_results_url(budget.id, non_existent_period_id))
 
         assert response.status_code == status.HTTP_200_OK
 
@@ -479,8 +479,8 @@ class TestUsersResultsAPIView:
 
 
 @pytest.mark.django_db
-class TestUsersResultsAPIViewIntegration:
-    """Integration tests for UsersResultsAPIView with complex scenarios."""
+class TestDepositsPredictionsResultsAPIViewIntegration:
+    """Integration tests for DepositsPredictionsResultsAPIView with complex scenarios."""
 
     def test_complete_budget_scenario_with_deposit_filtering(
         self,
@@ -498,7 +498,7 @@ class TestUsersResultsAPIViewIntegration:
         """
         GIVEN: Complete budget scenario with multiple users, periods, predictions, transfers
         and different deposit types.
-        WHEN: UsersResultsAPIView called by Budget member.
+        WHEN: DepositsPredictionsResultsAPIView called by Budget member.
         THEN: HTTP 200 - Response with accurate calculations for all users returned (only DAILY_EXPENSES
         deposits counted).
         """
@@ -555,7 +555,7 @@ class TestUsersResultsAPIViewIntegration:
 
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(users_results_url(budget.id, current_period.id))
+        response = api_client.get(deposits_predictions_results_url(budget.id, current_period.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == 3  # base_user, other_user, common
@@ -592,7 +592,7 @@ class TestUsersResultsAPIViewIntegration:
     ):
         """
         GIVEN: Budget with precise decimal values in predictions and expenses.
-        WHEN: UsersResultsAPIView called by Budget member.
+        WHEN: DepositsPredictionsResultsAPIView called by Budget member.
         THEN: HTTP 200 - Response with correctly formatted decimal values returned.
         """
         budget = budget_factory(members=[base_user])
@@ -620,7 +620,7 @@ class TestUsersResultsAPIViewIntegration:
 
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(users_results_url(budget.id, period.id))
+        response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
 
         assert response.status_code == status.HTTP_200_OK
 
