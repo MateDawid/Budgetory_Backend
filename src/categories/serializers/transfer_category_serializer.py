@@ -35,18 +35,22 @@ class TransferCategorySerializer(serializers.ModelSerializer):
         self._validate_category_uniqueness(attrs)
         return attrs
 
-    def validate_deposit(self, deposit: Deposit) -> None:
+    def validate_deposit(self, deposit: Deposit) -> Deposit:
         """
         Checks if Deposit Budget and Category Budget are the same.
 
         Args:
             deposit (Deposit): Input Deposit.
 
+        Returns:
+            Deposit: Validated Deposit.
+
         Raises:
             ValidationError: Raised when input Deposit Budget id different than request one.
         """
-        if deposit.budget.id != getattr(self.context.get("view"), "kwargs", {}).get("budget_pk"):
-            raise ValidationError("Deposit Budget invalid.", code="deposit-budget-invalid")
+        if deposit.budget.id != int(getattr(self.context.get("view"), "kwargs", {}).get("budget_pk")):
+            raise ValidationError("Deposit Budget is not the same as Category Budget.", code="deposit-budget-invalid")
+        return deposit
 
     @staticmethod
     def _validate_type_and_priority(category_type: CategoryType, priority: CategoryPriority) -> None:
