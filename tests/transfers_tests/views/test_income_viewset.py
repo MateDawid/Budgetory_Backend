@@ -327,8 +327,11 @@ class TestIncomeViewSetCreate:
             budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
-        payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.REGULAR).pk
+        deposit = deposit_factory(budget=budget)
+        payload["deposit"] = deposit.pk
+        payload["category"] = transfer_category_factory(
+            budget=budget, deposit=deposit, priority=CategoryPriority.REGULAR
+        ).pk
         payload["value"] = value
 
         response = api_client.post(transfers_url(budget.id), data=payload)
@@ -825,7 +828,9 @@ class TestIncomeViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
+        payload["category"] = transfer_category_factory(
+            budget=budget, deposit=payload["deposit"], priority=CategoryPriority.REGULAR
+        )
         transfer = income_factory(budget=budget, **payload)
         update_payload = {param: value}
         api_client.force_authenticate(base_user)
@@ -862,7 +867,9 @@ class TestIncomeViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
+        payload["category"] = transfer_category_factory(
+            budget=budget, deposit=payload["deposit"], priority=CategoryPriority.REGULAR
+        )
         transfer = income_factory(budget=budget, **payload)
         new_period = budgeting_period_factory(
             budget=budget, date_start=datetime.date(2024, 10, 1), date_end=datetime.date(2024, 10, 31)
@@ -920,44 +927,6 @@ class TestIncomeViewSetUpdate:
         assert getattr(transfer, "period") == payload["period"]
 
     @pytest.mark.django_db
-    def test_transfer_update_deposit(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
-        transfer_category_factory: FactoryMetaClass,
-        entity_factory: FactoryMetaClass,
-        deposit_factory: FactoryMetaClass,
-        income_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Income instance for Budget created in database.
-        WHEN: IncomeViewSet detail view called with PATCH with valid Deposit.
-        THEN: HTTP 200, Income updated.
-        """
-        budget = budget_factory(members=[base_user])
-        payload = self.PAYLOAD.copy()
-        payload["date"] = datetime.date(2024, 9, 1)
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
-        )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
-        transfer = income_factory(budget=budget, **payload)
-        new_deposit = deposit_factory(budget=budget)
-        update_payload = {"deposit": new_deposit.pk}
-        api_client.force_authenticate(base_user)
-        url = transfer_detail_url(budget.id, transfer.id)
-
-        response = api_client.patch(url, update_payload)
-
-        assert response.status_code == status.HTTP_200_OK
-        transfer.refresh_from_db()
-        assert getattr(transfer, "deposit") == new_deposit
-
-    @pytest.mark.django_db
     def test_transfer_update_entity(
         self,
         api_client: APIClient,
@@ -982,7 +951,9 @@ class TestIncomeViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
+        payload["category"] = transfer_category_factory(
+            budget=budget, deposit=payload["deposit"], priority=CategoryPriority.REGULAR
+        )
         transfer = income_factory(budget=budget, **payload)
         new_entity = entity_factory(budget=budget)
         update_payload = {"entity": new_entity.pk}
@@ -1118,44 +1089,6 @@ class TestIncomeViewSetUpdate:
         assert getattr(transfer, "entity") == payload["entity"]
 
     @pytest.mark.django_db
-    def test_transfer_update_category(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
-        transfer_category_factory: FactoryMetaClass,
-        entity_factory: FactoryMetaClass,
-        deposit_factory: FactoryMetaClass,
-        income_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Income instance for Budget created in database.
-        WHEN: IncomeViewSet detail view called with PATCH with valid TransferCategory.
-        THEN: HTTP 200, Income updated.
-        """
-        budget = budget_factory(members=[base_user])
-        payload = self.PAYLOAD.copy()
-        payload["date"] = datetime.date(2024, 9, 1)
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
-        )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
-        transfer = income_factory(budget=budget, **payload)
-        new_category = transfer_category_factory(budget=budget, priority=CategoryPriority.IRREGULAR)
-        update_payload = {"category": new_category.pk}
-        api_client.force_authenticate(base_user)
-        url = transfer_detail_url(budget.id, transfer.id)
-
-        response = api_client.patch(url, update_payload)
-
-        assert response.status_code == status.HTTP_200_OK
-        transfer.refresh_from_db()
-        assert getattr(transfer, "category") == new_category
-
-    @pytest.mark.django_db
     def test_error_on_transfer_update_category(
         self,
         api_client: APIClient,
@@ -1217,8 +1150,11 @@ class TestIncomeViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
+        payload["category"] = transfer_category_factory(
+            budget=budget, deposit=payload["deposit"], priority=CategoryPriority.REGULAR
+        )
         transfer = income_factory(budget=budget, **payload)
+        update_deposit = deposit_factory(budget=budget)
         update_payload = {
             "name": "New name",
             "description": "New description",
@@ -1230,8 +1166,10 @@ class TestIncomeViewSetUpdate:
                 date_end=datetime.date(2024, 10, 31),
             ).pk,
             "entity": entity_factory(budget=budget).pk,
-            "deposit": deposit_factory(budget=budget).pk,
-            "category": transfer_category_factory(budget=budget, priority=CategoryPriority.IRREGULAR).pk,
+            "deposit": update_deposit.pk,
+            "category": transfer_category_factory(
+                budget=budget, deposit=update_deposit, priority=CategoryPriority.IRREGULAR
+            ).pk,
         }
         api_client.force_authenticate(base_user)
         url = transfer_detail_url(budget.id, transfer.id)
