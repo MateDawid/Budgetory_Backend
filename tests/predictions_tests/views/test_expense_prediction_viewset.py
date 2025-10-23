@@ -516,10 +516,6 @@ class TestExpensePredictionViewSetCreate:
         )
         assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
 
-    # TODO: Update prediction for CLOSED period
-    # TODO: Update prediction for ACTIVE period
-    # TODO: Coverage check
-
 
 @pytest.mark.django_db
 class TestExpensePredictionViewSetDetail:
