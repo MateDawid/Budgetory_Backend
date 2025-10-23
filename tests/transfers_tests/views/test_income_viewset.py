@@ -611,6 +611,45 @@ class TestIncomeViewSetCreate:
         assert response.data["detail"]["entity"][0] == "Entity from different Budget."
         assert not Income.objects.filter(period__budget=budget).exists()
 
+    def test_error_deposit_different_from_category_deposit(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Category Deposit different from Transfer Deposit in payload for Income.
+        WHEN: IncomeViewSet called with POST by User belonging to Budget.
+        THEN: Bad request HTTP 400 returned. Income not created in database.
+        """
+        budget = budget_factory(members=[base_user])
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
+        payload["period"] = budgeting_period_factory(
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        ).pk
+        payload["entity"] = entity_factory(budget=budget).pk
+        payload["deposit"] = deposit_factory(budget=budget).pk
+        payload["category"] = transfer_category_factory(
+            budget=budget, deposit=deposit_factory(budget=budget), category_type=CategoryType.INCOME
+        ).pk
+
+        api_client.post(transfers_url(budget.id), payload)
+        response = api_client.post(transfers_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "non_field_errors" in response.data["detail"]
+        assert (
+            response.data["detail"]["non_field_errors"][0]
+            == "Transfer Deposit and Transfer Category Deposit has to be the same."
+        )
+        assert not Income.objects.filter(period__budget=budget).exists()
+
 
 @pytest.mark.django_db
 class TestIncomeViewSetDetail:
@@ -1364,6 +1403,51 @@ class TestIncomeViewSetUpdate:
         assert response.data["detail"]["entity"][0] == "Entity from different Budget."
         transfer.refresh_from_db()
         assert getattr(transfer, "entity") == payload["entity"]
+
+    def test_error_deposit_different_from_category_deposit(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Category Deposit different from Transfer Deposit in payload for Income.
+        WHEN: IncomeViewSet called with PATCH by User belonging to Budget.
+        THEN: Bad request HTTP 400 returned. Income not updated in database.
+        """
+        budget = budget_factory(members=[base_user])
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
+        payload["period"] = budgeting_period_factory(
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        )
+        payload["entity"] = entity_factory(budget=budget)
+        payload["deposit"] = deposit_factory(budget=budget)
+        payload["category"] = transfer_category_factory(
+            budget=budget, deposit=payload["deposit"], priority=CategoryPriority.REGULAR
+        )
+        transfer = income_factory(budget=budget, **payload)
+        new_deposit = deposit_factory(budget=budget)
+        update_payload = {"deposit": new_deposit.pk}
+        api_client.force_authenticate(base_user)
+        url = transfer_detail_url(budget.id, transfer.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "non_field_errors" in response.data["detail"]
+        assert (
+            response.data["detail"]["non_field_errors"][0]
+            == "Transfer Deposit and Transfer Category Deposit has to be the same."
+        )
+        transfer.refresh_from_db()
+        assert getattr(transfer, "deposit") == payload["deposit"]
 
 
 @pytest.mark.django_db

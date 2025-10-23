@@ -124,6 +124,9 @@ class TransferSerializer(serializers.ModelSerializer):
         """
         deposit = attrs.get("deposit") or getattr(self.instance, "deposit", None)
         entity = attrs.get("entity") or getattr(self.instance, "entity", None)
+        category = attrs.get("category") or getattr(self.instance, "category", None)
         if any([deposit, entity]) and deposit == entity:
             raise ValidationError("'deposit' and 'entity' fields cannot contain the same value.")
+        if deposit != category.deposit:
+            raise ValidationError("Transfer Deposit and Transfer Category Deposit has to be the same.")
         return attrs
