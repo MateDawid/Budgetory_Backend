@@ -359,7 +359,7 @@ class TestDepositsPredictionsResultsAPIView:
         """
         GIVEN: Budget in database but BudgetingPeriod does not exist.
         WHEN: DepositsPredictionsResultsAPIView called with non-existent period_pk.
-        THEN: HTTP 200 returned with zero values.
+        THEN: HTTP 404 returned.
         """
         budget = budget_factory(members=[base_user])
         deposit_factory(budget=budget)
@@ -368,14 +368,8 @@ class TestDepositsPredictionsResultsAPIView:
 
         response = api_client.get(deposits_predictions_results_url(budget.id, non_existent_period_id))
 
-        assert response.status_code == status.HTTP_200_OK
-
-        # Should return deposits with zero values when period doesn't exist
-        assert len(response.data) == 1
-        for item in response.data:
-            assert item["predictions_sum"] == "0.00"
-            assert item["period_balance"] == "0.00"
-            assert item["period_expenses"] == "0.00"
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["detail"] == "Budgeting Period with given pk does not exist in Budget."
 
 
 @pytest.mark.django_db

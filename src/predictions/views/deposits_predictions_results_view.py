@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.db.models import DecimalField, ExpressionWrapper, F, Func, OuterRef, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
+from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -161,6 +162,8 @@ class DepositsPredictionsResultsAPIView(APIView):
         Returns:
             Response: Serialized DepositResults in particular BudgetingPeriod.
         """
+        if not BudgetingPeriod.objects.filter(budget_id=budget_pk, pk=period_pk).exists():
+            raise NotFound("Budgeting Period with given pk does not exist in Budget.")
         deposits = (
             Budget.objects.get(pk=budget_pk)
             .entities.filter(is_deposit=True, deposit_type=DepositType.DAILY_EXPENSES)
