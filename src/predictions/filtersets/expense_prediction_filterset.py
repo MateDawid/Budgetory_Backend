@@ -69,7 +69,7 @@ class ExpensePredictionFilterSet(filters.FilterSet):
                 return queryset.filter(current_funds_left=0)
             case PredictionProgressStatus.OVERUSED.value:
                 return queryset.filter(current_funds_left__lt=0)
-            case _:
+            case _:  # NOQA
                 return queryset
 
     @staticmethod
@@ -87,4 +87,4 @@ class ExpensePredictionFilterSet(filters.FilterSet):
         """
         if value in CategoryPriority.values:
             return queryset.filter(category__priority=value)
-        return queryset
+        return queryset  # NOQA

@@ -392,3 +392,54 @@ class TestExpensePredictionFilterSetFiltering:
         assert response.data == serializer.data
         assert response.data[0]["id"] == prediction.id
         assert response.data[0][field] == value
+
+    def test_get_predictions_list_filtered_by_category_priority(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        expense_prediction_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Three ExpensePrediction with categories with different CategoryPriority values for single Budget.
+        WHEN: The ExpensePredictionViewSet list view is called with category filter.
+        THEN: Response must contain all ExpensePrediction existing in database assigned to Budget matching given
+        category_priority value.
+        """
+        budget = budget_factory(members=[base_user])
+        category = transfer_category_factory(
+            budget=budget, category_type=CategoryType.EXPENSE, priority=CategoryPriority.MOST_IMPORTANT
+        )
+        prediction = expense_prediction_factory(budget=budget, category=category)
+        expense_prediction_factory(
+            budget=budget,
+            category=transfer_category_factory(
+                budget=budget, category_type=CategoryType.EXPENSE, priority=CategoryPriority.SAVINGS
+            ),
+        )
+        expense_prediction_factory(
+            budget=budget,
+            category=transfer_category_factory(
+                budget=budget, category_type=CategoryType.EXPENSE, priority=CategoryPriority.OTHERS
+            ),
+        )
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(
+            expense_prediction_url(budget.id), data={"category_priority": CategoryPriority.MOST_IMPORTANT.value}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert ExpensePrediction.objects.all().count() == 3
+        predictions = annotate_expense_prediction_queryset(
+            ExpensePrediction.objects.filter(period__budget=budget, category__id=category.id)
+        )
+        serializer = ExpensePredictionSerializer(
+            predictions,
+            many=True,
+        )
+        assert response.data and serializer.data
+        assert len(response.data) == len(serializer.data) == predictions.count() == 1
+        assert response.data == serializer.data
+        assert response.data[0]["id"] == prediction.id
