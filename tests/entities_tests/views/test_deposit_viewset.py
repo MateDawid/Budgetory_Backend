@@ -245,28 +245,69 @@ class TestDepositViewSetCreate:
         assert response.status_code == status.HTTP_403_FORBIDDEN
         assert response.data["detail"] == "User does not have access to Budget."
 
+    @pytest.mark.parametrize(
+        "deposit_type",
+        [
+            pytest.param(DepositType.DAILY_EXPENSES, id="daily-expenses"),
+            pytest.param(DepositType.SAVINGS, id="savings"),
+            pytest.param(DepositType.INVESTMENTS, id="investments"),
+            pytest.param(DepositType.OTHER, id="other"),
+        ],
+    )
     def test_create_single_deposit(
-        self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        deposit_type: DepositType,
     ):
         """
         GIVEN: Budget instance created in database. Valid payload prepared for Deposit.
         WHEN: DepositViewSet called with POST by User belonging to Budget with valid payload.
-        THEN: Deposit object created in database with given payload
+        THEN: Deposit object created in database with given payload. Initial categories for Deposit created.
         """
         budget = budget_factory(members=[base_user])
         api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["deposit_type"] = deposit_type
 
-        response = api_client.post(deposits_url(budget.id), self.PAYLOAD)
+        response = api_client.post(deposits_url(budget.id), payload)
 
         assert response.status_code == status.HTTP_201_CREATED
         assert Deposit.objects.filter(budget=budget).count() == 1
         deposit = Deposit.objects.get(id=response.data["id"])
         assert deposit.budget == budget
-        for key in self.PAYLOAD:
-            assert getattr(deposit, key) == self.PAYLOAD[key]
+        for key in payload:
+            assert getattr(deposit, key) == payload[key]
         assert deposit.is_deposit is True
         serializer = DepositSerializer(deposit)
         assert response.data == serializer.data
+        deposit_categories = deposit.transfer_categories.all()
+        assert deposit_categories.exists()
+        categories_names = deposit_categories.values_list("name", flat=True)
+        match deposit_type:
+            case DepositType.DAILY_EXPENSES:
+                assert deposit_categories.count() == 6
+                assert "Salary" in categories_names
+                assert "Sell" in categories_names
+                assert "Bills" in categories_names
+                assert "For Savings" in categories_names
+                assert "For Investments" in categories_names
+                assert "Entertainment" in categories_names
+            case DepositType.OTHER:
+                assert deposit_categories.count() == 6
+                assert "Regular income" in categories_names
+                assert "Irregular income" in categories_names
+                assert "For most important expenses" in categories_names
+                assert "For savings" in categories_names
+                assert "For investments" in categories_names
+                assert "For other expenses" in categories_names
+            case _:
+                assert deposit_categories.count() == 4
+                assert "Income from User" in categories_names
+                assert "Value increase" in categories_names
+                assert "Value decrease" in categories_names
+                assert "Funds withdrawal" in categories_names
 
     @pytest.mark.parametrize("field_name", ["name", "description"])
     def test_error_value_too_long(
