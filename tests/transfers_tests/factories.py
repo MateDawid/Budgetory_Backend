@@ -71,7 +71,7 @@ class TransferFactory(factory.django.DjangoModelFactory):
         budget = self._Resolver__step.builder.extras.get("budget")
         if not budget:
             budget = self.period.budget
-        return DepositFactory(budget=budget, owner=getattr(self.category, "owner", None))
+        return DepositFactory(budget=budget)
 
     @factory.lazy_attribute
     def category(self, *args) -> TransferCategory:
@@ -112,10 +112,11 @@ class IncomeFactory(TransferFactory):
         Returns:
             TransferCategory: Generated TransferCategory.
         """
-        budget = self._Resolver__step.builder.extras.get("budget")
-        if not budget:
-            budget = self.period.budget
-        return TransferCategoryFactory(budget=budget, category_type=CategoryType.INCOME)
+        payload = {
+            "budget": self._Resolver__step.builder.extras.get("budget") or self.period.budget,
+            "deposit": self._Resolver__step.builder.extras.get("deposit") or self.deposit,
+        }
+        return TransferCategoryFactory(category_type=CategoryType.INCOME, **payload)
 
 
 class ExpenseFactory(TransferFactory):
@@ -132,7 +133,8 @@ class ExpenseFactory(TransferFactory):
         Returns:
             TransferCategory: Generated TransferCategory.
         """
-        budget = self._Resolver__step.builder.extras.get("budget")
-        if not budget:
-            budget = self.period.budget
-        return TransferCategoryFactory(budget=budget, category_type=CategoryType.EXPENSE)
+        payload = {
+            "budget": self._Resolver__step.builder.extras.get("budget") or self.period.budget,
+            "deposit": self._Resolver__step.builder.extras.get("deposit") or self.deposit,
+        }
+        return TransferCategoryFactory(category_type=CategoryType.EXPENSE, **payload)

@@ -145,11 +145,11 @@ class TestExpensePredictionViewSetList:
         budget = budget_factory(members=[base_user])
         expense_prediction_factory(
             budget=budget,
-            category=transfer_category_factory(budget=budget, owner=base_user, category_type=CategoryType.EXPENSE),
+            category=transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE),
         )
         expense_prediction_factory(
             budget=budget,
-            category=transfer_category_factory(budget=budget, owner=None, category_type=CategoryType.EXPENSE),
+            category=transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE),
         )
 
         response = api_client.get(expense_prediction_url(budget.id))
@@ -164,7 +164,7 @@ class TestExpensePredictionViewSetList:
             category = TransferCategory.objects.get(id=prediction["category"])
             assert prediction["category_display"] == f"📉{category.name}"
             assert prediction["category_priority"] == CategoryPriority(category.priority).label
-            assert prediction["category_owner"] == getattr(category.owner, "username", "🏦 Common")
+            assert prediction["category_deposit"] == getattr(category.deposit, "name", None)
 
     def test_prediction_list_limited_to_budget(
         self,
@@ -515,10 +515,6 @@ class TestExpensePredictionViewSetCreate:
             response.data["detail"]["period"][0] == "New Expense Prediction cannot be added to active Budgeting Period."
         )
         assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
-
-    # TODO: Update prediction for CLOSED period
-    # TODO: Update prediction for ACTIVE period
-    # TODO: Coverage check
 
 
 @pytest.mark.django_db

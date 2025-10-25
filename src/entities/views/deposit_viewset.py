@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.db.models import CharField, DecimalField, F, Func, Q, QuerySet, Sum, Value
 from django.db.models.functions import Coalesce
 from django_filters import rest_framework as filters
@@ -8,8 +9,14 @@ from rest_framework.viewsets import ModelViewSet
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
 from categories.models.choices.category_type import CategoryType
 from entities.filtersets.deposit_filterset import DepositFilterSet
+from entities.models.choices.deposit_type import DepositType
 from entities.models.deposit_model import Deposit
 from entities.serializers.deposit_serializer import DepositSerializer
+from entities.utils import (
+    create_initial_categories_for_daily_expenses_deposit,
+    create_initial_categories_for_other_deposit,
+    create_initial_categories_for_savings_and_investments_deposit,
+)
 
 
 def calculate_deposit_balance() -> Func:
@@ -85,9 +92,19 @@ class DepositViewSet(ModelViewSet):
     def perform_create(self, serializer: DepositSerializer) -> None:
         """
         Additionally save Budget from URL on Deposit instance during saving serializer. Create Entity object for
-        Deposit representation in Transfers.
+        Deposit representation in Transfers. Creates initial Categories for Deposit.
 
         Args:
             serializer [DepositSerializer]: Serializer for Deposit model.
         """
-        serializer.save(budget_id=self.kwargs.get("budget_pk"), is_deposit=True)
+        budget_pk = self.kwargs.get("budget_pk")
+        with transaction.atomic():
+            deposit = serializer.save(budget_id=budget_pk, is_deposit=True)
+            if deposit.deposit_type == DepositType.DAILY_EXPENSES:
+                create_initial_categories_for_daily_expenses_deposit(budget_pk=budget_pk, deposit_pk=deposit.pk)
+            elif deposit.deposit_type in (DepositType.SAVINGS, DepositType.INVESTMENTS):
+                create_initial_categories_for_savings_and_investments_deposit(
+                    budget_pk=budget_pk, deposit_pk=deposit.pk
+                )
+            else:
+                create_initial_categories_for_other_deposit(budget_pk=budget_pk, deposit_pk=deposit.pk)

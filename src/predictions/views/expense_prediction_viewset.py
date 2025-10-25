@@ -138,7 +138,12 @@ class ExpensePredictionViewSet(ModelViewSet):
         return (
             ExpensePrediction.objects.filter(period__budget__pk=self.kwargs.get("budget_pk"))
             .select_related(
-                "period", "period__budget", "period__previous_period", "category", "category__budget", "category__owner"
+                "period",
+                "period__budget",
+                "period__previous_period",
+                "category",
+                "category__budget",
+                "category__deposit",
             )
             .annotate(
                 current_result=sum_period_transfers_with_category(period_ref="period"),

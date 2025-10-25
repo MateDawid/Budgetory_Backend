@@ -327,8 +327,11 @@ class TestExpenseViewSetCreate:
             budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         ).pk
         payload["entity"] = entity_factory(budget=budget).pk
-        payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT).pk
+        deposit = deposit_factory(budget=budget)
+        payload["deposit"] = deposit.pk
+        payload["category"] = transfer_category_factory(
+            budget=budget, deposit=deposit, priority=CategoryPriority.MOST_IMPORTANT
+        ).pk
         payload["value"] = value
 
         response = api_client.post(transfers_url(budget.id), data=payload)
@@ -611,6 +614,45 @@ class TestExpenseViewSetCreate:
         assert response.data["detail"]["entity"][0] == "Entity from different Budget."
         assert not Expense.objects.filter(period__budget=budget).exists()
 
+    def test_error_deposit_different_from_category_deposit(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Category Deposit different from Transfer Deposit in payload for Expense.
+        WHEN: ExpenseViewSet called with POST by User belonging to Budget.
+        THEN: Bad request HTTP 400 returned. Expense not created in database.
+        """
+        budget = budget_factory(members=[base_user])
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
+        payload["period"] = budgeting_period_factory(
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        ).pk
+        payload["entity"] = entity_factory(budget=budget).pk
+        payload["deposit"] = deposit_factory(budget=budget).pk
+        payload["category"] = transfer_category_factory(
+            budget=budget, deposit=deposit_factory(budget=budget), category_type=CategoryType.EXPENSE
+        ).pk
+
+        api_client.post(transfers_url(budget.id), payload)
+        response = api_client.post(transfers_url(budget.id), payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "non_field_errors" in response.data["detail"]
+        assert (
+            response.data["detail"]["non_field_errors"][0]
+            == "Transfer Deposit and Transfer Category Deposit has to be the same."
+        )
+        assert not Expense.objects.filter(period__budget=budget).exists()
+
 
 @pytest.mark.django_db
 class TestExpenseViewSetDetail:
@@ -794,7 +836,9 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(
+            budget=budget, deposit=payload["deposit"], priority=CategoryPriority.MOST_IMPORTANT
+        )
         transfer = expense_factory(budget=budget, **payload)
         update_payload = {param: value}
         api_client.force_authenticate(base_user)
@@ -831,7 +875,9 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(
+            budget=budget, deposit=payload["deposit"], priority=CategoryPriority.MOST_IMPORTANT
+        )
         transfer = expense_factory(budget=budget, **payload)
         new_period = budgeting_period_factory(
             budget=budget, date_start=datetime.date(2024, 10, 1), date_end=datetime.date(2024, 10, 31)
@@ -889,44 +935,6 @@ class TestExpenseViewSetUpdate:
         assert getattr(transfer, "period") == payload["period"]
 
     @pytest.mark.django_db
-    def test_transfer_update_deposit(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
-        transfer_category_factory: FactoryMetaClass,
-        entity_factory: FactoryMetaClass,
-        deposit_factory: FactoryMetaClass,
-        expense_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Expense instance for Budget created in database.
-        WHEN: ExpenseViewSet detail view called with PATCH with valid Deposit.
-        THEN: HTTP 200, Expense updated.
-        """
-        budget = budget_factory(members=[base_user])
-        payload = self.PAYLOAD.copy()
-        payload["date"] = datetime.date(2024, 9, 1)
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
-        )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
-        transfer = expense_factory(budget=budget, **payload)
-        new_deposit = deposit_factory(budget=budget)
-        update_payload = {"deposit": new_deposit.pk}
-        api_client.force_authenticate(base_user)
-        url = transfer_detail_url(budget.id, transfer.id)
-
-        response = api_client.patch(url, update_payload)
-
-        assert response.status_code == status.HTTP_200_OK
-        transfer.refresh_from_db()
-        assert getattr(transfer, "deposit") == new_deposit
-
-    @pytest.mark.django_db
     def test_transfer_update_entity(
         self,
         api_client: APIClient,
@@ -951,7 +959,9 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(
+            budget=budget, deposit=payload["deposit"], priority=CategoryPriority.MOST_IMPORTANT
+        )
         transfer = expense_factory(budget=budget, **payload)
         new_entity = entity_factory(budget=budget)
         update_payload = {"entity": new_entity.pk}
@@ -1087,44 +1097,6 @@ class TestExpenseViewSetUpdate:
         assert getattr(transfer, "entity") == payload["entity"]
 
     @pytest.mark.django_db
-    def test_transfer_update_category(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
-        transfer_category_factory: FactoryMetaClass,
-        entity_factory: FactoryMetaClass,
-        deposit_factory: FactoryMetaClass,
-        expense_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Expense instance for Budget created in database.
-        WHEN: ExpenseViewSet detail view called with PATCH with valid TransferCategory.
-        THEN: HTTP 200, Expense updated.
-        """
-        budget = budget_factory(members=[base_user])
-        payload = self.PAYLOAD.copy()
-        payload["date"] = datetime.date(2024, 9, 1)
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
-        )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
-        transfer = expense_factory(budget=budget, **payload)
-        new_category = transfer_category_factory(budget=budget, priority=CategoryPriority.DEBTS)
-        update_payload = {"category": new_category.pk}
-        api_client.force_authenticate(base_user)
-        url = transfer_detail_url(budget.id, transfer.id)
-
-        response = api_client.patch(url, update_payload)
-
-        assert response.status_code == status.HTTP_200_OK
-        transfer.refresh_from_db()
-        assert getattr(transfer, "category") == new_category
-
-    @pytest.mark.django_db
     def test_error_on_transfer_update_category(
         self,
         api_client: APIClient,
@@ -1186,8 +1158,11 @@ class TestExpenseViewSetUpdate:
         )
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
+        payload["category"] = transfer_category_factory(
+            budget=budget, deposit=payload["deposit"], priority=CategoryPriority.MOST_IMPORTANT
+        )
         transfer = expense_factory(budget=budget, **payload)
+        update_deposit = deposit_factory(budget=budget)
         update_payload = {
             "name": "New name",
             "description": "New description",
@@ -1199,8 +1174,10 @@ class TestExpenseViewSetUpdate:
                 date_end=datetime.date(2024, 10, 31),
             ).pk,
             "entity": entity_factory(budget=budget).pk,
-            "deposit": deposit_factory(budget=budget).pk,
-            "category": transfer_category_factory(budget=budget, priority=CategoryPriority.DEBTS).pk,
+            "deposit": update_deposit.pk,
+            "category": transfer_category_factory(
+                budget=budget, deposit=update_deposit, priority=CategoryPriority.OTHERS
+            ).pk,
         }
         api_client.force_authenticate(base_user)
         url = transfer_detail_url(budget.id, transfer.id)
@@ -1372,6 +1349,51 @@ class TestExpenseViewSetUpdate:
         assert response.data["detail"]["entity"][0] == "Entity from different Budget."
         transfer.refresh_from_db()
         assert getattr(transfer, "entity") == payload["entity"]
+
+    def test_error_deposit_different_from_category_deposit(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Category Deposit different from Transfer Deposit in payload for Expense.
+        WHEN: ExpenseViewSet called with PATCH by User belonging to Budget.
+        THEN: Bad request HTTP 400 returned. Expense not updated in database.
+        """
+        budget = budget_factory(members=[base_user])
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
+        payload["period"] = budgeting_period_factory(
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        )
+        payload["entity"] = entity_factory(budget=budget)
+        payload["deposit"] = deposit_factory(budget=budget)
+        payload["category"] = transfer_category_factory(
+            budget=budget, deposit=payload["deposit"], priority=CategoryPriority.MOST_IMPORTANT
+        )
+        transfer = expense_factory(budget=budget, **payload)
+        new_deposit = deposit_factory(budget=budget)
+        update_payload = {"deposit": new_deposit.pk}
+        api_client.force_authenticate(base_user)
+        url = transfer_detail_url(budget.id, transfer.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "non_field_errors" in response.data["detail"]
+        assert (
+            response.data["detail"]["non_field_errors"][0]
+            == "Transfer Deposit and Transfer Category Deposit has to be the same."
+        )
+        transfer.refresh_from_db()
+        assert getattr(transfer, "deposit") == payload["deposit"]
 
 
 @pytest.mark.django_db

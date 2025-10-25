@@ -22,8 +22,8 @@ class ExpensePredictionFilterSet(filters.FilterSet):
             budget__pk=get_budget_pk(request), category_type=CategoryType.EXPENSE
         )
     )
+    deposit = filters.NumberFilter(method="filter_by_deposit")
     category_priority = filters.NumberFilter(method="filter_by_category_priority")
-    owner = filters.NumberFilter(method="filter_by_owner")
     initial_plan = filters.NumberFilter()
     initial_plan_min = filters.NumberFilter(field_name="initial_plan", lookup_expr="gte")
     initial_plan_max = filters.NumberFilter(field_name="initial_plan", lookup_expr="lte")
@@ -33,9 +33,9 @@ class ExpensePredictionFilterSet(filters.FilterSet):
     progress_status = filters.NumberFilter(method="filter_by_progress_status")
 
     @staticmethod
-    def filter_by_owner(queryset: QuerySet, name: str, value: Decimal) -> QuerySet:
+    def filter_by_deposit(queryset: QuerySet, name: str, value: Decimal) -> QuerySet:
         """
-        Filters ExpensePredictions queryset by Transfer Category owner field value.
+        Filters ExpensePredictions queryset by Transfer Category deposit field value.
 
         Args:
             queryset [QuerySet]: Input QuerySet
@@ -45,9 +45,7 @@ class ExpensePredictionFilterSet(filters.FilterSet):
         Returns:
             QuerySet: Filtered QuerySet.
         """
-        if value == Decimal("-1"):
-            return queryset.filter(category__owner__isnull=True)
-        return queryset.filter(category__owner__id=value)
+        return queryset.filter(category__deposit__id=value)
 
     @staticmethod
     def filter_by_progress_status(queryset: QuerySet, name: str, value: Decimal) -> QuerySet:
@@ -71,7 +69,7 @@ class ExpensePredictionFilterSet(filters.FilterSet):
                 return queryset.filter(current_funds_left=0)
             case PredictionProgressStatus.OVERUSED.value:
                 return queryset.filter(current_funds_left__lt=0)
-            case _:
+            case _:  # NOQA
                 return queryset
 
     @staticmethod
@@ -89,4 +87,4 @@ class ExpensePredictionFilterSet(filters.FilterSet):
         """
         if value in CategoryPriority.values:
             return queryset.filter(category__priority=value)
-        return queryset
+        return queryset  # NOQA

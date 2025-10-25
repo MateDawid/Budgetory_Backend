@@ -10,7 +10,6 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from app_users.serializers.user_serializer import UserSerializer
-from app_users.utils import create_initial_categories_for_budget_pk
 from budgets.filtersets.budget_filterset import BudgetFilterSet
 from budgets.models import Budget
 from budgets.serializers.budget_serializer import BudgetSerializer
@@ -67,4 +66,3 @@ class BudgetViewSet(ModelViewSet):
         with transaction.atomic():
             budget = serializer.save()
             budget.members.add(self.request.user)
-            create_initial_categories_for_budget_pk(budget_pk=budget.pk)

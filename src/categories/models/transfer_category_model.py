@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.db import models
 from django.db.models import CheckConstraint, Q, UniqueConstraint
 
@@ -12,12 +11,8 @@ class TransferCategory(models.Model):
     budget = models.ForeignKey("budgets.Budget", on_delete=models.CASCADE, related_name="transfer_categories")
     name = models.CharField(max_length=128)
     description = models.CharField(max_length=255, blank=True, null=True)
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        blank=True,
-        null=True,
-        on_delete=models.CASCADE,
-        related_name="personal_transfer_categories",
+    deposit = models.ForeignKey(
+        "entities.Deposit", on_delete=models.CASCADE, related_name="transfer_categories", blank=False, null=False
     )
     is_active = models.BooleanField(default=True)
     category_type = models.PositiveSmallIntegerField(choices=CategoryType.choices, null=False, blank=False)
@@ -34,14 +29,9 @@ class TransferCategory(models.Model):
                 ),
             ),
             UniqueConstraint(
-                name="%(app_label)s_%(class)s_name_unique_for_owner",
-                fields=("budget", "category_type", "name", "owner"),
-                condition=Q(owner__isnull=False),
-            ),
-            UniqueConstraint(
-                name="%(app_label)s_%(class)s_name_unique_when_no_owner",
-                fields=("budget", "category_type", "name"),
-                condition=Q(owner__isnull=True),
+                name="%(app_label)s_%(class)s_name_unique_for_deposit",
+                fields=("budget", "category_type", "name", "deposit"),
+                condition=Q(deposit__isnull=False),
             ),
         )
 
