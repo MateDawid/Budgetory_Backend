@@ -74,7 +74,7 @@ class TransferSerializer(serializers.ModelSerializer):
         Raises:
             ValidationError: Raised on not matching budget_pk values.
         """
-        if entity.budget.pk != self._budget_pk:
+        if entity and entity.budget.pk != self._budget_pk:
             raise ValidationError("Entity from different Budget.")
         return entity
 
@@ -108,7 +108,7 @@ class TransferSerializer(serializers.ModelSerializer):
         Raises:
             ValidationError: Raised on not matching budget_pk values.
         """
-        if category.budget.pk != self._budget_pk:
+        if category and category.budget.pk != self._budget_pk:
             raise ValidationError("TransferCategory from different Budget.")
         return category
 
@@ -127,6 +127,6 @@ class TransferSerializer(serializers.ModelSerializer):
         category = attrs.get("category") or getattr(self.instance, "category", None)
         if any([deposit, entity]) and deposit == entity:
             raise ValidationError("'deposit' and 'entity' fields cannot contain the same value.")
-        if deposit != category.deposit:
+        if category and deposit != category.deposit:
             raise ValidationError("Transfer Deposit and Transfer Category Deposit has to be the same.")
         return attrs

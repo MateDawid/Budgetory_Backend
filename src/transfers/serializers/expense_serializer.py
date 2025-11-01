@@ -26,6 +26,6 @@ class ExpenseSerializer(TransferSerializer):
             ValidationError: Raised on invalid type of provided category.
         """
         category = super().validate_category(category)
-        if category.category_type != CategoryType.EXPENSE:
+        if category and category.category_type != CategoryType.EXPENSE:
             raise ValidationError("Invalid TransferCategory for Expense provided.")
         return category

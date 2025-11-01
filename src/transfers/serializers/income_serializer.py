@@ -26,6 +26,6 @@ class IncomeSerializer(TransferSerializer):
             ValidationError: Raised on invalid type of provided category.
         """
         category = super().validate_category(category)
-        if category.category_type != CategoryType.INCOME:
+        if category and category.category_type != CategoryType.INCOME:
             raise ValidationError("Invalid TransferCategory for Income provided.")
         return category
