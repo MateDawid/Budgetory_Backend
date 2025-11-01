@@ -7,5 +7,5 @@ from transfers.models.transfer_model import Transfer
 class TransferAdmin(admin.ModelAdmin):
     """Custom admin view for Transfer model."""
 
-    list_display = ("date", "period", "entity", "name", "category", "value", "deposit")
-    list_filter = ("date", "period__budget", "period", "entity", "category", "deposit")
+    list_display = ("transfer_type", "date", "period", "name", "deposit", "entity", "category", "value", "description")
+    list_filter = ("date", "period__budget", "period", "transfer_type", "entity", "category", "deposit")
