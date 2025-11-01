@@ -24,13 +24,13 @@ class ExpenseQuerySet(QuerySet):
 
 
 class ExpenseManager(models.Manager):
-    """Manager for Transfers with ExpenseCategory as category."""
+    """Manager for Expense Transfers."""
 
     def get_queryset(self) -> QuerySet:
         """
-        Returns only Transfers with ExpenseCategories as category.
+        Returns only Expense type Transfers.
 
         Returns:
-            QuerySet: QuerySet containing only Transfers with ExpenseCategories as category.
+            QuerySet: QuerySet containing only Expense type Transfers.
         """
-        return ExpenseQuerySet(self.model, using=self._db).filter(category__category_type=CategoryType.EXPENSE)
+        return ExpenseQuerySet(self.model, using=self._db).filter(transfer_type=CategoryType.EXPENSE)
