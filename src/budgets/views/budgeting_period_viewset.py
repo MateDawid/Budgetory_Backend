@@ -20,9 +20,12 @@ from categories.models.choices.category_type import CategoryType
 from predictions.models import ExpensePrediction
 
 
-def sum_period_transfers(category_type: CategoryType) -> Func:
+def sum_period_transfers(transfer_type: CategoryType) -> Func:
     """
     Function for calculate Transfers values sum of given CategoryType for BudgetingPeriod.
+
+    Args:
+        transfer_type (CategoryType): Transfer type - INCOME or EXPENSE.
 
     Returns:
         Func: ORM function returning Sum of BudgetingPeriod Transfers values for specified CategoryType.
@@ -30,7 +33,7 @@ def sum_period_transfers(category_type: CategoryType) -> Func:
     return Coalesce(
         Sum(
             "transfers__value",
-            filter=Q(transfers__category__category_type=category_type),
+            filter=Q(transfers__transfer_type=transfer_type),
             output_field=DecimalField(decimal_places=2),
         ),
         Value(0),

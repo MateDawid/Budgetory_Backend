@@ -87,7 +87,7 @@ def sum_period_and_previous_transfers(budget_pk: int, period_pk: int, category_t
         Subquery(
             Transfer.objects.filter(
                 period__budget__pk=budget_pk,
-                category__category_type=category_type,
+                transfer_type=category_type,
                 period__date_start__lt=Subquery(
                     BudgetingPeriod.objects.filter(pk=period_pk).values(
                         "date_start" if category_type == CategoryType.EXPENSE else "date_end"
@@ -95,7 +95,6 @@ def sum_period_and_previous_transfers(budget_pk: int, period_pk: int, category_t
                 ),
                 deposit__id=OuterRef("pk"),
             )
-            .values("category__category_type")
             .annotate(total=Sum("value"))
             .values("total")[:1],
             output_field=DecimalField(decimal_places=2),
