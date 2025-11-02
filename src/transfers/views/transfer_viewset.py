@@ -97,7 +97,7 @@ class TransferViewSet(ModelViewSet):
             self.serializer_class.Meta.model(
                 **{
                     field_name: getattr(copied_object, field_name)
-                    for field_name in self.serializer_class.Meta.fields
+                    for field_name in ("transfer_type", *self.serializer_class.Meta.fields)
                     if field_name not in ("id",)
                 }
             )
