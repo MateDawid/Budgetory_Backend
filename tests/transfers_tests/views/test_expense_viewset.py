@@ -349,6 +349,78 @@ class TestExpenseViewSetCreate:
         serializer = ExpenseSerializer(transfer)
         assert response.data == serializer.data
 
+    def test_create_single_transfer_without_entity(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget instance created in database. Valid payload prepared for Expense without 'entity' value.
+        WHEN: ExpenseViewSet called with POST by User belonging to Budget with valid payload.
+        THEN: Expense object created in database with given payload and entity value None.
+        """
+        budget = budget_factory(members=[base_user])
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
+        payload["period"] = budgeting_period_factory(
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        ).pk
+        deposit = deposit_factory(budget=budget)
+        payload["deposit"] = deposit.pk
+        payload["category"] = transfer_category_factory(
+            budget=budget, deposit=deposit, priority=CategoryPriority.MOST_IMPORTANT
+        ).pk
+        payload["value"] = Decimal("0.01")
+
+        response = api_client.post(transfers_url(budget.id), data=payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert Expense.objects.filter(period__budget=budget).count() == 1
+        transfer = Expense.objects.get(id=response.data["id"])
+        assert transfer.entity is None
+        serializer = ExpenseSerializer(transfer)
+        assert response.data == serializer.data
+
+    def test_create_single_transfer_without_category(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget instance created in database. Valid payload prepared for Expense without 'category' value.
+        WHEN: ExpenseViewSet called with POST by User belonging to Budget with valid payload.
+        THEN: Expense object created in database with given payload and category value None.
+        """
+        budget = budget_factory(members=[base_user])
+        api_client.force_authenticate(base_user)
+        payload = self.PAYLOAD.copy()
+        payload["date"] = datetime.date(2024, 9, 1)
+        payload["period"] = budgeting_period_factory(
+            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        ).pk
+        deposit = deposit_factory(budget=budget)
+        payload["deposit"] = deposit.pk
+        payload["entity"] = entity_factory(budget=budget).pk
+        payload["value"] = Decimal("0.01")
+
+        response = api_client.post(transfers_url(budget.id), data=payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert Expense.objects.filter(period__budget=budget).count() == 1
+        transfer = Expense.objects.get(id=response.data["id"])
+        assert transfer.category is None
+        serializer = ExpenseSerializer(transfer)
+        assert response.data == serializer.data
+
     @pytest.mark.parametrize("field_name", ["name"])
     def test_error_value_too_long(
         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass, field_name: str
