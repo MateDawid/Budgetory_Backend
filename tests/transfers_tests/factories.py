@@ -87,6 +87,16 @@ class TransferFactory(factory.django.DjangoModelFactory):
         return TransferCategoryFactory(budget=budget)
 
     @factory.lazy_attribute
+    def transfer_type(self, *args) -> CategoryType:
+        """
+        Returns the same CategoryType as set for category field.
+
+        Returns:
+            CategoryType: The same CategoryType as set for category field.
+        """
+        return self.category.category_type
+
+    @factory.lazy_attribute
     def date(self) -> date:
         """
         Generates date field basing on given period daterange.

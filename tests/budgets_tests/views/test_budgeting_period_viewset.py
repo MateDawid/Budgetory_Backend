@@ -168,9 +168,9 @@ class TestBudgetingPeriodViewSetList:
             assert period["incomes_sum"] == str(
                 Decimal(
                     sum(
-                        Transfer.objects.filter(
-                            period__id=period["id"], category__category_type=CategoryType.INCOME
-                        ).values_list("value", flat=True)
+                        Transfer.objects.filter(period__id=period["id"], transfer_type=CategoryType.INCOME).values_list(
+                            "value", flat=True
+                        )
                     )
                 ).quantize(Decimal("0.00"))
             )
@@ -178,7 +178,7 @@ class TestBudgetingPeriodViewSetList:
                 Decimal(
                     sum(
                         Transfer.objects.filter(
-                            period__id=period["id"], category__category_type=CategoryType.EXPENSE
+                            period__id=period["id"], transfer_type=CategoryType.EXPENSE
                         ).values_list("value", flat=True)
                     )
                 ).quantize(Decimal("0.00"))

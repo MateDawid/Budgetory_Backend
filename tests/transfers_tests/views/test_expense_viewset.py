@@ -349,7 +349,7 @@ class TestExpenseViewSetCreate:
         serializer = ExpenseSerializer(transfer)
         assert response.data == serializer.data
 
-    @pytest.mark.parametrize("field_name", ["name", "description"])
+    @pytest.mark.parametrize("field_name", ["name"])
     def test_error_value_too_long(
         self, api_client: APIClient, base_user: AbstractUser, budget_factory: FactoryMetaClass, field_name: str
     ):

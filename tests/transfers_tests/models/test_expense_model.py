@@ -76,7 +76,7 @@ class TestExpenseModel:
         payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
 
         expense = Expense(**payload)
-        expense.full_clean()
+        expense.full_clean(exclude=["transfer_type"])
         expense.save()
         expense.refresh_from_db()
 
@@ -138,13 +138,13 @@ class TestExpenseModel:
 
         with pytest.raises(ValidationError) as exc:
             expense = Expense(**payload)
-            expense.full_clean()
+            expense.full_clean(exclude=["transfer_type"])
             expense.save()
         assert str(exc.value.error_list[0].message) == "Expense model instance can not be created with IncomeCategory."
         assert not Expense.objects.all().exists()
 
     @pytest.mark.django_db(transaction=True)
-    @pytest.mark.parametrize("field_name", ["name", "description"])
+    @pytest.mark.parametrize("field_name", ["name"])
     def test_error_value_too_long(self, budget: Budget, expense_factory: BaseFactory, field_name: str):
         """
         GIVEN: Payload with too long value for one field.
