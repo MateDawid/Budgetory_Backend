@@ -95,6 +95,7 @@ def sum_period_and_previous_transfers(budget_pk: int, period_pk: int, category_t
                 ),
                 deposit__id=OuterRef("pk"),
             )
+            .values("transfer_type")
             .annotate(total=Sum("value"))
             .values("total")[:1],
             output_field=DecimalField(decimal_places=2),

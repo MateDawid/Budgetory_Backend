@@ -228,12 +228,12 @@ class TestDepositsPredictionsResultsAPIView:
 
         assert response.status_code == status.HTTP_200_OK
 
-        # Check user balance calculation
+        # Check deposit balance calculation
         # For expenses: date_start filter applies - periods 1 & 2 included (200 + 100 = 300)
         # For incomes: date_end filter applies - periods 1, 2 & 3 included (1000 + 500 + 800 = 2300)
         # Balance = 2300 - 300 = 2000
-        user_data = next(item for item in response.data if item["deposit_name"] == deposit.name)
-        assert user_data["period_balance"] == "2000.00"
+        deposit_data = next(item for item in response.data if item["deposit_name"] == deposit.name)
+        assert deposit_data["period_balance"] == "2000.00"
 
     def test_get_deposits_results_with_transfers_daily_expenses_deposit_only(
         self,
