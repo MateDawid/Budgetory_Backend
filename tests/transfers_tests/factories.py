@@ -58,7 +58,7 @@ class TransferFactory(factory.django.DjangoModelFactory):
         budget = self._Resolver__step.builder.extras.get("budget")
         if not budget:
             budget = self.period.budget
-        return EntityFactory(budget=budget)
+        return random.choice([None, EntityFactory(budget=budget)])
 
     @factory.lazy_attribute
     def deposit(self, *args) -> Deposit:
@@ -84,7 +84,7 @@ class TransferFactory(factory.django.DjangoModelFactory):
         budget = self._Resolver__step.builder.extras.get("budget")
         if not budget:
             budget = self.period.budget
-        return TransferCategoryFactory(budget=budget)
+        return random.choice([None, TransferCategoryFactory(budget=budget)])
 
     @factory.lazy_attribute
     def transfer_type(self, *args) -> CategoryType:
@@ -94,7 +94,9 @@ class TransferFactory(factory.django.DjangoModelFactory):
         Returns:
             CategoryType: The same CategoryType as set for category field.
         """
-        return self.category.category_type
+        return (
+            self.category.category_type if self.category else random.choice([CategoryType.INCOME, CategoryType.EXPENSE])
+        )
 
     @factory.lazy_attribute
     def date(self) -> date:
@@ -126,7 +128,7 @@ class IncomeFactory(TransferFactory):
             "budget": self._Resolver__step.builder.extras.get("budget") or self.period.budget,
             "deposit": self._Resolver__step.builder.extras.get("deposit") or self.deposit,
         }
-        return TransferCategoryFactory(category_type=CategoryType.INCOME, **payload)
+        return random.choice([None, TransferCategoryFactory(category_type=CategoryType.INCOME, **payload)])
 
 
 class ExpenseFactory(TransferFactory):
@@ -147,4 +149,4 @@ class ExpenseFactory(TransferFactory):
             "budget": self._Resolver__step.builder.extras.get("budget") or self.period.budget,
             "deposit": self._Resolver__step.builder.extras.get("deposit") or self.deposit,
         }
-        return TransferCategoryFactory(category_type=CategoryType.EXPENSE, **payload)
+        return random.choice([None, TransferCategoryFactory(category_type=CategoryType.EXPENSE, **payload)])
