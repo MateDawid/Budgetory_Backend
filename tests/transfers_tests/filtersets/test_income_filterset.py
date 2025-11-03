@@ -69,8 +69,7 @@ class TestIncomeFilterSetOrdering:
         response = api_client.get(transfers_url(budget.id), data={"ordering": sort_param})
 
         assert response.status_code == status.HTTP_200_OK
-        base_queryset = Income.objects.all().order_by("id")
-        transfers = base_queryset.order_by(sort_param)
+        transfers = Income.objects.all().order_by(sort_param, "id")
         serializer = IncomeSerializer(transfers, many=True)
         assert response.data and serializer.data
         assert len(response.data) == len(serializer.data) == len(transfers) == 5

@@ -130,6 +130,16 @@ class IncomeFactory(TransferFactory):
         }
         return random.choice([None, TransferCategoryFactory(category_type=CategoryType.INCOME, **payload)])
 
+    @factory.lazy_attribute
+    def transfer_type(self, *args) -> CategoryType:
+        """
+        Returns INCOME CategoryType.
+
+        Returns:
+            CategoryType: INCOME CategoryType.
+        """
+        return CategoryType.INCOME
+
 
 class ExpenseFactory(TransferFactory):
     """Factory for Expense proxy model."""
@@ -150,3 +160,13 @@ class ExpenseFactory(TransferFactory):
             "deposit": self._Resolver__step.builder.extras.get("deposit") or self.deposit,
         }
         return random.choice([None, TransferCategoryFactory(category_type=CategoryType.EXPENSE, **payload)])
+
+    @factory.lazy_attribute
+    def transfer_type(self, *args) -> CategoryType:
+        """
+        Returns EXPENSE CategoryType.
+
+        Returns:
+            CategoryType: EXPENSE CategoryType.
+        """
+        return CategoryType.EXPENSE

@@ -32,8 +32,8 @@ class TransferViewSet(ModelViewSet):
         return (
             self.serializer_class.Meta.model.objects.prefetch_related("period", "category")
             .filter(period__budget__pk=self.kwargs.get("budget_pk"))
-            .distinct()
             .order_by("id")
+            .distinct()
         )
 
     @swagger_auto_schema(
