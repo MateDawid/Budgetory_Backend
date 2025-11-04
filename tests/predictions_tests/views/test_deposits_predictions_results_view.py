@@ -317,6 +317,7 @@ class TestDepositsPredictionsResultsAPIView:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
     ):
         """
@@ -326,15 +327,17 @@ class TestDepositsPredictionsResultsAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
+        deposit_factory(budget=budget)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert isinstance(response.data, list)
+        assert len(response.data) == 1
 
         for item in response.data:
-            assert "user_username" in item
+            assert "deposit_name" in item
             assert "predictions_sum" in item
             assert "period_balance" in item
             assert "period_expenses" in item
