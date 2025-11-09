@@ -1,0 +1,1066 @@
+[
+  {
+    "model": "auth.permission",
+    "pk": 1,
+    "fields": {
+      "name": "Can add log entry",
+      "content_type": 1,
+      "codename": "add_logentry"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 2,
+    "fields": {
+      "name": "Can change log entry",
+      "content_type": 1,
+      "codename": "change_logentry"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 3,
+    "fields": {
+      "name": "Can delete log entry",
+      "content_type": 1,
+      "codename": "delete_logentry"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 4,
+    "fields": {
+      "name": "Can view log entry",
+      "content_type": 1,
+      "codename": "view_logentry"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 5,
+    "fields": {
+      "name": "Can add permission",
+      "content_type": 2,
+      "codename": "add_permission"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 6,
+    "fields": {
+      "name": "Can change permission",
+      "content_type": 2,
+      "codename": "change_permission"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 7,
+    "fields": {
+      "name": "Can delete permission",
+      "content_type": 2,
+      "codename": "delete_permission"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 8,
+    "fields": {
+      "name": "Can view permission",
+      "content_type": 2,
+      "codename": "view_permission"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 9,
+    "fields": {
+      "name": "Can add group",
+      "content_type": 3,
+      "codename": "add_group"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 10,
+    "fields": {
+      "name": "Can change group",
+      "content_type": 3,
+      "codename": "change_group"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 11,
+    "fields": {
+      "name": "Can delete group",
+      "content_type": 3,
+      "codename": "delete_group"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 12,
+    "fields": {
+      "name": "Can view group",
+      "content_type": 3,
+      "codename": "view_group"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 13,
+    "fields": {
+      "name": "Can add content type",
+      "content_type": 4,
+      "codename": "add_contenttype"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 14,
+    "fields": {
+      "name": "Can change content type",
+      "content_type": 4,
+      "codename": "change_contenttype"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 15,
+    "fields": {
+      "name": "Can delete content type",
+      "content_type": 4,
+      "codename": "delete_contenttype"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 16,
+    "fields": {
+      "name": "Can view content type",
+      "content_type": 4,
+      "codename": "view_contenttype"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 17,
+    "fields": {
+      "name": "Can add session",
+      "content_type": 5,
+      "codename": "add_session"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 18,
+    "fields": {
+      "name": "Can change session",
+      "content_type": 5,
+      "codename": "change_session"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 19,
+    "fields": {
+      "name": "Can delete session",
+      "content_type": 5,
+      "codename": "delete_session"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 20,
+    "fields": {
+      "name": "Can view session",
+      "content_type": 5,
+      "codename": "view_session"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 21,
+    "fields": {
+      "name": "Can add Token",
+      "content_type": 6,
+      "codename": "add_token"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 22,
+    "fields": {
+      "name": "Can change Token",
+      "content_type": 6,
+      "codename": "change_token"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 23,
+    "fields": {
+      "name": "Can delete Token",
+      "content_type": 6,
+      "codename": "delete_token"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 24,
+    "fields": {
+      "name": "Can view Token",
+      "content_type": 6,
+      "codename": "view_token"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 25,
+    "fields": {
+      "name": "Can add Token",
+      "content_type": 7,
+      "codename": "add_tokenproxy"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 26,
+    "fields": {
+      "name": "Can change Token",
+      "content_type": 7,
+      "codename": "change_tokenproxy"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 27,
+    "fields": {
+      "name": "Can delete Token",
+      "content_type": 7,
+      "codename": "delete_tokenproxy"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 28,
+    "fields": {
+      "name": "Can view Token",
+      "content_type": 7,
+      "codename": "view_tokenproxy"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 29,
+    "fields": {
+      "name": "Can add user",
+      "content_type": 8,
+      "codename": "add_user"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 30,
+    "fields": {
+      "name": "Can change user",
+      "content_type": 8,
+      "codename": "change_user"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 31,
+    "fields": {
+      "name": "Can delete user",
+      "content_type": 8,
+      "codename": "delete_user"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 32,
+    "fields": {
+      "name": "Can view user",
+      "content_type": 8,
+      "codename": "view_user"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 33,
+    "fields": {
+      "name": "Can add budget",
+      "content_type": 9,
+      "codename": "add_budget"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 34,
+    "fields": {
+      "name": "Can change budget",
+      "content_type": 9,
+      "codename": "change_budget"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 35,
+    "fields": {
+      "name": "Can delete budget",
+      "content_type": 9,
+      "codename": "delete_budget"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 36,
+    "fields": {
+      "name": "Can view budget",
+      "content_type": 9,
+      "codename": "view_budget"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 37,
+    "fields": {
+      "name": "Can add budgeting period",
+      "content_type": 10,
+      "codename": "add_budgetingperiod"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 38,
+    "fields": {
+      "name": "Can change budgeting period",
+      "content_type": 10,
+      "codename": "change_budgetingperiod"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 39,
+    "fields": {
+      "name": "Can delete budgeting period",
+      "content_type": 10,
+      "codename": "delete_budgetingperiod"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 40,
+    "fields": {
+      "name": "Can view budgeting period",
+      "content_type": 10,
+      "codename": "view_budgetingperiod"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 41,
+    "fields": {
+      "name": "Can add entity",
+      "content_type": 11,
+      "codename": "add_entity"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 42,
+    "fields": {
+      "name": "Can change entity",
+      "content_type": 11,
+      "codename": "change_entity"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 43,
+    "fields": {
+      "name": "Can delete entity",
+      "content_type": 11,
+      "codename": "delete_entity"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 44,
+    "fields": {
+      "name": "Can view entity",
+      "content_type": 11,
+      "codename": "view_entity"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 45,
+    "fields": {
+      "name": "Can add deposit",
+      "content_type": 12,
+      "codename": "add_deposit"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 46,
+    "fields": {
+      "name": "Can change deposit",
+      "content_type": 12,
+      "codename": "change_deposit"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 47,
+    "fields": {
+      "name": "Can delete deposit",
+      "content_type": 12,
+      "codename": "delete_deposit"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 48,
+    "fields": {
+      "name": "Can view deposit",
+      "content_type": 12,
+      "codename": "view_deposit"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 49,
+    "fields": {
+      "name": "Can add transfer category",
+      "content_type": 13,
+      "codename": "add_transfercategory"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 50,
+    "fields": {
+      "name": "Can change transfer category",
+      "content_type": 13,
+      "codename": "change_transfercategory"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 51,
+    "fields": {
+      "name": "Can delete transfer category",
+      "content_type": 13,
+      "codename": "delete_transfercategory"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 52,
+    "fields": {
+      "name": "Can view transfer category",
+      "content_type": 13,
+      "codename": "view_transfercategory"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 53,
+    "fields": {
+      "name": "Can add expense prediction",
+      "content_type": 14,
+      "codename": "add_expenseprediction"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 54,
+    "fields": {
+      "name": "Can change expense prediction",
+      "content_type": 14,
+      "codename": "change_expenseprediction"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 55,
+    "fields": {
+      "name": "Can delete expense prediction",
+      "content_type": 14,
+      "codename": "delete_expenseprediction"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 56,
+    "fields": {
+      "name": "Can view expense prediction",
+      "content_type": 14,
+      "codename": "view_expenseprediction"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 57,
+    "fields": {
+      "name": "Can add transfer",
+      "content_type": 15,
+      "codename": "add_transfer"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 58,
+    "fields": {
+      "name": "Can change transfer",
+      "content_type": 15,
+      "codename": "change_transfer"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 59,
+    "fields": {
+      "name": "Can delete transfer",
+      "content_type": 15,
+      "codename": "delete_transfer"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 60,
+    "fields": {
+      "name": "Can view transfer",
+      "content_type": 15,
+      "codename": "view_transfer"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 61,
+    "fields": {
+      "name": "Can add expense",
+      "content_type": 16,
+      "codename": "add_expense"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 62,
+    "fields": {
+      "name": "Can change expense",
+      "content_type": 16,
+      "codename": "change_expense"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 63,
+    "fields": {
+      "name": "Can delete expense",
+      "content_type": 16,
+      "codename": "delete_expense"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 64,
+    "fields": {
+      "name": "Can view expense",
+      "content_type": 16,
+      "codename": "view_expense"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 65,
+    "fields": {
+      "name": "Can add income",
+      "content_type": 17,
+      "codename": "add_income"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 66,
+    "fields": {
+      "name": "Can change income",
+      "content_type": 17,
+      "codename": "change_income"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 67,
+    "fields": {
+      "name": "Can delete income",
+      "content_type": 17,
+      "codename": "delete_income"
+    }
+  },
+  {
+    "model": "auth.permission",
+    "pk": 68,
+    "fields": {
+      "name": "Can view income",
+      "content_type": 17,
+      "codename": "view_income"
+    }
+  },
+  {
+    "model": "contenttypes.contenttype",
+    "pk": 1,
+    "fields": {
+      "app_label": "admin",
+      "model": "logentry"
+    }
+  },
+  {
+    "model": "contenttypes.contenttype",
+    "pk": 2,
+    "fields": {
+      "app_label": "auth",
+      "model": "permission"
+    }
+  },
+  {
+    "model": "contenttypes.contenttype",
+    "pk": 3,
+    "fields": {
+      "app_label": "auth",
+      "model": "group"
+    }
+  },
+  {
+    "model": "contenttypes.contenttype",
+    "pk": 4,
+    "fields": {
+      "app_label": "contenttypes",
+      "model": "contenttype"
+    }
+  },
+  {
+    "model": "contenttypes.contenttype",
+    "pk": 5,
+    "fields": {
+      "app_label": "sessions",
+      "model": "session"
+    }
+  },
+  {
+    "model": "contenttypes.contenttype",
+    "pk": 6,
+    "fields": {
+      "app_label": "authtoken",
+      "model": "token"
+    }
+  },
+  {
+    "model": "contenttypes.contenttype",
+    "pk": 7,
+    "fields": {
+      "app_label": "authtoken",
+      "model": "tokenproxy"
+    }
+  },
+  {
+    "model": "contenttypes.contenttype",
+    "pk": 8,
+    "fields": {
+      "app_label": "app_users",
+      "model": "user"
+    }
+  },
+  {
+    "model": "contenttypes.contenttype",
+    "pk": 9,
+    "fields": {
+      "app_label": "budgets",
+      "model": "budget"
+    }
+  },
+  {
+    "model": "contenttypes.contenttype",
+    "pk": 10,
+    "fields": {
+      "app_label": "budgets",
+      "model": "budgetingperiod"
+    }
+  },
+  {
+    "model": "contenttypes.contenttype",
+    "pk": 11,
+    "fields": {
+      "app_label": "entities",
+      "model": "entity"
+    }
+  },
+  {
+    "model": "contenttypes.contenttype",
+    "pk": 12,
+    "fields": {
+      "app_label": "entities",
+      "model": "deposit"
+    }
+  },
+  {
+    "model": "contenttypes.contenttype",
+    "pk": 13,
+    "fields": {
+      "app_label": "categories",
+      "model": "transfercategory"
+    }
+  },
+  {
+    "model": "contenttypes.contenttype",
+    "pk": 14,
+    "fields": {
+      "app_label": "predictions",
+      "model": "expenseprediction"
+    }
+  },
+  {
+    "model": "contenttypes.contenttype",
+    "pk": 15,
+    "fields": {
+      "app_label": "transfers",
+      "model": "transfer"
+    }
+  },
+  {
+    "model": "contenttypes.contenttype",
+    "pk": 16,
+    "fields": {
+      "app_label": "transfers",
+      "model": "expense"
+    }
+  },
+  {
+    "model": "contenttypes.contenttype",
+    "pk": 17,
+    "fields": {
+      "app_label": "transfers",
+      "model": "income"
+    }
+  },
+  {
+    "model": "app_users.user",
+    "pk": 1,
+    "fields": {
+      "password": "pbkdf2_sha256$600000$YP0e3u4kEJNx43MQfJqg5L$Q5tzOs3Wb0QTv6I5cM8R3cK2eMgdj9P62TFZ8u80xiw=",
+      "last_login": null,
+      "is_superuser": false,
+      "email": "tester@budgetory.com",
+      "username": "Tester",
+      "is_active": true,
+      "is_staff": false,
+      "created_at": "2025-09-22T06:04:28.963Z",
+      "updated_at": "2025-09-22T06:04:28.963Z",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "budgets.budget",
+    "pk": 1,
+    "fields": {
+      "name": "Your Budget",
+      "description": null,
+      "currency": "$",
+      "members": [
+        1
+      ]
+    }
+  },
+  {
+    "model": "budgets.budgetingperiod",
+    "pk": 1,
+    "fields": {
+      "budget": 1,
+      "status": 1,
+      "name": "2025_09",
+      "date_start": "2025-09-01",
+      "date_end": "2025-09-30",
+      "previous_period": null
+    }
+  },
+  {
+    "model": "entities.entity",
+    "pk": 1,
+    "fields": {
+      "budget": 1,
+      "name": "Personal account",
+      "description": "Account for my personal expenses.",
+      "is_active": true,
+      "is_deposit": true,
+      "deposit_type": 1,
+      "owner": 1
+    }
+  },
+  {
+    "model": "entities.entity",
+    "pk": 2,
+    "fields": {
+      "budget": 1,
+      "name": "Common account",
+      "description": "Account for common, family expenses.",
+      "is_active": true,
+      "is_deposit": true,
+      "deposit_type": 1,
+      "owner": null
+    }
+  },
+  {
+    "model": "entities.entity",
+    "pk": 5,
+    "fields": {
+      "budget": 1,
+      "name": "Savings account",
+      "description": "Account to collect funds for future.",
+      "is_active": true,
+      "is_deposit": true,
+      "deposit_type": 2,
+      "owner": null
+    }
+  },
+  {
+    "model": "entities.entity",
+    "pk": 6,
+    "fields": {
+      "budget": 1,
+      "name": "Brokerage account",
+      "description": "Account for investments.",
+      "is_active": true,
+      "is_deposit": true,
+      "deposit_type": 3,
+      "owner": 1
+    }
+  },
+  {
+    "model": "entities.entity",
+    "pk": 7,
+    "fields": {
+      "budget": 1,
+      "name": "Initial state",
+      "description": "Dummy entity to provide initial state for Deposits.",
+      "is_active": false,
+      "is_deposit": false,
+      "deposit_type": null,
+      "owner": null
+    }
+  },
+  {
+    "model": "entities.entity",
+    "pk": 8,
+    "fields": {
+      "budget": 1,
+      "name": "Tester's wife",
+      "description": "Tester's wife, which also takes part in common expenses.",
+      "is_active": true,
+      "is_deposit": false,
+      "deposit_type": null,
+      "owner": null
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 1,
+    "fields": {
+      "budget": 1,
+      "name": "Salary",
+      "description": "Category for my salary.",
+      "deposit": 1,
+      "is_active": true,
+      "category_type": 1,
+      "priority": 1
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 2,
+    "fields": {
+      "budget": 1,
+      "name": "Sell",
+      "description": "A category intended for selling unnecessary items.",
+      "deposit": 1,
+      "is_active": true,
+      "category_type": 1,
+      "priority": 2
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 3,
+    "fields": {
+      "budget": 1,
+      "name": "Bills",
+      "description": "Category for all bills that we need to pay in month.",
+      "deposit": 1,
+      "is_active": true,
+      "category_type": 2,
+      "priority": 3
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 4,
+    "fields": {
+      "budget": 1,
+      "name": "Food",
+      "description": "Category for food that we need to buy in month.",
+      "deposit": 1,
+      "is_active": true,
+      "category_type": 2,
+      "priority": 3
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 5,
+    "fields": {
+      "budget": 1,
+      "name": "Mortgage",
+      "description": "Category for mortgage loan.",
+      "deposit": 1,
+      "is_active": true,
+      "category_type": 2,
+      "priority": 4
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 6,
+    "fields": {
+      "budget": 1,
+      "name": "Common expenses",
+      "description": "Category for my contribution to common expenses.",
+      "deposit": 2,
+      "is_active": true,
+      "category_type": 2,
+      "priority": 3
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 7,
+    "fields": {
+      "budget": 1,
+      "name": "Tester's contribution to common expenses",
+      "description": "Category for Tester's contribution to common expenses.",
+      "deposit": 1,
+      "is_active": true,
+      "category_type": 1,
+      "priority": 1
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 8,
+    "fields": {
+      "budget": 1,
+      "name": "Savings",
+      "description": "Category for savings.",
+      "deposit": 2,
+      "is_active": true,
+      "category_type": 2,
+      "priority": 5
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 9,
+    "fields": {
+      "budget": 1,
+      "name": "Depositing savings",
+      "description": "Category for depositing savings on savings account.",
+      "deposit": 2,
+      "is_active": true,
+      "category_type": 1,
+      "priority": 1
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 10,
+    "fields": {
+      "budget": 1,
+      "name": "Entertainment",
+      "description": "Category for entertainment.",
+      "deposit": 1,
+      "is_active": true,
+      "category_type": 2,
+      "priority": 5
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 11,
+    "fields": {
+      "budget": 1,
+      "name": "Initial state",
+      "description": "Dummy category for setting initial state of Deposits.",
+      "deposit": 1,
+      "is_active": false,
+      "category_type": 1,
+      "priority": 2
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 12,
+    "fields": {
+      "budget": 1,
+      "name": "Investments",
+      "description": "Category for investments.",
+      "deposit": 2,
+      "is_active": true,
+      "category_type": 2,
+      "priority": 4
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 13,
+    "fields": {
+      "budget": 1,
+      "name": "Decrease in investment value",
+      "description": "Category for decrease in investment value.",
+      "deposit": 2,
+      "is_active": true,
+      "category_type": 2,
+      "priority": 4
+    }
+  },
+  {
+    "model": "categories.transfercategory",
+    "pk": 14,
+    "fields": {
+      "budget": 1,
+      "name": "Increase in investment value",
+      "description": "Category for increase in investment value.",
+      "deposit": 2,
+      "is_active": true,
+      "category_type": 1,
+      "priority": 1
+    }
+  },
+  {
+    "model": "transfers.transfer",
+    "pk": 1,
+    "fields": {
+      "transfer_type": 1,
+      "name": "Initial state",
+      "description": "",
+      "value": "3000.00",
+      "date": "2025-09-01",
+      "period": 1,
+      "entity": 7,
+      "deposit": 1,
+      "category": 11
+    }
+  }
+]
