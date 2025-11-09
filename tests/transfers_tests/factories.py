@@ -1,5 +1,5 @@
 import random
-from datetime import date
+from datetime import date, timedelta
 
 import factory.fuzzy
 from budgets_tests.factories import BudgetFactory, BudgetingPeriodFactory
@@ -35,17 +35,56 @@ class TransferFactory(factory.django.DjangoModelFactory):
         pass
 
     @factory.lazy_attribute
-    def period(self, *args) -> BudgetingPeriod:
+    def date(self) -> date:
+        """
+        Generates date field basing on given period daterange.
+
+        Returns:
+            date: Generated Transfer date.
+        """
+        period_value = self._Resolver__step.builder.extras.get("period")
+        if period_value:
+            day = random.randint(self.period.date_start.day, self.period.date_end.day)
+            return date(year=self.period.date_start.year, month=self.period.date_start.month, day=day)
+        budget = self._Resolver__step.builder.extras.get("budget")
+        if not budget:
+            return date.today()
+        last_period_dates = budget.periods.all().order_by("date_start").values("date_start", "date_end").last()
+        if not last_period_dates:
+            return date.today()
+        last_period_date_start, last_period_date_end = last_period_dates.values()
+        return date(
+            year=last_period_date_start.year,
+            month=last_period_date_start.month,
+            day=random.randint(last_period_date_start.day, last_period_date_end.day),
+        )
+
+    @factory.lazy_attribute
+    def period(self, *args) -> BudgetingPeriod | BudgetingPeriodFactory:
         """
         Returns BudgetingPeriod with the same Budget as prediction category.
 
         Returns:
-            BudgetingPeriod: BudgetingPeriod with the same Budget as category.
+            BudgetingPeriod | BudgetingPeriodFactory: BudgetingPeriod with the same Budget as category.
         """
         budget = self._Resolver__step.builder.extras.get("budget")
         if not budget:
             budget = BudgetFactory()
-        return BudgetingPeriodFactory(budget=budget)
+        date_value = self._Resolver__step.attributes.get("date")
+        if not date_value:
+            return BudgetingPeriodFactory(budget=budget)
+        try:
+            return BudgetingPeriod.objects.get(budget=budget, date_start__lte=date_value, date_end__gte=date_value)
+        except BudgetingPeriod.DoesNotExist:
+            return BudgetingPeriodFactory(
+                budget=budget,
+                date_start=date(year=date_value.year, month=date_value.month, day=1),
+                date_end=date(
+                    year=date_value.year,
+                    month=date_value.month,
+                    day=(date(date_value.year, date_value.month + 1, 1) - timedelta(days=1)).day,
+                ),
+            )
 
     @factory.lazy_attribute
     def entity(self, *args) -> Entity:
@@ -74,40 +113,32 @@ class TransferFactory(factory.django.DjangoModelFactory):
         return DepositFactory(budget=budget)
 
     @factory.lazy_attribute
+    def transfer_type(self, *args) -> CategoryType:
+        """
+        Returns the same CategoryType as set for category field or random one.
+
+        Returns:
+            CategoryType: CategoryType value.
+        """
+        if category := self._Resolver__step.builder.extras.get("category"):
+            return category.category_type
+        return random.choice([CategoryType.INCOME, CategoryType.EXPENSE])
+
+    @factory.lazy_attribute
     def category(self, *args) -> TransferCategory:
         """
         Returns TransferCategory with the same Budget as prediction period.
 
         Returns:
-            TransferCategory: TransferCategory with the same Budget as period.
+            TransferCategory: TransferCategory value.
         """
         budget = self._Resolver__step.builder.extras.get("budget")
         if not budget:
             budget = self.period.budget
-        return random.choice([None, TransferCategoryFactory(budget=budget)])
-
-    @factory.lazy_attribute
-    def transfer_type(self, *args) -> CategoryType:
-        """
-        Returns the same CategoryType as set for category field.
-
-        Returns:
-            CategoryType: The same CategoryType as set for category field.
-        """
-        return (
-            self.category.category_type if self.category else random.choice([CategoryType.INCOME, CategoryType.EXPENSE])
-        )
-
-    @factory.lazy_attribute
-    def date(self) -> date:
-        """
-        Generates date field basing on given period daterange.
-
-        Returns:
-            date: Generated Transfer date.
-        """
-        day = random.randint(self.period.date_start.day, self.period.date_end.day)
-        return date(year=self.period.date_start.year, month=self.period.date_start.month, day=day)
+        category_kwargs = {"budget": budget}
+        if transfer_type := self._Resolver__step.attributes.get("transfer_type"):
+            category_kwargs["category_type"] = transfer_type
+        return random.choice([None, TransferCategoryFactory(budget=budget, category_type=transfer_type)])
 
 
 class IncomeFactory(TransferFactory):

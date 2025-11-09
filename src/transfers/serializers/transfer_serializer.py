@@ -17,7 +17,7 @@ class TransferSerializer(serializers.ModelSerializer):
     class Meta:
         model: Model = Transfer
         fields: tuple[str] = ("id", "name", "description", "value", "date", "period", "entity", "deposit", "category")
-        read_only_fields: tuple[str] = ("id",)
+        read_only_fields: tuple[str] = ("id", "period")
 
     @property
     def _budget_pk(self) -> int:
@@ -43,23 +43,6 @@ class TransferSerializer(serializers.ModelSerializer):
         if value <= Decimal("0.00"):
             raise ValidationError("Value should be higher than 0.00.")
         return value
-
-    def validate_period(self, period: BudgetingPeriod) -> BudgetingPeriod:
-        """
-        Checks if BudgetingPeriod budget field value contains the same Budget.pk as passed in URL.
-
-        Args:
-            period (BudgetingPeriod): BudgetingPeriod model instance.
-
-        Returns:
-            BudgetingPeriod: Validated BudgetingPeriod.
-
-        Raises:
-            ValidationError: Raised on not matching budget_pk values.
-        """
-        if period.budget.pk != self._budget_pk:
-            raise ValidationError("BudgetingPeriod from different Budget.")
-        return period
 
     def validate_entity(self, entity: Entity) -> Entity:
         """
@@ -122,6 +105,13 @@ class TransferSerializer(serializers.ModelSerializer):
         Returns:
             OrderedDict: Validated dictionary containing all given params.
         """
+        if "date" in attrs:
+            try:
+                attrs["period"] = BudgetingPeriod.objects.get(
+                    budget=self._budget_pk, date_start__lte=attrs["date"], date_end__gte=attrs["date"]
+                )
+            except BudgetingPeriod.DoesNotExist:
+                raise ValidationError("Period matching given date does not exist.")
         deposit = attrs.get("deposit") or getattr(self.instance, "deposit", None)
         entity = attrs.get("entity") or getattr(self.instance, "entity", None)
         category = attrs.get("category") or getattr(self.instance, "category", None)

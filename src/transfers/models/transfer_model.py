@@ -16,7 +16,9 @@ class Transfer(models.Model):
     description = models.TextField(blank=True, null=True)
     value = models.DecimalField(max_digits=10, decimal_places=2)
     date = models.DateField(null=False, blank=False)
-    period = models.ForeignKey("budgets.BudgetingPeriod", on_delete=models.CASCADE, related_name="transfers")
+    period = models.ForeignKey(
+        "budgets.BudgetingPeriod", blank=False, null=False, on_delete=models.CASCADE, related_name="transfers"
+    )
     entity = models.ForeignKey(
         "entities.Entity", on_delete=models.SET_NULL, blank=True, null=True, related_name="entity_transfers"
     )
