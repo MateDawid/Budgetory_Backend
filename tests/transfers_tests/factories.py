@@ -135,10 +135,10 @@ class TransferFactory(factory.django.DjangoModelFactory):
         budget = self._Resolver__step.builder.extras.get("budget")
         if not budget:
             budget = self.period.budget
-        category_kwargs = {"budget": budget}
+        category_kwargs = {"budget": budget, "deposit": self._Resolver__step.attributes.get("deposit")}
         if transfer_type := self._Resolver__step.attributes.get("transfer_type"):
             category_kwargs["category_type"] = transfer_type
-        return random.choice([None, TransferCategoryFactory(budget=budget, category_type=transfer_type)])
+        return random.choice([None, TransferCategoryFactory(**category_kwargs)])
 
 
 class IncomeFactory(TransferFactory):
