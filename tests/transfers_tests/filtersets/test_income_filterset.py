@@ -324,9 +324,9 @@ class TestIncomeFilterSetFiltering:
         api_client.force_authenticate(base_user)
         budget = budget_factory(members=[base_user])
         other_budget = budget_factory()
-        income_factory(budget=other_budget, category=transfer_category_factory(budget=other_budget))
+        income_factory(budget=other_budget, category=transfer_category_factory(category_type=CategoryType.INCOME, budget=other_budget))
         income_factory(budget=other_budget, category=None)
-        income_factory(budget=budget, category=transfer_category_factory(budget=budget))
+        income_factory(budget=budget, category=transfer_category_factory(category_type=CategoryType.INCOME, budget=budget))
         matching_transfer = income_factory(budget=budget, category=None)
 
         response = api_client.get(transfers_url(budget.id), data={"category": "-1"})
