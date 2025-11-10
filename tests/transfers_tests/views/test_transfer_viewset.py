@@ -1,6 +1,7 @@
 """
 Test file for both IncomeViewSet and TransferViewSet.
 """
+
 import datetime
 from decimal import Decimal
 from typing import Any, Callable

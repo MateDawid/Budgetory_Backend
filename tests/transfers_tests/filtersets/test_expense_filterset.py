@@ -325,9 +325,14 @@ class TestExpenseFilterSetFiltering:
         api_client.force_authenticate(base_user)
         budget = budget_factory(members=[base_user])
         other_budget = budget_factory()
-        expense_factory(budget=other_budget, category=transfer_category_factory(category_type=CategoryType.EXPENSE, budget=other_budget))
+        expense_factory(
+            budget=other_budget,
+            category=transfer_category_factory(category_type=CategoryType.EXPENSE, budget=other_budget),
+        )
         expense_factory(budget=other_budget, category=None)
-        expense_factory(budget=budget, category=transfer_category_factory(category_type=CategoryType.EXPENSE, budget=budget))
+        expense_factory(
+            budget=budget, category=transfer_category_factory(category_type=CategoryType.EXPENSE, budget=budget)
+        )
         matching_transfer = expense_factory(budget=budget, category=None)
 
         response = api_client.get(transfers_url(budget.id), data={"category": "-1"})
