@@ -327,7 +327,7 @@ class TestDepositsPredictionsResultsAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
-        deposit_factory(budget=budget)
+        deposit_factory(budget=budget, deposit_type=DepositType.DAILY_EXPENSES)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
