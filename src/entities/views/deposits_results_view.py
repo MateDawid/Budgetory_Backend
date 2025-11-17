@@ -113,8 +113,8 @@ def get_deposits_balances_in_period(
             balance=Coalesce(
                 Sum(
                     Case(
-                        When(category__category_type=CategoryType.INCOME, then=F("value")),
-                        When(category__category_type=CategoryType.EXPENSE, then=-F("value")),
+                        When(transfer_type=CategoryType.INCOME, then=F("value")),
+                        When(transfer_type=CategoryType.EXPENSE, then=-F("value")),
                         default=Value(0),
                         output_field=DecimalField(max_digits=10, decimal_places=2),
                     )

@@ -8,6 +8,16 @@ from categories.models.choices.category_type import CategoryType
 class IncomeQuerySet(QuerySet):
     """Custom IncomeQuerySet for validating input data for Income instances create and update."""
 
+    def create(self, **kwargs):
+        """
+        Extends create kwargs with transfer_type.
+
+        Returns:
+            Income: Income instance.
+        """
+        kwargs["transfer_type"] = CategoryType.INCOME
+        return super().create(**kwargs)
+
     def update(self, **kwargs) -> int:
         """
         Method extended with additional check of "category" field.
@@ -24,13 +34,13 @@ class IncomeQuerySet(QuerySet):
 
 
 class IncomeManager(models.Manager):
-    """Manager for Transfers with IncomeCategory as category."""
+    """Manager for Income Transfers."""
 
     def get_queryset(self) -> QuerySet:
         """
-        Returns only Transfers with IncomeCategories as category.
+        Returns only Income Transfers.
 
         Returns:
-            QuerySet: QuerySet containing only Transfers with IncomeCategories as category.
+            QuerySet: QuerySet containing only Income type Transfers.
         """
-        return IncomeQuerySet(self.model, using=self._db).filter(category__category_type=CategoryType.INCOME)
+        return IncomeQuerySet(self.model, using=self._db).filter(transfer_type=CategoryType.INCOME)

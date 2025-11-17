@@ -17,7 +17,7 @@ class TransferSerializer(serializers.ModelSerializer):
     class Meta:
         model: Model = Transfer
         fields: tuple[str] = ("id", "name", "description", "value", "date", "period", "entity", "deposit", "category")
-        read_only_fields: tuple[str] = ("id",)
+        read_only_fields: tuple[str] = ("id", "period")
 
     @property
     def _budget_pk(self) -> int:
@@ -44,23 +44,6 @@ class TransferSerializer(serializers.ModelSerializer):
             raise ValidationError("Value should be higher than 0.00.")
         return value
 
-    def validate_period(self, period: BudgetingPeriod) -> BudgetingPeriod:
-        """
-        Checks if BudgetingPeriod budget field value contains the same Budget.pk as passed in URL.
-
-        Args:
-            period (BudgetingPeriod): BudgetingPeriod model instance.
-
-        Returns:
-            BudgetingPeriod: Validated BudgetingPeriod.
-
-        Raises:
-            ValidationError: Raised on not matching budget_pk values.
-        """
-        if period.budget.pk != self._budget_pk:
-            raise ValidationError("BudgetingPeriod from different Budget.")
-        return period
-
     def validate_entity(self, entity: Entity) -> Entity:
         """
         Checks if Entity budget field value contains the same Budget.pk as passed in URL.
@@ -74,7 +57,7 @@ class TransferSerializer(serializers.ModelSerializer):
         Raises:
             ValidationError: Raised on not matching budget_pk values.
         """
-        if entity.budget.pk != self._budget_pk:
+        if entity and entity.budget.pk != self._budget_pk:
             raise ValidationError("Entity from different Budget.")
         return entity
 
@@ -108,7 +91,7 @@ class TransferSerializer(serializers.ModelSerializer):
         Raises:
             ValidationError: Raised on not matching budget_pk values.
         """
-        if category.budget.pk != self._budget_pk:
+        if category and category.budget.pk != self._budget_pk:
             raise ValidationError("TransferCategory from different Budget.")
         return category
 
@@ -122,11 +105,18 @@ class TransferSerializer(serializers.ModelSerializer):
         Returns:
             OrderedDict: Validated dictionary containing all given params.
         """
+        if "date" in attrs:
+            try:
+                attrs["period"] = BudgetingPeriod.objects.get(
+                    budget=self._budget_pk, date_start__lte=attrs["date"], date_end__gte=attrs["date"]
+                )
+            except BudgetingPeriod.DoesNotExist:
+                raise ValidationError("Period matching given date does not exist.")
         deposit = attrs.get("deposit") or getattr(self.instance, "deposit", None)
         entity = attrs.get("entity") or getattr(self.instance, "entity", None)
         category = attrs.get("category") or getattr(self.instance, "category", None)
         if any([deposit, entity]) and deposit == entity:
             raise ValidationError("'deposit' and 'entity' fields cannot contain the same value.")
-        if deposit != category.deposit:
+        if category and deposit != category.deposit:
             raise ValidationError("Transfer Deposit and Transfer Category Deposit has to be the same.")
         return attrs

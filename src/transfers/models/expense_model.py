@@ -18,6 +18,7 @@ class Expense(Transfer):
         """
         Save method overridden to validate category_type of Expense.category.
         """
-        if not self.category.category_type == CategoryType.EXPENSE:
+        if self.category and not self.category.category_type == CategoryType.EXPENSE:
             raise ValidationError("Expense model instance can not be created with IncomeCategory.")
+        self.transfer_type = CategoryType.EXPENSE
         super().save(*args, **kwargs)

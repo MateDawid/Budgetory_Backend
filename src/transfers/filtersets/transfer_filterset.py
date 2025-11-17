@@ -1,10 +1,12 @@
+from decimal import Decimal
+
+from django.db.models import QuerySet
 from django_filters import rest_framework as filters
 from rest_framework.request import Request
 
 from budgets.models import BudgetingPeriod
 from budgets.utils import get_budget_pk
-from categories.models import TransferCategory
-from entities.models import Deposit, Entity
+from entities.models import Deposit
 
 
 class TransferFilterSet(filters.FilterSet):
@@ -14,14 +16,9 @@ class TransferFilterSet(filters.FilterSet):
     period = filters.ModelChoiceFilter(
         queryset=lambda request: BudgetingPeriod.objects.filter(budget__pk=get_budget_pk(request))
     )
-    entity = filters.ModelChoiceFilter(
-        queryset=lambda request: Entity.objects.filter(budget__pk=get_budget_pk(request))
-    )
+    entity = filters.NumberFilter(method="filter_by_entity")
     deposit = filters.ModelChoiceFilter(
         queryset=lambda request: Deposit.objects.filter(budget__pk=get_budget_pk(request))
-    )
-    category = filters.ModelChoiceFilter(
-        queryset=lambda request: TransferCategory.objects.filter(budget__pk=get_budget_pk(request))
     )
     date = filters.DateFromToRangeFilter()
     value = filters.NumberFilter()
@@ -40,3 +37,20 @@ class TransferFilterSet(filters.FilterSet):
             int: Budget PK.
         """
         return request.parser_context.get("kwargs", {}).get("budget_pk")  # pragma: no cover
+
+    def filter_by_entity(self, queryset: QuerySet, name: str, value: Decimal) -> QuerySet:
+        """
+        Filters Transfer queryset by Entity field value.
+
+        Args:
+            queryset [QuerySet]: Input QuerySet
+            name [str]: Name of filtered param
+            value [Decimal]: Value of filtered param
+
+        Returns:
+            QuerySet: Filtered QuerySet.
+        """
+        budget_pk = self.request.parser_context.get("kwargs", {}).get("budget_pk")
+        if value == Decimal("-1"):
+            return queryset.filter(period__budget__pk=budget_pk, entity__isnull=True)
+        return queryset.filter(period__budget__pk=budget_pk, entity__id=value)

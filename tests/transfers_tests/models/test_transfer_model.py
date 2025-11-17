@@ -8,6 +8,7 @@ from factory.base import BaseFactory, FactoryMetaClass
 
 from budgets.models.budget_model import Budget
 from categories.models.choices.category_priority import CategoryPriority
+from categories.models.choices.category_type import CategoryType
 from transfers.models.transfer_model import Transfer
 
 
@@ -48,6 +49,7 @@ class TestTransferModel:
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
         payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
+        payload["transfer_type"] = CategoryType.INCOME
         transfer = Transfer.objects.create(**payload)
 
         for key in payload:
@@ -78,6 +80,7 @@ class TestTransferModel:
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
         payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
+        payload["transfer_type"] = CategoryType.INCOME
 
         transfer = Transfer(**payload)
         transfer.full_clean()
@@ -112,6 +115,7 @@ class TestTransferModel:
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
         payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
+        payload["transfer_type"] = CategoryType.EXPENSE
 
         transfer = Transfer.objects.create(**payload)
 
@@ -143,6 +147,7 @@ class TestTransferModel:
         payload["entity"] = entity_factory(budget=budget)
         payload["deposit"] = deposit_factory(budget=budget)
         payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
+        payload["transfer_type"] = CategoryType.EXPENSE
 
         transfer = Transfer(**payload)
         transfer.full_clean()
@@ -157,7 +162,7 @@ class TestTransferModel:
         assert str(transfer) == f"{transfer.date} | {transfer.category} | {transfer.value}"
 
     @pytest.mark.django_db(transaction=True)
-    @pytest.mark.parametrize("field_name", ["name", "description"])
+    @pytest.mark.parametrize("field_name", ["name"])
     def test_error_value_too_long(self, budget: Budget, transfer_factory: BaseFactory, field_name: str):
         """
         GIVEN: Payload with too long value for one field.

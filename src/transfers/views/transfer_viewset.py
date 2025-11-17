@@ -32,6 +32,7 @@ class TransferViewSet(ModelViewSet):
         return (
             self.serializer_class.Meta.model.objects.prefetch_related("period", "category")
             .filter(period__budget__pk=self.kwargs.get("budget_pk"))
+            .order_by("id")
             .distinct()
         )
 
@@ -97,7 +98,7 @@ class TransferViewSet(ModelViewSet):
             self.serializer_class.Meta.model(
                 **{
                     field_name: getattr(copied_object, field_name)
-                    for field_name in self.serializer_class.Meta.fields
+                    for field_name in ("transfer_type", *self.serializer_class.Meta.fields)
                     if field_name not in ("id",)
                 }
             )

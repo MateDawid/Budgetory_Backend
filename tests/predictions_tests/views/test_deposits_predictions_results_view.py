@@ -228,12 +228,12 @@ class TestDepositsPredictionsResultsAPIView:
 
         assert response.status_code == status.HTTP_200_OK
 
-        # Check user balance calculation
+        # Check deposit balance calculation
         # For expenses: date_start filter applies - periods 1 & 2 included (200 + 100 = 300)
         # For incomes: date_end filter applies - periods 1, 2 & 3 included (1000 + 500 + 800 = 2300)
         # Balance = 2300 - 300 = 2000
-        user_data = next(item for item in response.data if item["deposit_name"] == deposit.name)
-        assert user_data["period_balance"] == "2000.00"
+        deposit_data = next(item for item in response.data if item["deposit_name"] == deposit.name)
+        assert deposit_data["period_balance"] == "2000.00"
 
     def test_get_deposits_results_with_transfers_daily_expenses_deposit_only(
         self,
@@ -317,6 +317,7 @@ class TestDepositsPredictionsResultsAPIView:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
     ):
         """
@@ -326,15 +327,17 @@ class TestDepositsPredictionsResultsAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
+        deposit_factory(budget=budget, deposit_type=DepositType.DAILY_EXPENSES)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert isinstance(response.data, list)
+        assert len(response.data) == 1
 
         for item in response.data:
-            assert "user_username" in item
+            assert "deposit_name" in item
             assert "predictions_sum" in item
             assert "period_balance" in item
             assert "period_expenses" in item

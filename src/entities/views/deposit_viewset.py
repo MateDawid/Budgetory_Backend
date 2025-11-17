@@ -29,9 +29,12 @@ def calculate_deposit_balance() -> Func:
     return Coalesce(F("incomes_sum") - F("expenses_sum"), Value(0), output_field=DecimalField(decimal_places=2))
 
 
-def sum_deposit_transfers(category_type: CategoryType) -> Func:
+def sum_deposit_transfers(transfer_type: CategoryType) -> Func:
     """
     Function for calculate Transfers values sum of given CategoryType for Deposit.
+
+    Args:
+        transfer_type (CategoryType): Transfer type - INCOME or EXPENSE
 
     Returns:
         Func: ORM function returning Sum of Deposit Transfers values for specified CategoryType.
@@ -39,7 +42,7 @@ def sum_deposit_transfers(category_type: CategoryType) -> Func:
     return Coalesce(
         Sum(
             "deposit_transfers__value",
-            filter=Q(deposit_transfers__category__category_type=category_type),
+            filter=Q(deposit_transfers__transfer_type=transfer_type),
             output_field=DecimalField(decimal_places=2),
         ),
         Value(0),
@@ -69,7 +72,7 @@ class DepositViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, UserBelongsToBudgetPermission]
     filterset_class = DepositFilterSet
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
-    ordering_fields = ("id", "name", "balance")
+    ordering_fields = ("id", "name", "balance", "deposit_type")
 
     def get_queryset(self) -> QuerySet:
         """

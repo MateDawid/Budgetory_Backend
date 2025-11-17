@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from categories.models.choices.category_type import CategoryType
 from transfers.managers.expense_manager import ExpenseManager
 from transfers.managers.income_manager import IncomeManager
 
@@ -10,16 +11,19 @@ from transfers.managers.income_manager import IncomeManager
 class Transfer(models.Model):
     """Transfer model for representing cash flow between Entities"""
 
-    name = models.CharField(max_length=255, blank=False, null=False)
-    description = models.CharField(max_length=255, blank=True, null=True)
+    transfer_type = models.PositiveSmallIntegerField(choices=CategoryType.choices, null=False, blank=False)
+    name = models.CharField(max_length=255, blank=True, null=False)
+    description = models.TextField(blank=True, null=True)
     value = models.DecimalField(max_digits=10, decimal_places=2)
     date = models.DateField(null=False, blank=False)
-    period = models.ForeignKey("budgets.BudgetingPeriod", on_delete=models.CASCADE, related_name="transfers")
+    period = models.ForeignKey(
+        "budgets.BudgetingPeriod", blank=False, null=False, on_delete=models.CASCADE, related_name="transfers"
+    )
     entity = models.ForeignKey(
         "entities.Entity", on_delete=models.SET_NULL, blank=True, null=True, related_name="entity_transfers"
     )
     deposit = models.ForeignKey(
-        "entities.Deposit", on_delete=models.SET_NULL, blank=True, null=True, related_name="deposit_transfers"
+        "entities.Deposit", on_delete=models.CASCADE, blank=False, null=False, related_name="deposit_transfers"
     )
     category = models.ForeignKey(
         "categories.TransferCategory", on_delete=models.SET_NULL, blank=True, null=True, related_name="transfers"
@@ -58,7 +62,12 @@ class Transfer(models.Model):
         Raises:
             ValidationError: Raised when different budget for one of period, category, entity and deposit fields.
         """
-        if not (self.period.budget == self.category.budget == self.entity.budget == self.deposit.budget):
+        field_budgets = [self.deposit.budget]
+        if self.category:
+            field_budgets.append(self.category.budget)
+        if self.entity:
+            field_budgets.append(self.entity.budget)
+        if not all((self.period.budget == field_budget for field_budget in field_budgets)):
             raise ValidationError(
                 "Budget for period, category, entity and deposit fields is not the same.", code="budget-invalid"
             )

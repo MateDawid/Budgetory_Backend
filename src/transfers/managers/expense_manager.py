@@ -8,6 +8,16 @@ from categories.models.choices.category_type import CategoryType
 class ExpenseQuerySet(QuerySet):
     """Custom ExpenseQuerySet for validating input data for Expense instances create and update."""
 
+    def create(self, **kwargs):
+        """
+        Extends create kwargs with transfer_type.
+
+        Returns:
+            Expense: Expense instance.
+        """
+        kwargs["transfer_type"] = CategoryType.EXPENSE
+        return super().create(**kwargs)
+
     def update(self, **kwargs) -> int:
         """
         Method extended with additional check of "category" field.
@@ -24,13 +34,13 @@ class ExpenseQuerySet(QuerySet):
 
 
 class ExpenseManager(models.Manager):
-    """Manager for Transfers with ExpenseCategory as category."""
+    """Manager for Expense Transfers."""
 
     def get_queryset(self) -> QuerySet:
         """
-        Returns only Transfers with ExpenseCategories as category.
+        Returns only Expense type Transfers.
 
         Returns:
-            QuerySet: QuerySet containing only Transfers with ExpenseCategories as category.
+            QuerySet: QuerySet containing only Expense type Transfers.
         """
-        return ExpenseQuerySet(self.model, using=self._db).filter(category__category_type=CategoryType.EXPENSE)
+        return ExpenseQuerySet(self.model, using=self._db).filter(transfer_type=CategoryType.EXPENSE)
