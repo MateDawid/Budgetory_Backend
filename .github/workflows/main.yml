@@ -11,6 +11,10 @@ jobs:
   quality_and_tests:
     name: Code quality and tests
     runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
     env:
       DEV: true
       SECRET_KEY: test_secret_key
@@ -19,22 +23,44 @@ jobs:
     steps:
       - name: "Checkout"
         uses: actions/checkout@v4
+
       - name: "Build image"
         run: docker compose -f docker-compose-tests.yaml up backend -d
+
       - name: "Perform database migrations"
         run: docker compose -f docker-compose-tests.yaml run backend sh -c "python src/manage.py wait_for_db && python src/manage.py migrate"
+
       - name: "[Code quality] black"
         run: docker compose -f docker-compose-tests.yaml run backend sh -c "black . --line-length=120 --check"
+
       - name: "[Code quality] isort"
         run: docker compose -f docker-compose-tests.yaml run backend sh -c "isort . --check-only --profile black"
+
       - name: "[Code quality] flake8"
         run: docker compose -f docker-compose-tests.yaml run backend sh -c "flake8 ."
+
       - name: "[Code quality] bandit"
         run: docker compose -f docker-compose-tests.yaml run backend sh -c "bandit -c pyproject.toml -r ."
+
       - name: "[Code quality] safety"
         run: docker compose -f docker-compose-tests.yaml run backend sh -c "safety check -i 70612,66963"
-      - name: "[Tests] pytest"
-        run: docker compose -f docker-compose-tests.yaml run backend sh -c "python src/manage.py wait_for_db && pytest"
+
+      - name: "[Tests] pytest with coverage"
+        run: docker compose -f docker-compose-tests.yaml run backend sh -c "python src/manage.py wait_for_db && pytest --junitxml=test-results/junit.xml --cov=. --cov-report=xml:test-results/coverage.xml --cov-report=html --cov-report=term"
+
+      - name: "Test results"
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: test-results/junit.xml
+          check_name: Tests results
+
+      - name: "Coverage report"
+        uses: orgoro/coverage@v3.2
+        with:
+          coverageFile: test-results/coverage.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: "Cleanup"
         if: always()
-        run: docker compose rm -s -f -v
+        run: docker compose -f docker-compose-tests.yaml rm -s -f -v
