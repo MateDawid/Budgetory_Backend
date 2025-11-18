@@ -46,14 +46,20 @@ jobs:
         run: docker compose -f docker-compose-tests.yaml run backend sh -c "safety check -i 70612,66963"
 
       - name: "[Tests] pytest with coverage"
-        run: docker compose -f docker-compose-tests.yaml run backend sh -c "python src/manage.py wait_for_db && pytest --junitxml=junit.xml --cov=. --cov-report=xml --cov-report=html --cov-report=term"
+        run: docker compose -f docker-compose-tests.yaml run backend sh -c "python src/manage.py wait_for_db && pytest --junitxml=test-results/junit.xml --cov=. --cov-report=xml:test-results/coverage.xml --cov-report=html --cov-report=term"
 
-      - name: "Publish test results"
+      - name: "Test results"
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
-          files: junit.xml
+          files: test-results/junit.xml
           check_name: Tests results
+
+      - name: "Coverage report"
+        uses: orgoro/coverage@v3.2
+        with:
+          coverageFile: test-results/coverage.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: "Cleanup"
         if: always()
