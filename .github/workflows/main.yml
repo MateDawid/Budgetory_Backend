@@ -48,11 +48,6 @@ jobs:
       - name: "[Tests] pytest with coverage"
         run: docker compose -f docker-compose-tests.yaml run backend sh -c "python src/manage.py wait_for_db && pytest --junitxml=junit.xml --cov=. --cov-report=xml --cov-report=html --cov-report=term"
 
-      - name: "Copy test results from container"
-        if: always()
-        run: |
-          docker compose -f docker-compose-tests.yaml cp backend:/app/junit.xml ./junit.xml || true
-
       - name: "Publish test results"
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
