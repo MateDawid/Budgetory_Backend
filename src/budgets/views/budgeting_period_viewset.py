@@ -57,7 +57,7 @@ def prepare_predictions_on_period_activation(budget_pk: str, period_pk: str) -> 
     )
     # Create predictions with 0 value for not predicted categories
     predicted_categories_ids = ExpensePrediction.objects.filter(
-        period__id=period_pk, period__budget__id=budget_pk
+        period__id=period_pk, period__budget__id=budget_pk, category__isnull=False
     ).values_list("category", flat=True)
 
     unpredicted_categories_ids = TransferCategory.objects.filter(
