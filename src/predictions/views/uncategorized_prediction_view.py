@@ -56,8 +56,14 @@ class UncategorizedPredictionView(APIView):
         Returns:
             Response: Response containing serialized ExpensePrediction-like objects.
         """
+        deposit_filters = {
+            "budget_id": budget_pk,
+        }
+        if deposit_id := request.query_params.get("deposit"):
+            deposit_filters["id"] = deposit_id
+
         uncategorized_predictions = (
-            Deposit.objects.filter(budget_id=budget_pk)
+            Deposit.objects.filter(**deposit_filters)
             .annotate(
                 category_deposit=F("name"),
                 period_id=Value(period_pk, output_field=IntegerField()),
