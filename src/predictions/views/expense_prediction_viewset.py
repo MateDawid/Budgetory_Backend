@@ -5,6 +5,7 @@ from django.db.models import (
     F,
     Func,
     OuterRef,
+    Q,
     QuerySet,
     Subquery,
     Sum,
@@ -37,7 +38,10 @@ def sum_period_transfers_with_category(period_ref: str) -> Func:
 
     return Coalesce(
         Subquery(
-            Transfer.objects.filter(period=OuterRef(period_ref), category=OuterRef("category"))
+            Transfer.objects.filter(
+                Q(period=OuterRef(period_ref), deposit=OuterRef("deposit"))
+                & (Q(category=OuterRef("category")) | (Q(category__isnull=True) & Q(category__exact=None)))
+            )
             .values("period", "category")
             .annotate(total=Sum("value"))
             .values("total")[:1],
@@ -142,8 +146,7 @@ class ExpensePredictionViewSet(ModelViewSet):
                 "period__budget",
                 "period__previous_period",
                 "category",
-                "category__budget",
-                "category__deposit",
+                "deposit",
             )
             .annotate(
                 current_result=sum_period_transfers_with_category(period_ref="period"),
@@ -155,5 +158,6 @@ class ExpensePredictionViewSet(ModelViewSet):
                 current_progress=get_current_progress(),
                 previous_funds_left=get_previous_funds_left(),
             )
+            .filter(Q(category__isnull=False) | (Q(category__isnull=True) & Q(current_result__gt=Value(0))))
             .order_by("id")
         )
