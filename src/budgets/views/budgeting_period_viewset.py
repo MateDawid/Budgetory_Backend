@@ -17,6 +17,7 @@ from budgets.models.choices.period_status import PeriodStatus
 from budgets.serializers.budgeting_period_serializer import BudgetingPeriodSerializer
 from categories.models import TransferCategory
 from categories.models.choices.category_type import CategoryType
+from entities.models import Deposit
 from predictions.models import ExpensePrediction
 
 
@@ -122,7 +123,19 @@ class BudgetingPeriodViewSet(ModelViewSet):
         Args:
             serializer [BudgetingPeriodSerializer]: Serializer for BudgetingPeriod
         """
-        serializer.save(budget_id=self.kwargs.get("budget_pk"))
+        budget_pk = self.kwargs.get("budget_pk")
+        with transaction.atomic():
+            period = serializer.save(budget_id=budget_pk)
+            ExpensePrediction.objects.bulk_create(
+                ExpensePrediction(
+                    deposit_id=deposit_id,
+                    category=None,
+                    period_id=period.pk,
+                    initial_plan=Decimal("0.00"),
+                    current_plan=Decimal("0.00"),
+                )
+                for deposit_id in Deposit.objects.filter(budget_id=budget_pk).values_list("id", flat=True)
+            )
 
     def update(self, request: Request, *args: list, **kwargs: dict) -> Response:
         """
