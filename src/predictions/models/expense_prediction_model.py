@@ -4,6 +4,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import CheckConstraint, Q
 
+NOT_CATEGORIZED_CATEGORY_NAME = "❗Not categorized"
+
 
 class ExpensePrediction(models.Model):
     """ExpensePrediction model for planned expenses in particular BudgetingPeriod."""
@@ -41,7 +43,7 @@ class ExpensePrediction(models.Model):
         Returns:
             str: Custom string representation of instance.
         """
-        return f"[{self.period.name}] {getattr(self.category, 'name', '❗Not categorized')}"
+        return f"[{self.period.name}] {getattr(self.category, 'name', NOT_CATEGORIZED_CATEGORY_NAME)}"
 
     def save(self, *args, **kwargs) -> None:
         """

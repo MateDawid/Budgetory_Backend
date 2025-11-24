@@ -10,7 +10,7 @@ from budgets.models.choices.period_status import PeriodStatus
 from categories.models import TransferCategory
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
-from predictions.models.expense_prediction_model import ExpensePrediction
+from predictions.models.expense_prediction_model import NOT_CATEGORIZED_CATEGORY_NAME, ExpensePrediction
 
 
 class ExpensePredictionSerializer(serializers.ModelSerializer):
@@ -137,7 +137,9 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
             OrderedDict: Dictionary containing overridden values.
         """
         representation = super().to_representation(instance)
-        representation["category_display"] = f"📉{instance.category.name}"
-        representation["category_deposit"] = getattr(instance.category.deposit, "name", None)
-        representation["category_priority"] = CategoryPriority(instance.category.priority).label
+        representation["category_display"] = f"📉{instance.category.name}" if instance.category else None
+        representation["category_deposit"] = getattr(instance.deposit, "name", None)
+        representation["category_priority"] = (
+            CategoryPriority(instance.category.priority).label if instance.category else NOT_CATEGORIZED_CATEGORY_NAME
+        )
         return representation
