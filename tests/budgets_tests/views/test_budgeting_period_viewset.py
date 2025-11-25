@@ -26,6 +26,7 @@ from budgets.models.choices.period_status import PeriodStatus
 from budgets.serializers.budgeting_period_serializer import BudgetingPeriodSerializer
 from budgets.views.budgeting_period_viewset import sum_period_transfers
 from categories.models.choices.category_type import CategoryType
+from predictions.models import ExpensePrediction
 from transfers.models import Transfer
 
 
@@ -305,19 +306,22 @@ class TestBudgetingPeriodViewSetCreate:
         response = api_client.post(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_create_single_period_by_owner(
+    def test_create_single_period(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Budget in database created.
-        WHEN: BudgetingPeriodViewSet list view for Budget id called by authenticated Budget owner by POST with
+        WHEN: BudgetingPeriodViewSet list view for Budget id called by authenticated Budget member by POST with
         valid data.
         THEN: BudgetingPeriod for Budget created in database.
         """
         budget = budget_factory(members=[base_user])
+        deposit_1 = deposit_factory(budget=budget)
+        deposit_2 = deposit_factory(budget=budget)
         api_client.force_authenticate(base_user)
         payload = {
             "name": "2023_01",
@@ -336,37 +340,14 @@ class TestBudgetingPeriodViewSetCreate:
             assert getattr(period, key) == payload[key]
         serializer = BudgetingPeriodSerializer(period)
         assert response.data == serializer.data
-
-    def test_create_single_period_by_member(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Budget in database created.
-        WHEN: BudgetingPeriodViewSet list view for Budget id called by Budget member by POST with valid data.
-        THEN: BudgetingPeriod for Budget created in database.
-        """
-        budget = budget_factory(members=[base_user])
-        api_client.force_authenticate(base_user)
-        payload = {
-            "name": "2023_01",
-            "status": PeriodStatus.DRAFT,
-            "date_start": date(2023, 1, 1),
-            "date_end": date(2023, 1, 31),
-        }
-        url = periods_url(budget.id)
-
-        response = api_client.post(url, payload)
-
-        assert response.status_code == status.HTTP_201_CREATED
-        assert BudgetingPeriod.objects.filter(budget=budget).count() == 1
-        period = BudgetingPeriod.objects.get(id=response.data["id"])
-        for key in payload:
-            assert getattr(period, key) == payload[key]
-        serializer = BudgetingPeriodSerializer(period)
-        assert response.data == serializer.data
+        for deposit in (deposit_1, deposit_2):
+            assert ExpensePrediction.objects.filter(
+                deposit=deposit,
+                category=None,
+                period=period,
+                initial_plan=Decimal("0.00"),
+                current_plan=Decimal("0.00"),
+            ).exists()
 
     def test_error_create_two_draft_periods_for_one_budget(
         self,
