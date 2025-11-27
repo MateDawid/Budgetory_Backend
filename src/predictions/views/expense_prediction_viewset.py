@@ -25,7 +25,7 @@ from predictions.serializers.expense_prediction_serializer import ExpensePredict
 from transfers.models import Transfer
 
 
-def sum_period_transfers_with_category(period_ref: str) -> Func:
+def sum_period_transfers_with_category(period_ref: str) -> Case:
     """
     Function for calculate Transfers values sum of given TransferCategory in BudgetingPeriod.
 
@@ -33,21 +33,39 @@ def sum_period_transfers_with_category(period_ref: str) -> Func:
         period_ref (string): Period field name for OuterRef.
 
     Returns:
-        Func: ORM function returning Sum of BudgetingPeriod Transfers values for specified TransferCategory.
+        Case: ORM function returning Sum of BudgetingPeriod Transfers values for specified TransferCategory.
     """
 
-    return Coalesce(
-        Subquery(
-            Transfer.objects.filter(
-                Q(period=OuterRef(period_ref), deposit=OuterRef("deposit"))
-                & (Q(category=OuterRef("category")) | (Q(category__isnull=True) & Q(category__exact=None)))
-            )
-            .values("period", "category")
-            .annotate(total=Sum("value"))
-            .values("total")[:1],
+    return Case(
+        When(
+            category__isnull=True,
+            then=Coalesce(
+                Subquery(
+                    Transfer.objects.filter(
+                        Q(period=OuterRef(period_ref), deposit=OuterRef("deposit"), category__isnull=True)
+                    )
+                    .values("period")
+                    .annotate(total=Sum("value"))
+                    .values("total")[:1],
+                    output_field=DecimalField(decimal_places=2),
+                ),
+                Value(0),
+                output_field=DecimalField(decimal_places=2),
+            ),
+        ),
+        default=Coalesce(
+            Subquery(
+                Transfer.objects.filter(
+                    Q(period=OuterRef(period_ref), deposit=OuterRef("deposit"), category=OuterRef("category"))
+                )
+                .values("period")
+                .annotate(total=Sum("value"))
+                .values("total")[:1],
+                output_field=DecimalField(decimal_places=2),
+            ),
+            Value(0),
             output_field=DecimalField(decimal_places=2),
         ),
-        Value(0),
         output_field=DecimalField(decimal_places=2),
     )
 
