@@ -61,19 +61,20 @@ def prepare_predictions_on_period_activation(budget_pk: str, period_pk: str) -> 
         period__id=period_pk, period__budget__id=budget_pk, category__isnull=False
     ).values_list("category", flat=True)
 
-    unpredicted_categories_ids = TransferCategory.objects.filter(
+    unpredicted_categories = TransferCategory.objects.filter(
         ~Q(id__in=predicted_categories_ids),
         category_type=CategoryType.EXPENSE,
-    ).values_list("id", flat=True)
+    ).values_list("id", "deposit")
 
     zero_predictions = [
         ExpensePrediction(
             period_id=period_pk,
+            deposit_id=deposit_id,
             category_id=category_id,
             initial_plan=Decimal("0.00"),
             current_plan=Decimal("0.00"),
         )
-        for category_id in unpredicted_categories_ids
+        for category_id, deposit_id in unpredicted_categories
     ]
     ExpensePrediction.objects.bulk_create(zero_predictions)
 
