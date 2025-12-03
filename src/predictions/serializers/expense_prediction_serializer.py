@@ -28,6 +28,7 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "period",
+            "deposit",
             "category",
             "description",
             "initial_plan",
@@ -64,6 +65,8 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
         Raises:
             ValidationError: Raised when TransferCategory.category_type is not EXPENSE.
         """
+        if category is None:
+            raise ValidationError("This field is required.")
         if category.category_type != CategoryType.EXPENSE:
             raise ValidationError("Incorrect category provided. Please provide expense category.")
         return category
