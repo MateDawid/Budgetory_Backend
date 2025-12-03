@@ -234,6 +234,7 @@ class TestExpensePredictionFilterSetFiltering:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
         progress_status: int,
@@ -246,32 +247,40 @@ class TestExpensePredictionFilterSetFiltering:
         progress status.
         """
         budget = budget_factory(members=[base_user])
+        deposit = deposit_factory(budget=budget)
 
         # NOT_USED: current_funds_left == current_plan
-        expense_prediction_factory(budget=budget, current_plan=Decimal("100.00"))
+        expense_prediction_factory(budget=budget, deposit=deposit, current_plan=Decimal("100.00"))
 
         # IN_PLANNED_RANGE: 0 < current_funds_left < current_plan
-        in_planned_range_prediction = expense_prediction_factory(budget=budget, current_plan=Decimal("100.00"))
+        in_planned_range_prediction = expense_prediction_factory(
+            budget=budget, deposit=deposit, current_plan=Decimal("100.00")
+        )
         expense_factory(
             budget=budget,
+            deposit=deposit,
             category=in_planned_range_prediction.category,
             period=in_planned_range_prediction.period,
             value=Decimal("10.00"),
         )
 
         # FULLY_UTILIZED: current_funds_left == 0
-        fully_utilized_prediction = expense_prediction_factory(budget=budget, current_plan=Decimal("100.00"))
+        fully_utilized_prediction = expense_prediction_factory(
+            budget=budget, deposit=deposit, current_plan=Decimal("100.00")
+        )
         expense_factory(
             budget=budget,
+            deposit=deposit,
             category=fully_utilized_prediction.category,
             period=fully_utilized_prediction.period,
             value=Decimal("100.00"),
         )
 
         # OVERUSED: current_funds_left < 0
-        overused_prediction = expense_prediction_factory(budget=budget, current_plan=Decimal("100.00"))
+        overused_prediction = expense_prediction_factory(budget=budget, deposit=deposit, current_plan=Decimal("100.00"))
         expense_factory(
             budget=budget,
+            deposit=deposit,
             category=overused_prediction.category,
             period=overused_prediction.period,
             value=Decimal("101.00"),

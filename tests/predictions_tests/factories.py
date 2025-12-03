@@ -1,11 +1,13 @@
 import factory
 from budgets_tests.factories import BudgetFactory, BudgetingPeriodFactory
 from categories_tests.factories import TransferCategoryFactory
+from entities_tests.factories import DepositFactory
 
 from budgets.models import Budget, BudgetingPeriod
 from budgets.models.choices.period_status import PeriodStatus
 from categories.models import TransferCategory
 from categories.models.choices.category_type import CategoryType
+from entities.models import Deposit
 
 
 class ExpensePredictionFactory(factory.django.DjangoModelFactory):
@@ -31,6 +33,21 @@ class ExpensePredictionFactory(factory.django.DjangoModelFactory):
         return BudgetingPeriodFactory(budget=budget)
 
     @factory.lazy_attribute
+    def deposit(self, *args) -> Deposit:
+        """
+        Returns Deposit with the same Budget as prediction period.
+
+        Returns:
+            Deposit: Deposit with the same Budget as period.
+        """
+        budget = self._Resolver__step.builder.extras.get("budget")
+        if not budget:
+            budget = self.period.budget
+        if category := self._Resolver__step.builder.extras.get("category"):
+            return category.deposit
+        return DepositFactory(budget=budget)
+
+    @factory.lazy_attribute
     def initial_plan(self, *args) -> float | None:
         """
         Returns TransferCategory with the same Budget as prediction period and CategoryType.EXPENSE category_type field.
@@ -54,7 +71,9 @@ class ExpensePredictionFactory(factory.django.DjangoModelFactory):
         budget = self._Resolver__step.builder.extras.get("budget")
         if not budget:
             budget = self.period.budget
-        return TransferCategoryFactory(budget=budget, category_type=CategoryType.EXPENSE)
+        return TransferCategoryFactory(
+            budget=budget, deposit=self._Resolver__step.attributes.get("deposit"), category_type=CategoryType.EXPENSE
+        )
 
     @factory.post_generation
     def budget(self, create: bool, budget: Budget, **kwargs) -> None:
