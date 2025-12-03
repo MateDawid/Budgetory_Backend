@@ -4,13 +4,20 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import CheckConstraint, Q
 
+NOT_CATEGORIZED_CATEGORY_NAME = "❗Not categorized"
+
 
 class ExpensePrediction(models.Model):
     """ExpensePrediction model for planned expenses in particular BudgetingPeriod."""
 
     period = models.ForeignKey("budgets.BudgetingPeriod", on_delete=models.CASCADE, related_name="expense_predictions")
+    deposit = models.ForeignKey("entities.Deposit", on_delete=models.CASCADE, related_name="expense_predictions")
     category = models.ForeignKey(
-        "categories.TransferCategory", on_delete=models.CASCADE, related_name="expense_predictions"
+        "categories.TransferCategory",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="expense_predictions",
     )
     initial_plan = models.DecimalField(max_digits=10, decimal_places=2, default=None, blank=True, null=True)
     current_plan = models.DecimalField(max_digits=10, decimal_places=2)
@@ -36,21 +43,25 @@ class ExpensePrediction(models.Model):
         Returns:
             str: Custom string representation of instance.
         """
-        return f"[{self.period.name}] {self.category.name}"
+        return f"[{self.period.name}] {getattr(self.category, 'name', NOT_CATEGORIZED_CATEGORY_NAME)}"
 
     def save(self, *args, **kwargs) -> None:
         """
         Override save method to execute validation before saving model in database.
         """
-        self.validate_budget()
+        self._validate_category()
         super().save(*args, **kwargs)
 
-    def validate_budget(self) -> None:
+    def _validate_category(self) -> None:
         """
         Checks if category Budget and period Budget are the same.
 
         Raises:
             ValidationError: Raised when category Budget and period Budget are not the same.
         """
-        if self.period.budget != self.category.budget:
+        if self.category is None:
+            return
+        if self.category.budget != self.period.budget:
             raise ValidationError("Budget for period and category fields is not the same.", code="budget-invalid")
+        if self.category.deposit != self.deposit:
+            raise ValidationError("Category Deposit different than Prediction Deposit", code="deposit-invalid")

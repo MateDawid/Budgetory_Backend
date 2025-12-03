@@ -82,7 +82,10 @@ class TransferFactory(factory.django.DjangoModelFactory):
                 date_end=date(
                     year=date_value.year,
                     month=date_value.month,
-                    day=(date(date_value.year, date_value.month + 1, 1) - timedelta(days=1)).day,
+                    day=(
+                        date(date_value.year, date_value.month + 1 if date_value.month < 12 else 1, 1)
+                        - timedelta(days=1)
+                    ).day,
                 ),
             )
 

@@ -16,6 +16,7 @@ from entities.models.choices.deposit_type import DepositType
 from entities.models.deposit_model import Deposit
 from entities.serializers.deposit_serializer import DepositSerializer
 from entities.views.deposit_viewset import calculate_deposit_balance, get_deposit_owner_display, sum_deposit_transfers
+from predictions.models import ExpensePrediction
 from transfers.models import Transfer
 
 
@@ -259,6 +260,7 @@ class TestDepositViewSetCreate:
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
         deposit_type: DepositType,
     ):
         """
@@ -267,6 +269,8 @@ class TestDepositViewSetCreate:
         THEN: Deposit object created in database with given payload. Initial categories for Deposit created.
         """
         budget = budget_factory(members=[base_user])
+        period_1 = budgeting_period_factory(budget=budget)
+        period_2 = budgeting_period_factory(budget=budget)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["deposit_type"] = deposit_type
@@ -308,6 +312,14 @@ class TestDepositViewSetCreate:
                 assert "Value increase" in categories_names
                 assert "Value decrease" in categories_names
                 assert "Funds withdrawal" in categories_names
+        for period in (period_1, period_2):
+            assert ExpensePrediction.objects.filter(
+                deposit=deposit,
+                category=None,
+                period=period,
+                initial_plan=Decimal("0.00"),
+                current_plan=Decimal("0.00"),
+            ).exists()
 
     @pytest.mark.parametrize("field_name", ["name", "description"])
     def test_error_value_too_long(

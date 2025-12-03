@@ -16,4 +16,9 @@ urlpatterns = [
         CopyPredictionsFromPreviousPeriodAPIView.as_view(),
         name="copy-predictions-from-previous-period",
     ),
+    path(
+        "copy_predictions_from_previous_period/<int:period_pk>/",
+        CopyPredictionsFromPreviousPeriodAPIView.as_view(),
+        name="copy-predictions-from-previous-period",
+    ),
 ]

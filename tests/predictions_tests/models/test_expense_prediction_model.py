@@ -20,7 +20,11 @@ class TestExpensePredictionModel:
     }
 
     def test_create_expense_prediction(
-        self, budget: Budget, budgeting_period_factory: FactoryMetaClass, transfer_category_factory: FactoryMetaClass
+        self,
+        budget: Budget,
+        budgeting_period_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
     ):
         """
         GIVEN: BudgetingPeriod and ExpenseCategory models instances in database. Valid payload for
@@ -29,9 +33,10 @@ class TestExpensePredictionModel:
         THEN: ExpensePrediction model instance exists in database with given data.
         """
         period = budgeting_period_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        deposit = deposit_factory(budget=budget)
+        category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 
-        prediction = ExpensePrediction.objects.create(period=period, category=category, **self.PAYLOAD)
+        prediction = ExpensePrediction.objects.create(period=period, deposit=deposit, category=category, **self.PAYLOAD)
 
         for key in self.PAYLOAD:
             assert getattr(prediction, key) == self.PAYLOAD[key]
@@ -46,6 +51,7 @@ class TestExpensePredictionModel:
         self,
         budget: Budget,
         budgeting_period_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         field: str,
     ):
@@ -61,7 +67,10 @@ class TestExpensePredictionModel:
         payload = self.PAYLOAD.copy()
         payload[field] = "1" + "0" * max_length
         payload["period"] = budgeting_period_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        payload["deposit"] = deposit_factory(budget=budget)
+        payload["category"] = transfer_category_factory(
+            budget=budget, deposit=payload["deposit"], category_type=CategoryType.EXPENSE
+        )
 
         with pytest.raises(DataError) as exc:
             ExpensePrediction.objects.create(**payload)
@@ -76,6 +85,7 @@ class TestExpensePredictionModel:
         budget: Budget,
         budgeting_period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
         field: str,
         value: Decimal,
     ):
@@ -87,7 +97,10 @@ class TestExpensePredictionModel:
         payload = self.PAYLOAD.copy()
         payload[field] = value
         payload["period"] = budgeting_period_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        payload["deposit"] = deposit_factory(budget=budget)
+        payload["category"] = transfer_category_factory(
+            budget=budget, deposit=payload["deposit"], category_type=CategoryType.EXPENSE
+        )
 
         with pytest.raises(IntegrityError) as exc:
             ExpensePrediction.objects.create(**payload)
@@ -96,7 +109,11 @@ class TestExpensePredictionModel:
 
     @pytest.mark.django_db(transaction=True)
     def test_error_on_second_prediction_for_category_in_period(
-        self, budget: Budget, budgeting_period_factory: FactoryMetaClass, transfer_category_factory: FactoryMetaClass
+        self,
+        budget: Budget,
+        budgeting_period_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
     ):
         """
         GIVEN: BudgetingPeriod and ExpenseCategory models instances in database.
@@ -104,11 +121,12 @@ class TestExpensePredictionModel:
         THEN: IntegrityError raised.
         """
         period = budgeting_period_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
-        ExpensePrediction.objects.create(period=period, category=category, **self.PAYLOAD)
+        deposit = deposit_factory(budget=budget)
+        category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        ExpensePrediction.objects.create(period=period, deposit=deposit, category=category, **self.PAYLOAD)
 
         with pytest.raises(IntegrityError) as exc:
-            ExpensePrediction.objects.create(period=period, category=category, **self.PAYLOAD)
+            ExpensePrediction.objects.create(period=period, deposit=deposit, category=category, **self.PAYLOAD)
 
         assert "duplicate key value violates unique constraint" in str(exc.value)
         assert ExpensePrediction.objects.all().count() == 1

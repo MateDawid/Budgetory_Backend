@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import transaction
 from django.db.models import CharField, DecimalField, F, Func, Q, QuerySet, Sum, Value
 from django.db.models.functions import Coalesce
@@ -7,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
+from budgets.models import BudgetingPeriod
 from categories.models.choices.category_type import CategoryType
 from entities.filtersets.deposit_filterset import DepositFilterSet
 from entities.models.choices.deposit_type import DepositType
@@ -17,6 +20,7 @@ from entities.utils import (
     create_initial_categories_for_other_deposit,
     create_initial_categories_for_savings_and_investments_deposit,
 )
+from predictions.models import ExpensePrediction
 
 
 def calculate_deposit_balance() -> Func:
@@ -103,6 +107,16 @@ class DepositViewSet(ModelViewSet):
         budget_pk = self.kwargs.get("budget_pk")
         with transaction.atomic():
             deposit = serializer.save(budget_id=budget_pk, is_deposit=True)
+            ExpensePrediction.objects.bulk_create(
+                ExpensePrediction(
+                    deposit_id=deposit.pk,
+                    category=None,
+                    period_id=period_id,
+                    initial_plan=Decimal("0.00"),
+                    current_plan=Decimal("0.00"),
+                )
+                for period_id in BudgetingPeriod.objects.filter(budget_id=budget_pk).values_list("id", flat=True)
+            )
             if deposit.deposit_type == DepositType.DAILY_EXPENSES:
                 create_initial_categories_for_daily_expenses_deposit(budget_pk=budget_pk, deposit_pk=deposit.pk)
             elif deposit.deposit_type in (DepositType.SAVINGS, DepositType.INVESTMENTS):

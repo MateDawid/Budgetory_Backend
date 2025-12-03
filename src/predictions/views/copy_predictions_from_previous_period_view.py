@@ -38,7 +38,7 @@ class CopyPredictionsFromPreviousPeriodAPIView(APIView):
             Response: HTTP response.
         """
 
-        if ExpensePrediction.objects.filter(period_id=period_pk).exists():
+        if ExpensePrediction.objects.filter(period_id=period_pk, category__isnull=False).exists():
             logger.warning(
                 f"Copying Predictions from previous Period not started - "
                 f"some Predictions already exist in current Period | Period ID: {period_pk}"
@@ -51,7 +51,8 @@ class CopyPredictionsFromPreviousPeriodAPIView(APIView):
         previous_period_predictions = ExpensePrediction.objects.filter(
             period__budget__pk=budget_pk,
             period__pk=Subquery(BudgetingPeriod.objects.filter(pk=period_pk).values("previous_period__pk")[:1]),
-        ).values("category", "current_plan", "description")
+            category__isnull=False,
+        ).values("category", "deposit", "current_plan", "description")
         if not previous_period_predictions:
             logger.warning(
                 f"Copying Predictions from previous Period not started - "
@@ -65,6 +66,7 @@ class CopyPredictionsFromPreviousPeriodAPIView(APIView):
                     [
                         ExpensePrediction(
                             period_id=period_pk,
+                            deposit_id=previous_prediction["deposit"],
                             category_id=previous_prediction["category"],
                             current_plan=previous_prediction["current_plan"],
                             description=previous_prediction["description"],

@@ -17,6 +17,7 @@ from budgets.models.choices.period_status import PeriodStatus
 from budgets.serializers.budgeting_period_serializer import BudgetingPeriodSerializer
 from categories.models import TransferCategory
 from categories.models.choices.category_type import CategoryType
+from entities.models import Deposit
 from predictions.models import ExpensePrediction
 
 
@@ -57,22 +58,23 @@ def prepare_predictions_on_period_activation(budget_pk: str, period_pk: str) -> 
     )
     # Create predictions with 0 value for not predicted categories
     predicted_categories_ids = ExpensePrediction.objects.filter(
-        period__id=period_pk, period__budget__id=budget_pk
+        period__id=period_pk, period__budget__id=budget_pk, category__isnull=False
     ).values_list("category", flat=True)
 
-    unpredicted_categories_ids = TransferCategory.objects.filter(
+    unpredicted_categories = TransferCategory.objects.filter(
         ~Q(id__in=predicted_categories_ids),
         category_type=CategoryType.EXPENSE,
-    ).values_list("id", flat=True)
+    ).values_list("id", "deposit")
 
     zero_predictions = [
         ExpensePrediction(
             period_id=period_pk,
+            deposit_id=deposit_id,
             category_id=category_id,
             initial_plan=Decimal("0.00"),
             current_plan=Decimal("0.00"),
         )
-        for category_id in unpredicted_categories_ids
+        for category_id, deposit_id in unpredicted_categories
     ]
     ExpensePrediction.objects.bulk_create(zero_predictions)
 
@@ -122,7 +124,19 @@ class BudgetingPeriodViewSet(ModelViewSet):
         Args:
             serializer [BudgetingPeriodSerializer]: Serializer for BudgetingPeriod
         """
-        serializer.save(budget_id=self.kwargs.get("budget_pk"))
+        budget_pk = self.kwargs.get("budget_pk")
+        with transaction.atomic():
+            period = serializer.save(budget_id=budget_pk)
+            ExpensePrediction.objects.bulk_create(
+                ExpensePrediction(
+                    deposit_id=deposit_id,
+                    category=None,
+                    period_id=period.pk,
+                    initial_plan=Decimal("0.00"),
+                    current_plan=Decimal("0.00"),
+                )
+                for deposit_id in Deposit.objects.filter(budget_id=budget_pk).values_list("id", flat=True)
+            )
 
     def update(self, request: Request, *args: list, **kwargs: dict) -> Response:
         """

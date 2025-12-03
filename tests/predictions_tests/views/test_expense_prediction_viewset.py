@@ -246,6 +246,7 @@ class TestExpensePredictionViewSetList:
         budgeting_period_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Two ExpensePrediction model instances for consecutive Periods in database.
@@ -256,24 +257,37 @@ class TestExpensePredictionViewSetList:
         """
         api_client.force_authenticate(base_user)
         budget = budget_factory(members=[base_user])
-        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        deposit = deposit_factory(budget=budget)
+        category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
         previous_period = budgeting_period_factory(
             budget=budget, date_start=date(2025, 6, 1), date_end=date(2025, 6, 30)
         )
         current_period = budgeting_period_factory(
             budget=budget, date_start=date(2025, 7, 1), date_end=date(2025, 7, 31)
         )
-        previous_prediction = expense_prediction_factory(budget=budget, period=previous_period, category=category)
-        current_prediction = expense_prediction_factory(budget=budget, period=current_period, category=category)
+        previous_prediction = expense_prediction_factory(
+            budget=budget, deposit=deposit, period=previous_period, category=category
+        )
+        current_prediction = expense_prediction_factory(
+            budget=budget, deposit=deposit, period=current_period, category=category
+        )
         # Transfer matching previous ExpensePrediction
-        expense_factory(budget=budget, category=category, period=previous_period, value=Decimal("1.00"))
-        expense_factory(budget=budget, category=category, period=previous_period, value=Decimal("2.00"))
-        # Transfer matching current ExpensePredicton
-        expense_factory(budget=budget, category=category, period=current_period, value=Decimal("10.00"))
-        expense_factory(budget=budget, category=category, period=current_period, value=Decimal("20.00"))
+        expense_factory(
+            budget=budget, deposit=deposit, category=category, period=previous_period, value=Decimal("1.00")
+        )
+        expense_factory(
+            budget=budget, deposit=deposit, category=category, period=previous_period, value=Decimal("2.00")
+        )
+        # Transfer matching current ExpensePrediction
+        expense_factory(
+            budget=budget, deposit=deposit, category=category, period=current_period, value=Decimal("10.00")
+        )
+        expense_factory(
+            budget=budget, deposit=deposit, category=category, period=current_period, value=Decimal("20.00")
+        )
         # Other Transfers
-        expense_factory(budget=budget, value=Decimal("100.00"))
-        expense_factory(budget=budget, value=Decimal("200.00"))
+        expense_factory(budget=budget, deposit=deposit, value=Decimal("100.00"))
+        expense_factory(budget=budget, deposit=deposit, value=Decimal("200.00"))
 
         response = api_client.get(expense_prediction_url(budget.id))
 
@@ -364,6 +378,7 @@ class TestExpensePredictionViewSetCreate:
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Budget, BudgetingPeriod and TransferCategory instances created in database. Valid payload prepared
@@ -373,11 +388,13 @@ class TestExpensePredictionViewSetCreate:
         """
         other_user = user_factory()
         budget = budget_factory(members=[base_user, other_user])
+        deposit = deposit_factory(budget=budget)
         period = budgeting_period_factory(budget=budget, status=PeriodStatus.DRAFT)
-        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
         payload = self.PAYLOAD.copy()
         payload["period"] = period.id
         payload["category"] = category.id
+        payload["deposit"] = deposit.id
         api_client.force_authenticate(base_user)
 
         response = api_client.post(expense_prediction_url(budget.id), payload)
@@ -390,6 +407,7 @@ class TestExpensePredictionViewSetCreate:
         assert getattr(prediction, "initial_plan") is None
         assert prediction.category == category
         assert prediction.period == period
+        assert prediction.deposit == deposit
         serializer = ExpensePredictionSerializer(prediction)
         assert response.data == serializer.data
 
@@ -745,6 +763,7 @@ class TestExpensePredictionViewSetUpdate:
         budget_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
     ):
         """
         GIVEN: ExpensePrediction instance for Budget created in database. Update payload with "category" value prepared.
@@ -752,8 +771,9 @@ class TestExpensePredictionViewSetUpdate:
         THEN: HTTP 200, Deposit updated with "category" value.
         """
         budget = budget_factory(members=[base_user])
-        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
-        prediction = expense_prediction_factory(budget=budget, **self.PAYLOAD)
+        deposit = deposit_factory(budget=budget)
+        category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        prediction = expense_prediction_factory(budget=budget, deposit=deposit, **self.PAYLOAD)
         update_payload = {"category": category.id}
         api_client.force_authenticate(base_user)
         url = expense_prediction_detail_url(budget.id, prediction.id)
