@@ -8,6 +8,7 @@ from budgets.utils import get_budget_pk
 from categories.models import TransferCategory
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
+from entities.models import Deposit
 from predictions.views.prediction_progress_status_view import PredictionProgressStatus
 
 
@@ -17,12 +18,14 @@ class ExpensePredictionFilterSet(filters.FilterSet):
     period = filters.ModelChoiceFilter(
         queryset=lambda request: BudgetingPeriod.objects.filter(budget__pk=get_budget_pk(request))
     )
+    deposit = filters.ModelChoiceFilter(
+        queryset=lambda request: Deposit.objects.filter(budget__pk=get_budget_pk(request))
+    )
     category = filters.ModelChoiceFilter(
         queryset=lambda request: TransferCategory.objects.filter(
             budget__pk=get_budget_pk(request), category_type=CategoryType.EXPENSE
         )
     )
-    deposit = filters.NumberFilter(method="filter_by_deposit")
     category_priority = filters.NumberFilter(method="filter_by_category_priority")
     initial_plan = filters.NumberFilter()
     initial_plan_min = filters.NumberFilter(field_name="initial_plan", lookup_expr="gte")
@@ -31,21 +34,6 @@ class ExpensePredictionFilterSet(filters.FilterSet):
     current_plan_min = filters.NumberFilter(field_name="current_plan", lookup_expr="gte")
     current_plan_max = filters.NumberFilter(field_name="current_plan", lookup_expr="lte")
     progress_status = filters.NumberFilter(method="filter_by_progress_status")
-
-    @staticmethod
-    def filter_by_deposit(queryset: QuerySet, name: str, value: Decimal) -> QuerySet:
-        """
-        Filters ExpensePredictions queryset by Transfer Category deposit field value.
-
-        Args:
-            queryset [QuerySet]: Input QuerySet
-            name [str]: Name of filtered param
-            value [Decimal]: Value of filtered param
-
-        Returns:
-            QuerySet: Filtered QuerySet.
-        """
-        return queryset.filter(category__deposit__id=value)
 
     @staticmethod
     def filter_by_progress_status(queryset: QuerySet, name: str, value: Decimal) -> QuerySet:
@@ -87,4 +75,6 @@ class ExpensePredictionFilterSet(filters.FilterSet):
         """
         if value in CategoryPriority.values:
             return queryset.filter(category__priority=value)
+        elif value == -1:
+            return queryset.filter(category__isnull=True)
         return queryset  # NOQA
