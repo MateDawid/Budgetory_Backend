@@ -43,7 +43,8 @@ class ExpensePredictionFactory(factory.django.DjangoModelFactory):
         budget = self._Resolver__step.builder.extras.get("budget")
         if not budget:
             budget = self.period.budget
-        if category := self._Resolver__step.builder.extras.get("category"):
+        category = self._Resolver__step.builder.extras.get("category")
+        if isinstance(category, TransferCategory):
             return category.deposit
         return DepositFactory(budget=budget)
 
