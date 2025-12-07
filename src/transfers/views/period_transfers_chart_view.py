@@ -67,7 +67,7 @@ class PeriodTransfersChartApiView(APIView):
 
         periods = (
             BudgetingPeriod.objects.filter(budget_id=budget_pk)
-            .order_by("date_start")
+            .order_by("-date_start")
             .annotate(
                 expenses=get_period_transfers_sum(CategoryType.EXPENSE),
                 incomes=get_period_transfers_sum(CategoryType.INCOME),
@@ -76,8 +76,8 @@ class PeriodTransfersChartApiView(APIView):
         )
 
         for period in periods:
-            response["xAxis"].append(period["name"])
-            response["expense_series"].append(period["expenses"])
-            response["income_series"].append(period["incomes"])
+            response["xAxis"].insert(0, period["name"])
+            response["expense_series"].insert(0, period["expenses"])
+            response["income_series"].insert(0, period["incomes"])
 
         return Response(response)
