@@ -8,5 +8,4 @@ class ExpensePredictionAdmin(admin.ModelAdmin):
     """Custom admin view for ExpensePrediction model."""
 
     list_display = ("period", "deposit", "category", "initial_plan", "current_plan")
-    list_filter = ("period__budget__name", "deposit", "category")
-    readonly_fields = ("initial_plan",)
+    list_filter = ("period__budget__name", "period", "deposit", "category")
