@@ -10,8 +10,6 @@ from budgets.models import BudgetingPeriod
 from categories.models.choices.category_type import CategoryType
 from transfers.models import Transfer
 
-DEFAULT_PERIODS_NUMBER_ON_CHART = 5
-
 
 def get_period_transfers_sum(transfer_type: CategoryType, deposit_id: str | None = None) -> Coalesce:
     """
@@ -69,27 +67,37 @@ class PeriodTransfersChartApiView(APIView):
             expense_series (accumulated Expenses from all Deposits in Periods) and income_series
             (accumulated Incomes from all Deposits in Periods).
         """
+        # Query params
         deposit_id = request.query_params.get("deposit", None)
-        try:
-            periods_count = int(request.query_params.get("periods_count", DEFAULT_PERIODS_NUMBER_ON_CHART))
-        except ValueError:
-            periods_count = DEFAULT_PERIODS_NUMBER_ON_CHART
+        transfer_type = request.query_params.get("transfer_type", None)
+        periods_count = int(request.query_params.get("periods_count"))
 
-        response = {"xAxis": [], "expense_series": [], "income_series": []}
-
-        periods = (
-            BudgetingPeriod.objects.filter(budget_id=budget_pk)
-            .order_by("-date_start")
-            .annotate(
-                expenses=get_period_transfers_sum(CategoryType.EXPENSE, deposit_id),
+        # Database query
+        queryset_fields = ["name"]
+        periods = BudgetingPeriod.objects.filter(budget_id=budget_pk).order_by("-date_start")
+        if transfer_type == str(CategoryType.INCOME.value):
+            periods = periods.annotate(incomes=get_period_transfers_sum(CategoryType.INCOME, deposit_id))
+            queryset_fields.append("incomes")
+        elif transfer_type == str(CategoryType.EXPENSE.value):
+            periods = periods.annotate(expenses=get_period_transfers_sum(CategoryType.EXPENSE, deposit_id))
+            queryset_fields.append("expenses")
+        else:
+            periods = periods.annotate(
                 incomes=get_period_transfers_sum(CategoryType.INCOME, deposit_id),
+                expenses=get_period_transfers_sum(CategoryType.EXPENSE, deposit_id),
             )
-            .values("name", "expenses", "incomes")[:periods_count]
-        )
+            queryset_fields.extend(["incomes", "expenses"])
+        periods = periods.values(*queryset_fields)[:periods_count]
 
+        # Response
+        response = {"xAxis": [], "expense_series": [], "income_series": []}
         for period in periods:
             response["xAxis"].insert(0, period["name"])
-            response["expense_series"].insert(0, period["expenses"])
-            response["income_series"].insert(0, period["incomes"])
-
+            if transfer_type == str(CategoryType.INCOME.value):
+                response["income_series"].insert(0, period["incomes"])
+            elif transfer_type == str(CategoryType.EXPENSE.value):
+                response["expense_series"].insert(0, period["expenses"])
+            else:
+                response["income_series"].insert(0, period["incomes"])
+                response["expense_series"].insert(0, period["expenses"])
         return Response(response)
