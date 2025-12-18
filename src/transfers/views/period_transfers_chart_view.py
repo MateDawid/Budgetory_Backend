@@ -70,7 +70,10 @@ class PeriodTransfersChartApiView(APIView):
         # Query params
         deposit_id = request.query_params.get("deposit", None)
         transfer_type = request.query_params.get("transfer_type", None)
-        periods_count = int(request.query_params.get("periods_count"))
+        try:
+            periods_count = int(request.query_params.get("periods_count"))
+        except TypeError:  # Handle None value of query_params.periods_count
+            periods_count = None
 
         # Database query
         queryset_fields = ["name"]
