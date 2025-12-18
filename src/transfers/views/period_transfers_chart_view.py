@@ -1,3 +1,5 @@
+from functools import partial
+
 from django.db.models import DecimalField, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from rest_framework.permissions import IsAuthenticated
@@ -11,20 +13,24 @@ from categories.models.choices.category_type import CategoryType
 from transfers.models import Transfer
 
 
-def get_period_transfers_sum(transfer_type: CategoryType, deposit_id: str | None = None) -> Coalesce:
+def get_period_transfers_sum(
+    transfer_type: CategoryType, deposit_id: str | None = None, entity_id: str | None = None
+) -> Coalesce:
     """
     Calculates given Transfer type Transfers in Period.
 
     Args:
         transfer_type (CategoryType): Type of Transfer.
         deposit_id (str | None): Deposit ID or None.
-
+        entity_id (str | None): Entity ID or None.
     Returns:
         Coalesce: Django ORM Coalesce function with Transfer subquery.
     """
     transfer_kwargs: dict = {"transfer_type": transfer_type}
     if deposit_id:
         transfer_kwargs["deposit_id"] = deposit_id
+    if entity_id:
+        transfer_kwargs["entity_id"] = entity_id
     return Coalesce(
         Subquery(
             Transfer.objects.filter(Q(period_id=OuterRef("id"), **transfer_kwargs))
@@ -69,6 +75,7 @@ class PeriodTransfersChartApiView(APIView):
         """
         # Query params
         deposit_id = request.query_params.get("deposit", None)
+        entity_id = request.query_params.get("entity", None)
         transfer_type = request.query_params.get("transfer_type", None)
         try:
             periods_count = int(request.query_params.get("periods_count"))
@@ -78,17 +85,20 @@ class PeriodTransfersChartApiView(APIView):
         # Database query
         queryset_fields = ["name"]
         periods = BudgetingPeriod.objects.filter(budget_id=budget_pk).order_by("-date_start")
+        get_incomes_sum = partial(
+            get_period_transfers_sum, transfer_type=CategoryType.INCOME, deposit_id=deposit_id, entity_id=entity_id
+        )
+        get_expenses_sum = partial(
+            get_period_transfers_sum, transfer_type=CategoryType.EXPENSE, deposit_id=deposit_id, entity_id=entity_id
+        )
         if transfer_type == str(CategoryType.INCOME.value):
-            periods = periods.annotate(incomes=get_period_transfers_sum(CategoryType.INCOME, deposit_id))
+            periods = periods.annotate(incomes=get_incomes_sum())
             queryset_fields.append("incomes")
         elif transfer_type == str(CategoryType.EXPENSE.value):
-            periods = periods.annotate(expenses=get_period_transfers_sum(CategoryType.EXPENSE, deposit_id))
+            periods = periods.annotate(expenses=get_expenses_sum())
             queryset_fields.append("expenses")
         else:
-            periods = periods.annotate(
-                incomes=get_period_transfers_sum(CategoryType.INCOME, deposit_id),
-                expenses=get_period_transfers_sum(CategoryType.EXPENSE, deposit_id),
-            )
+            periods = periods.annotate(incomes=get_incomes_sum(), expenses=get_expenses_sum())
             queryset_fields.extend(["incomes", "expenses"])
         periods = periods.values(*queryset_fields)[:periods_count]
 
