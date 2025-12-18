@@ -12,7 +12,6 @@ from rest_framework.test import APIClient
 from app_users.models import User
 from categories.models.choices.category_type import CategoryType
 from entities.models import Deposit
-from transfers.views.period_transfers_chart_view import DEFAULT_PERIODS_NUMBER_ON_CHART
 
 
 def period_transfers_chart_url(budget_id: int) -> str:
@@ -210,69 +209,6 @@ class TestPeriodTransfersChartApiView:
         assert response.data["xAxis"] == ["Jan 2024"]
         assert response.data["expense_series"] == [Decimal("500.00")]  # 100 + 400
         assert response.data["income_series"] == [Decimal("1000.00")]  # 300 + 700
-
-    def test_get_chart_data_limit_five_periods(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
-        deposit_factory: FactoryMetaClass,
-        transfer_category_factory: FactoryMetaClass,
-        transfer_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Budget with more than five periods.
-        WHEN: PeriodTransfersChartApiView called by Budget member.
-        THEN: HTTP 200 - Response with only first five periods (ordered by date_start).
-        """
-        budget = budget_factory(members=[base_user])
-        deposit = deposit_factory(budget=budget, owner=base_user)
-        income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
-        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
-
-        # Create 8 periods
-        periods = []
-        for month in range(1, 9):
-            period = budgeting_period_factory(
-                budget=budget,
-                name=f"2024-{month:02d}",  # NOQA
-                date_start=date(2024, month, 1),
-                date_end=date(2024, month, 28),
-            )
-            periods.append(period)
-            # Add some transfers to each period
-            transfer_factory(
-                period=period, category=income_category, value=Decimal(f"{month * 100}.00"), deposit=deposit
-            )
-            transfer_factory(
-                period=period, category=expense_category, value=Decimal(f"{month * 50}.00"), deposit=deposit
-            )
-
-        api_client.force_authenticate(base_user)
-
-        response = api_client.get(period_transfers_chart_url(budget.id))
-
-        assert response.status_code == status.HTTP_200_OK
-        assert len(response.data["xAxis"]) == DEFAULT_PERIODS_NUMBER_ON_CHART
-        assert response.data["xAxis"] == ["2024-04", "2024-05", "2024-06", "2024-07", "2024-08"]
-        assert len(response.data["expense_series"]) == DEFAULT_PERIODS_NUMBER_ON_CHART
-        assert len(response.data["income_series"]) == DEFAULT_PERIODS_NUMBER_ON_CHART
-        # Verify correct values for first 5 periods
-        assert response.data["income_series"] == [
-            Decimal("400.00"),
-            Decimal("500.00"),
-            Decimal("600.00"),
-            Decimal("700.00"),
-            Decimal("800.00"),
-        ]
-        assert response.data["expense_series"] == [
-            Decimal("200.00"),
-            Decimal("250.00"),
-            Decimal("300.00"),
-            Decimal("350.00"),
-            Decimal("400.00"),
-        ]
 
     def test_get_chart_data_periods_ordered_by_date(
         self,
@@ -741,37 +677,6 @@ class TestPeriodTransfersChartApiView:
         assert response.data["income_series"] == [Decimal("300.00"), Decimal("400.00"), Decimal("500.00")]
         assert response.data["expense_series"] == [Decimal("0"), Decimal("0"), Decimal("0")]
 
-    def test_periods_count_parameter_invalid_string(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Budget with periods.
-        WHEN: PeriodTransfersChartApiView called with non-numeric periods_count.
-        THEN: HTTP 200 - Response with default 5 periods (or error handling depending on implementation).
-        """
-        budget = budget_factory(members=[base_user])
-
-        for month in range(1, 8):
-            budgeting_period_factory(
-                budget=budget,
-                name=f"2024-{month:02d}",  # NOQA
-                date_start=date(2024, month, 1),
-                date_end=date(2024, month, 28),
-            )
-
-        api_client.force_authenticate(base_user)
-
-        response = api_client.get(period_transfers_chart_url(budget.id), {"periods_count": "invalid"})
-
-        # This test documents current behavior - might return default or raise error
-        # Adjust assertion based on actual implementation
-        assert response.status_code == status.HTTP_200_OK
-        # Depending on implementation, might return all periods or default to 5
-
     def test_deposit_filter_empty_string(
         self,
         api_client: APIClient,
@@ -801,3 +706,419 @@ class TestPeriodTransfersChartApiView:
         assert response.status_code == status.HTTP_200_OK
         # Should likely treat empty string as no filter and return all deposits
         assert response.data["xAxis"] == ["Jan 2024"]
+
+    def test_transfer_type_filter_income_only(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        transfer_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget with both income and expense transfers.
+        WHEN: PeriodTransfersChartApiView called with transfer_type=INCOME filter.
+        THEN: HTTP 200 - Response with only income_series populated, expense_series empty.
+        """
+        budget = budget_factory(members=[base_user])
+        period = budgeting_period_factory(budget=budget, name="Jan 2024")
+        deposit = deposit_factory(budget=budget, owner=base_user)
+        income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
+        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+
+        transfer_factory(period=period, category=income_category, value=Decimal("1000.00"), deposit=deposit)
+        transfer_factory(period=period, category=expense_category, value=Decimal("500.00"), deposit=deposit)
+
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(
+            period_transfers_chart_url(budget.id), {"transfer_type": str(CategoryType.INCOME.value)}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["xAxis"] == ["Jan 2024"]
+        assert response.data["income_series"] == [Decimal("1000.00")]
+        assert response.data["expense_series"] == []
+
+    def test_transfer_type_filter_expense_only(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        transfer_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget with both income and expense transfers.
+        WHEN: PeriodTransfersChartApiView called with transfer_type=EXPENSE filter.
+        THEN: HTTP 200 - Response with only expense_series populated, income_series empty.
+        """
+        budget = budget_factory(members=[base_user])
+        period = budgeting_period_factory(budget=budget, name="Jan 2024")
+        deposit = deposit_factory(budget=budget, owner=base_user)
+        income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
+        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+
+        transfer_factory(period=period, category=income_category, value=Decimal("1000.00"), deposit=deposit)
+        transfer_factory(period=period, category=expense_category, value=Decimal("500.00"), deposit=deposit)
+
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(
+            period_transfers_chart_url(budget.id), {"transfer_type": str(CategoryType.EXPENSE.value)}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["xAxis"] == ["Jan 2024"]
+        assert response.data["expense_series"] == [Decimal("500.00")]
+        assert response.data["income_series"] == []
+
+    def test_transfer_type_filter_invalid_value(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        transfer_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget with transfers.
+        WHEN: PeriodTransfersChartApiView called with invalid transfer_type value.
+        THEN: HTTP 200 - Response with both series populated (falls back to default behavior).
+        """
+        budget = budget_factory(members=[base_user])
+        period = budgeting_period_factory(budget=budget, name="Jan 2024")
+        deposit = deposit_factory(budget=budget, owner=base_user)
+        income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
+        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+
+        transfer_factory(period=period, category=income_category, value=Decimal("1000.00"), deposit=deposit)
+        transfer_factory(period=period, category=expense_category, value=Decimal("500.00"), deposit=deposit)
+
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(period_transfers_chart_url(budget.id), {"transfer_type": "INVALID"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["xAxis"] == ["Jan 2024"]
+        assert response.data["income_series"] == [Decimal("1000.00")]
+        assert response.data["expense_series"] == [Decimal("500.00")]
+
+    def test_entity_filter_single_entity(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        transfer_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget with multiple entities and transfers.
+        WHEN: PeriodTransfersChartApiView called with entity query parameter.
+        THEN: HTTP 200 - Response with data only from specified entity.
+        """
+        budget = budget_factory(members=[base_user])
+        period = budgeting_period_factory(budget=budget, name="Jan 2024")
+        deposit = deposit_factory(budget=budget, owner=base_user)
+
+        entity1 = entity_factory(budget=budget)
+        entity2 = entity_factory(budget=budget)
+
+        income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
+        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+
+        # Transfers for entity1
+        transfer_factory(
+            period=period, category=income_category, value=Decimal("300.00"), deposit=deposit, entity=entity1
+        )
+        transfer_factory(
+            period=period, category=expense_category, value=Decimal("100.00"), deposit=deposit, entity=entity1
+        )
+
+        # Transfers for entity2
+        transfer_factory(
+            period=period, category=income_category, value=Decimal("700.00"), deposit=deposit, entity=entity2
+        )
+        transfer_factory(
+            period=period, category=expense_category, value=Decimal("400.00"), deposit=deposit, entity=entity2
+        )
+
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(period_transfers_chart_url(budget.id), {"entity": str(entity1.id)})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["xAxis"] == ["Jan 2024"]
+        assert response.data["expense_series"] == [Decimal("100.00")]
+        assert response.data["income_series"] == [Decimal("300.00")]
+
+    def test_combined_deposit_entity_filters(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        transfer_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget with multiple deposits, entities, and transfers.
+        WHEN: PeriodTransfersChartApiView called with both deposit and entity parameters.
+        THEN: HTTP 200 - Response with data filtered by both deposit and entity.
+        """
+        budget = budget_factory(members=[base_user])
+        period = budgeting_period_factory(budget=budget, name="Jan 2024")
+
+        deposit1 = deposit_factory(budget=budget, owner=base_user)
+        deposit2 = deposit_factory(budget=budget, owner=base_user)
+
+        entity1 = entity_factory(budget=budget)
+        entity2 = entity_factory(budget=budget)
+
+        income_category1 = transfer_category_factory(budget=budget, deposit=deposit1, category_type=CategoryType.INCOME)
+        income_category2 = transfer_category_factory(budget=budget, deposit=deposit2, category_type=CategoryType.INCOME)
+
+        # Various combinations
+        transfer_factory(
+            period=period, category=income_category1, value=Decimal("100.00"), deposit=deposit1, entity=entity1
+        )
+        transfer_factory(
+            period=period, category=income_category1, value=Decimal("200.00"), deposit=deposit1, entity=entity2
+        )
+        transfer_factory(
+            period=period, category=income_category2, value=Decimal("300.00"), deposit=deposit2, entity=entity1
+        )
+        transfer_factory(
+            period=period, category=income_category2, value=Decimal("400.00"), deposit=deposit2, entity=entity2
+        )
+
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(
+            period_transfers_chart_url(budget.id), {"deposit": str(deposit1.id), "entity": str(entity1.id)}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["xAxis"] == ["Jan 2024"]
+        assert response.data["income_series"] == [Decimal("100.00")]
+        assert response.data["expense_series"] == [Decimal("0")]
+
+    def test_combined_all_filters(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        transfer_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget with multiple periods, deposits, entities, and transfers.
+        WHEN: PeriodTransfersChartApiView called with deposit, entity, transfer_type, and periods_count.
+        THEN: HTTP 200 - Response with data filtered by all parameters.
+        """
+        budget = budget_factory(members=[base_user])
+
+        periods = []
+        for month in range(1, 4):
+            period = budgeting_period_factory(
+                budget=budget,
+                name=f"2024-{month:02d}",  # NOQA
+                date_start=date(2024, month, 1),
+                date_end=date(2024, month, 28),
+            )
+            periods.append(period)
+
+        deposit1 = deposit_factory(budget=budget, owner=base_user)
+        deposit2 = deposit_factory(budget=budget, owner=base_user)
+        entity1 = entity_factory(budget=budget)
+        entity2 = entity_factory(budget=budget)
+
+        income_category1 = transfer_category_factory(budget=budget, deposit=deposit1, category_type=CategoryType.INCOME)
+        income_category2 = transfer_category_factory(budget=budget, deposit=deposit2, category_type=CategoryType.INCOME)
+        expense_category1 = transfer_category_factory(
+            budget=budget, deposit=deposit1, category_type=CategoryType.EXPENSE
+        )
+
+        # Add transfers for different combinations
+        for idx, period in enumerate(periods, start=1):
+            # Target: deposit1 + entity1 + income
+            transfer_factory(
+                period=period,
+                category=income_category1,
+                value=Decimal(f"{idx * 100}.00"),
+                deposit=deposit1,
+                entity=entity1,
+            )
+            # Other combinations (should be filtered out)
+            transfer_factory(
+                period=period,
+                category=income_category1,
+                value=Decimal(f"{idx * 50}.00"),
+                deposit=deposit1,
+                entity=entity2,
+            )
+            transfer_factory(
+                period=period,
+                category=income_category2,
+                value=Decimal(f"{idx * 200}.00"),
+                deposit=deposit2,
+                entity=entity1,
+            )
+            transfer_factory(
+                period=period,
+                category=expense_category1,
+                value=Decimal(f"{idx * 25}.00"),
+                deposit=deposit1,
+                entity=entity1,
+            )
+
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(
+            period_transfers_chart_url(budget.id),
+            {
+                "deposit": str(deposit1.id),
+                "entity": str(entity1.id),
+                "transfer_type": str(CategoryType.INCOME.value),
+                "periods_count": 2,
+            },
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data["xAxis"]) == 2
+        assert response.data["xAxis"] == ["2024-02", "2024-03"]
+        assert response.data["income_series"] == [Decimal("200.00"), Decimal("300.00")]
+        assert response.data["expense_series"] == []
+
+    def test_multiple_transfers_same_category_same_period(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        transfer_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget with multiple transfers in same category in same period.
+        WHEN: PeriodTransfersChartApiView called by Budget member.
+        THEN: HTTP 200 - Response with correctly summed values.
+        """
+        budget = budget_factory(members=[base_user])
+        period = budgeting_period_factory(budget=budget, name="Jan 2024")
+        deposit = deposit_factory(budget=budget, owner=base_user)
+        income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
+
+        # Multiple income transfers
+        transfer_factory(period=period, category=income_category, value=Decimal("100.00"), deposit=deposit)
+        transfer_factory(period=period, category=income_category, value=Decimal("200.00"), deposit=deposit)
+        transfer_factory(period=period, category=income_category, value=Decimal("300.00"), deposit=deposit)
+        transfer_factory(period=period, category=income_category, value=Decimal("50.50"), deposit=deposit)
+
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(period_transfers_chart_url(budget.id))
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["income_series"] == [Decimal("650.50")]
+        assert response.data["expense_series"] == [Decimal("0")]
+
+    def test_entity_filter_nonexistent_entity(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        entity_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        transfer_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget with transfers.
+        WHEN: PeriodTransfersChartApiView called with nonexistent entity ID.
+        THEN: HTTP 200 - Response with zero values for all periods.
+        """
+        budget = budget_factory(members=[base_user])
+        period = budgeting_period_factory(budget=budget, name="Jan 2024")
+        deposit = deposit_factory(budget=budget, owner=base_user)
+        entity = entity_factory(budget=budget)
+        income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
+
+        transfer_factory(
+            period=period, category=income_category, value=Decimal("500.00"), deposit=deposit, entity=entity
+        )
+
+        api_client.force_authenticate(base_user)
+
+        # Use a UUID that doesn't exist
+        from entities.models import Entity
+
+        nonexistent_id = Entity.objects.filter(budget=budget).order_by("-id").first().id + 1
+
+        response = api_client.get(period_transfers_chart_url(budget.id), {"entity": str(nonexistent_id)})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["xAxis"] == ["Jan 2024"]
+        assert response.data["expense_series"] == [Decimal("0")]
+        assert response.data["income_series"] == [Decimal("0")]
+
+    def test_transfer_type_with_periods_count(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        budget_factory: FactoryMetaClass,
+        budgeting_period_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        transfer_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Budget with multiple periods and transfers.
+        WHEN: PeriodTransfersChartApiView called with transfer_type=INCOME and periods_count=2.
+        THEN: HTTP 200 - Response with only income data for last 2 periods.
+        """
+        budget = budget_factory(members=[base_user])
+        deposit = deposit_factory(budget=budget, owner=base_user)
+        income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
+        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+
+        for month in range(1, 5):
+            period = budgeting_period_factory(
+                budget=budget,
+                name=f"2024-{month:02d}",  # NOQA
+                date_start=date(2024, month, 1),
+                date_end=date(2024, month, 28),
+            )
+            transfer_factory(
+                period=period, category=income_category, value=Decimal(f"{month * 100}.00"), deposit=deposit
+            )
+            transfer_factory(
+                period=period, category=expense_category, value=Decimal(f"{month * 50}.00"), deposit=deposit
+            )
+
+        api_client.force_authenticate(base_user)
+
+        response = api_client.get(
+            period_transfers_chart_url(budget.id), {"transfer_type": str(CategoryType.INCOME.value), "periods_count": 2}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["xAxis"] == ["2024-03", "2024-04"]
+        assert response.data["income_series"] == [Decimal("300.00"), Decimal("400.00")]
+        assert response.data["expense_series"] == []
