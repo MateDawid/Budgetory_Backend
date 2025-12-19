@@ -16,17 +16,17 @@ from entities.models.choices.deposit_type import DepositType
 
 def deposits_results_url(budget_id: int) -> str:
     """Create and return a deposits results URL."""
-    return reverse("entities:deposits-results", args=[budget_id])
+    return reverse("charts:deposits-in-periods-chart", args=[budget_id])
 
 
 @pytest.mark.django_db
-class TestDepositsResultsAPIView:
-    """Tests for DepositsResultsAPIView."""
+class TestDepositsInPeriodsChartAPIView:
+    """Tests for DepositsInPeriodsChartAPIView."""
 
     def test_auth_required(self, api_client: APIClient, budget_factory: FactoryMetaClass):
         """
         GIVEN: Budget instance in database.
-        WHEN: DepositsResultsAPIView called with GET without authentication.
+        WHEN: DepositsInPeriodsChartAPIView called with GET without authentication.
         THEN: Unauthorized HTTP 401 returned.
         """
         budget = budget_factory()
@@ -43,7 +43,7 @@ class TestDepositsResultsAPIView:
     ):
         """
         GIVEN: User's JWT in request headers as HTTP_AUTHORIZATION.
-        WHEN: DepositsResultsAPIView endpoint called with GET.
+        WHEN: DepositsInPeriodsChartAPIView endpoint called with GET.
         THEN: HTTP 200 returned.
         """
         budget = budget_factory(members=[base_user])
@@ -62,7 +62,7 @@ class TestDepositsResultsAPIView:
     ):
         """
         GIVEN: Budget instance in database.
-        WHEN: DepositsResultsAPIView called with GET by User not belonging to given Budget.
+        WHEN: DepositsInPeriodsChartAPIView called with GET by User not belonging to given Budget.
         THEN: Forbidden HTTP 403 returned.
         """
         budget = budget_factory()
@@ -81,7 +81,7 @@ class TestDepositsResultsAPIView:
     ):
         """
         GIVEN: Budget with no periods and no deposits in database.
-        WHEN: DepositsResultsAPIView called by Budget member.
+        WHEN: DepositsInPeriodsChartAPIView called by Budget member.
         THEN: HTTP 200 - Response with empty xAxis and series arrays returned.
         """
         budget = budget_factory(members=[base_user])
@@ -102,7 +102,7 @@ class TestDepositsResultsAPIView:
     ):
         """
         GIVEN: Budget with deposits but no periods in database.
-        WHEN: DepositsResultsAPIView called by Budget member.
+        WHEN: DepositsInPeriodsChartAPIView called by Budget member.
         THEN: HTTP 200 - Response with empty xAxis and series arrays returned.
         """
         budget = budget_factory(members=[base_user])
@@ -124,7 +124,7 @@ class TestDepositsResultsAPIView:
     ):
         """
         GIVEN: Budget with periods but no deposits in database.
-        WHEN: DepositsResultsAPIView called by Budget member.
+        WHEN: DepositsInPeriodsChartAPIView called by Budget member.
         THEN: HTTP 200 - Response with empty xAxis and series arrays returned.
         """
         budget = budget_factory(members=[base_user])
@@ -147,7 +147,7 @@ class TestDepositsResultsAPIView:
     ):
         """
         GIVEN: Budget with periods and deposits but no transfers.
-        WHEN: DepositsResultsAPIView called by Budget member.
+        WHEN: DepositsInPeriodsChartAPIView called by Budget member.
         THEN: HTTP 200 - Response with periods on xAxis and deposits with zero balances in series.
         """
         budget = budget_factory(members=[base_user])
@@ -178,7 +178,7 @@ class TestDepositsResultsAPIView:
     ):
         """
         GIVEN: Budget with periods, deposits, and transfers.
-        WHEN: DepositsResultsAPIView called by Budget member.
+        WHEN: DepositsInPeriodsChartAPIView called by Budget member.
         THEN: HTTP 200 - Response with correct cumulative balance calculations.
         """
         budget = budget_factory(members=[base_user])
@@ -315,7 +315,7 @@ class TestDepositsResultsAPIView:
     ):
         """
         GIVEN: Budget with many periods, deposits, and transfers to simulate real-world load.
-        WHEN: DepositsResultsAPIView called by Budget member.
+        WHEN: DepositsInPeriodsChartAPIView called by Budget member.
         THEN: HTTP 200 - Response returned efficiently with correct calculations.
         """
         budget = budget_factory(members=[base_user])
@@ -393,7 +393,7 @@ class TestDepositsResultsAPIView:
     ):
         """
         GIVEN: Budget with various edge cases (zero balances, negative balances, missing data).
-        WHEN: DepositsResultsAPIView called by Budget member.
+        WHEN: DepositsInPeriodsChartAPIView called by Budget member.
         THEN: HTTP 200 - Response handles edge cases gracefully with correct calculations.
         """
         budget = budget_factory(members=[base_user])

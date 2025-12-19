@@ -44,7 +44,7 @@ def get_period_transfers_sum(
     )
 
 
-class PeriodTransfersChartApiView(APIView):
+class TransfersInPeriodsChartApiView(APIView):
     """
     API view for retrieving data about Transfers in last five Periods for chart purposes.
 

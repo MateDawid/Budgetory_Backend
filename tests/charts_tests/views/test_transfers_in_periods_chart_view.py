@@ -16,17 +16,17 @@ from entities.models import Deposit
 
 def period_transfers_chart_url(budget_id: int) -> str:
     """Create and return a period transfers chart URL."""
-    return reverse("transfers:period-transfers-chart", args=[budget_id])
+    return reverse("charts:transfers-in-periods-chart", args=[budget_id])
 
 
 @pytest.mark.django_db
-class TestPeriodTransfersChartApiView:
-    """Tests for PeriodTransfersChartApiView."""
+class TestTransfersInPeriodsChartApiView:
+    """Tests for TransfersInPeriodsChartApiView."""
 
     def test_auth_required(self, api_client: APIClient, budget_factory: FactoryMetaClass):
         """
         GIVEN: Budget instance in database.
-        WHEN: PeriodTransfersChartApiView called with GET without authentication.
+        WHEN: TransfersInPeriodsChartApiView called with GET without authentication.
         THEN: Unauthorized HTTP 401 returned.
         """
         budget = budget_factory()
@@ -43,7 +43,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: User's JWT in request headers as HTTP_AUTHORIZATION.
-        WHEN: PeriodTransfersChartApiView endpoint called with GET.
+        WHEN: TransfersInPeriodsChartApiView endpoint called with GET.
         THEN: HTTP 200 returned.
         """
         budget = budget_factory(members=[base_user])
@@ -62,7 +62,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget instance in database.
-        WHEN: PeriodTransfersChartApiView called with GET by User not belonging to given Budget.
+        WHEN: TransfersInPeriodsChartApiView called with GET by User not belonging to given Budget.
         THEN: Forbidden HTTP 403 returned.
         """
         budget = budget_factory()
@@ -81,7 +81,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with no periods in database.
-        WHEN: PeriodTransfersChartApiView called by Budget member.
+        WHEN: TransfersInPeriodsChartApiView called by Budget member.
         THEN: HTTP 200 - Response with empty xAxis, expense_series, and income_series arrays returned.
         """
         budget = budget_factory(members=[base_user])
@@ -103,7 +103,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with periods but no transfers in database.
-        WHEN: PeriodTransfersChartApiView called by Budget member.
+        WHEN: TransfersInPeriodsChartApiView called by Budget member.
         THEN: HTTP 200 - Response with periods on xAxis and zero values in series.
         """
         budget = budget_factory(members=[base_user])
@@ -130,7 +130,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with periods and transfers.
-        WHEN: PeriodTransfersChartApiView called by Budget member.
+        WHEN: TransfersInPeriodsChartApiView called by Budget member.
         THEN: HTTP 200 - Response with correct expense and income calculations.
         """
         budget = budget_factory(members=[base_user])
@@ -174,7 +174,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with period and transfers from multiple deposits.
-        WHEN: PeriodTransfersChartApiView called by Budget member.
+        WHEN: TransfersInPeriodsChartApiView called by Budget member.
         THEN: HTTP 200 - Response with aggregated expenses and incomes from all deposits.
         """
         budget = budget_factory(members=[base_user])
@@ -219,7 +219,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with periods created in non-chronological order.
-        WHEN: PeriodTransfersChartApiView called by Budget member.
+        WHEN: TransfersInPeriodsChartApiView called by Budget member.
         THEN: HTTP 200 - Response with periods ordered by date_start.
         """
         budget = budget_factory(members=[base_user])
@@ -254,7 +254,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with period containing only expense transfers.
-        WHEN: PeriodTransfersChartApiView called by Budget member.
+        WHEN: TransfersInPeriodsChartApiView called by Budget member.
         THEN: HTTP 200 - Response with expenses and zero incomes.
         """
         budget = budget_factory(members=[base_user])
@@ -284,7 +284,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with period containing only income transfers.
-        WHEN: PeriodTransfersChartApiView called by Budget member.
+        WHEN: TransfersInPeriodsChartApiView called by Budget member.
         THEN: HTTP 200 - Response with incomes and zero expenses.
         """
         budget = budget_factory(members=[base_user])
@@ -314,7 +314,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with transfers containing decimal values.
-        WHEN: PeriodTransfersChartApiView called by Budget member.
+        WHEN: TransfersInPeriodsChartApiView called by Budget member.
         THEN: HTTP 200 - Response with correct decimal precision in calculations.
         """
         budget = budget_factory(members=[base_user])
@@ -349,7 +349,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with transfers containing large monetary values.
-        WHEN: PeriodTransfersChartApiView called by Budget member.
+        WHEN: TransfersInPeriodsChartApiView called by Budget member.
         THEN: HTTP 200 - Response with correct calculations for large values.
         """
         budget = budget_factory(members=[base_user])
@@ -381,7 +381,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with multiple deposits and transfers in period.
-        WHEN: PeriodTransfersChartApiView called with deposit query parameter.
+        WHEN: TransfersInPeriodsChartApiView called with deposit query parameter.
         THEN: HTTP 200 - Response with data only from specified deposit.
         """
         budget = budget_factory(members=[base_user])
@@ -429,7 +429,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with transfers in period.
-        WHEN: PeriodTransfersChartApiView called with nonexistent deposit ID.
+        WHEN: TransfersInPeriodsChartApiView called with nonexistent deposit ID.
         THEN: HTTP 200 - Response with zero values for all periods.
         """
         budget = budget_factory(members=[base_user])
@@ -463,7 +463,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with multiple periods and deposits.
-        WHEN: PeriodTransfersChartApiView called with deposit filter.
+        WHEN: TransfersInPeriodsChartApiView called with deposit filter.
         THEN: HTTP 200 - Response with filtered data across all periods.
         """
         budget = budget_factory(members=[base_user])
@@ -506,7 +506,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with 8 periods.
-        WHEN: PeriodTransfersChartApiView called with periods_count=3.
+        WHEN: TransfersInPeriodsChartApiView called with periods_count=3.
         THEN: HTTP 200 - Response with only last 3 periods.
         """
         budget = budget_factory(members=[base_user])
@@ -537,7 +537,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with periods.
-        WHEN: PeriodTransfersChartApiView called with periods_count=0.
+        WHEN: TransfersInPeriodsChartApiView called with periods_count=0.
         THEN: HTTP 200 - Response with empty arrays.
         """
         budget = budget_factory(members=[base_user])
@@ -562,7 +562,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with 3 periods.
-        WHEN: PeriodTransfersChartApiView called with periods_count=10.
+        WHEN: TransfersInPeriodsChartApiView called with periods_count=10.
         THEN: HTTP 200 - Response with all 3 available periods.
         """
         budget = budget_factory(members=[base_user])
@@ -596,7 +596,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with multiple periods and transfers.
-        WHEN: PeriodTransfersChartApiView called with periods_count=1.
+        WHEN: TransfersInPeriodsChartApiView called with periods_count=1.
         THEN: HTTP 200 - Response with only the most recent period.
         """
         budget = budget_factory(members=[base_user])
@@ -634,7 +634,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with multiple periods and deposits.
-        WHEN: PeriodTransfersChartApiView called with both deposit and periods_count parameters.
+        WHEN: TransfersInPeriodsChartApiView called with both deposit and periods_count parameters.
         THEN: HTTP 200 - Response with filtered deposit data for specified number of periods.
         """
         budget = budget_factory(members=[base_user])
@@ -689,7 +689,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with deposits and transfers.
-        WHEN: PeriodTransfersChartApiView called with empty string deposit parameter.
+        WHEN: TransfersInPeriodsChartApiView called with empty string deposit parameter.
         THEN: HTTP 200 - Response should handle empty deposit filter appropriately.
         """
         budget = budget_factory(members=[base_user])
@@ -719,7 +719,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with both income and expense transfers.
-        WHEN: PeriodTransfersChartApiView called with transfer_type=INCOME filter.
+        WHEN: TransfersInPeriodsChartApiView called with transfer_type=INCOME filter.
         THEN: HTTP 200 - Response with only income_series populated, expense_series empty.
         """
         budget = budget_factory(members=[base_user])
@@ -754,7 +754,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with both income and expense transfers.
-        WHEN: PeriodTransfersChartApiView called with transfer_type=EXPENSE filter.
+        WHEN: TransfersInPeriodsChartApiView called with transfer_type=EXPENSE filter.
         THEN: HTTP 200 - Response with only expense_series populated, income_series empty.
         """
         budget = budget_factory(members=[base_user])
@@ -789,7 +789,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with transfers.
-        WHEN: PeriodTransfersChartApiView called with invalid transfer_type value.
+        WHEN: TransfersInPeriodsChartApiView called with invalid transfer_type value.
         THEN: HTTP 200 - Response with both series populated (falls back to default behavior).
         """
         budget = budget_factory(members=[base_user])
@@ -823,7 +823,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with multiple entities and transfers.
-        WHEN: PeriodTransfersChartApiView called with entity query parameter.
+        WHEN: TransfersInPeriodsChartApiView called with entity query parameter.
         THEN: HTTP 200 - Response with data only from specified entity.
         """
         budget = budget_factory(members=[base_user])
@@ -874,7 +874,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with multiple deposits, entities, and transfers.
-        WHEN: PeriodTransfersChartApiView called with both deposit and entity parameters.
+        WHEN: TransfersInPeriodsChartApiView called with both deposit and entity parameters.
         THEN: HTTP 200 - Response with data filtered by both deposit and entity.
         """
         budget = budget_factory(members=[base_user])
@@ -927,7 +927,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with multiple periods, deposits, entities, and transfers.
-        WHEN: PeriodTransfersChartApiView called with deposit, entity, transfer_type, and periods_count.
+        WHEN: TransfersInPeriodsChartApiView called with deposit, entity, transfer_type, and periods_count.
         THEN: HTTP 200 - Response with data filtered by all parameters.
         """
         budget = budget_factory(members=[base_user])
@@ -1016,7 +1016,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with multiple transfers in same category in same period.
-        WHEN: PeriodTransfersChartApiView called by Budget member.
+        WHEN: TransfersInPeriodsChartApiView called by Budget member.
         THEN: HTTP 200 - Response with correctly summed values.
         """
         budget = budget_factory(members=[base_user])
@@ -1051,7 +1051,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with transfers.
-        WHEN: PeriodTransfersChartApiView called with nonexistent entity ID.
+        WHEN: TransfersInPeriodsChartApiView called with nonexistent entity ID.
         THEN: HTTP 200 - Response with zero values for all periods.
         """
         budget = budget_factory(members=[base_user])
@@ -1090,7 +1090,7 @@ class TestPeriodTransfersChartApiView:
     ):
         """
         GIVEN: Budget with multiple periods and transfers.
-        WHEN: PeriodTransfersChartApiView called with transfer_type=INCOME and periods_count=2.
+        WHEN: TransfersInPeriodsChartApiView called with transfer_type=INCOME and periods_count=2.
         THEN: HTTP 200 - Response with only income data for last 2 periods.
         """
         budget = budget_factory(members=[base_user])

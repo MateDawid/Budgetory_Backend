@@ -149,7 +149,7 @@ def get_chart_data(deposits: list[dict[str, Any]], balances_data: list[dict[str,
     return series_data
 
 
-class DepositsResultsAPIView(APIView):
+class DepositsInPeriodsChartAPIView(APIView):
     """
     API view for retrieving deposit balance results across multiple periods.
 
