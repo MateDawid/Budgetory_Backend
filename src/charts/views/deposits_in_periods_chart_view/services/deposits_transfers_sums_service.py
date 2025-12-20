@@ -20,17 +20,17 @@ def get_deposits_transfers_sums_in_period(
     Returns:
         dict[int, float]: Dict containing deposit id as a key and deposit result as the value.
     """
-    period_balances = (
+    period_results = (
         Transfer.objects.filter(
             deposit_id__in=deposit_ids, period__budget_id=budget_pk, period_id=period["pk"], transfer_type=transfer_type
         )
         .values("deposit_id")
         .annotate(
-            deposit_result=Coalesce(
+            result=Coalesce(
                 Sum("value"),
                 Value(0, output_field=DecimalField(max_digits=10, decimal_places=2)),
             )
         )
     )
 
-    return {item["deposit_id"]: float(item["deposit_result"]) for item in period_balances}
+    return {item["deposit_id"]: float(item["result"]) for item in period_results}
