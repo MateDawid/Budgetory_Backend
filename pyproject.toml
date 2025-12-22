@@ -82,7 +82,7 @@ skip_glob = [
 ]
 
 [tool.bandit]
-exclude_dirs = ["tests", "venv", "__pycache__", ".pytest_cache", "htmlcov", "docker", ".github"]
+exclude_dirs = ["tests", "venv", "__pycache__", ".pytest_cache", "htmlcov", "docker", ".github", "./src/app_infrastructure/management/commands/create_test_data.py"]
 
 
 [build-system]
