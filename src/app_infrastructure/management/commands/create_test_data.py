@@ -1,6 +1,7 @@
 """
 Django command to prepare test data.
 """
+
 import random
 from datetime import date
 from decimal import Decimal
