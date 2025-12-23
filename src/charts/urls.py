@@ -2,6 +2,7 @@ from django.urls import path
 
 from charts.views.categories_in_periods_chart_view import CategoriesInPeriodsChartAPIView
 from charts.views.deposits_in_periods_chart_view import DepositsInPeriodsChartAPIView
+from charts.views.top_entities_in_period_chart_view import TopEntitiesInPeriodChartAPIView
 from charts.views.transfers_in_periods_chart_view import TransfersInPeriodsChartApiView
 
 app_name = "charts"
@@ -21,5 +22,10 @@ urlpatterns = [
         "budgets/<int:budget_pk>/charts/categories_in_periods/",
         CategoriesInPeriodsChartAPIView.as_view(),
         name="categories-in-periods-chart",
+    ),
+    path(
+        "budgets/<int:budget_pk>/charts/top_entities_in_period/",
+        TopEntitiesInPeriodChartAPIView.as_view(),
+        name="top-entities-in-period-chart",
     ),
 ]
