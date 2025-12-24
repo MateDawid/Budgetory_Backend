@@ -87,13 +87,7 @@ class BudgetingPeriodViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, UserBelongsToBudgetPermission]
     filterset_class = BudgetingPeriodFilterSet
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
-    ordering_fields = (
-        "id",
-        "status",
-        "name",
-        "date_start",
-        "date_end",
-    )
+    ordering_fields = ("id", "status", "name", "date_start", "date_end", "incomes_sum", "expenses_sum")
 
     def get_queryset(self) -> QuerySet:
         """
