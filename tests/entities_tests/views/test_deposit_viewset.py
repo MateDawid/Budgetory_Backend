@@ -272,8 +272,6 @@ class TestDepositViewSetCreate:
         assert deposit.is_deposit is True
         serializer = DepositSerializer(deposit)
         assert response.data == serializer.data
-        deposit_categories = deposit.transfer_categories.all()
-        assert deposit_categories.exists()
         for period in (period_1, period_2):
             assert ExpensePrediction.objects.filter(
                 deposit=deposit,

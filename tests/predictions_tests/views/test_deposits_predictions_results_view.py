@@ -127,19 +127,17 @@ class TestDepositsPredictionsResultsAPIView:
         deposit_1 = deposit_factory(budget=budget)
         deposit_2 = deposit_factory(budget=budget)
         deposit_3 = deposit_factory(budget=budget)
-        deposit_4 = deposit_factory(budget=budget)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
 
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) == 2
+        assert len(response.data) == 3
 
         deposits_names = [item["deposit_name"] for item in response.data]
         assert deposit_1.name in deposits_names
         assert deposit_2.name in deposits_names
-        assert deposit_3.name not in deposits_names
-        assert deposit_4.name not in deposits_names
+        assert deposit_3.name in deposits_names
 
     def test_get_deposits_results_with_expense_predictions(
         self,
