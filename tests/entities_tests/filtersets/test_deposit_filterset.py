@@ -10,7 +10,7 @@ from rest_framework.test import APIClient
 from categories.models.choices.category_type import CategoryType
 from entities.models import Deposit
 from entities.serializers.deposit_serializer import DepositSerializer
-from entities.views.deposit_viewset import calculate_deposit_balance, get_deposit_owner_display, sum_deposit_transfers
+from entities.views.deposit_viewset import calculate_deposit_balance, sum_deposit_transfers
 
 
 @pytest.mark.django_db
@@ -63,7 +63,6 @@ class TestDepositFilterSetOrdering:
             .annotate(
                 incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
                 expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
-                owner_display=get_deposit_owner_display(),
             )
             .annotate(balance=calculate_deposit_balance())
             .order_by(*sort_param.split(","))
@@ -121,9 +120,7 @@ class TestDepositFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert Deposit.objects.all().count() == 2
-        deposits = Deposit.objects.filter(budget=budget, id=matching_deposit.id).annotate(
-            owner_display=get_deposit_owner_display()
-        )
+        deposits = Deposit.objects.filter(budget=budget, id=matching_deposit.id)
         serializer = DepositSerializer(
             deposits,
             many=True,
@@ -157,9 +154,7 @@ class TestDepositFilterSetFiltering:
 
         assert response.status_code == status.HTTP_200_OK
         assert Deposit.objects.all().count() == 2
-        deposits = Deposit.objects.filter(budget=budget, id=matching_deposit.id).annotate(
-            owner_display=get_deposit_owner_display()
-        )
+        deposits = Deposit.objects.filter(budget=budget, id=matching_deposit.id)
         serializer = DepositSerializer(
             deposits,
             many=True,
@@ -206,7 +201,7 @@ class TestDepositFilterSetFiltering:
                 incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
                 expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
             )
-            .annotate(balance=calculate_deposit_balance(), owner_display=get_deposit_owner_display())
+            .annotate(balance=calculate_deposit_balance())
             .filter(balance=balance)
         )
         serializer = DepositSerializer(
@@ -256,7 +251,7 @@ class TestDepositFilterSetFiltering:
                 incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
                 expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
             )
-            .annotate(balance=calculate_deposit_balance(), owner_display=get_deposit_owner_display())
+            .annotate(balance=calculate_deposit_balance())
             .filter(balance__lte=balance)
         )
         serializer = DepositSerializer(
@@ -306,7 +301,7 @@ class TestDepositFilterSetFiltering:
                 incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
                 expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
             )
-            .annotate(balance=calculate_deposit_balance(), owner_display=get_deposit_owner_display())
+            .annotate(balance=calculate_deposit_balance())
             .filter(balance__gte=balance)
         )
         serializer = DepositSerializer(

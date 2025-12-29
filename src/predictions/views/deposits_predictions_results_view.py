@@ -12,7 +12,6 @@ from app_infrastructure.permissions import UserBelongsToBudgetPermission
 from budgets.models import Budget, BudgetingPeriod
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
-from entities.models.choices.deposit_type import DepositType
 from predictions.models import ExpensePrediction
 from transfers.models import Expense, Transfer
 
@@ -166,7 +165,7 @@ class DepositsPredictionsResultsAPIView(APIView):
             raise NotFound("Budgeting Period with given pk does not exist in Budget.")
         deposits = (
             Budget.objects.get(pk=budget_pk)
-            .entities.filter(is_deposit=True, deposit_type=DepositType.DAILY_EXPENSES)
+            .entities.filter(is_deposit=True)
             .annotate(
                 predictions_sum=get_deposit_period_expense_predictions(budget_pk, period_pk),
                 incomes_sum=sum_period_and_previous_transfers(budget_pk, period_pk, CategoryType.INCOME),

@@ -215,7 +215,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 
         entity1 = entity_factory(budget=budget, name="Entity A")
@@ -261,7 +261,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
 
         entity1 = entity_factory(budget=budget, name="Source A")
@@ -307,7 +307,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 
         for i in range(8):
@@ -381,7 +381,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
         entity = entity_factory(budget=budget, name="Entity 1")
 
@@ -426,7 +426,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
         entity = entity_factory(budget=budget, name="Entity 1")
 
@@ -463,7 +463,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 
         entity1 = entity_factory(budget=budget, name="Entity A")
@@ -511,7 +511,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 
@@ -559,7 +559,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 
         entity1 = entity_factory(budget=budget, name="Low")
@@ -606,7 +606,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 
         for i in range(8):
@@ -649,7 +649,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 
         entity1 = entity_factory(budget=budget, name="Entity 1")
@@ -695,7 +695,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 
         entity1 = entity_factory(budget=budget, name="Entity 1")
@@ -747,8 +747,8 @@ class TestTopEntitiesInPeriodChartAPIView:
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
 
-        deposit1 = deposit_factory(budget=budget, owner=base_user)
-        deposit2 = deposit_factory(budget=budget, owner=base_user)
+        deposit1 = deposit_factory(budget=budget)
+        deposit2 = deposit_factory(budget=budget)
 
         expense_category1 = transfer_category_factory(
             budget=budget, deposit=deposit1, category_type=CategoryType.EXPENSE
@@ -804,8 +804,8 @@ class TestTopEntitiesInPeriodChartAPIView:
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
 
-        deposit1 = deposit_factory(budget=budget, owner=base_user)
-        deposit2 = deposit_factory(budget=budget, owner=base_user)
+        deposit1 = deposit_factory(budget=budget)
+        deposit2 = deposit_factory(budget=budget)
 
         expense_category1 = transfer_category_factory(
             budget=budget, deposit=deposit1, category_type=CategoryType.EXPENSE
@@ -862,7 +862,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 
         entity = entity_factory(budget=budget, name="Entity 1")
@@ -902,7 +902,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 
         entity = entity_factory(budget=budget, name="Big Spender")
@@ -939,7 +939,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 
         entity1 = entity_factory(budget=budget, name="Entity 1")

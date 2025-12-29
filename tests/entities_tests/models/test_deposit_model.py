@@ -3,7 +3,6 @@ from django.core.exceptions import ValidationError
 from django.db import DataError, IntegrityError
 
 from budgets.models.budget_model import Budget
-from entities.models.choices.deposit_type import DepositType
 from entities.models.deposit_model import Deposit
 
 
@@ -16,7 +15,6 @@ class TestDepositModel:
         "description": "My own bank account",
         "is_active": True,
         "is_deposit": True,
-        "deposit_type": DepositType.DAILY_EXPENSES,
     }
 
     def test_save_deposit(self, budget: Budget):

@@ -34,7 +34,6 @@ urlpatterns = [
     path("api/budgets/", include("budgets.urls")),
     path("api/budgets/<int:budget_pk>/", include("predictions.urls")),
     path("api/categories/", include("categories.urls")),
-    path("api/", include("entities.urls")),
     path("api/", include("charts.urls")),
     path(
         "api/predictions/progress_statuses/", PredictionProgressStatusView.as_view(), name="prediction-progress-status"

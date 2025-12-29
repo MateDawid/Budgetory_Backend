@@ -12,10 +12,9 @@ from rest_framework.test import APIClient
 from app_users.models import User
 from budgets.models.budget_model import Budget
 from categories.models.choices.category_type import CategoryType
-from entities.models.choices.deposit_type import DepositType
 from entities.models.deposit_model import Deposit
 from entities.serializers.deposit_serializer import DepositSerializer
-from entities.views.deposit_viewset import calculate_deposit_balance, get_deposit_owner_display, sum_deposit_transfers
+from entities.views.deposit_viewset import calculate_deposit_balance, sum_deposit_transfers
 from predictions.models import ExpensePrediction
 from transfers.models import Transfer
 
@@ -140,7 +139,6 @@ class TestDepositViewSetList:
             .annotate(
                 incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
                 expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
-                owner_display=get_deposit_owner_display(),
             )
             .annotate(balance=calculate_deposit_balance())
             .filter(budget=budget)
@@ -182,7 +180,7 @@ class TestDepositViewSetList:
 
         response = api_client.get(deposits_url(budget.id))
 
-        deposits = Deposit.objects.filter(budget=budget).annotate(owner_display=get_deposit_owner_display())
+        deposits = Deposit.objects.filter(budget=budget)
         serializer = DepositSerializer(deposits, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == len(serializer.data) == deposits.count() == 1
@@ -198,7 +196,6 @@ class TestDepositViewSetCreate:
         "name": "Supermarket",
         "description": "Supermarket in which I buy food.",
         "is_active": True,
-        "deposit_type": DepositType.DAILY_EXPENSES,
     }
 
     def test_auth_required(self, api_client: APIClient, budget: Budget):
@@ -246,22 +243,12 @@ class TestDepositViewSetCreate:
         assert response.status_code == status.HTTP_403_FORBIDDEN
         assert response.data["detail"] == "User does not have access to Budget."
 
-    @pytest.mark.parametrize(
-        "deposit_type",
-        [
-            pytest.param(DepositType.DAILY_EXPENSES, id="daily-expenses"),
-            pytest.param(DepositType.SAVINGS, id="savings"),
-            pytest.param(DepositType.INVESTMENTS, id="investments"),
-            pytest.param(DepositType.OTHER, id="other"),
-        ],
-    )
     def test_create_single_deposit(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
         budget_factory: FactoryMetaClass,
         budgeting_period_factory: FactoryMetaClass,
-        deposit_type: DepositType,
     ):
         """
         GIVEN: Budget instance created in database. Valid payload prepared for Deposit.
@@ -273,7 +260,6 @@ class TestDepositViewSetCreate:
         period_2 = budgeting_period_factory(budget=budget)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
-        payload["deposit_type"] = deposit_type
 
         response = api_client.post(deposits_url(budget.id), payload)
 
@@ -288,30 +274,6 @@ class TestDepositViewSetCreate:
         assert response.data == serializer.data
         deposit_categories = deposit.transfer_categories.all()
         assert deposit_categories.exists()
-        categories_names = deposit_categories.values_list("name", flat=True)
-        match deposit_type:
-            case DepositType.DAILY_EXPENSES:
-                assert deposit_categories.count() == 6
-                assert "Salary" in categories_names
-                assert "Sell" in categories_names
-                assert "Bills" in categories_names
-                assert "For Savings" in categories_names
-                assert "For Investments" in categories_names
-                assert "Entertainment" in categories_names
-            case DepositType.OTHER:
-                assert deposit_categories.count() == 6
-                assert "Regular income" in categories_names
-                assert "Irregular income" in categories_names
-                assert "For most important expenses" in categories_names
-                assert "For savings" in categories_names
-                assert "For investments" in categories_names
-                assert "For other expenses" in categories_names
-            case _:
-                assert deposit_categories.count() == 4
-                assert "Income from User" in categories_names
-                assert "Value increase" in categories_names
-                assert "Value decrease" in categories_names
-                assert "Funds withdrawal" in categories_names
         for period in (period_1, period_2):
             assert ExpensePrediction.objects.filter(
                 deposit=deposit,

@@ -37,7 +37,7 @@ def get_deposits(budget_pk: int, deposit_id: str) -> list[dict[str, Any]]:
     query_filters: dict = {"budget_id": budget_pk}
     if deposit_id:
         query_filters["id"] = deposit_id
-    return list(Deposit.objects.filter(**query_filters).order_by("deposit_type", "name").values("pk", "name"))
+    return list(Deposit.objects.filter(**query_filters).order_by("name").values("pk", "name"))
 
 
 def get_chart_data(
@@ -79,7 +79,6 @@ class DepositsInPeriodsChartAPIView(APIView):
     Query Parameters:
         - period_from (optional): Starting period ID for date range filtering
         - period_to (optional): Ending period ID for date range filtering
-        - deposit_type (optional): Filter deposits by type
         - deposit (optional): Filter to specific deposit ID
 
     Returns:

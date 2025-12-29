@@ -3,7 +3,6 @@ from entities_tests.factories import EntityFactory
 from factory.base import FactoryMetaClass
 
 from budgets.models.budget_model import Budget
-from entities.models.choices.deposit_type import DepositType
 from entities.models.entity_model import Entity
 
 
@@ -35,7 +34,6 @@ class TestDepositManager:
             "description": "Some description",
             "is_deposit": False,  # intentionally set to False
             "is_active": True,
-            "deposit_type": DepositType.DAILY_EXPENSES,
         }
 
         entity = Entity.deposits.create(**payload)
@@ -52,7 +50,7 @@ class TestDepositManager:
         WHEN: Calling DepositManager for update.
         THEN: Manager updates object always with is_deposit set to True.
         """
-        entity = EntityFactory.create(is_deposit=True, deposit_type=DepositType.DAILY_EXPENSES)
+        entity = EntityFactory.create(is_deposit=True)
         assert Entity.deposits.all().count() == 1
 
         Entity.deposits.filter(pk=entity.pk).update(is_deposit=False)
