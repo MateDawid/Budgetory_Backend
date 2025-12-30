@@ -123,8 +123,7 @@ class TestDepositModel:
         # .create() scenario
         with pytest.raises(IntegrityError) as exc:
             Deposit.objects.create(**payload)
-        assert (
-            f'DETAIL:  Key (name, budget_id, is_deposit)=({payload["name"]}, {budget.id}, tts) already exists.'
-            in str(exc.value)
+        assert f'DETAIL:  Key (name, budget_id, is_deposit)=({payload["name"]}, {budget.id}, t) already exists.' in str(
+            exc.value
         )
         assert Deposit.objects.filter(budget=budget).count() == 1
