@@ -19,10 +19,7 @@ class Entity(models.Model):
 
     class Meta:
         verbose_name_plural = "entities"
-        unique_together = (
-            "name",
-            "budget",
-        )
+        unique_together = ("name", "budget", "is_deposit")
 
     def __str__(self) -> str:
         """
