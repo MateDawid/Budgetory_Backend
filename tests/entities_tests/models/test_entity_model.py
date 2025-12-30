@@ -140,11 +140,16 @@ class TestEntityModel:
             deposit = Entity(**payload)
             deposit.full_clean()
 
-        assert "Entity with this Name and Budget already exists." in exc.value.error_dict["__all__"][0].messages[0]
+        assert (
+            "Entity with this Name, Budget and Is deposit already exists."
+            in exc.value.error_dict["__all__"][0].messages[0]
+        )
         assert Entity.objects.filter(budget=budget).count() == 1
 
         # .create() scenario
         with pytest.raises(IntegrityError) as exc:
             Entity.objects.create(**payload)
-        assert f'DETAIL:  Key (name, budget_id)=({payload["name"]}, {budget.id}) already exists.' in str(exc.value)
+        assert f'DETAIL:  Key (name, budget_id, is_deposit)=({payload["name"]}, {budget.id}, f) already exists.' in str(
+            exc.value
+        )
         assert Entity.objects.filter(budget=budget).count() == 1
