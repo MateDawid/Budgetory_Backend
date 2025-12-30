@@ -3,6 +3,7 @@ from collections import OrderedDict
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+from entities.models import Deposit
 from entities.models.entity_model import Entity
 
 
@@ -28,7 +29,11 @@ class EntitySerializer(serializers.ModelSerializer):
             ValidationError: Raised if Entity with given name exists in Budget already.
         """
         if (
-            self.Meta.model.objects.filter(budget=self.context["view"].kwargs["budget_pk"], name__iexact=name)
+            self.Meta.model.objects.filter(
+                budget=self.context["view"].kwargs["budget_pk"],
+                name__iexact=name,
+                is_deposit=self.Meta.model is Deposit,
+            )
             .exclude(pk=getattr(self.instance, "pk", None))
             .exists()
         ):

@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("entities", "0002_entity_deposit_type_entity_owner_and_more"),
+        ("entities", "0001_initial"),
         ("budgets", "0001_initial"),
         ("categories", "0001_initial"),
     ]

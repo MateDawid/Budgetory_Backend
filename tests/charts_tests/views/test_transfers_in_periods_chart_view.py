@@ -141,7 +141,7 @@ class TestTransfersInPeriodsChartApiView:
             budget=budget, name="Feb 2024", date_start=date(2024, 2, 1), date_end=date(2024, 2, 29)
         )
 
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 
@@ -181,13 +181,13 @@ class TestTransfersInPeriodsChartApiView:
         period = budgeting_period_factory(budget=budget, name="Jan 2024")
 
         # Create two deposits with categories and transfers
-        deposit1 = deposit_factory(budget=budget, owner=base_user)
+        deposit1 = deposit_factory(budget=budget)
         income_category1 = transfer_category_factory(budget=budget, deposit=deposit1, category_type=CategoryType.INCOME)
         expense_category1 = transfer_category_factory(
             budget=budget, deposit=deposit1, category_type=CategoryType.EXPENSE
         )
 
-        deposit2 = deposit_factory(budget=budget, owner=base_user)
+        deposit2 = deposit_factory(budget=budget)
         income_category2 = transfer_category_factory(budget=budget, deposit=deposit2, category_type=CategoryType.INCOME)
         expense_category2 = transfer_category_factory(
             budget=budget, deposit=deposit2, category_type=CategoryType.EXPENSE
@@ -259,7 +259,7 @@ class TestTransfersInPeriodsChartApiView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 
         transfer_factory(period=period, category=expense_category, value=Decimal("250.00"), deposit=deposit)
@@ -289,7 +289,7 @@ class TestTransfersInPeriodsChartApiView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
 
         transfer_factory(period=period, category=income_category, value=Decimal("750.00"), deposit=deposit)
@@ -319,7 +319,7 @@ class TestTransfersInPeriodsChartApiView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 
@@ -354,7 +354,7 @@ class TestTransfersInPeriodsChartApiView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 
@@ -388,13 +388,13 @@ class TestTransfersInPeriodsChartApiView:
         period = budgeting_period_factory(budget=budget, name="Jan 2024")
 
         # Create two deposits with categories and transfers
-        deposit1 = deposit_factory(budget=budget, owner=base_user)
+        deposit1 = deposit_factory(budget=budget)
         income_category1 = transfer_category_factory(budget=budget, deposit=deposit1, category_type=CategoryType.INCOME)
         expense_category1 = transfer_category_factory(
             budget=budget, deposit=deposit1, category_type=CategoryType.EXPENSE
         )
 
-        deposit2 = deposit_factory(budget=budget, owner=base_user)
+        deposit2 = deposit_factory(budget=budget)
         income_category2 = transfer_category_factory(budget=budget, deposit=deposit2, category_type=CategoryType.INCOME)
         expense_category2 = transfer_category_factory(
             budget=budget, deposit=deposit2, category_type=CategoryType.EXPENSE
@@ -434,7 +434,7 @@ class TestTransfersInPeriodsChartApiView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
 
         transfer_factory(period=period, category=income_category, value=Decimal("500.00"), deposit=deposit)
@@ -474,8 +474,8 @@ class TestTransfersInPeriodsChartApiView:
             budget=budget, name="Feb 2024", date_start=date(2024, 2, 1), date_end=date(2024, 2, 29)
         )
 
-        deposit1 = deposit_factory(budget=budget, owner=base_user)
-        deposit2 = deposit_factory(budget=budget, owner=base_user)
+        deposit1 = deposit_factory(budget=budget)
+        deposit2 = deposit_factory(budget=budget)
 
         income_category1 = transfer_category_factory(budget=budget, deposit=deposit1, category_type=CategoryType.INCOME)
         income_category2 = transfer_category_factory(budget=budget, deposit=deposit2, category_type=CategoryType.INCOME)
@@ -607,7 +607,7 @@ class TestTransfersInPeriodsChartApiView:
             budget=budget, name="Feb 2024", date_start=date(2024, 2, 1), date_end=date(2024, 2, 29)
         )
 
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
 
         transfer_factory(period=period1, category=income_category, value=Decimal("100.00"), deposit=deposit)
@@ -650,8 +650,8 @@ class TestTransfersInPeriodsChartApiView:
             )
             periods.append(period)
 
-        deposit1 = deposit_factory(budget=budget, owner=base_user)
-        deposit2 = deposit_factory(budget=budget, owner=base_user)
+        deposit1 = deposit_factory(budget=budget)
+        deposit2 = deposit_factory(budget=budget)
 
         income_category1 = transfer_category_factory(budget=budget, deposit=deposit1, category_type=CategoryType.INCOME)
         income_category2 = transfer_category_factory(budget=budget, deposit=deposit2, category_type=CategoryType.INCOME)
@@ -694,7 +694,7 @@ class TestTransfersInPeriodsChartApiView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
 
         transfer_factory(period=period, category=income_category, value=Decimal("500.00"), deposit=deposit)
@@ -724,7 +724,7 @@ class TestTransfersInPeriodsChartApiView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 
@@ -759,7 +759,7 @@ class TestTransfersInPeriodsChartApiView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 
@@ -794,7 +794,7 @@ class TestTransfersInPeriodsChartApiView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 
@@ -828,7 +828,7 @@ class TestTransfersInPeriodsChartApiView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
 
         entity1 = entity_factory(budget=budget)
         entity2 = entity_factory(budget=budget)
@@ -880,8 +880,8 @@ class TestTransfersInPeriodsChartApiView:
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Jan 2024")
 
-        deposit1 = deposit_factory(budget=budget, owner=base_user)
-        deposit2 = deposit_factory(budget=budget, owner=base_user)
+        deposit1 = deposit_factory(budget=budget)
+        deposit2 = deposit_factory(budget=budget)
 
         entity1 = entity_factory(budget=budget)
         entity2 = entity_factory(budget=budget)
@@ -942,8 +942,8 @@ class TestTransfersInPeriodsChartApiView:
             )
             periods.append(period)
 
-        deposit1 = deposit_factory(budget=budget, owner=base_user)
-        deposit2 = deposit_factory(budget=budget, owner=base_user)
+        deposit1 = deposit_factory(budget=budget)
+        deposit2 = deposit_factory(budget=budget)
         entity1 = entity_factory(budget=budget)
         entity2 = entity_factory(budget=budget)
 
@@ -1021,7 +1021,7 @@ class TestTransfersInPeriodsChartApiView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
 
         # Multiple income transfers
@@ -1056,7 +1056,7 @@ class TestTransfersInPeriodsChartApiView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         entity = entity_factory(budget=budget)
         income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
 
@@ -1094,7 +1094,7 @@ class TestTransfersInPeriodsChartApiView:
         THEN: HTTP 200 - Response with only income data for last 2 periods.
         """
         budget = budget_factory(members=[base_user])
-        deposit = deposit_factory(budget=budget, owner=base_user)
+        deposit = deposit_factory(budget=budget)
         income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
         expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
 

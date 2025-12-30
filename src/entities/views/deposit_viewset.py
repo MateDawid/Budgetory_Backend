@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from django.db import transaction
-from django.db.models import CharField, DecimalField, F, Func, Q, QuerySet, Sum, Value
+from django.db.models import DecimalField, F, Func, Q, QuerySet, Sum, Value
 from django.db.models.functions import Coalesce
 from django_filters import rest_framework as filters
 from rest_framework.filters import OrderingFilter
@@ -12,14 +12,8 @@ from app_infrastructure.permissions import UserBelongsToBudgetPermission
 from budgets.models import BudgetingPeriod
 from categories.models.choices.category_type import CategoryType
 from entities.filtersets.deposit_filterset import DepositFilterSet
-from entities.models.choices.deposit_type import DepositType
 from entities.models.deposit_model import Deposit
 from entities.serializers.deposit_serializer import DepositSerializer
-from entities.utils import (
-    create_initial_categories_for_daily_expenses_deposit,
-    create_initial_categories_for_other_deposit,
-    create_initial_categories_for_savings_and_investments_deposit,
-)
 from predictions.models import ExpensePrediction
 
 
@@ -54,20 +48,6 @@ def sum_deposit_transfers(transfer_type: CategoryType) -> Func:
     )
 
 
-def get_deposit_owner_display() -> Func:
-    """
-    Function for generate display value of Deposit owner.
-
-    Returns:
-        Func: ORM function returning Deposit owner display value.
-    """
-    return Coalesce(
-        F("owner__username"),
-        Value("🏦 Common"),
-        output_field=CharField(),
-    )
-
-
 class DepositViewSet(ModelViewSet):
     """View for managing Deposits."""
 
@@ -76,7 +56,7 @@ class DepositViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, UserBelongsToBudgetPermission]
     filterset_class = DepositFilterSet
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
-    ordering_fields = ("id", "name", "balance", "deposit_type")
+    ordering_fields = ("id", "name", "balance")
 
     def get_queryset(self) -> QuerySet:
         """
@@ -89,7 +69,6 @@ class DepositViewSet(ModelViewSet):
             self.queryset.filter(budget__pk=self.kwargs.get("budget_pk"))
             .distinct()
             .annotate(
-                owner_display=get_deposit_owner_display(),
                 incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
                 expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
             )
@@ -117,11 +96,3 @@ class DepositViewSet(ModelViewSet):
                 )
                 for period_id in BudgetingPeriod.objects.filter(budget_id=budget_pk).values_list("id", flat=True)
             )
-            if deposit.deposit_type == DepositType.DAILY_EXPENSES:
-                create_initial_categories_for_daily_expenses_deposit(budget_pk=budget_pk, deposit_pk=deposit.pk)
-            elif deposit.deposit_type in (DepositType.SAVINGS, DepositType.INVESTMENTS):
-                create_initial_categories_for_savings_and_investments_deposit(
-                    budget_pk=budget_pk, deposit_pk=deposit.pk
-                )
-            else:
-                create_initial_categories_for_other_deposit(budget_pk=budget_pk, deposit_pk=deposit.pk)

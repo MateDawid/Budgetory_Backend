@@ -3,7 +3,6 @@ from django.core.exceptions import ValidationError
 from django.db import DataError, IntegrityError
 
 from budgets.models.budget_model import Budget
-from entities.models.choices.deposit_type import DepositType
 from entities.models.deposit_model import Deposit
 
 
@@ -16,7 +15,6 @@ class TestDepositModel:
         "description": "My own bank account",
         "is_active": True,
         "is_deposit": True,
-        "deposit_type": DepositType.DAILY_EXPENSES,
     }
 
     def test_save_deposit(self, budget: Budget):
@@ -116,11 +114,16 @@ class TestDepositModel:
             deposit = Deposit(**payload)
             deposit.full_clean()
 
-        assert "Entity with this Name and Budget already exists." in exc.value.error_dict["__all__"][0].messages[0]
+        assert (
+            "Entity with this Name, Budget and Is deposit already exists."
+            in exc.value.error_dict["__all__"][0].messages[0]
+        )
         assert Deposit.objects.filter(budget=budget).count() == 1
 
         # .create() scenario
         with pytest.raises(IntegrityError) as exc:
             Deposit.objects.create(**payload)
-        assert f'DETAIL:  Key (name, budget_id)=({payload["name"]}, {budget.id}) already exists.' in str(exc.value)
+        assert f'DETAIL:  Key (name, budget_id, is_deposit)=({payload["name"]}, {budget.id}, t) already exists.' in str(
+            exc.value
+        )
         assert Deposit.objects.filter(budget=budget).count() == 1

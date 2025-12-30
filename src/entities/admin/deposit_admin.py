@@ -7,5 +7,5 @@ from entities.models.deposit_model import Deposit
 class DepositAdmin(admin.ModelAdmin):
     """Custom admin view for Deposit model."""
 
-    list_display = ("name", "budget", "description", "is_active", "deposit_type", "owner")
-    list_filter = ("budget__name", "is_active", "deposit_type", "owner")
+    list_display = ("name", "budget", "description", "is_active")
+    list_filter = ("budget__name", "is_active")

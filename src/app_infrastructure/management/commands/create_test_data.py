@@ -16,7 +16,6 @@ from categories.models import TransferCategory
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from entities.models import Deposit, Entity
-from entities.models.choices.deposit_type import DepositType
 from predictions.models import ExpensePrediction
 from transfers.models import Expense, Income
 
@@ -81,13 +80,11 @@ class Command(BaseCommand):
             budget_id=self.objects_ids["budget_id"],
             name="Users account",
             description="Account for personal User expenses and incomes.",
-            deposit_type=DepositType.DAILY_EXPENSES,
         )
         deposit_common = Deposit.objects.create(
             budget_id=self.objects_ids["budget_id"],
             name="Common account",
             description="Account for common expenses and incomes.",
-            deposit_type=DepositType.DAILY_EXPENSES,
         )
         # Create Entities
         self.stdout.write("Creating Entities")

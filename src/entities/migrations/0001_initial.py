@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "verbose_name_plural": "entities",
-                "unique_together": {("name", "budget")},
+                "unique_together": {("name", "budget", "is_deposit")},
             },
         ),
         migrations.CreateModel(

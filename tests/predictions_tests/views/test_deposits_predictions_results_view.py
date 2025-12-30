@@ -11,7 +11,6 @@ from rest_framework.test import APIClient
 
 from app_users.models import User
 from categories.models.choices.category_type import CategoryType
-from entities.models.choices.deposit_type import DepositType
 
 
 def deposits_predictions_results_url(budget_id: int, period_id: int):
@@ -95,7 +94,7 @@ class TestDepositsPredictionsResultsAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget, deposit_type=DepositType.DAILY_EXPENSES)
+        deposit = deposit_factory(budget=budget)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
@@ -125,22 +124,20 @@ class TestDepositsPredictionsResultsAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
-        deposit_1 = deposit_factory(budget=budget, deposit_type=DepositType.DAILY_EXPENSES)
-        deposit_2 = deposit_factory(budget=budget, deposit_type=DepositType.DAILY_EXPENSES)
-        deposit_3 = deposit_factory(budget=budget, deposit_type=DepositType.SAVINGS)
-        deposit_4 = deposit_factory(budget=budget, deposit_type=DepositType.OTHER)
+        deposit_1 = deposit_factory(budget=budget)
+        deposit_2 = deposit_factory(budget=budget)
+        deposit_3 = deposit_factory(budget=budget)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
 
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) == 2
+        assert len(response.data) == 3
 
         deposits_names = [item["deposit_name"] for item in response.data]
         assert deposit_1.name in deposits_names
         assert deposit_2.name in deposits_names
-        assert deposit_3.name not in deposits_names
-        assert deposit_4.name not in deposits_names
+        assert deposit_3.name in deposits_names
 
     def test_get_deposits_results_with_expense_predictions(
         self,
@@ -159,8 +156,8 @@ class TestDepositsPredictionsResultsAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
-        deposit_1 = deposit_factory(budget=budget, deposit_type=DepositType.DAILY_EXPENSES)
-        deposit_2 = deposit_factory(budget=budget, deposit_type=DepositType.DAILY_EXPENSES)
+        deposit_1 = deposit_factory(budget=budget)
+        deposit_2 = deposit_factory(budget=budget)
 
         # Create categories
         category_1 = transfer_category_factory(budget=budget, deposit=deposit_1, category_type=CategoryType.EXPENSE)
@@ -202,7 +199,7 @@ class TestDepositsPredictionsResultsAPIView:
         current_period = budgeting_period_factory(
             budget=budget, date_start=date(2024, 3, 1), date_end=date(2024, 3, 31)
         )
-        deposit = deposit_factory(budget=budget, owner=base_user, deposit_type=DepositType.DAILY_EXPENSES)
+        deposit = deposit_factory(budget=budget)
 
         # Create categories
         income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
@@ -235,83 +232,6 @@ class TestDepositsPredictionsResultsAPIView:
         deposit_data = next(item for item in response.data if item["deposit_name"] == deposit.name)
         assert deposit_data["period_balance"] == "2000.00"
 
-    def test_get_deposits_results_with_transfers_daily_expenses_deposit_only(
-        self,
-        api_client: APIClient,
-        base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
-        transfer_category_factory: FactoryMetaClass,
-        transfer_factory: FactoryMetaClass,
-        deposit_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Budget with BudgetingPeriods and Transfers with different deposit types.
-        WHEN: DepositsPredictionsResultsAPIView called by Budget member.
-        THEN: HTTP 200 - Response with period_balance calculation only including DAILY_EXPENSES deposits.
-        """
-        budget = budget_factory(members=[base_user])
-        previous_period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31)
-        )
-        current_period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29)
-        )
-
-        # Create deposits with different types
-        daily_deposit = deposit_factory(budget=budget, owner=base_user, deposit_type=DepositType.DAILY_EXPENSES)
-        savings_deposit = deposit_factory(budget=budget, owner=base_user, deposit_type=DepositType.SAVINGS)
-
-        # Create categories
-        income_daily_deposit_category = transfer_category_factory(
-            budget=budget, deposit=daily_deposit, category_type=CategoryType.INCOME
-        )
-        expense_daily_deposit_category = transfer_category_factory(
-            budget=budget, deposit=daily_deposit, category_type=CategoryType.EXPENSE
-        )
-        income_savings_deposit_category = transfer_category_factory(
-            budget=budget, deposit=savings_deposit, category_type=CategoryType.INCOME
-        )
-        expense_savings_deposit_category = transfer_category_factory(
-            budget=budget, deposit=savings_deposit, category_type=CategoryType.EXPENSE
-        )
-
-        # Create transfers with different deposit types
-        transfer_factory(
-            period=previous_period,
-            category=income_daily_deposit_category,
-            value=Decimal("1000.00"),
-            deposit=daily_deposit,
-        )
-        transfer_factory(
-            period=previous_period,
-            category=income_savings_deposit_category,
-            value=Decimal("500.00"),
-            deposit=savings_deposit,
-        )  # Should NOT be counted
-        transfer_factory(
-            period=previous_period,
-            category=expense_daily_deposit_category,
-            value=Decimal("300.00"),
-            deposit=daily_deposit,
-        )
-        transfer_factory(
-            period=previous_period,
-            category=expense_savings_deposit_category,
-            value=Decimal("200.00"),
-            deposit=savings_deposit,
-        )  # Should NOT be counted
-
-        api_client.force_authenticate(base_user)
-
-        response = api_client.get(deposits_predictions_results_url(budget.id, current_period.id))
-
-        assert response.status_code == status.HTTP_200_OK
-
-        # Check user balance (only DAILY_EXPENSES deposits: 1000 income - 300 expense = 700)
-        user_data = next(item for item in response.data if item["deposit_name"] == daily_deposit.name)
-        assert user_data["period_balance"] == "700.00"
-
     def test_get_deposits_results_response_structure(
         self,
         api_client: APIClient,
@@ -327,7 +247,7 @@ class TestDepositsPredictionsResultsAPIView:
         """
         budget = budget_factory(members=[base_user])
         period = budgeting_period_factory(budget=budget)
-        deposit_factory(budget=budget, deposit_type=DepositType.DAILY_EXPENSES)
+        deposit_factory(budget=budget)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
@@ -393,11 +313,9 @@ class TestDepositsPredictionsResultsAPIViewIntegration:
         deposit_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Complete budget scenario with multiple deposits, periods, predictions, transfers
-        and different deposit types.
+        GIVEN: Complete budget scenario with multiple deposits, periods, predictions, transfers.
         WHEN: DepositsPredictionsResultsAPIView called by Budget member.
-        THEN: HTTP 200 - Response with accurate calculations for all deposits returned (only DAILY_EXPENSES
-        deposits counted).
+        THEN: HTTP 200 - Response with accurate calculations for all deposits returned.
         """
         other_user = user_factory(username="otheruser")
         budget = budget_factory(members=[base_user, other_user])
@@ -409,14 +327,9 @@ class TestDepositsPredictionsResultsAPIViewIntegration:
             budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29)
         )
 
-        # Create deposits with different types
-        daily_expenses_deposit_1 = deposit_factory(
-            budget=budget, owner=base_user, deposit_type=DepositType.DAILY_EXPENSES
-        )
-        daily_expenses_deposit_2 = deposit_factory(
-            budget=budget, owner=base_user, deposit_type=DepositType.DAILY_EXPENSES
-        )
-        savings_deposit = deposit_factory(budget=budget, owner=None, deposit_type=DepositType.SAVINGS)
+        # Create deposits
+        daily_expenses_deposit_1 = deposit_factory(budget=budget)
+        daily_expenses_deposit_2 = deposit_factory(budget=budget)
 
         # Create categories for different deposits
         daily_expenses_deposit_1_income_category = transfer_category_factory(
@@ -428,31 +341,19 @@ class TestDepositsPredictionsResultsAPIViewIntegration:
         daily_expenses_deposit_2_income_category = transfer_category_factory(
             budget=budget, deposit=daily_expenses_deposit_2, category_type=CategoryType.INCOME
         )
-        savings_deposit_income_category = transfer_category_factory(
-            budget=budget, deposit=savings_deposit, category_type=CategoryType.INCOME
-        )
-        savings_deposit_expense_category = transfer_category_factory(
-            budget=budget, deposit=savings_deposit, category_type=CategoryType.EXPENSE
-        )
 
         # Create predictions for current period
         expense_prediction_factory(
             period=current_period, category=daily_expenses_deposit_1_expense_category, current_plan=Decimal("400.00")
         )
 
-        # Create previous period transfers (for balance calculation) - mix of deposit types
+        # Create previous period transfers (for balance calculation)
         transfer_factory(
             period=previous_period,
             category=daily_expenses_deposit_1_income_category,
             value=Decimal("2000.00"),
             deposit=daily_expenses_deposit_1,
         )
-        transfer_factory(
-            period=previous_period,
-            category=savings_deposit_income_category,
-            value=Decimal("1000.00"),
-            deposit=savings_deposit,
-        )  # Should NOT be counted
         transfer_factory(
             period=previous_period,
             category=daily_expenses_deposit_1_expense_category,
@@ -466,19 +367,13 @@ class TestDepositsPredictionsResultsAPIViewIntegration:
             deposit=daily_expenses_deposit_2,
         )
 
-        # Create current period expenses (only daily expenses counted)
+        # Create current period expenses
         expense_factory(
             period=current_period,
             category=daily_expenses_deposit_1_expense_category,
             value=Decimal("200.00"),
             deposit=daily_expenses_deposit_1,
         )
-        expense_factory(
-            period=current_period,
-            category=savings_deposit_expense_category,
-            value=Decimal("100.00"),
-            deposit=savings_deposit,
-        )  # Should NOT be counted
 
         api_client.force_authenticate(base_user)
 
@@ -489,15 +384,13 @@ class TestDepositsPredictionsResultsAPIViewIntegration:
 
         deposit_1_data = next(item for item in response.data if item["deposit_name"] == daily_expenses_deposit_1.name)
         assert deposit_1_data["predictions_sum"] == "400.00"  # User's prediction
-        assert deposit_1_data["period_expenses"] == "200.00"  # Current period expense (only daily expenses)
-        assert (
-            deposit_1_data["period_balance"] == "1200.00"
-        )  # 2000 income - 800 expense from previous (only daily expenses)
+        assert deposit_1_data["period_expenses"] == "200.00"  # Current period expense
+        assert deposit_1_data["period_balance"] == "1200.00"  # 2000 income - 800 expense from previous
 
         deposit_2_data = next(item for item in response.data if item["deposit_name"] == daily_expenses_deposit_2.name)
         assert deposit_2_data["predictions_sum"] == "0.00"  # No predictions
         assert deposit_2_data["period_expenses"] == "0.00"  # No current period expenses
-        assert deposit_2_data["period_balance"] == "1500.00"  # 1500 income from previous (daily expenses)
+        assert deposit_2_data["period_balance"] == "1500.00"  # 1500 income from previous
 
     def test_decimal_precision_handling(
         self,
@@ -520,7 +413,7 @@ class TestDepositsPredictionsResultsAPIViewIntegration:
         period = budgeting_period_factory(budget=budget)
 
         entity = entity_factory(budget=budget)
-        daily_deposit = deposit_factory(budget=budget, owner=base_user, deposit_type=DepositType.DAILY_EXPENSES)
+        daily_deposit = deposit_factory(budget=budget)
         category = transfer_category_factory(budget=budget, deposit=daily_deposit, category_type=CategoryType.EXPENSE)
 
         # Create prediction and expense with precise decimals
