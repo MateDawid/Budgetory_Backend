@@ -10,7 +10,7 @@ NOT_CATEGORIZED_CATEGORY_NAME = "❗Not categorized"
 class ExpensePrediction(models.Model):
     """ExpensePrediction model for planned expenses in particular BudgetingPeriod."""
 
-    period = models.ForeignKey("budgets.BudgetingPeriod", on_delete=models.CASCADE, related_name="expense_predictions")
+    period = models.ForeignKey("periods.BudgetingPeriod", on_delete=models.CASCADE, related_name="expense_predictions")
     deposit = models.ForeignKey("entities.Deposit", on_delete=models.CASCADE, related_name="expense_predictions")
     category = models.ForeignKey(
         "categories.TransferCategory",

@@ -9,11 +9,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
-from budgets.models import BudgetingPeriod
 from categories.models.choices.category_type import CategoryType
 from entities.filtersets.deposit_filterset import DepositFilterSet
 from entities.models.deposit_model import Deposit
 from entities.serializers.deposit_serializer import DepositSerializer
+from periods.models import BudgetingPeriod
 from predictions.models import ExpensePrediction
 
 

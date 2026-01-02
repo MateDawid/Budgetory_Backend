@@ -21,11 +21,11 @@ from rest_framework.test import APIClient
 
 from app_users.models import User
 from budgets.models.budget_model import Budget
-from budgets.models.budgeting_period_model import BudgetingPeriod
-from budgets.models.choices.period_status import PeriodStatus
-from budgets.serializers.budgeting_period_serializer import BudgetingPeriodSerializer
-from budgets.views.budgeting_period_viewset import sum_period_transfers
 from categories.models.choices.category_type import CategoryType
+from periods.models.budgeting_period_model import BudgetingPeriod
+from periods.models.choices.period_status import PeriodStatus
+from periods.serializers.budgeting_period_serializer import BudgetingPeriodSerializer
+from periods.views.budgeting_period_viewset import sum_period_transfers
 from predictions.models import ExpensePrediction
 from transfers.models import Transfer
 

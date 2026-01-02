@@ -11,13 +11,13 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
-from budgets.filtersets.budgeting_period_filterset import BudgetingPeriodFilterSet
-from budgets.models import BudgetingPeriod
-from budgets.models.choices.period_status import PeriodStatus
-from budgets.serializers.budgeting_period_serializer import BudgetingPeriodSerializer
 from categories.models import TransferCategory
 from categories.models.choices.category_type import CategoryType
 from entities.models import Deposit
+from periods.filtersets.budgeting_period_filterset import BudgetingPeriodFilterSet
+from periods.models import BudgetingPeriod
+from periods.models.choices.period_status import PeriodStatus
+from periods.serializers.budgeting_period_serializer import BudgetingPeriodSerializer
 from predictions.models import ExpensePrediction
 
 

@@ -5,9 +5,9 @@ from django.db.models import Model
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from budgets.models import BudgetingPeriod
 from categories.models import TransferCategory
 from entities.models import Deposit, Entity
+from periods.models import BudgetingPeriod
 from transfers.models.transfer_model import Transfer
 
 

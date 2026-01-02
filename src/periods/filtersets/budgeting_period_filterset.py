@@ -1,6 +1,6 @@
 from django_filters import rest_framework as filters
 
-from budgets.models.choices.period_status import PeriodStatus
+from periods.models.choices.period_status import PeriodStatus
 
 
 class BudgetingPeriodFilterSet(filters.FilterSet):

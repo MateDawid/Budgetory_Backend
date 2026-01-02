@@ -12,10 +12,10 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from app_users.models import User
-from budgets.models.choices.period_status import PeriodStatus
 from categories.models import TransferCategory
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
+from periods.models.choices.period_status import PeriodStatus
 from predictions.models.expense_prediction_model import ExpensePrediction
 from predictions.serializers.expense_prediction_serializer import ExpensePredictionSerializer
 

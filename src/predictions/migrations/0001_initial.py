@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("categories", "0001_initial"),
-        ("budgets", "0001_initial"),
+        ("periods", "0001_initial"),
         ("entities", "0001_initial"),
     ]
 
@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="expense_predictions",
-                        to="budgets.budgetingperiod",
+                        to="periods.budgetingperiod",
                     ),
                 ),
             ],

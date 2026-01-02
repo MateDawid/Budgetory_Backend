@@ -8,8 +8,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
-from budgets.models import BudgetingPeriod
 from categories.models.choices.category_type import CategoryType
+from periods.models import BudgetingPeriod
 from transfers.models import Transfer
 
 

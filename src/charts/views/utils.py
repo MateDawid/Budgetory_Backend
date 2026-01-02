@@ -3,8 +3,8 @@ from typing import Any
 
 from django.db.models import Subquery
 
-from budgets.models import BudgetingPeriod
 from categories.models.choices.category_type import CategoryType
+from periods.models import BudgetingPeriod
 
 
 def generate_rgba_value(index: int, total_count: int, display_value: CategoryType | None) -> str:

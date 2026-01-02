@@ -7,9 +7,9 @@ from factory.base import FactoryMetaClass
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from budgets.models import BudgetingPeriod
-from budgets.models.choices.period_status import PeriodStatus
-from budgets.serializers.budgeting_period_serializer import BudgetingPeriodSerializer
+from periods.models import BudgetingPeriod
+from periods.models.choices.period_status import PeriodStatus
+from periods.serializers.budgeting_period_serializer import BudgetingPeriodSerializer
 
 
 def periods_url(budget_id):

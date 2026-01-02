@@ -4,9 +4,9 @@ from django.db.models import QuerySet
 from django_filters import rest_framework as filters
 from rest_framework.request import Request
 
-from budgets.models import BudgetingPeriod
 from budgets.utils import get_budget_pk
 from entities.models import Deposit
+from periods.models import BudgetingPeriod
 
 
 class TransferFilterSet(filters.FilterSet):

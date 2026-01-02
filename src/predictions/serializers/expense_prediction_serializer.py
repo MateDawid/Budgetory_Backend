@@ -5,11 +5,11 @@ from django.db.models import Model
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from budgets.models import BudgetingPeriod
-from budgets.models.choices.period_status import PeriodStatus
 from categories.models import TransferCategory
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
+from periods.models import BudgetingPeriod
+from periods.models.choices.period_status import PeriodStatus
 from predictions.models.expense_prediction_model import NOT_CATEGORIZED_CATEGORY_NAME, ExpensePrediction
 
 

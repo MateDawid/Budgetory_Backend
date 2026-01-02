@@ -1,13 +1,15 @@
 import factory
-from budgets_tests.factories import BudgetFactory, BudgetingPeriodFactory
+from budgets_tests.factories import BudgetFactory
 from categories_tests.factories import TransferCategoryFactory
 from entities_tests.factories import DepositFactory
+from periods_tests.factories import BudgetingPeriodFactory
 
-from budgets.models import Budget, BudgetingPeriod
-from budgets.models.choices.period_status import PeriodStatus
+from budgets.models import Budget
 from categories.models import TransferCategory
 from categories.models.choices.category_type import CategoryType
 from entities.models import Deposit
+from periods.models import BudgetingPeriod
+from periods.models.choices.period_status import PeriodStatus
 
 
 class ExpensePredictionFactory(factory.django.DjangoModelFactory):

@@ -10,12 +10,13 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from app_users.models import User
-from budgets.models import Budget, BudgetingPeriod
-from budgets.models.choices.period_status import PeriodStatus
+from budgets.models import Budget
 from categories.models import TransferCategory
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from entities.models import Deposit, Entity
+from periods.models import BudgetingPeriod
+from periods.models.choices.period_status import PeriodStatus
 from predictions.models import ExpensePrediction
 from transfers.models import Expense, Income
 

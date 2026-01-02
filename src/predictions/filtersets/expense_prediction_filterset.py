@@ -3,12 +3,12 @@ from decimal import Decimal
 from django.db.models import F, QuerySet
 from django_filters import rest_framework as filters
 
-from budgets.models import BudgetingPeriod
 from budgets.utils import get_budget_pk
 from categories.models import TransferCategory
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from entities.models import Deposit
+from periods.models import BudgetingPeriod
 from predictions.views.prediction_progress_status_view import PredictionProgressStatus
 
 

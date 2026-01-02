@@ -9,9 +9,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
-from budgets.models import Budget, BudgetingPeriod
+from budgets.models import Budget
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
+from periods.models import BudgetingPeriod
 from predictions.models import ExpensePrediction
 from transfers.models import Expense, Transfer
 

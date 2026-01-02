@@ -4,8 +4,8 @@ import pytest
 from django.db import DataError, IntegrityError
 
 from budgets.models.budget_model import Budget
-from budgets.models.budgeting_period_model import BudgetingPeriod
-from budgets.models.choices.period_status import PeriodStatus
+from periods.models.budgeting_period_model import BudgetingPeriod
+from periods.models.choices.period_status import PeriodStatus
 
 
 @pytest.mark.django_db

@@ -2,7 +2,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from budgets.models.choices.period_status import PeriodStatus
+from periods.models.choices.period_status import PeriodStatus
 
 
 class PeriodStatusView(APIView):

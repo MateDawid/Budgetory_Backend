@@ -2,14 +2,16 @@ import random
 from datetime import date, timedelta
 
 import factory.fuzzy
-from budgets_tests.factories import BudgetFactory, BudgetingPeriodFactory
+from budgets_tests.factories import BudgetFactory
 from categories_tests.factories import TransferCategoryFactory
 from entities_tests.factories import DepositFactory, EntityFactory
+from periods_tests.factories import BudgetingPeriodFactory
 
-from budgets.models import Budget, BudgetingPeriod
+from budgets.models import Budget
 from categories.models import TransferCategory
 from categories.models.choices.category_type import CategoryType
 from entities.models import Deposit, Entity
+from periods.models import BudgetingPeriod
 
 
 class TransferFactory(factory.django.DjangoModelFactory):

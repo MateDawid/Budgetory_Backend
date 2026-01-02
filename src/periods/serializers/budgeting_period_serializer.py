@@ -4,8 +4,8 @@ from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from budgets.models import BudgetingPeriod
-from budgets.models.choices.period_status import PeriodStatus
+from periods.models import BudgetingPeriod
+from periods.models.choices.period_status import PeriodStatus
 
 
 class BudgetingPeriodSerializer(serializers.ModelSerializer):

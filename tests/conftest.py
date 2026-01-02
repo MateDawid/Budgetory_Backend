@@ -2,11 +2,12 @@ from typing import Any
 
 import pytest
 from app_users_tests.factories import UserFactory
-from budgets_tests.factories import BudgetFactory, BudgetingPeriodFactory
+from budgets_tests.factories import BudgetFactory
 from categories_tests.factories import TransferCategoryFactory
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from entities_tests.factories import DepositFactory, EntityFactory
+from periods_tests.factories import BudgetingPeriodFactory
 from predictions_tests.factories import ExpensePredictionFactory
 from pytest_django.lazy_django import skip_if_no_django
 from pytest_factoryboy import register

@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from app_infrastructure.permissions import UserBelongsToBudgetPermission
-from budgets.models import BudgetingPeriod
+from periods.models import BudgetingPeriod
 from predictions.models import ExpensePrediction
 
 logger = logging.getLogger("default")

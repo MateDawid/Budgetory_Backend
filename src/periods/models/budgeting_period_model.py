@@ -1,6 +1,6 @@
 from django.db import models
 
-from budgets.models.choices.period_status import PeriodStatus
+from periods.models.choices.period_status import PeriodStatus
 
 
 class BudgetingPeriod(models.Model):
