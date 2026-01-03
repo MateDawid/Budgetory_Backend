@@ -27,7 +27,7 @@ class EntityViewSet(ModelViewSet):
         Returns:
             QuerySet: Filtered Entity QuerySet.
         """
-        return self.queryset.filter(_pk=self.kwargs.get("wallet_pk")).distinct()
+        return self.queryset.filter(wallet_id=self.kwargs.get("wallet_pk")).distinct()
 
     def perform_create(self, serializer: EntitySerializer) -> None:
         """

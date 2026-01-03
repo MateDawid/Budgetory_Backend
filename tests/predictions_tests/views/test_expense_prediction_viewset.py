@@ -490,7 +490,7 @@ class TestExpensePredictionViewSetCreate:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "period" in response.data["detail"]
-        assert response.data["detail"]["period"][0] == "New Expense Prediction cannot be added to closed  Period."
+        assert response.data["detail"]["period"][0] == "New Expense Prediction cannot be added to closed Period."
         assert not ExpensePrediction.objects.filter(period__wallet=wallet).exists()
 
     def test_error_add_prediction_to_active_period(
@@ -519,7 +519,7 @@ class TestExpensePredictionViewSetCreate:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "period" in response.data["detail"]
-        assert response.data["detail"]["period"][0] == "New Expense Prediction cannot be added to active  Period."
+        assert response.data["detail"]["period"][0] == "New Expense Prediction cannot be added to active Period."
         assert not ExpensePrediction.objects.filter(period__wallet=wallet).exists()
 
 
@@ -854,7 +854,7 @@ class TestExpensePredictionViewSetUpdate:
         assert "non_field_errors" in response.data["detail"]
         assert (
             response.data["detail"]["non_field_errors"][0]
-            == "Expense Prediction cannot be changed when  Period is closed."
+            == "Expense Prediction cannot be changed when Period is closed."
         )
 
     def test_update_prediction_for_active_period(
@@ -911,7 +911,7 @@ class TestExpensePredictionViewSetUpdate:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "period" in response.data["detail"]
-        assert response.data["detail"]["period"][0] == " Period for Expense Prediction cannot be changed."
+        assert response.data["detail"]["period"][0] == "Period for Expense Prediction cannot be changed."
 
 
 @pytest.mark.django_db

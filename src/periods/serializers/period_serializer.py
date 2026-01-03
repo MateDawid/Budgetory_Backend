@@ -97,7 +97,7 @@ class PeriodSerializer(serializers.ModelSerializer):
             | Q(wallet__pk=wallet_pk, date_start__gte=date_start, date_end__lte=date_end)
         ).exclude(pk=getattr(self.instance, "pk", None))
         if colliding_periods.exists():
-            raise ValidationError(" period date range collides with other period in Wallet.")
+            raise ValidationError("Period date range collides with other period in Wallet.")
 
         if attrs.get("status", getattr(self.instance, "status", None)) == PeriodStatus.DRAFT:
             newer_periods = Period.objects.filter(wallet__pk=wallet_pk, date_start__gte=date_end).exclude(
