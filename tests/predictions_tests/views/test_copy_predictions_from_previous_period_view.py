@@ -12,9 +12,9 @@ from app_users.models import User
 from predictions.models import ExpensePrediction
 
 
-def copy_predictions_url(budget_id: int, period_id: int):
+def copy_predictions_url(wallet_id: int, period_id: int):
     """Create and return a copy predictions URL."""
-    return reverse("predictions:copy-predictions-from-previous-period", args=[budget_id, period_id])
+    return reverse("predictions:copy-predictions-from-previous-period", args=[wallet_id, period_id])
 
 
 @pytest.mark.django_db
@@ -27,28 +27,26 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with BudgetingPeriods and existing ExpensePredictions in current period.
+        GIVEN: Wallet with Periods and existing ExpensePredictions in current period.
         WHEN: CopyPredictionsFromPreviousPeriodAPIView endpoint called with POST.
         THEN: HTTP 400 returned with appropriate error message.
         """
-        budget = budget_factory(members=[base_user])
-        previous_period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31)
-        )
-        current_period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), previous_period=previous_period
+        wallet = wallet_factory(members=[base_user])
+        previous_period = period_factory(wallet=wallet, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
+        current_period = period_factory(
+            wallet=wallet, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), previous_period=previous_period
         )
 
         # Create prediction in current period
         expense_prediction_factory(period=current_period)
 
         api_client.force_authenticate(base_user)
-        url = copy_predictions_url(budget.id, current_period.id)
+        url = copy_predictions_url(wallet.id, current_period.id)
 
         response = api_client.post(url)
 
@@ -62,25 +60,23 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with BudgetingPeriods and ExpensePredictions in previous period.
+        GIVEN: Wallet with Periods and ExpensePredictions in previous period.
         WHEN: CopyPredictionsFromPreviousPeriodAPIView endpoint called with POST.
         THEN: HTTP 200 returned and predictions are copied successfully.
         """
-        budget = budget_factory(members=[base_user])
-        category1 = transfer_category_factory(budget=budget)
-        category2 = transfer_category_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        category1 = transfer_category_factory(wallet=wallet)
+        category2 = transfer_category_factory(wallet=wallet)
 
-        previous_period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31)
-        )
-        current_period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), previous_period=previous_period
+        previous_period = period_factory(wallet=wallet, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
+        current_period = period_factory(
+            wallet=wallet, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), previous_period=previous_period
         )
 
         # Create predictions in previous period
@@ -92,7 +88,7 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
         )
 
         api_client.force_authenticate(base_user)
-        url = copy_predictions_url(budget.id, current_period.id)
+        url = copy_predictions_url(wallet.id, current_period.id)
 
         response = api_client.post(url)
 
@@ -115,24 +111,22 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with multiple categories and predictions in previous period.
+        GIVEN: Wallet with multiple categories and predictions in previous period.
         WHEN: CopyPredictionsFromPreviousPeriodAPIView endpoint called with POST.
         THEN: All predictions are copied with correct category associations.
         """
-        budget = budget_factory(members=[base_user])
-        categories = [transfer_category_factory(budget=budget) for _ in range(5)]
+        wallet = wallet_factory(members=[base_user])
+        categories = [transfer_category_factory(wallet=wallet) for _ in range(5)]
 
-        previous_period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31)
-        )
-        current_period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), previous_period=previous_period
+        previous_period = period_factory(wallet=wallet, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
+        current_period = period_factory(
+            wallet=wallet, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), previous_period=previous_period
         )
 
         # Create predictions for all categories
@@ -147,7 +141,7 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
             original_predictions.append(prediction)
 
         api_client.force_authenticate(base_user)
-        url = copy_predictions_url(budget.id, current_period.id)
+        url = copy_predictions_url(wallet.id, current_period.id)
 
         response = api_client.post(url)
 
@@ -162,73 +156,71 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
             assert copied_prediction.current_plan == original_prediction.current_plan
             assert copied_prediction.description == original_prediction.description
 
-    def test_copy_ignores_predictions_from_other_budgets(
+    def test_copy_ignores_predictions_from_other_wallets(
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Multiple budgets with predictions in previous periods.
-        WHEN: CopyPredictionsFromPreviousPeriodAPIView endpoint called for specific budget.
-        THEN: Only predictions from the specified budget are copied.
+        GIVEN: Multiple wallets with predictions in previous periods.
+        WHEN: CopyPredictionsFromPreviousPeriodAPIView endpoint called for specific wallet.
+        THEN: Only predictions from the specified wallet are copied.
         """
-        # Target budget
-        budget = budget_factory(members=[base_user])
-        category = transfer_category_factory(budget=budget)
+        # Target wallet
+        wallet = wallet_factory(members=[base_user])
+        category = transfer_category_factory(wallet=wallet)
 
-        # Other budget
-        other_budget = budget_factory()
-        other_category = transfer_category_factory(budget=other_budget)
+        # Other wallet
+        other_wallet = wallet_factory()
+        other_category = transfer_category_factory(wallet=other_wallet)
 
-        previous_period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31)
-        )
-        current_period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), previous_period=previous_period
+        previous_period = period_factory(wallet=wallet, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
+        current_period = period_factory(
+            wallet=wallet, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), previous_period=previous_period
         )
 
-        other_previous_period = budgeting_period_factory(
-            budget=other_budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31)
+        other_previous_period = period_factory(
+            wallet=other_wallet, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31)
         )
 
-        # Create prediction in target budget
+        # Create prediction in target wallet
         expense_prediction_factory(
             period=previous_period,
             category=category,
             current_plan=Decimal("100.00"),
-            description="Target budget prediction",
+            description="Target wallet prediction",
         )
 
-        # Create prediction in other budget (should not be copied)
+        # Create prediction in other wallet (should not be copied)
         expense_prediction_factory(
             period=other_previous_period,
             category=other_category,
             current_plan=Decimal("200.00"),
-            description="Other budget prediction",
+            description="Other wallet prediction",
         )
 
         api_client.force_authenticate(base_user)
-        url = copy_predictions_url(budget.id, current_period.id)
+        url = copy_predictions_url(wallet.id, current_period.id)
 
         response = api_client.post(url)
 
         assert response.status_code == status.HTTP_200_OK
 
-        # Verify only one prediction was copied (from target budget)
+        # Verify only one prediction was copied (from target wallet)
         copied_predictions = ExpensePrediction.objects.filter(period=current_period)
         assert copied_predictions.count() == 1
-        assert copied_predictions.first().description == "Target budget prediction"
+        assert copied_predictions.first().description == "Target wallet prediction"
 
     def test_copy_predictions_handles_none_values(
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
     ):
@@ -237,14 +229,12 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
         WHEN: CopyPredictionsFromPreviousPeriodAPIView endpoint called with POST.
         THEN: Predictions with None values are copied correctly.
         """
-        budget = budget_factory(members=[base_user])
-        category = transfer_category_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        category = transfer_category_factory(wallet=wallet)
 
-        previous_period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31)
-        )
-        current_period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), previous_period=previous_period
+        previous_period = period_factory(wallet=wallet, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
+        current_period = period_factory(
+            wallet=wallet, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), previous_period=previous_period
         )
 
         # Create prediction with None description
@@ -253,7 +243,7 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
         )
 
         api_client.force_authenticate(base_user)
-        url = copy_predictions_url(budget.id, current_period.id)
+        url = copy_predictions_url(wallet.id, current_period.id)
 
         response = api_client.post(url)
 
@@ -263,18 +253,18 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
         assert copied_prediction.description is None
         assert copied_prediction.current_plan == prediction.current_plan
 
-    def test_copy_predictions_nonexistent_budget(
+    def test_copy_predictions_nonexistent_wallet(
         self,
         api_client: APIClient,
         base_user: User,
-        budgeting_period_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Nonexistent budget ID.
+        GIVEN: Nonexistent wallet ID.
         WHEN: CopyPredictionsFromPreviousPeriodAPIView endpoint called with POST.
-        THEN: HTTP 403 returned (UserBelongsToBudgetPermission fails).
+        THEN: HTTP 403 returned (UserBelongsToWalletPermission fails).
         """
-        period = budgeting_period_factory()
+        period = period_factory()
         api_client.force_authenticate(base_user)
         url = copy_predictions_url(99999, period.id)
 
@@ -286,16 +276,16 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Nonexistent period ID but valid budget.
+        GIVEN: Nonexistent period ID but valid wallet.
         WHEN: CopyPredictionsFromPreviousPeriodAPIView endpoint called with POST.
         THEN: HTTP 200 returned with no predictions message.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         api_client.force_authenticate(base_user)
-        url = copy_predictions_url(budget.id, 99999)
+        url = copy_predictions_url(wallet.id, 99999)
 
         response = api_client.post(url)
 
@@ -308,8 +298,8 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
         mock_bulk_create,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
     ):
@@ -320,20 +310,18 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
         """
         mock_bulk_create.side_effect = Exception("Database connection error")
 
-        budget = budget_factory(members=[base_user])
-        category = transfer_category_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        category = transfer_category_factory(wallet=wallet)
 
-        previous_period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31)
-        )
-        current_period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), previous_period=previous_period
+        previous_period = period_factory(wallet=wallet, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
+        current_period = period_factory(
+            wallet=wallet, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), previous_period=previous_period
         )
 
         expense_prediction_factory(period=previous_period, category=category, current_plan=Decimal("100.00"))
 
         api_client.force_authenticate(base_user)
-        url = copy_predictions_url(budget.id, current_period.id)
+        url = copy_predictions_url(wallet.id, current_period.id)
 
         response = api_client.post(url)
 
@@ -345,18 +333,18 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Valid budget and period.
+        GIVEN: Valid wallet and period.
         WHEN: CopyPredictionsFromPreviousPeriodAPIView endpoint called with GET/PUT/DELETE.
         THEN: HTTP 405 Method Not Allowed returned.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
-        url = copy_predictions_url(budget.id, period.id)
+        url = copy_predictions_url(wallet.id, period.id)
 
         # Test GET method
         response = api_client.get(url)

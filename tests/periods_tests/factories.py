@@ -1,25 +1,25 @@
 from datetime import date
 
 import factory
-from budgets_tests.factories import BudgetFactory
 from dateutil.relativedelta import relativedelta
+from wallets_tests.factories import WalletFactory
 
 from periods.models.choices.period_status import PeriodStatus
 
 
-class BudgetingPeriodFactory(factory.django.DjangoModelFactory):
-    """Factory for BudgetingPeriod model."""
+class PeriodFactory(factory.django.DjangoModelFactory):
+    """Factory for Period model."""
 
     class Meta:
-        model = "periods.BudgetingPeriod"
+        model = "periods.Period"
 
-    budget = factory.SubFactory(BudgetFactory)
+    wallet = factory.SubFactory(WalletFactory)
     status = factory.Sequence(lambda _: PeriodStatus.DRAFT)
 
     @factory.lazy_attribute
     def date_start(self) -> date:
         """Generates date_start field."""
-        last_date_start = self.budget.periods.all().order_by("date_start").values_list("date_start", flat=True).last()
+        last_date_start = self.wallet.periods.all().order_by("date_start").values_list("date_start", flat=True).last()
         if not last_date_start:
             return date(2023, 1, 1)
         return last_date_start + relativedelta(months=1)
@@ -27,7 +27,7 @@ class BudgetingPeriodFactory(factory.django.DjangoModelFactory):
     @factory.lazy_attribute
     def date_end(self) -> date:
         """Generates date_end field."""
-        last_date_start = self.budget.periods.all().order_by("date_start").values_list("date_start", flat=True).last()
+        last_date_start = self.wallet.periods.all().order_by("date_start").values_list("date_start", flat=True).last()
         if not last_date_start:
             return date(2023, 1, 31)
         return last_date_start + relativedelta(months=2) - relativedelta(days=1)

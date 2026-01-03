@@ -1,3 +1,3 @@
-from .budgeting_period_model import BudgetingPeriod
+from .period_model import Period
 
-__all__ = ["BudgetingPeriod"]
+__all__ = ["Period"]

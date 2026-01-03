@@ -12,14 +12,14 @@ from categories.models.transfer_category_model import TransferCategory
 from categories.serializers.transfer_category_serializer import TransferCategorySerializer
 
 
-def categories_url(budget_id):
+def categories_url(wallet_id):
     """Create and return an TransferCategory detail URL."""
-    return reverse("budgets:category-list", args=[budget_id])
+    return reverse("wallets:category-list", args=[wallet_id])
 
 
-def category_detail_url(budget_id, category_id):
+def category_detail_url(wallet_id, category_id):
     """Create and return an TransferCategory detail URL."""
-    return reverse("budgets:category-detail", args=[budget_id, category_id])
+    return reverse("wallets:category-detail", args=[wallet_id, category_id])
 
 
 @pytest.mark.django_db
@@ -46,7 +46,7 @@ class TestTransferCategoryFilterSetOrdering:
         self,
         api_client: APIClient,
         user_factory: FactoryMetaClass,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         sort_param: str,
     ):
@@ -57,13 +57,13 @@ class TestTransferCategoryFilterSetOrdering:
         """
         member_1 = user_factory(email="bob@bob.com")
         member_2 = user_factory(email="alice@alice.com")
-        budget = budget_factory(members=[member_1, member_2])
-        transfer_category_factory(budget=budget, name="Aaa", priority=CategoryPriority.MOST_IMPORTANT)
-        transfer_category_factory(budget=budget, name="Bbb", priority=CategoryPriority.OTHERS)
-        transfer_category_factory(budget=budget, name="Ccc", priority=CategoryPriority.REGULAR)
+        wallet = wallet_factory(members=[member_1, member_2])
+        transfer_category_factory(wallet=wallet, name="Aaa", priority=CategoryPriority.MOST_IMPORTANT)
+        transfer_category_factory(wallet=wallet, name="Bbb", priority=CategoryPriority.OTHERS)
+        transfer_category_factory(wallet=wallet, name="Ccc", priority=CategoryPriority.REGULAR)
         api_client.force_authenticate(member_1)
 
-        response = api_client.get(categories_url(budget.id), data={"ordering": sort_param})
+        response = api_client.get(categories_url(wallet.id), data={"ordering": sort_param})
 
         assert response.status_code == status.HTTP_200_OK
         categories = annotate_transfer_category_queryset(TransferCategory.objects.all()).order_by(
@@ -102,28 +102,28 @@ class TestTransferCategoryFilterSetFiltering:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         param: str,
         filter_value: str,
     ):
         """
-        GIVEN: Two TransferCategory objects for single Budget.
+        GIVEN: Two TransferCategory objects for single Wallet.
         WHEN: The TransferCategoryViewSet list view is called with "name" filter.
-        THEN: Response must contain all TransferCategory existing in database assigned to Budget containing given
+        THEN: Response must contain all TransferCategory existing in database assigned to Wallet containing given
         "name" value in name param.
         """
-        budget = budget_factory(members=[base_user])
-        matching_category = transfer_category_factory(budget=budget, **{param: "Some category"})
-        transfer_category_factory(budget=budget, **{param: "Other one"})
+        wallet = wallet_factory(members=[base_user])
+        matching_category = transfer_category_factory(wallet=wallet, **{param: "Some category"})
+        transfer_category_factory(wallet=wallet, **{param: "Other one"})
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(categories_url(budget.id), data={param: filter_value})
+        response = api_client.get(categories_url(wallet.id), data={param: filter_value})
 
         assert response.status_code == status.HTTP_200_OK
         assert TransferCategory.objects.all().count() == 2
         categories = annotate_transfer_category_queryset(
-            TransferCategory.objects.filter(budget=budget, id=matching_category.id)
+            TransferCategory.objects.filter(wallet=wallet, id=matching_category.id)
         )
         serializer = TransferCategorySerializer(
             categories,
@@ -138,28 +138,28 @@ class TestTransferCategoryFilterSetFiltering:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Two TransferCategory objects for single Budget - one with deposit set, one without.
+        GIVEN: Two TransferCategory objects for single Wallet - one with deposit set, one without.
         WHEN: The TransferCategoryViewSet list view is called with "deposit" filter.
-        THEN: Response must contain all TransferCategory existing in database assigned to Budget with
+        THEN: Response must contain all TransferCategory existing in database assigned to Wallet with
         matching "deposit" value.
         """
-        budget = budget_factory(members=[base_user])
-        deposit = deposit_factory(budget=budget)
-        matching_category = transfer_category_factory(budget=budget, name="Some category", deposit=deposit)
-        transfer_category_factory(budget=budget, name="Other one")
+        wallet = wallet_factory(members=[base_user])
+        deposit = deposit_factory(wallet=wallet)
+        matching_category = transfer_category_factory(wallet=wallet, name="Some category", deposit=deposit)
+        transfer_category_factory(wallet=wallet, name="Other one")
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(categories_url(budget.id), data={"deposit": deposit.id})
+        response = api_client.get(categories_url(wallet.id), data={"deposit": deposit.id})
 
         assert response.status_code == status.HTTP_200_OK
         assert TransferCategory.objects.all().count() == 2
         categories = annotate_transfer_category_queryset(
-            TransferCategory.objects.filter(budget=budget, id=matching_category.id)
+            TransferCategory.objects.filter(wallet=wallet, id=matching_category.id)
         )
         serializer = TransferCategorySerializer(
             categories,
@@ -175,27 +175,27 @@ class TestTransferCategoryFilterSetFiltering:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         filter_value: bool,
     ):
         """
-        GIVEN: Two TransferCategory objects for single Budget.
+        GIVEN: Two TransferCategory objects for single Wallet.
         WHEN: The TransferCategoryViewSet list view is called with "is_active" filter.
-        THEN: Response must contain all TransferCategory existing in database assigned to Budget with
+        THEN: Response must contain all TransferCategory existing in database assigned to Wallet with
         matching "is_active" value.
         """
-        budget = budget_factory(members=[base_user])
-        matching_category = transfer_category_factory(budget=budget, name="Some category", is_active=filter_value)
-        transfer_category_factory(budget=budget, name="Other one", is_active=not filter_value)
+        wallet = wallet_factory(members=[base_user])
+        matching_category = transfer_category_factory(wallet=wallet, name="Some category", is_active=filter_value)
+        transfer_category_factory(wallet=wallet, name="Other one", is_active=not filter_value)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(categories_url(budget.id), data={"is_active": filter_value})
+        response = api_client.get(categories_url(wallet.id), data={"is_active": filter_value})
 
         assert response.status_code == status.HTTP_200_OK
         assert TransferCategory.objects.all().count() == 2
         categories = annotate_transfer_category_queryset(
-            TransferCategory.objects.filter(budget=budget, id=matching_category.id)
+            TransferCategory.objects.filter(wallet=wallet, id=matching_category.id)
         )
         serializer = TransferCategorySerializer(
             categories,
@@ -210,28 +210,28 @@ class TestTransferCategoryFilterSetFiltering:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Two TransferCategory objects for single Budget.
+        GIVEN: Two TransferCategory objects for single Wallet.
         WHEN: The TransferCategoryViewSet list view is called with "category_type" filter.
-        THEN: Response must contain all TransferCategory existing in database assigned to Budget with
+        THEN: Response must contain all TransferCategory existing in database assigned to Wallet with
         matching "category_type" value.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         matching_category = transfer_category_factory(
-            budget=budget, name="Some category", category_type=CategoryType.EXPENSE
+            wallet=wallet, name="Some category", category_type=CategoryType.EXPENSE
         )
-        transfer_category_factory(budget=budget, name="Other one", category_type=CategoryType.INCOME)
+        transfer_category_factory(wallet=wallet, name="Other one", category_type=CategoryType.INCOME)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(categories_url(budget.id), data={"category_type": CategoryType.EXPENSE.value})
+        response = api_client.get(categories_url(wallet.id), data={"category_type": CategoryType.EXPENSE.value})
 
         assert response.status_code == status.HTTP_200_OK
         assert TransferCategory.objects.all().count() == 2
         categories = annotate_transfer_category_queryset(
-            TransferCategory.objects.filter(budget=budget, id=matching_category.id)
+            TransferCategory.objects.filter(wallet=wallet, id=matching_category.id)
         )
         serializer = TransferCategorySerializer(
             categories,
@@ -246,28 +246,28 @@ class TestTransferCategoryFilterSetFiltering:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Two TransferCategory objects for single Budget.
+        GIVEN: Two TransferCategory objects for single Wallet.
         WHEN: The TransferCategoryViewSet list view is called with "priority" filter.
-        THEN: Response must contain all TransferCategory existing in database assigned to Budget with
+        THEN: Response must contain all TransferCategory existing in database assigned to Wallet with
         matching "priority" value.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         matching_category = transfer_category_factory(
-            budget=budget, name="Some category", priority=CategoryPriority.MOST_IMPORTANT
+            wallet=wallet, name="Some category", priority=CategoryPriority.MOST_IMPORTANT
         )
-        transfer_category_factory(budget=budget, name="Other one", priority=CategoryPriority.OTHERS)
+        transfer_category_factory(wallet=wallet, name="Other one", priority=CategoryPriority.OTHERS)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(categories_url(budget.id), data={"priority": CategoryPriority.MOST_IMPORTANT.value})
+        response = api_client.get(categories_url(wallet.id), data={"priority": CategoryPriority.MOST_IMPORTANT.value})
 
         assert response.status_code == status.HTTP_200_OK
         assert TransferCategory.objects.all().count() == 2
         categories = annotate_transfer_category_queryset(
-            TransferCategory.objects.filter(budget=budget, id=matching_category.id)
+            TransferCategory.objects.filter(wallet=wallet, id=matching_category.id)
         )
         serializer = TransferCategorySerializer(
             categories,

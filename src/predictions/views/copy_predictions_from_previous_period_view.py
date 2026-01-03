@@ -8,8 +8,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from app_infrastructure.permissions import UserBelongsToBudgetPermission
-from periods.models import BudgetingPeriod
+from app_infrastructure.permissions import UserBelongsToWalletPermission
+from periods.models import Period
 from predictions.models import ExpensePrediction
 
 logger = logging.getLogger("default")
@@ -22,17 +22,17 @@ class CopyPredictionsFromPreviousPeriodAPIView(APIView):
 
     permission_classes = (
         IsAuthenticated,
-        UserBelongsToBudgetPermission,
+        UserBelongsToWalletPermission,
     )
 
-    def post(self, request: Request, budget_pk: int, period_pk: int) -> Response:
+    def post(self, request: Request, wallet_pk: int, period_pk: int) -> Response:
         """
-        Handles copying ExpensePrediction from previous BudgetingPeriod of one with given period_pk.
+        Handles copying ExpensePrediction from previous Period of one with given period_pk.
 
         Args:
             request [Request]: User request.
-            budget_pk [int]: Budget PK.
-            period_pk [int]: Budgeting Period PK into which predictions will be copied.
+            wallet_pk [int]: Wallet PK.
+            period_pk [int]:  Period PK into which predictions will be copied.
 
         Returns:
             Response: HTTP response.
@@ -49,8 +49,8 @@ class CopyPredictionsFromPreviousPeriodAPIView(APIView):
             )
 
         previous_period_predictions = ExpensePrediction.objects.filter(
-            period__budget__pk=budget_pk,
-            period__pk=Subquery(BudgetingPeriod.objects.filter(pk=period_pk).values("previous_period__pk")[:1]),
+            period__wallet__pk=wallet_pk,
+            period__pk=Subquery(Period.objects.filter(pk=period_pk).values("previous_period__pk")[:1]),
             category__isnull=False,
         ).values("category", "deposit", "current_plan", "description")
         if not previous_period_predictions:

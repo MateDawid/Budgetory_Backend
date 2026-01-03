@@ -6,12 +6,12 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("budgets", "0001_initial"),
+        ("wallets", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name="BudgetingPeriod",
+            name="Period",
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 (
@@ -22,23 +22,23 @@ class Migration(migrations.Migration):
                 ("date_start", models.DateField()),
                 ("date_end", models.DateField()),
                 (
-                    "budget",
+                    "wallet",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, related_name="periods", to="budgets.budget"
+                        on_delete=django.db.models.deletion.CASCADE, related_name="periods", to="wallets.wallet"
                     ),
                 ),
                 ("previous_period",
                  models.ForeignKey(
                      blank=True,
-                     help_text="Reference to the previous budgeting period within the same budget",
+                     help_text="Reference to the previous period within the same wallet",
                      null=True,
                      on_delete=django.db.models.deletion.SET_NULL,
                      related_name="next_periods",
-                     to="periods.budgetingperiod",
+                     to="periods.period",
                  )),
             ],
             options={
-                "unique_together": {("name", "budget")},
+                "unique_together": {("name", "wallet")},
             },
         ),
     ]

@@ -1,10 +1,9 @@
-# TODO: Chart utils
 from typing import Any
 
 from django.db.models import Subquery
 
 from categories.models.choices.category_type import CategoryType
-from periods.models import BudgetingPeriod
+from periods.models import Period
 
 
 def generate_rgba_value(index: int, total_count: int, display_value: CategoryType | None) -> str:
@@ -32,15 +31,15 @@ def generate_rgba_value(index: int, total_count: int, display_value: CategoryTyp
         return f"rgba(0, 0, 0, {color_value})"
 
 
-def get_periods(budget_pk: int, query_params: dict[str, str]) -> list[dict[str, Any]]:
+def get_periods(wallet_pk: int, query_params: dict[str, str]) -> list[dict[str, Any]]:
     """
-    Retrieve budgeting periods for a specific budget with optional date filtering.
+    Retrieve periods for a specific wallet with optional date filtering.
 
-    Filters periods based on budget ID and optional date range constraints using
+    Filters periods based on wallet ID and optional date range constraints using
     period_from and period_to query parameters.
 
     Args:
-        budget_pk (int): Primary key of the budget to filter periods for
+        wallet_pk (int): Primary key of the wallet to filter periods for
         query_params (dict[str, str]): Query parameters dictionary containing optional filters:
             - period_from: ID of the starting period for date range filtering
             - period_to: ID of the ending period for date range filtering
@@ -51,13 +50,9 @@ def get_periods(budget_pk: int, query_params: dict[str, str]) -> list[dict[str, 
             - name: Period name
             - date_end: Period end date
     """
-    query_filters: dict = {"budget_id": budget_pk}
+    query_filters: dict = {"wallet_id": wallet_pk}
     if period_from_id := query_params.get("period_from"):
-        query_filters["date_start__gte"] = Subquery(
-            BudgetingPeriod.objects.filter(pk=period_from_id).values("date_start")[:1]
-        )
+        query_filters["date_start__gte"] = Subquery(Period.objects.filter(pk=period_from_id).values("date_start")[:1])
     if period_to_id := query_params.get("period_to"):
-        query_filters["date_end__lte"] = Subquery(
-            BudgetingPeriod.objects.filter(pk=period_to_id).values("date_end")[:1]
-        )
-    return list(BudgetingPeriod.objects.filter(**query_filters).order_by("date_start").values("pk", "name", "date_end"))
+        query_filters["date_end__lte"] = Subquery(Period.objects.filter(pk=period_to_id).values("date_end")[:1])
+    return list(Period.objects.filter(**query_filters).order_by("date_start").values("pk", "name", "date_end"))

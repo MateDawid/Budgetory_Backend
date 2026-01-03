@@ -33,7 +33,7 @@ class TestDepositFilterSetOrdering:
         self,
         api_client: APIClient,
         user_factory: FactoryMetaClass,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
@@ -46,15 +46,15 @@ class TestDepositFilterSetOrdering:
         """
         member_1 = user_factory(email="bob@bob.com")
         member_2 = user_factory(email="alice@alice.com")
-        budget = budget_factory(members=[member_1, member_2])
+        wallet = wallet_factory(members=[member_1, member_2])
         for _ in range(3):
-            deposit = deposit_factory(budget=budget)
-            category = transfer_category_factory(budget=budget, deposit=deposit)
+            deposit = deposit_factory(wallet=wallet)
+            category = transfer_category_factory(wallet=wallet, deposit=deposit)
             for _ in range(3):
-                transfer_factory(budget=budget, deposit=deposit, category=category)
+                transfer_factory(wallet=wallet, deposit=deposit, category=category)
         api_client.force_authenticate(member_1)
 
-        response = api_client.get(deposits_url(budget.id), data={"ordering": sort_param})
+        response = api_client.get(deposits_url(wallet.id), data={"ordering": sort_param})
 
         assert response.status_code == status.HTTP_200_OK
 
@@ -100,27 +100,27 @@ class TestDepositFilterSetFiltering:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         param: str,
         filter_value: str,
     ):
         """
-        GIVEN: Two Deposit objects for single Budget.
+        GIVEN: Two Deposit objects for single Wallet.
         WHEN: The DepositViewSet list view is called with CharFilter.
-        THEN: Response must contain all Deposit existing in database assigned to Budget containing given
+        THEN: Response must contain all Deposit existing in database assigned to Wallet containing given
         "name" value in name param.
         """
-        budget = budget_factory(members=[base_user])
-        matching_deposit = deposit_factory(budget=budget, **{param: "Some deposit"})
-        deposit_factory(budget=budget, **{param: "Other one"})
+        wallet = wallet_factory(members=[base_user])
+        matching_deposit = deposit_factory(wallet=wallet, **{param: "Some deposit"})
+        deposit_factory(wallet=wallet, **{param: "Other one"})
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_url(budget.id), data={param: filter_value})
+        response = api_client.get(deposits_url(wallet.id), data={param: filter_value})
 
         assert response.status_code == status.HTTP_200_OK
         assert Deposit.objects.all().count() == 2
-        deposits = Deposit.objects.filter(budget=budget, id=matching_deposit.id)
+        deposits = Deposit.objects.filter(wallet=wallet, id=matching_deposit.id)
         serializer = DepositSerializer(
             deposits,
             many=True,
@@ -135,26 +135,26 @@ class TestDepositFilterSetFiltering:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         filter_value: bool,
     ):
         """
-        GIVEN: Two Deposit objects for single Budget.
+        GIVEN: Two Deposit objects for single Wallet.
         WHEN: The DepositViewSet list view is called with "is_active" filter.
-        THEN: Response must contain all Deposit existing in database assigned to Budget with
+        THEN: Response must contain all Deposit existing in database assigned to Wallet with
         matching "is_active" value.
         """
-        budget = budget_factory(members=[base_user])
-        matching_deposit = deposit_factory(budget=budget, name="Some deposit", is_active=filter_value)
-        deposit_factory(budget=budget, name="Other one", is_active=not filter_value)
+        wallet = wallet_factory(members=[base_user])
+        matching_deposit = deposit_factory(wallet=wallet, name="Some deposit", is_active=filter_value)
+        deposit_factory(wallet=wallet, name="Other one", is_active=not filter_value)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_url(budget.id), data={"is_active": filter_value})
+        response = api_client.get(deposits_url(wallet.id), data={"is_active": filter_value})
 
         assert response.status_code == status.HTTP_200_OK
         assert Deposit.objects.all().count() == 2
-        deposits = Deposit.objects.filter(budget=budget, id=matching_deposit.id)
+        deposits = Deposit.objects.filter(wallet=wallet, id=matching_deposit.id)
         serializer = DepositSerializer(
             deposits,
             many=True,
@@ -168,31 +168,31 @@ class TestDepositFilterSetFiltering:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Two Deposit objects for single Budget.
+        GIVEN: Two Deposit objects for single Wallet.
         WHEN: The DepositViewSet list view is called with balance filter.
-        THEN: Response must contain all Deposit existing in database assigned to Budget matching given
+        THEN: Response must contain all Deposit existing in database assigned to Wallet matching given
         balance.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         balance = "123.45"
-        target_deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, deposit=target_deposit, category_type=CategoryType.INCOME)
+        target_deposit = deposit_factory(wallet=wallet)
+        category = transfer_category_factory(wallet=wallet, deposit=target_deposit, category_type=CategoryType.INCOME)
         transfer_factory(
-            budget=budget, deposit=target_deposit, category=category, value=Decimal(balance).quantize(Decimal("0.00"))
+            wallet=wallet, deposit=target_deposit, category=category, value=Decimal(balance).quantize(Decimal("0.00"))
         )
-        other_deposit = deposit_factory(budget=budget)
+        other_deposit = deposit_factory(wallet=wallet)
         transfer_factory(
-            budget=budget, deposit=other_deposit, category=category, value=Decimal("234.56").quantize(Decimal("0.00"))
+            wallet=wallet, deposit=other_deposit, category=category, value=Decimal("234.56").quantize(Decimal("0.00"))
         )
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_url(budget.id), data={"balance": balance})
+        response = api_client.get(deposits_url(wallet.id), data={"balance": balance})
 
         assert response.status_code == status.HTTP_200_OK
         assert Deposit.objects.all().count() == 2
@@ -218,31 +218,31 @@ class TestDepositFilterSetFiltering:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Two Deposit objects for single Budget.
+        GIVEN: Two Deposit objects for single Wallet.
         WHEN: The DepositViewSet list view is called with balance_max filter.
-        THEN: Response must contain all Deposit existing in database assigned to Budget matching given
+        THEN: Response must contain all Deposit existing in database assigned to Wallet matching given
         Decimal balance_max.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         balance = "123.45"
-        target_deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, deposit=target_deposit, category_type=CategoryType.INCOME)
+        target_deposit = deposit_factory(wallet=wallet)
+        category = transfer_category_factory(wallet=wallet, deposit=target_deposit, category_type=CategoryType.INCOME)
         transfer_factory(
-            budget=budget, deposit=target_deposit, category=category, value=Decimal(balance).quantize(Decimal("0.00"))
+            wallet=wallet, deposit=target_deposit, category=category, value=Decimal(balance).quantize(Decimal("0.00"))
         )
-        other_deposit = deposit_factory(budget=budget)
+        other_deposit = deposit_factory(wallet=wallet)
         transfer_factory(
-            budget=budget, deposit=other_deposit, category=category, value=Decimal("234.56").quantize(Decimal("0.00"))
+            wallet=wallet, deposit=other_deposit, category=category, value=Decimal("234.56").quantize(Decimal("0.00"))
         )
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_url(budget.id), data={"balance_max": balance})
+        response = api_client.get(deposits_url(wallet.id), data={"balance_max": balance})
 
         assert response.status_code == status.HTTP_200_OK
         assert Deposit.objects.all().count() == 2
@@ -268,31 +268,31 @@ class TestDepositFilterSetFiltering:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Two Deposit objects for single Budget.
+        GIVEN: Two Deposit objects for single Wallet.
         WHEN: The DepositViewSet list view is called with balance_min filter.
-        THEN: Response must contain all Deposit existing in database assigned to Budget matching given
+        THEN: Response must contain all Deposit existing in database assigned to Wallet matching given
         balance_min value.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         balance = "234.56"
-        target_deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, deposit=target_deposit, category_type=CategoryType.INCOME)
+        target_deposit = deposit_factory(wallet=wallet)
+        category = transfer_category_factory(wallet=wallet, deposit=target_deposit, category_type=CategoryType.INCOME)
         transfer_factory(
-            budget=budget, deposit=target_deposit, category=category, value=Decimal(balance).quantize(Decimal("0.00"))
+            wallet=wallet, deposit=target_deposit, category=category, value=Decimal(balance).quantize(Decimal("0.00"))
         )
-        other_deposit = deposit_factory(budget=budget)
+        other_deposit = deposit_factory(wallet=wallet)
         transfer_factory(
-            budget=budget, deposit=other_deposit, category=category, value=Decimal("123.45").quantize(Decimal("0.00"))
+            wallet=wallet, deposit=other_deposit, category=category, value=Decimal("123.45").quantize(Decimal("0.00"))
         )
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_url(budget.id), data={"balance_min": balance})
+        response = api_client.get(deposits_url(wallet.id), data={"balance_min": balance})
 
         assert response.status_code == status.HTTP_200_OK
         assert Deposit.objects.all().count() == 2

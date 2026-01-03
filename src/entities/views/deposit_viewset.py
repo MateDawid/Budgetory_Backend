@@ -8,12 +8,12 @@ from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
-from app_infrastructure.permissions import UserBelongsToBudgetPermission
+from app_infrastructure.permissions import UserBelongsToWalletPermission
 from categories.models.choices.category_type import CategoryType
 from entities.filtersets.deposit_filterset import DepositFilterSet
 from entities.models.deposit_model import Deposit
 from entities.serializers.deposit_serializer import DepositSerializer
-from periods.models import BudgetingPeriod
+from periods.models import Period
 from predictions.models import ExpensePrediction
 
 
@@ -53,20 +53,20 @@ class DepositViewSet(ModelViewSet):
 
     serializer_class = DepositSerializer
     queryset = Deposit.objects.all()
-    permission_classes = [IsAuthenticated, UserBelongsToBudgetPermission]
+    permission_classes = [IsAuthenticated, UserBelongsToWalletPermission]
     filterset_class = DepositFilterSet
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
     ordering_fields = ("id", "name", "balance")
 
     def get_queryset(self) -> QuerySet:
         """
-        Retrieve Deposits for Budget passed in URL and annotate them with sum of Transfers.
+        Retrieve Deposits for Wallet passed in URL and annotate them with sum of Transfers.
 
         Returns:
             QuerySet: Filtered Deposit QuerySet.
         """
         return (
-            self.queryset.filter(budget__pk=self.kwargs.get("budget_pk"))
+            self.queryset.filter(wallet__pk=self.kwargs.get("wallet_pk"))
             .distinct()
             .annotate(
                 incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
@@ -77,15 +77,15 @@ class DepositViewSet(ModelViewSet):
 
     def perform_create(self, serializer: DepositSerializer) -> None:
         """
-        Additionally save Budget from URL on Deposit instance during saving serializer. Create Entity object for
+        Additionally save Wallet from URL on Deposit instance during saving serializer. Create Entity object for
         Deposit representation in Transfers. Creates initial Categories for Deposit.
 
         Args:
             serializer [DepositSerializer]: Serializer for Deposit model.
         """
-        budget_pk = self.kwargs.get("budget_pk")
+        wallet_pk = self.kwargs.get("wallet_pk")
         with transaction.atomic():
-            deposit = serializer.save(budget_id=budget_pk, is_deposit=True)
+            deposit = serializer.save(wallet_id=wallet_pk, is_deposit=True)
             ExpensePrediction.objects.bulk_create(
                 ExpensePrediction(
                     deposit_id=deposit.pk,
@@ -94,5 +94,5 @@ class DepositViewSet(ModelViewSet):
                     initial_plan=Decimal("0.00"),
                     current_plan=Decimal("0.00"),
                 )
-                for period_id in BudgetingPeriod.objects.filter(budget_id=budget_pk).values_list("id", flat=True)
+                for period_id in Period.objects.filter(wallet_id=wallet_pk).values_list("id", flat=True)
             )

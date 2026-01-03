@@ -33,7 +33,7 @@ OUTER_APPS = [
 CREATED_APPS = [
     "app_users",
     "app_infrastructure",
-    "budgets",
+    "wallets",
     "periods",
     "entities",
     "categories",

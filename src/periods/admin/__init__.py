@@ -1,3 +1,3 @@
-from .budgeting_period_admin import BudgetingPeriodAdmin
+from .period_admin import PeriodAdmin
 
-__all__ = ["BudgetingPeriodAdmin"]
+__all__ = ["PeriodAdmin"]

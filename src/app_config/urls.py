@@ -11,9 +11,9 @@ from predictions.views.prediction_progress_status_view import PredictionProgress
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="BudgetManager API",
+        title="Budgetory API",
         default_version="v1",
-        description="API for BudgetManager application.",
+        description="API for Budgetory application.",
         contact=openapi.Contact(email="mateusiakdawid@gmail.com"),
         # license=openapi.License(name="BSD License"),
     ),
@@ -31,8 +31,8 @@ urlpatterns = [
     path("api/admin/", admin.site.urls),
     path("api/", include(router.urls)),
     path("api/users/", include("app_users.urls")),
-    path("api/budgets/", include("budgets.urls")),
-    path("api/budgets/<int:budget_pk>/", include("predictions.urls")),
+    path("api/wallets/", include("wallets.urls")),
+    path("api/wallets/<int:wallet_pk>/", include("predictions.urls")),
     path("api/categories/", include("categories.urls")),
     path("api/", include("charts.urls")),
     path(

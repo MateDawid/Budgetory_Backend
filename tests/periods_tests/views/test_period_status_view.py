@@ -5,7 +5,7 @@ from rest_framework.test import APIClient
 
 from periods.models.choices.period_status import PeriodStatus
 
-PERIOD_STATUS_URL = reverse("budgets:period-status")
+PERIOD_STATUS_URL = reverse("wallets:period-status")
 
 
 @pytest.mark.django_db

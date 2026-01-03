@@ -17,7 +17,7 @@ class EntitySerializer(serializers.ModelSerializer):
 
     def validate_name(self, name: str):
         """
-        Checks if Entity with given name exists in Budget already.
+        Checks if Entity with given name exists in Wallet already.
 
         Args:
             name: Name of Entity.
@@ -26,11 +26,11 @@ class EntitySerializer(serializers.ModelSerializer):
             str: Validated name of Entity.
 
         Raises:
-            ValidationError: Raised if Entity with given name exists in Budget already.
+            ValidationError: Raised if Entity with given name exists in Wallet already.
         """
         if (
             self.Meta.model.objects.filter(
-                budget=self.context["view"].kwargs["budget_pk"],
+                wallet=self.context["view"].kwargs["wallet_pk"],
                 name__iexact=name,
                 is_deposit=self.Meta.model is Deposit,
             )
@@ -38,7 +38,7 @@ class EntitySerializer(serializers.ModelSerializer):
             .exists()
         ):
             raise ValidationError(
-                "{class_name} with given name already exists in Budget.".format(class_name=self.Meta.model.__name__)
+                "{class_name} with given name already exists in Wallet.".format(class_name=self.Meta.model.__name__)
             )
         return name
 
@@ -47,7 +47,7 @@ class EntitySerializer(serializers.ModelSerializer):
         Extends model representation with "value" and "label" fields for React MUI DataGrid filtering purposes.
 
         Attributes:
-            instance [Entity]: BudgetingPeriod model instance
+            instance [Entity]: Period model instance
 
         Returns:
             OrderedDict: Dictionary containing overridden values.

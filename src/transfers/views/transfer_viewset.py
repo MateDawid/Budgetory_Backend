@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from app_infrastructure.permissions import UserBelongsToBudgetPermission
+from app_infrastructure.permissions import UserBelongsToWalletPermission
 from transfers.serializers.transfer_serializer import TransferSerializer
 
 
@@ -18,20 +18,20 @@ class TransferViewSet(ModelViewSet):
     """Base ViewSet for managing Transfers."""
 
     serializer_class = TransferSerializer
-    permission_classes = (IsAuthenticated, UserBelongsToBudgetPermission)
+    permission_classes = (IsAuthenticated, UserBelongsToWalletPermission)
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
     ordering_fields = ("id", "name", "value", "date", "period", "entity", "category", "deposit")
 
     def get_queryset(self) -> QuerySet:
         """
-        Retrieve Transfer for Budget passed in URL.
+        Retrieve Transfer for Wallet passed in URL.
 
         Returns:
             QuerySet: Filtered TransferCategory QuerySet.
         """
         return (
             self.serializer_class.Meta.model.objects.prefetch_related("period", "category")
-            .filter(period__budget__pk=self.kwargs.get("budget_pk"))
+            .filter(period__wallet__pk=self.kwargs.get("wallet_pk"))
             .order_by("id")
             .distinct()
         )
@@ -51,7 +51,7 @@ class TransferViewSet(ModelViewSet):
         ),
     )
     @action(detail=False, methods=["delete"])
-    def bulk_delete(self, request, budget_pk: str) -> Response:
+    def bulk_delete(self, request, wallet_pk: str) -> Response:
         """
         Removes multiple Transfers with given IDs at once.
 
@@ -64,7 +64,7 @@ class TransferViewSet(ModelViewSet):
         if not ids:
             return Response({"error": "objects_ids must not be an empty list."}, status=status.HTTP_400_BAD_REQUEST)
         with transaction.atomic():
-            self.serializer_class.Meta.model.objects.filter(period__budget__id=int(budget_pk), id__in=ids).delete()
+            self.serializer_class.Meta.model.objects.filter(period__wallet__id=int(wallet_pk), id__in=ids).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(
@@ -82,7 +82,7 @@ class TransferViewSet(ModelViewSet):
         ),
     )
     @action(detail=False, methods=["post"])
-    def copy(self, request, budget_pk: str) -> Response:
+    def copy(self, request, wallet_pk: str) -> Response:
         """
         Copies multiple Transfers with given IDs.
 
@@ -103,7 +103,7 @@ class TransferViewSet(ModelViewSet):
                 }
             )
             for copied_object in self.serializer_class.Meta.model.objects.filter(
-                period__budget__id=int(budget_pk), id__in=ids
+                period__wallet__id=int(wallet_pk), id__in=ids
             )
         ]
         objs = self.serializer_class.Meta.model.objects.bulk_create(new_objects)

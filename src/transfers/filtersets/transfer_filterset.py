@@ -4,9 +4,9 @@ from django.db.models import QuerySet
 from django_filters import rest_framework as filters
 from rest_framework.request import Request
 
-from budgets.utils import get_budget_pk
 from entities.models import Deposit
-from periods.models import BudgetingPeriod
+from periods.models import Period
+from wallets.utils import get_wallet_pk
 
 
 class TransferFilterSet(filters.FilterSet):
@@ -14,11 +14,11 @@ class TransferFilterSet(filters.FilterSet):
 
     name = filters.CharFilter(lookup_expr="icontains", field_name="name")
     period = filters.ModelChoiceFilter(
-        queryset=lambda request: BudgetingPeriod.objects.filter(budget__pk=get_budget_pk(request))
+        queryset=lambda request: Period.objects.filter(wallet__pk=get_wallet_pk(request))
     )
     entity = filters.NumberFilter(method="filter_by_entity")
     deposit = filters.ModelChoiceFilter(
-        queryset=lambda request: Deposit.objects.filter(budget__pk=get_budget_pk(request))
+        queryset=lambda request: Deposit.objects.filter(wallet__pk=get_wallet_pk(request))
     )
     date = filters.DateFromToRangeFilter()
     value = filters.NumberFilter()
@@ -26,17 +26,17 @@ class TransferFilterSet(filters.FilterSet):
     value_max = filters.NumberFilter(field_name="value", lookup_expr="lte")
 
     @staticmethod
-    def get_budget_pk(request: Request) -> int:
+    def get_wallet_pk(request: Request) -> int:
         """
-        Retrieves Budget PK from User Request.
+        Retrieves Wallet PK from User Request.
 
         Args:
             request (Request): User request.
 
         Returns:
-            int: Budget PK.
+            int: Wallet PK.
         """
-        return request.parser_context.get("kwargs", {}).get("budget_pk")  # pragma: no cover
+        return request.parser_context.get("kwargs", {}).get("wallet_pk")  # pragma: no cover
 
     def filter_by_entity(self, queryset: QuerySet, name: str, value: Decimal) -> QuerySet:
         """
@@ -50,7 +50,7 @@ class TransferFilterSet(filters.FilterSet):
         Returns:
             QuerySet: Filtered QuerySet.
         """
-        budget_pk = self.request.parser_context.get("kwargs", {}).get("budget_pk")
+        wallet_pk = self.request.parser_context.get("kwargs", {}).get("wallet_pk")
         if value == Decimal("-1"):
-            return queryset.filter(period__budget__pk=budget_pk, entity__isnull=True)
-        return queryset.filter(period__budget__pk=budget_pk, entity__id=value)
+            return queryset.filter(period__wallet__pk=wallet_pk, entity__isnull=True)
+        return queryset.filter(period__wallet__pk=wallet_pk, entity__id=value)

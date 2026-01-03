@@ -3,7 +3,7 @@ from entities.models.entity_model import Entity
 
 
 class Deposit(Entity):
-    """Deposit proxy model for Entity owned by Budget member representation."""
+    """Deposit proxy model for Entity owned by Wallet member representation."""
 
     objects = DepositManager()
 

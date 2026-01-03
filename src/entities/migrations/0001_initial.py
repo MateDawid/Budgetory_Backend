@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("budgets", "0001_initial"),
+        ("wallets", "0001_initial"),
     ]
 
     operations = [
@@ -22,15 +22,15 @@ class Migration(migrations.Migration):
                 ("is_active", models.BooleanField(default=True)),
                 ("is_deposit", models.BooleanField(default=False)),
                 (
-                    "budget",
+                    "wallet",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, related_name="entities", to="budgets.budget"
+                        on_delete=django.db.models.deletion.CASCADE, related_name="entities", to="wallets.wallet"
                     ),
                 ),
             ],
             options={
                 "verbose_name_plural": "entities",
-                "unique_together": {("name", "budget", "is_deposit")},
+                "unique_together": {("name", "wallet", "is_deposit")},
             },
         ),
         migrations.CreateModel(

@@ -6,8 +6,8 @@ from entities.managers.deposit_manager import DepositManager
 class Entity(models.Model):
     """Entity model for Transfer actor (payer or receiver) representation."""
 
-    budget = models.ForeignKey(
-        "budgets.Budget", on_delete=models.CASCADE, related_name="entities", null=False, blank=False
+    wallet = models.ForeignKey(
+        "wallets.Wallet", on_delete=models.CASCADE, related_name="entities", null=False, blank=False
     )
     name = models.CharField(max_length=128)
     description = models.CharField(max_length=255, blank=True)
@@ -19,7 +19,7 @@ class Entity(models.Model):
 
     class Meta:
         verbose_name_plural = "entities"
-        unique_together = ("name", "budget", "is_deposit")
+        unique_together = ("name", "wallet", "is_deposit")
 
     def __str__(self) -> str:
         """
@@ -28,4 +28,4 @@ class Entity(models.Model):
         Returns:
             str: String representation of Entity model instance.
         """
-        return f"{self.name} ({self.budget.name})"
+        return f"{self.name} ({self.wallet.name})"

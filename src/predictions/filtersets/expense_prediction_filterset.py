@@ -3,27 +3,27 @@ from decimal import Decimal
 from django.db.models import F, QuerySet
 from django_filters import rest_framework as filters
 
-from budgets.utils import get_budget_pk
 from categories.models import TransferCategory
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from entities.models import Deposit
-from periods.models import BudgetingPeriod
+from periods.models import Period
 from predictions.views.prediction_progress_status_view import PredictionProgressStatus
+from wallets.utils import get_wallet_pk
 
 
 class ExpensePredictionFilterSet(filters.FilterSet):
     """FilterSet for ExpensePrediction endpoints."""
 
     period = filters.ModelChoiceFilter(
-        queryset=lambda request: BudgetingPeriod.objects.filter(budget__pk=get_budget_pk(request))
+        queryset=lambda request: Period.objects.filter(wallet__pk=get_wallet_pk(request))
     )
     deposit = filters.ModelChoiceFilter(
-        queryset=lambda request: Deposit.objects.filter(budget__pk=get_budget_pk(request))
+        queryset=lambda request: Deposit.objects.filter(wallet__pk=get_wallet_pk(request))
     )
     category = filters.ModelChoiceFilter(
         queryset=lambda request: TransferCategory.objects.filter(
-            budget__pk=get_budget_pk(request), category_type=CategoryType.EXPENSE
+            wallet__pk=get_wallet_pk(request), category_type=CategoryType.EXPENSE
         )
     )
     category_priority = filters.NumberFilter(method="filter_by_category_priority")

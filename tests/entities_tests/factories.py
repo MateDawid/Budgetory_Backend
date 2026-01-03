@@ -1,5 +1,5 @@
 import factory
-from budgets_tests.factories import BudgetFactory
+from wallets_tests.factories import WalletFactory
 
 
 class EntityFactory(factory.django.DjangoModelFactory):
@@ -8,7 +8,7 @@ class EntityFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "entities.Entity"
 
-    budget = factory.SubFactory(BudgetFactory)
+    wallet = factory.SubFactory(WalletFactory)
     name = factory.Faker("text", max_nb_chars=128)
     description = factory.Faker("text", max_nb_chars=255)
     is_active = factory.Faker("boolean")

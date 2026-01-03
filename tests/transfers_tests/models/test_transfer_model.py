@@ -6,10 +6,10 @@ from django.core.exceptions import ValidationError
 from django.db import DataError, IntegrityError
 from factory.base import BaseFactory, FactoryMetaClass
 
-from budgets.models.budget_model import Budget
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from transfers.models.transfer_model import Transfer
+from wallets.models.wallet_model import Wallet
 
 
 @pytest.mark.django_db
@@ -30,56 +30,56 @@ class TestTransferModel:
 
     def test_create_income(
         self,
-        budget: Budget,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet: Wallet,
+        period_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget model instance in database. Valid payload for Income proxy of Transfer model.
+        GIVEN: Wallet model instance in database. Valid payload for Income proxy of Transfer model.
         WHEN: Transfer instance create attempt with valid data.
         THEN: Transfer model instance created in database with given data.
         """
         payload = self.INCOME_PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        payload["period"] = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
+        payload["entity"] = entity_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
+        payload["category"] = transfer_category_factory(wallet=wallet, priority=CategoryPriority.REGULAR)
         payload["transfer_type"] = CategoryType.INCOME
         transfer = Transfer.objects.create(**payload)
 
         for key in payload:
             assert getattr(transfer, key) == payload[key]
-        assert Transfer.objects.filter(period__budget=budget).count() == 1
-        assert Transfer.incomes.filter(period__budget=budget).count() == 1
-        assert Transfer.expenses.filter(period__budget=budget).count() == 0
+        assert Transfer.objects.filter(period__wallet=wallet).count() == 1
+        assert Transfer.incomes.filter(period__wallet=wallet).count() == 1
+        assert Transfer.expenses.filter(period__wallet=wallet).count() == 0
         assert str(transfer) == f"{transfer.date} | {transfer.category} | {transfer.value}"
 
     def test_save_income(
         self,
-        budget: Budget,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet: Wallet,
+        period_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget model instance in database. Valid payload for Income proxy of Transfer model.
+        GIVEN: Wallet model instance in database. Valid payload for Income proxy of Transfer model.
         WHEN: Transfer instance save attempt with valid data.
         THEN: Transfer model instance exists in database with given data.
         """
         payload = self.INCOME_PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        payload["period"] = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
+        payload["entity"] = entity_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
+        payload["category"] = transfer_category_factory(wallet=wallet, priority=CategoryPriority.REGULAR)
         payload["transfer_type"] = CategoryType.INCOME
 
         transfer = Transfer(**payload)
@@ -89,64 +89,64 @@ class TestTransferModel:
 
         for key in payload:
             assert getattr(transfer, key) == payload[key]
-        assert Transfer.objects.filter(period__budget=budget).count() == 1
-        assert Transfer.incomes.filter(period__budget=budget).count() == 1
-        assert Transfer.expenses.filter(period__budget=budget).count() == 0
+        assert Transfer.objects.filter(period__wallet=wallet).count() == 1
+        assert Transfer.incomes.filter(period__wallet=wallet).count() == 1
+        assert Transfer.expenses.filter(period__wallet=wallet).count() == 0
         assert str(transfer) == f"{transfer.date} | {transfer.category} | {transfer.value}"
 
     def test_create_expense(
         self,
-        budget: Budget,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet: Wallet,
+        period_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget model instance in database. Valid payload for Expense proxy of Transfer model.
+        GIVEN: Wallet model instance in database. Valid payload for Expense proxy of Transfer model.
         WHEN: Transfer instance create attempt with valid data.
         THEN: Transfer model instance created in database with given data.
         """
         payload = self.EXPENSE_PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        payload["period"] = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
+        payload["entity"] = entity_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
+        payload["category"] = transfer_category_factory(wallet=wallet, priority=CategoryPriority.MOST_IMPORTANT)
         payload["transfer_type"] = CategoryType.EXPENSE
 
         transfer = Transfer.objects.create(**payload)
 
         for key in payload:
             assert getattr(transfer, key) == payload[key]
-        assert Transfer.objects.filter(period__budget=budget).count() == 1
-        assert Transfer.expenses.filter(period__budget=budget).count() == 1
-        assert Transfer.incomes.filter(period__budget=budget).count() == 0
+        assert Transfer.objects.filter(period__wallet=wallet).count() == 1
+        assert Transfer.expenses.filter(period__wallet=wallet).count() == 1
+        assert Transfer.incomes.filter(period__wallet=wallet).count() == 0
         assert str(transfer) == f"{transfer.date} | {transfer.category} | {transfer.value}"
 
     def test_save_expense(
         self,
-        budget: Budget,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet: Wallet,
+        period_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget model instance in database. Valid payload for Expense proxy of Transfer model.
+        GIVEN: Wallet model instance in database. Valid payload for Expense proxy of Transfer model.
         WHEN: Transfer instance save attempt with valid data.
         THEN: Transfer model instance exists in database with given data.
         """
         payload = self.EXPENSE_PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        payload["period"] = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.MOST_IMPORTANT)
+        payload["entity"] = entity_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
+        payload["category"] = transfer_category_factory(wallet=wallet, priority=CategoryPriority.MOST_IMPORTANT)
         payload["transfer_type"] = CategoryType.EXPENSE
 
         transfer = Transfer(**payload)
@@ -156,14 +156,14 @@ class TestTransferModel:
 
         for key in payload:
             assert getattr(transfer, key) == payload[key]
-        assert Transfer.objects.filter(period__budget=budget).count() == 1
-        assert Transfer.incomes.filter(period__budget=budget).count() == 0
-        assert Transfer.expenses.filter(period__budget=budget).count() == 1
+        assert Transfer.objects.filter(period__wallet=wallet).count() == 1
+        assert Transfer.incomes.filter(period__wallet=wallet).count() == 0
+        assert Transfer.expenses.filter(period__wallet=wallet).count() == 1
         assert str(transfer) == f"{transfer.date} | {transfer.category} | {transfer.value}"
 
     @pytest.mark.django_db(transaction=True)
     @pytest.mark.parametrize("field_name", ["name"])
-    def test_error_value_too_long(self, budget: Budget, transfer_factory: BaseFactory, field_name: str):
+    def test_error_value_too_long(self, wallet: Wallet, transfer_factory: BaseFactory, field_name: str):
         """
         GIVEN: Payload with too long value for one field.
         WHEN: Transfer instance create attempt with field value too long.
@@ -172,18 +172,18 @@ class TestTransferModel:
         max_length = Transfer._meta.get_field(field_name).max_length
         payload = self.EXPENSE_PAYLOAD.copy()
         payload[field_name] = (max_length + 1) * "a"
-        transfer = transfer_factory.build(budget=budget, **payload)
+        transfer = transfer_factory.build(wallet=wallet, **payload)
 
         with pytest.raises(DataError) as exc:
             transfer.save()
         assert str(exc.value) == f"value too long for type character varying({max_length})\n"
-        assert not Transfer.objects.filter(period__budget=budget).exists()
+        assert not Transfer.objects.filter(period__wallet=wallet).exists()
 
     @pytest.mark.django_db(transaction=True)
     @pytest.mark.parametrize("value", [Decimal("0.00"), Decimal("-0.01")])
     def test_error_value_too_low(
         self,
-        budget: Budget,
+        wallet: Wallet,
         transfer_factory: BaseFactory,
         value: Decimal,
     ):
@@ -194,7 +194,7 @@ class TestTransferModel:
         """
         payload = self.EXPENSE_PAYLOAD.copy()
         payload["value"] = value
-        transfer = transfer_factory.build(budget=budget, **payload)
+        transfer = transfer_factory.build(wallet=wallet, **payload)
 
         with pytest.raises(IntegrityError) as exc:
             transfer.save()
@@ -204,7 +204,7 @@ class TestTransferModel:
     @pytest.mark.django_db(transaction=True)
     def test_error_deposit_and_entity_the_same(
         self,
-        budget: Budget,
+        wallet: Wallet,
         transfer_factory: BaseFactory,
         deposit_factory: FactoryMetaClass,
     ):
@@ -214,10 +214,10 @@ class TestTransferModel:
         THEN: IntegrityError raised.
         """
         payload = self.EXPENSE_PAYLOAD.copy()
-        deposit = deposit_factory(budget=budget)
+        deposit = deposit_factory(wallet=wallet)
         payload["deposit"] = deposit
         payload["entity"] = deposit
-        transfer = transfer_factory.build(budget=budget, **payload)
+        transfer = transfer_factory.build(wallet=wallet, **payload)
         with pytest.raises(IntegrityError) as exc:
             transfer.save()
         assert 'violates check constraint "transfers_transfer_deposit_and_entity_not_the_same"' in str(exc.value)
@@ -234,9 +234,9 @@ class TestTransferModel:
     @pytest.mark.django_db(transaction=True)
     def test_error_transfer_date_out_of_period(
         self,
-        budget: Budget,
+        wallet: Wallet,
         transfer_factory: BaseFactory,
-        budgeting_period_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         date: datetime.date,
     ):
         """
@@ -246,11 +246,11 @@ class TestTransferModel:
         """
         payload = self.EXPENSE_PAYLOAD.copy()
         payload["date"] = date
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 10, 1), date_end=datetime.date(2024, 10, 31)
+        payload["period"] = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 10, 1), date_end=datetime.date(2024, 10, 31)
         )
 
-        transfer = transfer_factory.build(budget=budget, **payload)
+        transfer = transfer_factory.build(wallet=wallet, **payload)
         with pytest.raises(ValidationError) as exc:
             transfer.save()
 
@@ -259,7 +259,7 @@ class TestTransferModel:
 
     @pytest.mark.django_db(transaction=True)
     def test_error_entity_in_deposit_field(
-        self, budget: Budget, transfer_factory: BaseFactory, entity_factory: FactoryMetaClass
+        self, wallet: Wallet, transfer_factory: BaseFactory, entity_factory: FactoryMetaClass
     ):
         """
         GIVEN: Payload with Entity instance as "deposit" field value.
@@ -267,9 +267,9 @@ class TestTransferModel:
         THEN: ValidationError raised.
         """
         payload = self.EXPENSE_PAYLOAD.copy()
-        payload["deposit"] = entity_factory(budget=budget)
-        payload["entity"] = entity_factory(budget=budget)
-        transfer = transfer_factory.build(budget=budget, **payload)
+        payload["deposit"] = entity_factory(wallet=wallet)
+        payload["entity"] = entity_factory(wallet=wallet)
+        transfer = transfer_factory.build(wallet=wallet, **payload)
         with pytest.raises(ValidationError) as exc:
             transfer.save()
         assert 'Value of "deposit" field has to be Deposit model instance.' in str(exc.value)
@@ -277,38 +277,38 @@ class TestTransferModel:
 
     @pytest.mark.parametrize("field", ["period", "category", "entity", "deposit"])
     @pytest.mark.django_db(transaction=True)
-    def test_error_different_budgets_in_category_and_period(
+    def test_error_different_wallets_in_category_and_period(
         self,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_factory: BaseFactory,
-        budgeting_period_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         field: str,
     ):
         """
-        GIVEN: Two Budgets in database. Payload with one of period, category, entity and deposit value with
-        other Budget than others.
+        GIVEN: Two Wallets in database. Payload with one of period, category, entity and deposit value with
+        other Wallet than others.
         WHEN: Create Transfer in database.
         THEN: ValidationError raised.
         """
-        budget_1 = budget_factory()
-        budget_2 = budget_factory()
+        wallet_1 = wallet_factory()
+        wallet_2 = wallet_factory()
         payload = self.EXPENSE_PAYLOAD.copy()
         match field:
             case "period":
-                payload[field] = budgeting_period_factory(budget=budget_2)
+                payload[field] = period_factory(wallet=wallet_2)
             case "category":
-                payload[field] = transfer_category_factory(budget=budget_2)
+                payload[field] = transfer_category_factory(wallet=wallet_2)
             case "entity":
-                payload[field] = entity_factory(budget=budget_2)
+                payload[field] = entity_factory(wallet=wallet_2)
             case "deposit":
-                payload[field] = deposit_factory(budget=budget_2)
+                payload[field] = deposit_factory(wallet=wallet_2)
 
-        transfer = transfer_factory.build(budget=budget_1, **payload)
+        transfer = transfer_factory.build(wallet=wallet_1, **payload)
         with pytest.raises(ValidationError) as exc:
             transfer.save()
 
-        assert str(exc.value.args[0]) == "Budget for period, category, entity and deposit fields is not the same."
+        assert str(exc.value.args[0]) == "Wallet for period, category, entity and deposit fields is not the same."
         assert not Transfer.objects.all().exists()

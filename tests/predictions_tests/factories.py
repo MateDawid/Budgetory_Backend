@@ -1,15 +1,15 @@
 import factory
-from budgets_tests.factories import BudgetFactory
 from categories_tests.factories import TransferCategoryFactory
 from entities_tests.factories import DepositFactory
-from periods_tests.factories import BudgetingPeriodFactory
+from periods_tests.factories import PeriodFactory
+from wallets_tests.factories import WalletFactory
 
-from budgets.models import Budget
 from categories.models import TransferCategory
 from categories.models.choices.category_type import CategoryType
 from entities.models import Deposit
-from periods.models import BudgetingPeriod
+from periods.models import Period
 from periods.models.choices.period_status import PeriodStatus
+from wallets.models import Wallet
 
 
 class ExpensePredictionFactory(factory.django.DjangoModelFactory):
@@ -22,38 +22,38 @@ class ExpensePredictionFactory(factory.django.DjangoModelFactory):
     description = factory.Faker("text", max_nb_chars=255)
 
     @factory.lazy_attribute
-    def period(self, *args) -> BudgetingPeriod:
+    def period(self, *args) -> Period:
         """
-        Returns BudgetingPeriod with the same Budget as prediction category.
+        Returns Period with the same Wallet as prediction category.
 
         Returns:
-            BudgetingPeriod: BudgetingPeriod with the same Budget as category.
+            Period: Period with the same Wallet as category.
         """
-        budget = self._Resolver__step.builder.extras.get("budget")
-        if not budget:
-            budget = BudgetFactory()
-        return BudgetingPeriodFactory(budget=budget)
+        wallet = self._Resolver__step.builder.extras.get("wallet")
+        if not wallet:
+            wallet = WalletFactory()
+        return PeriodFactory(wallet=wallet)
 
     @factory.lazy_attribute
     def deposit(self, *args) -> Deposit:
         """
-        Returns Deposit with the same Budget as prediction period.
+        Returns Deposit with the same Wallet as prediction period.
 
         Returns:
-            Deposit: Deposit with the same Budget as period.
+            Deposit: Deposit with the same Wallet as period.
         """
-        budget = self._Resolver__step.builder.extras.get("budget")
-        if not budget:
-            budget = self.period.budget
+        wallet = self._Resolver__step.builder.extras.get("wallet")
+        if not wallet:
+            wallet = self.period.wallet
         category = self._Resolver__step.builder.extras.get("category")
         if isinstance(category, TransferCategory):
             return category.deposit
-        return DepositFactory(budget=budget)
+        return DepositFactory(wallet=wallet)
 
     @factory.lazy_attribute
     def initial_plan(self, *args) -> float | None:
         """
-        Returns TransferCategory with the same Budget as prediction period and CategoryType.EXPENSE category_type field.
+        Returns TransferCategory with the same Wallet as prediction period and CategoryType.EXPENSE category_type field.
 
         Returns:
             TransferCategory: Generated TransferCategory.
@@ -66,26 +66,26 @@ class ExpensePredictionFactory(factory.django.DjangoModelFactory):
     @factory.lazy_attribute
     def category(self, *args) -> TransferCategory:
         """
-        Returns TransferCategory with the same Budget as prediction period and CategoryType.EXPENSE category_type field.
+        Returns TransferCategory with the same Wallet as prediction period and CategoryType.EXPENSE category_type field.
 
         Returns:
             TransferCategory: Generated TransferCategory.
         """
-        budget = self._Resolver__step.builder.extras.get("budget")
-        if not budget:
-            budget = self.period.budget
+        wallet = self._Resolver__step.builder.extras.get("wallet")
+        if not wallet:
+            wallet = self.period.wallet
         return TransferCategoryFactory(
-            budget=budget, deposit=self._Resolver__step.attributes.get("deposit"), category_type=CategoryType.EXPENSE
+            wallet=wallet, deposit=self._Resolver__step.attributes.get("deposit"), category_type=CategoryType.EXPENSE
         )
 
     @factory.post_generation
-    def budget(self, create: bool, budget: Budget, **kwargs) -> None:
+    def wallet(self, create: bool, wallet: Wallet, **kwargs) -> None:
         """
-        Enables to pass "budget" as parameter to factory.
+        Enables to pass "wallet" as parameter to factory.
 
         Args:
             create [bool]: Indicates if object is created or updated.
-            budget [Budget]: Budget model instance.
+            wallet [Wallet]: Wallet model instance.
             **kwargs [dict]: Keyword arguments
         """
         pass

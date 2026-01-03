@@ -17,7 +17,7 @@ class Transfer(models.Model):
     value = models.DecimalField(max_digits=10, decimal_places=2)
     date = models.DateField(null=False, blank=False)
     period = models.ForeignKey(
-        "periods.BudgetingPeriod", blank=False, null=False, on_delete=models.CASCADE, related_name="transfers"
+        "periods.Period", blank=False, null=False, on_delete=models.CASCADE, related_name="transfers"
     )
     entity = models.ForeignKey(
         "entities.Entity", on_delete=models.SET_NULL, blank=True, null=True, related_name="entity_transfers"
@@ -50,26 +50,26 @@ class Transfer(models.Model):
         """
         Override save method to execute validation before saving model in database.
         """
-        self.validate_budget()
+        self.validate_wallet()
         self.validate_period()
         self.validate_deposit()
         super().save(*args, **kwargs)
 
-    def validate_budget(self) -> None:
+    def validate_wallet(self) -> None:
         """
-        Checks if budget fields for period, category, entity and deposit are the same.
+        Checks if wallet fields for period, category, entity and deposit are the same.
 
         Raises:
-            ValidationError: Raised when different budget for one of period, category, entity and deposit fields.
+            ValidationError: Raised when different wallet for one of period, category, entity and deposit fields.
         """
-        field_budgets = [self.deposit.budget]
+        field_wallets = [self.deposit.wallet]
         if self.category:
-            field_budgets.append(self.category.budget)
+            field_wallets.append(self.category.wallet)
         if self.entity:
-            field_budgets.append(self.entity.budget)
-        if not all((self.period.budget == field_budget for field_budget in field_budgets)):
+            field_wallets.append(self.entity.wallet)
+        if not all((self.period.wallet == field_wallet for field_wallet in field_wallets)):
             raise ValidationError(
-                "Budget for period, category, entity and deposit fields is not the same.", code="budget-invalid"
+                "Wallet for period, category, entity and deposit fields is not the same.", code="wallet-invalid"
             )
 
     def validate_period(self) -> None:

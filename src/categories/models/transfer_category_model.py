@@ -8,7 +8,7 @@ from categories.models.choices.category_type import CategoryType
 class TransferCategory(models.Model):
     """TransferCategory model for grouping Transfer model instances."""
 
-    budget = models.ForeignKey("budgets.Budget", on_delete=models.CASCADE, related_name="transfer_categories")
+    wallet = models.ForeignKey("wallets.Wallet", on_delete=models.CASCADE, related_name="transfer_categories")
     name = models.CharField(max_length=128)
     description = models.CharField(max_length=255, blank=True, null=True)
     deposit = models.ForeignKey(
@@ -30,7 +30,7 @@ class TransferCategory(models.Model):
             ),
             UniqueConstraint(
                 name="%(app_label)s_%(class)s_name_unique_for_deposit",
-                fields=("budget", "category_type", "name", "deposit"),
+                fields=("wallet", "category_type", "name", "deposit"),
                 condition=Q(deposit__isnull=False),
             ),
         )

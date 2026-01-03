@@ -5,9 +5,9 @@ from django.core.exceptions import ValidationError
 from django.db import DataError, IntegrityError
 from factory.base import FactoryMetaClass
 
-from budgets.models.budget_model import Budget
 from categories.models.choices.category_type import CategoryType
 from predictions.models.expense_prediction_model import ExpensePrediction
+from wallets.models.wallet_model import Wallet
 
 
 @pytest.mark.django_db
@@ -21,20 +21,20 @@ class TestExpensePredictionModel:
 
     def test_create_expense_prediction(
         self,
-        budget: Budget,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet: Wallet,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: BudgetingPeriod and ExpenseCategory models instances in database. Valid payload for
+        GIVEN: Period and ExpenseCategory models instances in database. Valid payload for
         ExpensePrediction provided.
         WHEN: ExpensePrediction instance create attempt with valid data.
         THEN: ExpensePrediction model instance exists in database with given data.
         """
-        period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        period = period_factory(wallet=wallet)
+        deposit = deposit_factory(wallet=wallet)
+        category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
 
         prediction = ExpensePrediction.objects.create(period=period, deposit=deposit, category=category, **self.PAYLOAD)
 
@@ -49,14 +49,14 @@ class TestExpensePredictionModel:
     @pytest.mark.parametrize("field", ("initial_plan", "current_plan"))
     def test_error_value_too_long(
         self,
-        budget: Budget,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet: Wallet,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         field: str,
     ):
         """
-        GIVEN: BudgetingPeriod and ExpenseCategory models instances in database.
+        GIVEN: Period and ExpenseCategory models instances in database.
         WHEN: ExpensePrediction instance create attempt with "value" value too long.
         THEN: DataError raised.
         """
@@ -66,10 +66,10 @@ class TestExpensePredictionModel:
         )
         payload = self.PAYLOAD.copy()
         payload[field] = "1" + "0" * max_length
-        payload["period"] = budgeting_period_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
+        payload["period"] = period_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
         payload["category"] = transfer_category_factory(
-            budget=budget, deposit=payload["deposit"], category_type=CategoryType.EXPENSE
+            wallet=wallet, deposit=payload["deposit"], category_type=CategoryType.EXPENSE
         )
 
         with pytest.raises(DataError) as exc:
@@ -82,24 +82,24 @@ class TestExpensePredictionModel:
     @pytest.mark.parametrize("value", [Decimal("-0.01"), Decimal("-1.00")])
     def test_error_value_too_low(
         self,
-        budget: Budget,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet: Wallet,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         field: str,
         value: Decimal,
     ):
         """
-        GIVEN: BudgetingPeriod and ExpenseCategory models instances in database.
+        GIVEN: Period and ExpenseCategory models instances in database.
         WHEN: ExpensePrediction instance create attempt with "value" value too low.
         THEN: DataError raised.
         """
         payload = self.PAYLOAD.copy()
         payload[field] = value
-        payload["period"] = budgeting_period_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
+        payload["period"] = period_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
         payload["category"] = transfer_category_factory(
-            budget=budget, deposit=payload["deposit"], category_type=CategoryType.EXPENSE
+            wallet=wallet, deposit=payload["deposit"], category_type=CategoryType.EXPENSE
         )
 
         with pytest.raises(IntegrityError) as exc:
@@ -110,19 +110,19 @@ class TestExpensePredictionModel:
     @pytest.mark.django_db(transaction=True)
     def test_error_on_second_prediction_for_category_in_period(
         self,
-        budget: Budget,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet: Wallet,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: BudgetingPeriod and ExpenseCategory models instances in database.
+        GIVEN: Period and ExpenseCategory models instances in database.
         WHEN: Trying to create two ExpensePrediction instances for the same period and category.
         THEN: IntegrityError raised.
         """
-        period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        period = period_factory(wallet=wallet)
+        deposit = deposit_factory(wallet=wallet)
+        category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
         ExpensePrediction.objects.create(period=period, deposit=deposit, category=category, **self.PAYLOAD)
 
         with pytest.raises(IntegrityError) as exc:
@@ -132,24 +132,24 @@ class TestExpensePredictionModel:
         assert ExpensePrediction.objects.all().count() == 1
 
     @pytest.mark.django_db(transaction=True)
-    def test_error_different_budgets_in_category_and_period(
+    def test_error_different_wallets_in_category_and_period(
         self,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: BudgetingPeriod and ExpenseCategory models instances for different Budgets in database.
-        WHEN: Trying to create ExpensePrediction with period and category in different budgets.
+        GIVEN: Period and ExpenseCategory models instances for different Wallets in database.
+        WHEN: Trying to create ExpensePrediction with period and category in different wallets.
         THEN: ValidationError raised.
         """
-        budget_1 = budget_factory()
-        budget_2 = budget_factory()
-        period = budgeting_period_factory(budget=budget_1)
-        category = transfer_category_factory(budget=budget_2, category_type=CategoryType.EXPENSE)
+        wallet_1 = wallet_factory()
+        wallet_2 = wallet_factory()
+        period = period_factory(wallet=wallet_1)
+        category = transfer_category_factory(wallet=wallet_2, category_type=CategoryType.EXPENSE)
 
         with pytest.raises(ValidationError) as exc:
             ExpensePrediction.objects.create(period=period, category=category, **self.PAYLOAD)
 
-        assert str(exc.value.args[0]) == "Budget for period and category fields is not the same."
+        assert str(exc.value.args[0]) == "Wallet for period and category fields is not the same."
         assert not ExpensePrediction.objects.all().exists()

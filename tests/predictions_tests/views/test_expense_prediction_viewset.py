@@ -20,14 +20,14 @@ from predictions.models.expense_prediction_model import ExpensePrediction
 from predictions.serializers.expense_prediction_serializer import ExpensePredictionSerializer
 
 
-def expense_prediction_url(budget_id: int):
+def expense_prediction_url(wallet_id: int):
     """Create and return an ExpensePrediction list URL."""
-    return reverse("budgets:expense_prediction-list", args=[budget_id])
+    return reverse("wallets:expense_prediction-list", args=[wallet_id])
 
 
-def expense_prediction_detail_url(budget_id: int, prediction_id: int):
+def expense_prediction_detail_url(wallet_id: int, prediction_id: int):
     """Create and return an ExpensePrediction detail URL."""
-    return reverse("budgets:expense_prediction-detail", args=[budget_id, prediction_id])
+    return reverse("wallets:expense_prediction-detail", args=[wallet_id, prediction_id])
 
 
 @pytest.mark.django_db
@@ -40,22 +40,22 @@ class TestExpensePredictionViewSetList:
         WHEN: ExpensePredictionViewSet list method called with GET without authentication.
         THEN: Unauthorized HTTP 401 returned.
         """
-        response = api_client.get(expense_prediction_url(expense_prediction.period.budget.id))
+        response = api_client.get(expense_prediction_url(expense_prediction.period.wallet.id))
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_auth_with_jwt(
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
         WHEN: ExpensePredictionViewSet list endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(members=[base_user])
-        url = expense_prediction_url(budget.id)
+        wallet = wallet_factory(members=[base_user])
+        url = expense_prediction_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
         assert response.status_code == status.HTTP_200_OK
@@ -64,20 +64,20 @@ class TestExpensePredictionViewSetList:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Ten ExpensePrediction model instances for single Budget created in database.
-        WHEN: ExpensePredictionViewSet called by Budget member without pagination parameters.
+        GIVEN: Ten ExpensePrediction model instances for single Wallet created in database.
+        WHEN: ExpensePredictionViewSet called by Wallet member without pagination parameters.
         THEN: HTTP 200 - Response with all objects returned.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         for _ in range(10):
-            expense_prediction_factory(budget=budget)
+            expense_prediction_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(expense_prediction_url(budget.id))
+        response = api_client.get(expense_prediction_url(wallet.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert "results" not in response.data
@@ -88,26 +88,26 @@ class TestExpensePredictionViewSetList:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Ten ExpensePrediction model instances for single Budget created in database.
-        WHEN: ExpensePredictionViewSet called by Budget member with pagination parameters - page_size and page.
+        GIVEN: Ten ExpensePrediction model instances for single Wallet created in database.
+        WHEN: ExpensePredictionViewSet called by Wallet member with pagination parameters - page_size and page.
         THEN: HTTP 200 - Paginated response returned.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         for _ in range(10):
-            expense_prediction_factory(budget=budget)
+            expense_prediction_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(expense_prediction_url(budget.id), data={"page_size": 2, "page": 1})
+        response = api_client.get(expense_prediction_url(wallet.id), data={"page_size": 2, "page": 1})
 
         assert response.status_code == status.HTTP_200_OK
         assert "results" in response.data
         assert response.data["count"] == 10
 
-    def test_user_not_budget_member(
+    def test_user_not_wallet_member(
         self,
         api_client: APIClient,
         user_factory: FactoryMetaClass,
@@ -115,7 +115,7 @@ class TestExpensePredictionViewSetList:
     ):
         """
         GIVEN: ExpensePrediction model instance in database.
-        WHEN: ExpensePredictionViewSet list method called with GET by User not belonging to given Budget.
+        WHEN: ExpensePredictionViewSet list method called with GET by User not belonging to given Wallet.
         THEN: Forbidden HTTP 403 returned.
         """
         other_user = user_factory()
@@ -123,39 +123,39 @@ class TestExpensePredictionViewSetList:
 
         api_client.force_authenticate(other_user)
 
-        response = api_client.get(expense_prediction_url(expense_prediction.period.budget.id))
+        response = api_client.get(expense_prediction_url(expense_prediction.period.wallet.id))
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["detail"] == "User does not have access to Budget."
+        assert response.data["detail"] == "User does not have access to Wallet."
 
-    def test_retrieve_prediction_list_by_budget_member(
+    def test_retrieve_prediction_list_by_wallet_member(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Two ExpensePrediction model instances for single Budget created in database.
-        WHEN: ExpensePredictionViewSet called by Budget member.
-        THEN: Response with serialized Budget ExpensePrediction list returned.
+        GIVEN: Two ExpensePrediction model instances for single Wallet created in database.
+        WHEN: ExpensePredictionViewSet called by Wallet member.
+        THEN: Response with serialized Wallet ExpensePrediction list returned.
         """
         api_client.force_authenticate(base_user)
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         expense_prediction_factory(
-            budget=budget,
-            category=transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE),
+            wallet=wallet,
+            category=transfer_category_factory(wallet=wallet, category_type=CategoryType.EXPENSE),
         )
         expense_prediction_factory(
-            budget=budget,
-            category=transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE),
+            wallet=wallet,
+            category=transfer_category_factory(wallet=wallet, category_type=CategoryType.EXPENSE),
         )
 
-        response = api_client.get(expense_prediction_url(budget.id))
+        response = api_client.get(expense_prediction_url(wallet.id))
 
         predictions = annotate_expense_prediction_queryset(
-            ExpensePrediction.objects.filter(period__budget=budget)
+            ExpensePrediction.objects.filter(period__wallet=wallet)
         ).order_by("id")
         serializer = ExpensePredictionSerializer(predictions, many=True)
         assert response.status_code == status.HTTP_200_OK
@@ -166,26 +166,26 @@ class TestExpensePredictionViewSetList:
             assert prediction["category_priority"] == CategoryPriority(category.priority).label
             assert prediction["category_deposit"] == getattr(category.deposit, "name", None)
 
-    def test_prediction_list_limited_to_budget(
+    def test_prediction_list_limited_to_wallet(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Two ExpensePrediction model instances for different Budgets created in database.
-        WHEN: ExpensePredictionViewSet called by one of Budgets owner.
-        THEN: Response with serialized ExpensePrediction list (only from given Budget) returned.
+        GIVEN: Two ExpensePrediction model instances for different Wallets created in database.
+        WHEN: ExpensePredictionViewSet called by one of Wallets owner.
+        THEN: Response with serialized ExpensePrediction list (only from given Wallet) returned.
         """
-        budget = budget_factory(members=[base_user])
-        prediction = expense_prediction_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        prediction = expense_prediction_factory(wallet=wallet)
         expense_prediction_factory()
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(expense_prediction_url(budget.id))
+        response = api_client.get(expense_prediction_url(wallet.id))
 
-        predictions = annotate_expense_prediction_queryset(ExpensePrediction.objects.filter(period__budget=budget))
+        predictions = annotate_expense_prediction_queryset(ExpensePrediction.objects.filter(period__wallet=wallet))
         serializer = ExpensePredictionSerializer(predictions, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == len(serializer.data) == predictions.count() == 1
@@ -196,36 +196,32 @@ class TestExpensePredictionViewSetList:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Two ExpensePrediction model instances for consecutive Periods in database.
-        WHEN: ExpensePredictionViewSet called by one of Budgets owner.
+        WHEN: ExpensePredictionViewSet called by one of Wallets owner.
         THEN: Response with serialized ExpensePrediction list containing calculated "previous_plan" field returned.
         """
         api_client.force_authenticate(base_user)
-        budget = budget_factory(members=[base_user])
-        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
-        previous_period = budgeting_period_factory(
-            budget=budget, date_start=date(2025, 6, 1), date_end=date(2025, 6, 30)
-        )
-        current_period = budgeting_period_factory(
-            budget=budget, date_start=date(2025, 7, 1), date_end=date(2025, 7, 31)
-        )
+        wallet = wallet_factory(members=[base_user])
+        category = transfer_category_factory(wallet=wallet, category_type=CategoryType.EXPENSE)
+        previous_period = period_factory(wallet=wallet, date_start=date(2025, 6, 1), date_end=date(2025, 6, 30))
+        current_period = period_factory(wallet=wallet, date_start=date(2025, 7, 1), date_end=date(2025, 7, 31))
         previous_prediction = expense_prediction_factory(
-            budget=budget, period=previous_period, category=category, current_plan=Decimal("100.00")
+            wallet=wallet, period=previous_period, category=category, current_plan=Decimal("100.00")
         )
         current_prediction = expense_prediction_factory(
-            budget=budget, period=current_period, category=category, current_plan=Decimal("200.00")
+            wallet=wallet, period=current_period, category=category, current_plan=Decimal("200.00")
         )
 
-        response = api_client.get(expense_prediction_url(budget.id))
+        response = api_client.get(expense_prediction_url(wallet.id))
 
         predictions = annotate_expense_prediction_queryset(
-            ExpensePrediction.objects.filter(period__budget=budget)
+            ExpensePrediction.objects.filter(period__wallet=wallet)
         ).order_by("id")
         serializer = ExpensePredictionSerializer(predictions, many=True)
         assert response.status_code == status.HTTP_200_OK
@@ -241,9 +237,9 @@ class TestExpensePredictionViewSetList:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
@@ -251,48 +247,44 @@ class TestExpensePredictionViewSetList:
         """
         GIVEN: Two ExpensePrediction model instances for consecutive Periods in database.
         Six Transfers (two matching current period, two matching previous period, two others) created too.
-        WHEN: ExpensePredictionViewSet called by one of Budgets owner.
+        WHEN: ExpensePredictionViewSet called by one of Wallets owner.
         THEN: Response with serialized ExpensePrediction list containing calculated "current_result"
         and "previous_result" field returned.
         """
         api_client.force_authenticate(base_user)
-        budget = budget_factory(members=[base_user])
-        deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
-        previous_period = budgeting_period_factory(
-            budget=budget, date_start=date(2025, 6, 1), date_end=date(2025, 6, 30)
-        )
-        current_period = budgeting_period_factory(
-            budget=budget, date_start=date(2025, 7, 1), date_end=date(2025, 7, 31)
-        )
+        wallet = wallet_factory(members=[base_user])
+        deposit = deposit_factory(wallet=wallet)
+        category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
+        previous_period = period_factory(wallet=wallet, date_start=date(2025, 6, 1), date_end=date(2025, 6, 30))
+        current_period = period_factory(wallet=wallet, date_start=date(2025, 7, 1), date_end=date(2025, 7, 31))
         previous_prediction = expense_prediction_factory(
-            budget=budget, deposit=deposit, period=previous_period, category=category
+            wallet=wallet, deposit=deposit, period=previous_period, category=category
         )
         current_prediction = expense_prediction_factory(
-            budget=budget, deposit=deposit, period=current_period, category=category
+            wallet=wallet, deposit=deposit, period=current_period, category=category
         )
         # Transfer matching previous ExpensePrediction
         expense_factory(
-            budget=budget, deposit=deposit, category=category, period=previous_period, value=Decimal("1.00")
+            wallet=wallet, deposit=deposit, category=category, period=previous_period, value=Decimal("1.00")
         )
         expense_factory(
-            budget=budget, deposit=deposit, category=category, period=previous_period, value=Decimal("2.00")
+            wallet=wallet, deposit=deposit, category=category, period=previous_period, value=Decimal("2.00")
         )
         # Transfer matching current ExpensePrediction
         expense_factory(
-            budget=budget, deposit=deposit, category=category, period=current_period, value=Decimal("10.00")
+            wallet=wallet, deposit=deposit, category=category, period=current_period, value=Decimal("10.00")
         )
         expense_factory(
-            budget=budget, deposit=deposit, category=category, period=current_period, value=Decimal("20.00")
+            wallet=wallet, deposit=deposit, category=category, period=current_period, value=Decimal("20.00")
         )
         # Other Transfers
-        expense_factory(budget=budget, deposit=deposit, value=Decimal("100.00"))
-        expense_factory(budget=budget, deposit=deposit, value=Decimal("200.00"))
+        expense_factory(wallet=wallet, deposit=deposit, value=Decimal("100.00"))
+        expense_factory(wallet=wallet, deposit=deposit, value=Decimal("200.00"))
 
-        response = api_client.get(expense_prediction_url(budget.id))
+        response = api_client.get(expense_prediction_url(wallet.id))
 
         predictions = annotate_expense_prediction_queryset(
-            ExpensePrediction.objects.filter(period__budget=budget)
+            ExpensePrediction.objects.filter(period__wallet=wallet)
         ).order_by("id")
         serializer = ExpensePredictionSerializer(predictions, many=True)
 
@@ -327,7 +319,7 @@ class TestExpensePredictionViewSetCreate:
         WHEN: ExpensePredictionViewSet list method called with POST without authentication.
         THEN: Unauthorized HTTP 401 returned.
         """
-        url = expense_prediction_url(expense_prediction.period.budget.id)
+        url = expense_prediction_url(expense_prediction.period.wallet.id)
         response = api_client.post(url, data={})
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -335,72 +327,72 @@ class TestExpensePredictionViewSetCreate:
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
         WHEN: ExpensePredictionViewSet list endpoint called with POST.
         THEN: HTTP 400 returned - access granted, but input invalid.
         """
-        budget = budget_factory(members=[base_user])
-        url = expense_prediction_url(budget.id)
+        wallet = wallet_factory(members=[base_user])
+        url = expense_prediction_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.post(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_user_not_budget_member(
+    def test_user_not_wallet_member(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget, BudgetingPeriod and TransferCategory instances created in database. Valid payload
+        GIVEN: Wallet, Period and TransferCategory instances created in database. Valid payload
         for ExpensePrediction.
-        WHEN: ExpensePredictionViewSet called with POST by User not belonging to Budget with valid payload.
+        WHEN: ExpensePredictionViewSet called with POST by User not belonging to Wallet with valid payload.
         THEN: Forbidden HTTP 403 returned. Object not created.
         """
-        budget = budget_factory()
+        wallet = wallet_factory()
         payload = self.PAYLOAD.copy()
         api_client.force_authenticate(base_user)
 
-        response = api_client.post(expense_prediction_url(budget.id), payload)
+        response = api_client.post(expense_prediction_url(wallet.id), payload)
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["detail"] == "User does not have access to Budget."
-        assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
+        assert response.data["detail"] == "User does not have access to Wallet."
+        assert not ExpensePrediction.objects.filter(period__wallet=wallet).exists()
 
     def test_create_single_prediction(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
         user_factory: FactoryMetaClass,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget, BudgetingPeriod and TransferCategory instances created in database. Valid payload prepared
+        GIVEN: Wallet, Period and TransferCategory instances created in database. Valid payload prepared
         for ExpensePrediction.
-        WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with valid payload.
+        WHEN: ExpensePredictionViewSet called with POST by User belonging to Wallet with valid payload.
         THEN: ExpensePrediction object created in database with given payload
         """
         other_user = user_factory()
-        budget = budget_factory(members=[base_user, other_user])
-        deposit = deposit_factory(budget=budget)
-        period = budgeting_period_factory(budget=budget, status=PeriodStatus.DRAFT)
-        category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        wallet = wallet_factory(members=[base_user, other_user])
+        deposit = deposit_factory(wallet=wallet)
+        period = period_factory(wallet=wallet, status=PeriodStatus.DRAFT)
+        category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
         payload = self.PAYLOAD.copy()
         payload["period"] = period.id
         payload["category"] = category.id
         payload["deposit"] = deposit.id
         api_client.force_authenticate(base_user)
 
-        response = api_client.post(expense_prediction_url(budget.id), payload)
+        response = api_client.post(expense_prediction_url(wallet.id), payload)
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert ExpensePrediction.objects.filter(period__budget=budget).count() == 1
+        assert ExpensePrediction.objects.filter(period__wallet=wallet).count() == 1
         prediction = ExpensePrediction.objects.get(id=response.data["id"])
         for key in self.PAYLOAD:
             assert getattr(prediction, key) == self.PAYLOAD[key]
@@ -416,123 +408,119 @@ class TestExpensePredictionViewSetCreate:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         current_plan: Decimal,
     ):
         """
-        GIVEN: Budget, BudgetingPeriod and TransferCategory instances created in database. Payload for ExpensePrediction
+        GIVEN: Wallet, Period and TransferCategory instances created in database. Payload for ExpensePrediction
         with current_plan too low.
-        WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with invalid payload.
+        WHEN: ExpensePredictionViewSet called with POST by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not created in database.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        category = transfer_category_factory(wallet=wallet, category_type=CategoryType.EXPENSE)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["period"] = period.id
         payload["category"] = category.id
         payload["current_plan"] = current_plan
 
-        response = api_client.post(expense_prediction_url(budget.id), payload)
+        response = api_client.post(expense_prediction_url(wallet.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "current_plan" in response.data["detail"]
         assert response.data["detail"]["current_plan"][0] == "Value should be higher than 0.00."
-        assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
+        assert not ExpensePrediction.objects.filter(period__wallet=wallet).exists()
 
     def test_error_category_not_with_expense_type(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget, BudgetingPeriod and TransferCategory instances created in database. Payload for ExpensePrediction
+        GIVEN: Wallet, Period and TransferCategory instances created in database. Payload for ExpensePrediction
         with INCOME TransferCategory as category.
-        WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with invalid payload.
+        WHEN: ExpensePredictionViewSet called with POST by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not created in database.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        category = transfer_category_factory(wallet=wallet, category_type=CategoryType.INCOME)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["period"] = period.id
         payload["category"] = category.id
 
-        response = api_client.post(expense_prediction_url(budget.id), payload)
+        response = api_client.post(expense_prediction_url(wallet.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "category" in response.data["detail"]
         assert response.data["detail"]["category"][0] == "Incorrect category provided. Please provide expense category."
-        assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
+        assert not ExpensePrediction.objects.filter(period__wallet=wallet).exists()
 
     def test_error_add_prediction_to_closed_period(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget, BudgetingPeriod and TransferCategory instances created in database. Payload for ExpensePrediction
-        with CLOSED BudgetingPeriod as period.
-        WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with invalid payload.
+        GIVEN: Wallet, Period and TransferCategory instances created in database. Payload for ExpensePrediction
+        with CLOSED Period as period.
+        WHEN: ExpensePredictionViewSet called with POST by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not created in database.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, status=PeriodStatus.CLOSED)
-        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet, status=PeriodStatus.CLOSED)
+        category = transfer_category_factory(wallet=wallet, category_type=CategoryType.EXPENSE)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["period"] = period.id
         payload["category"] = category.id
 
-        response = api_client.post(expense_prediction_url(budget.id), payload)
+        response = api_client.post(expense_prediction_url(wallet.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "period" in response.data["detail"]
-        assert (
-            response.data["detail"]["period"][0] == "New Expense Prediction cannot be added to closed Budgeting Period."
-        )
-        assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
+        assert response.data["detail"]["period"][0] == "New Expense Prediction cannot be added to closed  Period."
+        assert not ExpensePrediction.objects.filter(period__wallet=wallet).exists()
 
     def test_error_add_prediction_to_active_period(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget, BudgetingPeriod and TransferCategory instances created in database. Payload for ExpensePrediction
-        with ACTIVE BudgetingPeriod as period.
-        WHEN: ExpensePredictionViewSet called with POST by User belonging to Budget with invalid payload.
+        GIVEN: Wallet, Period and TransferCategory instances created in database. Payload for ExpensePrediction
+        with ACTIVE Period as period.
+        WHEN: ExpensePredictionViewSet called with POST by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not created in database.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, status=PeriodStatus.ACTIVE)
-        category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet, status=PeriodStatus.ACTIVE)
+        category = transfer_category_factory(wallet=wallet, category_type=CategoryType.EXPENSE)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["period"] = period.id
         payload["category"] = category.id
 
-        response = api_client.post(expense_prediction_url(budget.id), payload)
+        response = api_client.post(expense_prediction_url(wallet.id), payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "period" in response.data["detail"]
-        assert (
-            response.data["detail"]["period"][0] == "New Expense Prediction cannot be added to active Budgeting Period."
-        )
-        assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
+        assert response.data["detail"]["period"][0] == "New Expense Prediction cannot be added to active  Period."
+        assert not ExpensePrediction.objects.filter(period__wallet=wallet).exists()
 
 
 @pytest.mark.django_db
@@ -546,7 +534,7 @@ class TestExpensePredictionViewSetDetail:
         THEN: Unauthorized HTTP 401 returned.
         """
         response = api_client.get(
-            expense_prediction_detail_url(expense_prediction.period.budget.id, expense_prediction.id)
+            expense_prediction_detail_url(expense_prediction.period.wallet.id, expense_prediction.id)
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -554,7 +542,7 @@ class TestExpensePredictionViewSetDetail:
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
@@ -562,14 +550,14 @@ class TestExpensePredictionViewSetDetail:
         WHEN: ExpensePredictionViewSet detail endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(members=[base_user])
-        expense_prediction = expense_prediction_factory(budget=budget)
-        url = expense_prediction_detail_url(expense_prediction.period.budget.id, expense_prediction.id)
+        wallet = wallet_factory(members=[base_user])
+        expense_prediction = expense_prediction_factory(wallet=wallet)
+        url = expense_prediction_detail_url(expense_prediction.period.wallet.id, expense_prediction.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
         assert response.status_code == status.HTTP_200_OK
 
-    def test_user_not_budget_member(
+    def test_user_not_wallet_member(
         self,
         api_client: APIClient,
         user_factory: FactoryMetaClass,
@@ -577,7 +565,7 @@ class TestExpensePredictionViewSetDetail:
     ):
         """
         GIVEN: ExpensePrediction model instance in database.
-        WHEN: ExpensePredictionViewSet detail method called with GET by User not belonging to given Budget.
+        WHEN: ExpensePredictionViewSet detail method called with GET by User not belonging to given Wallet.
         THEN: Forbidden HTTP 403 returned.
         """
         other_user = user_factory()
@@ -585,33 +573,33 @@ class TestExpensePredictionViewSetDetail:
         api_client.force_authenticate(other_user)
 
         response = api_client.get(
-            expense_prediction_detail_url(expense_prediction.period.budget.id, expense_prediction.id)
+            expense_prediction_detail_url(expense_prediction.period.wallet.id, expense_prediction.id)
         )
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["detail"] == "User does not have access to Budget."
+        assert response.data["detail"] == "User does not have access to Wallet."
 
     @pytest.mark.parametrize("user_type", ["owner", "member"])
     def test_get_prediction_details(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
         user_type: str,
     ):
         """
-        GIVEN: ExpensePrediction instance for Budget created in database.
-        WHEN: ExpensePredictionViewSet detail view called by User belonging to Budget.
+        GIVEN: ExpensePrediction instance for Wallet created in database.
+        WHEN: ExpensePredictionViewSet detail view called by User belonging to Wallet.
         THEN: HTTP 200, ExpensePrediction details returned.
         """
         if user_type == "owner":
-            budget = budget_factory(members=[base_user])
+            wallet = wallet_factory(members=[base_user])
         else:
-            budget = budget_factory(members=[base_user])
-        prediction = expense_prediction_factory(budget=budget)
+            wallet = wallet_factory(members=[base_user])
+        prediction = expense_prediction_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
-        url = expense_prediction_detail_url(budget.id, prediction.id)
+        url = expense_prediction_detail_url(wallet.id, prediction.id)
 
         response = api_client.get(url)
         serializer = ExpensePredictionSerializer(
@@ -625,37 +613,37 @@ class TestExpensePredictionViewSetDetail:
         self, api_client: APIClient, base_user: AbstractUser, expense_prediction_factory: FactoryMetaClass
     ):
         """
-        GIVEN: ExpensePrediction instance for Budget created in database.
+        GIVEN: ExpensePrediction instance for Wallet created in database.
         WHEN: ExpensePredictionViewSet detail view called without authentication.
         THEN: Unauthorized HTTP 401.
         """
         prediction = expense_prediction_factory()
-        url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
+        url = expense_prediction_detail_url(prediction.period.wallet.id, prediction.id)
 
         response = api_client.get(url)
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_error_get_details_from_not_accessible_budget(
+    def test_error_get_details_from_not_accessible_wallet(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: ExpensePrediction instance for Budget created in database.
-        WHEN: ExpensePredictionViewSet detail view called by User not belonging to Budget.
+        GIVEN: ExpensePrediction instance for Wallet created in database.
+        WHEN: ExpensePredictionViewSet detail view called by User not belonging to Wallet.
         THEN: Forbidden HTTP 403 returned.
         """
-        prediction = expense_prediction_factory(budget=budget_factory())
+        prediction = expense_prediction_factory(wallet=wallet_factory())
         api_client.force_authenticate(base_user)
 
-        url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
+        url = expense_prediction_detail_url(prediction.period.wallet.id, prediction.id)
         response = api_client.get(url)
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["detail"] == "User does not have access to Budget."
+        assert response.data["detail"] == "User does not have access to Wallet."
 
 
 @pytest.mark.django_db
@@ -671,12 +659,12 @@ class TestExpensePredictionViewSetUpdate:
         self, api_client: APIClient, base_user: AbstractUser, expense_prediction_factory: FactoryMetaClass
     ):
         """
-        GIVEN: ExpensePrediction instance for Budget created in database.
+        GIVEN: ExpensePrediction instance for Wallet created in database.
         WHEN: ExpensePredictionViewSet detail view called with PATCH without authentication.
         THEN: Unauthorized HTTP 401.
         """
         prediction = expense_prediction_factory()
-        url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
+        url = expense_prediction_detail_url(prediction.period.wallet.id, prediction.id)
 
         response = api_client.patch(url, {})
 
@@ -686,7 +674,7 @@ class TestExpensePredictionViewSetUpdate:
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
@@ -694,33 +682,33 @@ class TestExpensePredictionViewSetUpdate:
         WHEN: ExpensePredictionViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(members=[base_user])
-        expense_prediction = expense_prediction_factory(budget=budget)
-        url = expense_prediction_detail_url(expense_prediction.period.budget.id, expense_prediction.id)
+        wallet = wallet_factory(members=[base_user])
+        expense_prediction = expense_prediction_factory(wallet=wallet)
+        url = expense_prediction_detail_url(expense_prediction.period.wallet.id, expense_prediction.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.patch(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
         assert response.status_code == status.HTTP_200_OK
 
-    def test_user_not_budget_member(
+    def test_user_not_wallet_member(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: ExpensePrediction instance for Budget created in database.
-        WHEN: ExpensePredictionViewSet detail view called with PATCH by User not belonging to Budget.
+        GIVEN: ExpensePrediction instance for Wallet created in database.
+        WHEN: ExpensePredictionViewSet detail view called with PATCH by User not belonging to Wallet.
         THEN: Forbidden HTTP 403 returned.
         """
-        prediction = expense_prediction_factory(budget=budget_factory())
+        prediction = expense_prediction_factory(wallet=wallet_factory())
         api_client.force_authenticate(base_user)
-        url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
+        url = expense_prediction_detail_url(prediction.period.wallet.id, prediction.id)
 
         response = api_client.patch(url, {})
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["detail"] == "User does not have access to Budget."
+        assert response.data["detail"] == "User does not have access to Wallet."
 
     @pytest.mark.parametrize(
         "param, value",
@@ -734,21 +722,21 @@ class TestExpensePredictionViewSetUpdate:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
         param: str,
         value: Any,
     ):
         """
-        GIVEN: ExpensePrediction instance for Budget created in database.
-        WHEN: ExpensePredictionViewSet detail view called with PATCH by User belonging to Budget.
+        GIVEN: ExpensePrediction instance for Wallet created in database.
+        WHEN: ExpensePredictionViewSet detail view called with PATCH by User belonging to Wallet.
         THEN: HTTP 200, ExpensePrediction updated.
         """
-        budget = budget_factory(members=[base_user])
-        prediction = expense_prediction_factory(budget=budget, **self.PAYLOAD)
+        wallet = wallet_factory(members=[base_user])
+        prediction = expense_prediction_factory(wallet=wallet, **self.PAYLOAD)
         update_payload = {param: value}
         api_client.force_authenticate(base_user)
-        url = expense_prediction_detail_url(budget.id, prediction.id)
+        url = expense_prediction_detail_url(wallet.id, prediction.id)
 
         response = api_client.patch(url, update_payload)
 
@@ -760,23 +748,23 @@ class TestExpensePredictionViewSetUpdate:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: ExpensePrediction instance for Budget created in database. Update payload with "category" value prepared.
-        WHEN: ExpensePredictionViewSet detail view called with PATCH by User belonging to Budget with valid payload.
+        GIVEN: ExpensePrediction instance for Wallet created in database. Update payload with "category" value prepared.
+        WHEN: ExpensePredictionViewSet detail view called with PATCH by User belonging to Wallet with valid payload.
         THEN: HTTP 200, Deposit updated with "category" value.
         """
-        budget = budget_factory(members=[base_user])
-        deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
-        prediction = expense_prediction_factory(budget=budget, deposit=deposit, **self.PAYLOAD)
+        wallet = wallet_factory(members=[base_user])
+        deposit = deposit_factory(wallet=wallet)
+        category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
+        prediction = expense_prediction_factory(wallet=wallet, deposit=deposit, **self.PAYLOAD)
         update_payload = {"category": category.id}
         api_client.force_authenticate(base_user)
-        url = expense_prediction_detail_url(budget.id, prediction.id)
+        url = expense_prediction_detail_url(wallet.id, prediction.id)
 
         response = api_client.patch(url, update_payload)
 
@@ -784,52 +772,52 @@ class TestExpensePredictionViewSetUpdate:
         prediction.refresh_from_db()
         assert prediction.category == category
 
-    def test_error_update_category_does_not_belong_to_budget(
+    def test_error_update_category_does_not_belong_to_wallet(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget instance created in database. TransferCategory not belonging to Budget as
+        GIVEN: Wallet instance created in database. TransferCategory not belonging to Wallet as
         'category' in payload.
-        WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Budget with invalid payload.
+        WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not updated.
         """
-        budget = budget_factory(members=[base_user])
-        prediction = expense_prediction_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        prediction = expense_prediction_factory(wallet=wallet)
         payload = {"category": transfer_category_factory(category_type=CategoryType.EXPENSE).id}
         api_client.force_authenticate(base_user)
-        url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
+        url = expense_prediction_detail_url(prediction.period.wallet.id, prediction.id)
 
         response = api_client.patch(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "non_field_errors" in response.data["detail"]
         assert (
-            response.data["detail"]["non_field_errors"][0] == "Budget for period and category fields is not the same."
+            response.data["detail"]["non_field_errors"][0] == "Wallet for period and category fields is not the same."
         )
 
     def test_error_category_not_with_expense_type(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget instance created in database. INCOME TransferCategory as 'category' in payload.
-        WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Budget with invalid payload.
+        GIVEN: Wallet instance created in database. INCOME TransferCategory as 'category' in payload.
+        WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not updated.
         """
-        budget = budget_factory(members=[base_user])
-        prediction = expense_prediction_factory(budget=budget)
-        payload = {"category": transfer_category_factory(budget=budget, category_type=CategoryType.INCOME).id}
+        wallet = wallet_factory(members=[base_user])
+        prediction = expense_prediction_factory(wallet=wallet)
+        payload = {"category": transfer_category_factory(wallet=wallet, category_type=CategoryType.INCOME).id}
         api_client.force_authenticate(base_user)
-        url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
+        url = expense_prediction_detail_url(prediction.period.wallet.id, prediction.id)
 
         response = api_client.patch(url, payload)
 
@@ -841,24 +829,24 @@ class TestExpensePredictionViewSetUpdate:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
         GIVEN: ExpensePrediction instance created in database.
-        WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Budget with valid payload, but when
-        the BudgetingPeriod of prediction is CLOSED.
+        WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Wallet with valid payload, but when
+        the Period of prediction is CLOSED.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not updated.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, status=PeriodStatus.DRAFT)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet, status=PeriodStatus.DRAFT)
         prediction = expense_prediction_factory(period=period)
         period.status = PeriodStatus.CLOSED
         period.save()
         payload = {"current_plan": Decimal("123.45")}
         api_client.force_authenticate(base_user)
-        url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
+        url = expense_prediction_detail_url(prediction.period.wallet.id, prediction.id)
 
         response = api_client.patch(url, payload)
 
@@ -866,31 +854,31 @@ class TestExpensePredictionViewSetUpdate:
         assert "non_field_errors" in response.data["detail"]
         assert (
             response.data["detail"]["non_field_errors"][0]
-            == "Expense Prediction cannot be changed when Budgeting Period is closed."
+            == "Expense Prediction cannot be changed when  Period is closed."
         )
 
     def test_update_prediction_for_active_period(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
         GIVEN: ExpensePrediction instance created in database.
-        WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Budget with valid payload, but when
-        the BudgetingPeriod of prediction is ACTIVE.
+        WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Wallet with valid payload, but when
+        the Period of prediction is ACTIVE.
         THEN: HTTP 200 returned. ExpensePrediction updated.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, status=PeriodStatus.DRAFT)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet, status=PeriodStatus.DRAFT)
         prediction = expense_prediction_factory(period=period, current_plan=Decimal("100.00"))
         period.status = PeriodStatus.ACTIVE
         period.save()
         payload = {"current_plan": Decimal("123.45")}
         api_client.force_authenticate(base_user)
-        url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
+        url = expense_prediction_detail_url(prediction.period.wallet.id, prediction.id)
 
         response = api_client.patch(url, payload)
 
@@ -902,28 +890,28 @@ class TestExpensePredictionViewSetUpdate:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
         GIVEN: ExpensePrediction instance created in database.
-        WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Budget with other BudgetingPeriod
+        WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Wallet with other Period
         in payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not updated.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
         prediction = expense_prediction_factory(period=period)
-        payload = {"period": budgeting_period_factory(budget=budget).id}
+        payload = {"period": period_factory(wallet=wallet).id}
         api_client.force_authenticate(base_user)
-        url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
+        url = expense_prediction_detail_url(prediction.period.wallet.id, prediction.id)
 
         response = api_client.patch(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "period" in response.data["detail"]
-        assert response.data["detail"]["period"][0] == "Budgeting Period for Expense Prediction cannot be changed."
+        assert response.data["detail"]["period"][0] == " Period for Expense Prediction cannot be changed."
 
 
 @pytest.mark.django_db
@@ -934,12 +922,12 @@ class TestExpensePredictionViewSetDelete:
         self, api_client: APIClient, base_user: AbstractUser, expense_prediction_factory: FactoryMetaClass
     ):
         """
-        GIVEN: ExpensePrediction instance for Budget created in database.
+        GIVEN: ExpensePrediction instance for Wallet created in database.
         WHEN: ExpensePredictionViewSet detail view called with DELETE without authentication.
         THEN: Unauthorized HTTP 401.
         """
         prediction = expense_prediction_factory()
-        url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
+        url = expense_prediction_detail_url(prediction.period.wallet.id, prediction.id)
 
         response = api_client.delete(url)
 
@@ -949,7 +937,7 @@ class TestExpensePredictionViewSetDelete:
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
@@ -957,54 +945,54 @@ class TestExpensePredictionViewSetDelete:
         WHEN: ExpensePredictionViewSet detail endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
-        budget = budget_factory(members=[base_user])
-        expense_prediction = expense_prediction_factory(budget=budget)
-        url = expense_prediction_detail_url(expense_prediction.period.budget.id, expense_prediction.id)
+        wallet = wallet_factory(members=[base_user])
+        expense_prediction = expense_prediction_factory(wallet=wallet)
+        url = expense_prediction_detail_url(expense_prediction.period.wallet.id, expense_prediction.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.delete(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
-    def test_user_not_budget_member(
+    def test_user_not_wallet_member(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: ExpensePrediction instance for Budget created in database.
-        WHEN: ExpensePredictionViewSet detail view called with DELETE by User not belonging to Budget.
+        GIVEN: ExpensePrediction instance for Wallet created in database.
+        WHEN: ExpensePredictionViewSet detail view called with DELETE by User not belonging to Wallet.
         THEN: Forbidden HTTP 403 returned.
         """
-        prediction = expense_prediction_factory(budget=budget_factory())
+        prediction = expense_prediction_factory(wallet=wallet_factory())
         api_client.force_authenticate(base_user)
-        url = expense_prediction_detail_url(prediction.period.budget.id, prediction.id)
+        url = expense_prediction_detail_url(prediction.period.wallet.id, prediction.id)
 
         response = api_client.delete(url)
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["detail"] == "User does not have access to Budget."
+        assert response.data["detail"] == "User does not have access to Wallet."
 
     def test_delete_prediction(
         self,
         api_client: APIClient,
         base_user: Any,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: ExpensePrediction instance for Budget created in database.
-        WHEN: ExpensePredictionViewSet detail view called with DELETE by User belonging to Budget.
+        GIVEN: ExpensePrediction instance for Wallet created in database.
+        WHEN: ExpensePredictionViewSet detail view called with DELETE by User belonging to Wallet.
         THEN: No content HTTP 204, ExpensePrediction deleted.
         """
-        budget = budget_factory(members=[base_user])
-        prediction = expense_prediction_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        prediction = expense_prediction_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
-        url = expense_prediction_detail_url(budget.id, prediction.id)
+        url = expense_prediction_detail_url(wallet.id, prediction.id)
 
-        assert ExpensePrediction.objects.filter(period__budget=budget).count() == 1
+        assert ExpensePrediction.objects.filter(period__wallet=wallet).count() == 1
 
         response = api_client.delete(url)
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
-        assert not ExpensePrediction.objects.filter(period__budget=budget).exists()
+        assert not ExpensePrediction.objects.filter(period__wallet=wallet).exists()

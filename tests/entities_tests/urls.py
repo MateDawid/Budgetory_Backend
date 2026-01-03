@@ -1,21 +1,21 @@
 from django.urls import reverse
 
 
-def deposits_url(budget_id):
+def deposits_url(wallet_id):
     """Create and return Deposit detail URL."""
-    return reverse("budgets:deposit-list", args=[budget_id])
+    return reverse("wallets:deposit-list", args=[wallet_id])
 
 
-def deposit_detail_url(budget_id, deposit_id):
+def deposit_detail_url(wallet_id, deposit_id):
     """Create and return Deposit detail URL."""
-    return reverse("budgets:deposit-detail", args=[budget_id, deposit_id])
+    return reverse("wallets:deposit-detail", args=[wallet_id, deposit_id])
 
 
-def entities_url(budget_id):
+def entities_url(wallet_id):
     """Create and return an Entity detail URL."""
-    return reverse("budgets:entity-list", args=[budget_id])
+    return reverse("wallets:entity-list", args=[wallet_id])
 
 
-def entity_detail_url(budget_id, entity_id):
+def entity_detail_url(wallet_id, entity_id):
     """Create and return an Entity detail URL."""
-    return reverse("budgets:entity-detail", args=[budget_id, entity_id])
+    return reverse("wallets:entity-detail", args=[wallet_id, entity_id])

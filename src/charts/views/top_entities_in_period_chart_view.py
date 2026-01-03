@@ -5,7 +5,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from app_infrastructure.permissions import UserBelongsToBudgetPermission
+from app_infrastructure.permissions import UserBelongsToWalletPermission
 from categories.models.choices.category_type import CategoryType
 from entities.models import Entity
 from transfers.models import Transfer
@@ -19,7 +19,7 @@ def get_entity_period_transfers_sum(
 
     Args:
         transfer_type (CategoryType): Type of Transfer.
-        period_id (str): BudgetingPeriod ID.
+        period_id (str): Period ID.
         deposit_id (str | None): Optional Deposit ID.
     Returns:
         Coalesce: Django ORM Coalesce function with Transfer subquery.
@@ -52,16 +52,16 @@ class TopEntitiesInPeriodChartAPIView(APIView):
 
     permission_classes = (
         IsAuthenticated,
-        UserBelongsToBudgetPermission,
+        UserBelongsToWalletPermission,
     )
 
-    def get(self, request: Request, budget_pk: int) -> Response:
+    def get(self, request: Request, wallet_pk: int) -> Response:
         """
         Handle GET requests for Period Transfers chart data.
 
         Args:
             request (Request): User Request.
-            budget_pk (int): Budget PK.
+            wallet_pk (int): Wallet PK.
 
         Returns:
             Response: JSON response containing chart data with xAxis (entity names) and
@@ -79,7 +79,7 @@ class TopEntitiesInPeriodChartAPIView(APIView):
             entities_count = 5
         # Database query
         entities = (
-            Entity.objects.filter(budget_id=budget_pk)
+            Entity.objects.filter(wallet_id=wallet_pk)
             .annotate(
                 result=get_entity_period_transfers_sum(
                     transfer_type=transfer_type, period_id=period_id, deposit_id=deposit_id

@@ -3,7 +3,7 @@ from django.db import models
 
 class PeriodStatus(models.IntegerChoices):
     """
-    Choices for BudgetingPeriod.status field.
+    Choices for Period.status field.
     """
 
     DRAFT = 1, "📝 Draft"

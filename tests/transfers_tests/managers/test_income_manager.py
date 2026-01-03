@@ -5,10 +5,10 @@ import pytest
 from django.core.exceptions import ValidationError
 from factory.base import FactoryMetaClass
 
-from budgets.models.budget_model import Budget
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from transfers.models.transfer_model import Transfer
+from wallets.models.wallet_model import Wallet
 
 
 @pytest.mark.django_db
@@ -22,14 +22,14 @@ class TestIncomeManager:
         "date": datetime.date(year=2024, month=9, day=1),
     }
 
-    def test_get_queryset(self, budget: Budget, expense_factory: FactoryMetaClass, income_factory: FactoryMetaClass):
+    def test_get_queryset(self, wallet: Wallet, expense_factory: FactoryMetaClass, income_factory: FactoryMetaClass):
         """
-        GIVEN: Budget and two Transfers (one Expense and one Income) models instances in database.
+        GIVEN: Wallet and two Transfers (one Expense and one Income) models instances in database.
         WHEN: Calling IncomeManager for get_queryset.
         THEN: Manager returns only Income proxy model instances.
         """
-        expense_factory(budget=budget)
-        income = income_factory(budget=budget)
+        expense_factory(wallet=wallet)
+        income = income_factory(wallet=wallet)
 
         qs = Transfer.incomes.all()
 
@@ -39,8 +39,8 @@ class TestIncomeManager:
 
     def test_create(
         self,
-        budget: Budget,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet: Wallet,
+        period_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
@@ -51,24 +51,24 @@ class TestIncomeManager:
         THEN: Income proxy model created in database.
         """
         payload = self.PAYLOAD.copy()
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        payload["period"] = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, priority=CategoryPriority.REGULAR)
+        payload["entity"] = entity_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
+        payload["category"] = transfer_category_factory(wallet=wallet, priority=CategoryPriority.REGULAR)
 
         transfer = Transfer.incomes.create(**payload)
 
         for param in payload:
             assert getattr(transfer, param) == payload[param]
-        assert Transfer.objects.filter(period__budget=budget).count() == 1
-        assert Transfer.incomes.filter(period__budget=budget).count() == 1
-        assert Transfer.expenses.filter(period__budget=budget).count() == 0
+        assert Transfer.objects.filter(period__wallet=wallet).count() == 1
+        assert Transfer.incomes.filter(period__wallet=wallet).count() == 1
+        assert Transfer.expenses.filter(period__wallet=wallet).count() == 0
         assert str(transfer) == f"{transfer.date} | {transfer.category} | {transfer.value}"
 
     def test_update(
-        self, budget: Budget, transfer_category_factory: FactoryMetaClass, transfer_factory: FactoryMetaClass
+        self, wallet: Wallet, transfer_category_factory: FactoryMetaClass, transfer_factory: FactoryMetaClass
     ):
         """
         GIVEN: Valid payload for Income proxy model.
@@ -77,10 +77,10 @@ class TestIncomeManager:
         """
 
         transfer = transfer_factory(
-            budget=budget, category=transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
+            wallet=wallet, category=transfer_category_factory(wallet=wallet, category_type=CategoryType.INCOME)
         )
         assert Transfer.incomes.all().count() == 1
-        new_category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
+        new_category = transfer_category_factory(wallet=wallet, category_type=CategoryType.INCOME)
 
         Transfer.incomes.filter(pk=transfer.pk).update(category=new_category)
 
@@ -90,7 +90,7 @@ class TestIncomeManager:
 
     def test_error_on_update_with_expense_category(
         self,
-        budget: Budget,
+        wallet: Wallet,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
@@ -99,10 +99,10 @@ class TestIncomeManager:
         WHEN: Calling IncomeManager for update.
         THEN: ValidationError raised, Income proxy model not updated in database.
         """
-        valid_category = transfer_category_factory(budget=budget, category_type=CategoryType.INCOME)
-        transfer = transfer_factory(budget=budget, category=valid_category)
+        valid_category = transfer_category_factory(wallet=wallet, category_type=CategoryType.INCOME)
+        transfer = transfer_factory(wallet=wallet, category=valid_category)
         assert Transfer.incomes.all().count() == 1
-        invalid_category = transfer_category_factory(budget=budget, category_type=CategoryType.EXPENSE)
+        invalid_category = transfer_category_factory(wallet=wallet, category_type=CategoryType.EXPENSE)
 
         with pytest.raises(ValidationError) as exc:
             Transfer.incomes.filter(pk=transfer.pk).update(category=invalid_category)

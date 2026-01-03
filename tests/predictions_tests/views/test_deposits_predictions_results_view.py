@@ -13,9 +13,9 @@ from app_users.models import User
 from categories.models.choices.category_type import CategoryType
 
 
-def deposits_predictions_results_url(budget_id: int, period_id: int):
+def deposits_predictions_results_url(wallet_id: int, period_id: int):
     """Create and return a deposits results URL."""
-    return reverse("predictions:deposits-predictions-results", args=[budget_id, period_id])
+    return reverse("predictions:deposits-predictions-results", args=[wallet_id, period_id])
 
 
 @pytest.mark.django_db
@@ -23,17 +23,17 @@ class TestDepositsPredictionsResultsAPIView:
     """Tests for DepositsPredictionsResultsAPIView."""
 
     def test_auth_required(
-        self, api_client: APIClient, budget_factory: FactoryMetaClass, budgeting_period_factory: FactoryMetaClass
+        self, api_client: APIClient, wallet_factory: FactoryMetaClass, period_factory: FactoryMetaClass
     ):
         """
-        GIVEN: Budget and BudgetingPeriod instances in database.
+        GIVEN: Wallet and Period instances in database.
         WHEN: DepositsPredictionsResultsAPIView called with GET without authentication.
         THEN: Unauthorized HTTP 401 returned.
         """
-        budget = budget_factory()
-        period = budgeting_period_factory(budget=budget)
+        wallet = wallet_factory()
+        period = period_factory(wallet=wallet)
 
-        response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
+        response = api_client.get(deposits_predictions_results_url(wallet.id, period.id))
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -41,63 +41,63 @@ class TestDepositsPredictionsResultsAPIView:
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
     ):
         """
         GIVEN: User's JWT in request headers as HTTP_AUTHORIZATION.
         WHEN: DepositsPredictionsResultsAPIView endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        url = deposits_predictions_results_url(budget.id, period.id)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        url = deposits_predictions_results_url(wallet.id, period.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
 
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
 
         assert response.status_code == status.HTTP_200_OK
 
-    def test_user_not_budget_member(
+    def test_user_not_wallet_member(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget and BudgetingPeriod instances in database.
-        WHEN: DepositsPredictionsResultsAPIView called with GET by User not belonging to given Budget.
+        GIVEN: Wallet and Period instances in database.
+        WHEN: DepositsPredictionsResultsAPIView called with GET by User not belonging to given Wallet.
         THEN: Forbidden HTTP 403 returned.
         """
-        budget = budget_factory()
-        period = budgeting_period_factory(budget=budget)
+        wallet = wallet_factory()
+        period = period_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
+        response = api_client.get(deposits_predictions_results_url(wallet.id, period.id))
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["detail"] == "User does not have access to Budget."
+        assert response.data["detail"] == "User does not have access to Wallet."
 
     def test_get_deposits_results_for_no_data(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with single deposit and BudgetingPeriod in database with no transfers or predictions.
-        WHEN: DepositsPredictionsResultsAPIView called by Budget member.
+        GIVEN: Wallet with single deposit and Period in database with no transfers or predictions.
+        WHEN: DepositsPredictionsResultsAPIView called by Wallet member.
         THEN: HTTP 200 - Response with deposit data containing zero values returned.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit = deposit_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
+        response = api_client.get(deposits_predictions_results_url(wallet.id, period.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == 1
@@ -113,23 +113,23 @@ class TestDepositsPredictionsResultsAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with multiple deposits and BudgetingPeriod in database.
-        WHEN: DepositsPredictionsResultsAPIView called by Budget member.
+        GIVEN: Wallet with multiple deposits and Period in database.
+        WHEN: DepositsPredictionsResultsAPIView called by Wallet member.
         THEN: HTTP 200 - Response with all deposits data returned.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        deposit_1 = deposit_factory(budget=budget)
-        deposit_2 = deposit_factory(budget=budget)
-        deposit_3 = deposit_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit_1 = deposit_factory(wallet=wallet)
+        deposit_2 = deposit_factory(wallet=wallet)
+        deposit_3 = deposit_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
+        response = api_client.get(deposits_predictions_results_url(wallet.id, period.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == 3
@@ -143,25 +143,25 @@ class TestDepositsPredictionsResultsAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with two Deposits, BudgetingPeriod and ExpensePredictions for different deposits in database.
-        WHEN: DepositsPredictionsResultsAPIView called by Budget member.
+        GIVEN: Wallet with two Deposits, Period and ExpensePredictions for different deposits in database.
+        WHEN: DepositsPredictionsResultsAPIView called by Wallet member.
         THEN: HTTP 200 - Response with correct predictions_sum values for each deposit returned.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        deposit_1 = deposit_factory(budget=budget)
-        deposit_2 = deposit_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit_1 = deposit_factory(wallet=wallet)
+        deposit_2 = deposit_factory(wallet=wallet)
 
         # Create categories
-        category_1 = transfer_category_factory(budget=budget, deposit=deposit_1, category_type=CategoryType.EXPENSE)
-        category_2 = transfer_category_factory(budget=budget, deposit=deposit_2, category_type=CategoryType.EXPENSE)
+        category_1 = transfer_category_factory(wallet=wallet, deposit=deposit_1, category_type=CategoryType.EXPENSE)
+        category_2 = transfer_category_factory(wallet=wallet, deposit=deposit_2, category_type=CategoryType.EXPENSE)
 
         # Create predictions
         expense_prediction_factory(period=period, category=category_1, current_plan=Decimal("150.00"))
@@ -169,7 +169,7 @@ class TestDepositsPredictionsResultsAPIView:
 
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
+        response = api_client.get(deposits_predictions_results_url(wallet.id, period.id))
 
         assert response.status_code == status.HTTP_200_OK
 
@@ -182,28 +182,26 @@ class TestDepositsPredictionsResultsAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with Deposit, multiple BudgetingPeriods and Transfers with different dates.
-        WHEN: DepositsPredictionsResultsAPIView called by Budget member.
+        GIVEN: Wallet with Deposit, multiple Periods and Transfers with different dates.
+        WHEN: DepositsPredictionsResultsAPIView called by Wallet member.
         THEN: HTTP 200 - Response with correct period_balance calculation based on date filtering.
         """
-        budget = budget_factory(members=[base_user])
-        period_1 = budgeting_period_factory(budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
-        period_2 = budgeting_period_factory(budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29))
-        current_period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 3, 1), date_end=date(2024, 3, 31)
-        )
-        deposit = deposit_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        period_1 = period_factory(wallet=wallet, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
+        period_2 = period_factory(wallet=wallet, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29))
+        current_period = period_factory(wallet=wallet, date_start=date(2024, 3, 1), date_end=date(2024, 3, 31))
+        deposit = deposit_factory(wallet=wallet)
 
         # Create categories
-        income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
-        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
+        expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
 
         # Create transfers in different periods
         # Period 1 transfers (should be included for expenses,
@@ -221,7 +219,7 @@ class TestDepositsPredictionsResultsAPIView:
 
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_predictions_results_url(budget.id, current_period.id))
+        response = api_client.get(deposits_predictions_results_url(wallet.id, current_period.id))
 
         assert response.status_code == status.HTTP_200_OK
 
@@ -236,21 +234,21 @@ class TestDepositsPredictionsResultsAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with Deposit and BudgetingPeriod in database.
-        WHEN: DepositsPredictionsResultsAPIView called by Budget member.
+        GIVEN: Wallet with Deposit and Period in database.
+        WHEN: DepositsPredictionsResultsAPIView called by Wallet member.
         THEN: HTTP 200 - Response with correct structure for each user returned.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        deposit_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
+        response = api_client.get(deposits_predictions_results_url(wallet.id, period.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert isinstance(response.data, list)
@@ -276,36 +274,36 @@ class TestDepositsPredictionsResultsAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget in database but BudgetingPeriod does not exist.
+        GIVEN: Wallet in database but Period does not exist.
         WHEN: DepositsPredictionsResultsAPIView called with non-existent period_pk.
         THEN: HTTP 404 returned.
         """
-        budget = budget_factory(members=[base_user])
-        deposit_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        deposit_factory(wallet=wallet)
         non_existent_period_id = 99999
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_predictions_results_url(budget.id, non_existent_period_id))
+        response = api_client.get(deposits_predictions_results_url(wallet.id, non_existent_period_id))
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
-        assert response.data["detail"] == "Budgeting Period with given pk does not exist in Budget."
+        assert response.data["detail"] == "Period with given pk does not exist in Wallet."
 
 
 @pytest.mark.django_db
 class TestDepositsPredictionsResultsAPIViewIntegration:
     """Integration tests for DepositsPredictionsResultsAPIView with complex scenarios."""
 
-    def test_complete_budget_scenario_with_deposit_filtering(
+    def test_complete_wallet_scenario_with_deposit_filtering(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
         user_factory: FactoryMetaClass,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
@@ -313,33 +311,29 @@ class TestDepositsPredictionsResultsAPIViewIntegration:
         deposit_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Complete budget scenario with multiple deposits, periods, predictions, transfers.
-        WHEN: DepositsPredictionsResultsAPIView called by Budget member.
+        GIVEN: Complete wallet scenario with multiple deposits, periods, predictions, transfers.
+        WHEN: DepositsPredictionsResultsAPIView called by Wallet member.
         THEN: HTTP 200 - Response with accurate calculations for all deposits returned.
         """
         other_user = user_factory(username="otheruser")
-        budget = budget_factory(members=[base_user, other_user])
+        wallet = wallet_factory(members=[base_user, other_user])
 
-        previous_period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31)
-        )
-        current_period = budgeting_period_factory(
-            budget=budget, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29)
-        )
+        previous_period = period_factory(wallet=wallet, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
+        current_period = period_factory(wallet=wallet, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29))
 
         # Create deposits
-        daily_expenses_deposit_1 = deposit_factory(budget=budget)
-        daily_expenses_deposit_2 = deposit_factory(budget=budget)
+        daily_expenses_deposit_1 = deposit_factory(wallet=wallet)
+        daily_expenses_deposit_2 = deposit_factory(wallet=wallet)
 
         # Create categories for different deposits
         daily_expenses_deposit_1_income_category = transfer_category_factory(
-            budget=budget, deposit=daily_expenses_deposit_1, category_type=CategoryType.INCOME
+            wallet=wallet, deposit=daily_expenses_deposit_1, category_type=CategoryType.INCOME
         )
         daily_expenses_deposit_1_expense_category = transfer_category_factory(
-            budget=budget, deposit=daily_expenses_deposit_1, category_type=CategoryType.EXPENSE
+            wallet=wallet, deposit=daily_expenses_deposit_1, category_type=CategoryType.EXPENSE
         )
         daily_expenses_deposit_2_income_category = transfer_category_factory(
-            budget=budget, deposit=daily_expenses_deposit_2, category_type=CategoryType.INCOME
+            wallet=wallet, deposit=daily_expenses_deposit_2, category_type=CategoryType.INCOME
         )
 
         # Create predictions for current period
@@ -377,7 +371,7 @@ class TestDepositsPredictionsResultsAPIViewIntegration:
 
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_predictions_results_url(budget.id, current_period.id))
+        response = api_client.get(deposits_predictions_results_url(wallet.id, current_period.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == 2
@@ -396,8 +390,8 @@ class TestDepositsPredictionsResultsAPIViewIntegration:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         expense_prediction_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
@@ -405,16 +399,16 @@ class TestDepositsPredictionsResultsAPIViewIntegration:
         entity_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with precise decimal values in predictions and expenses.
-        WHEN: DepositsPredictionsResultsAPIView called by Budget member.
+        GIVEN: Wallet with precise decimal values in predictions and expenses.
+        WHEN: DepositsPredictionsResultsAPIView called by Wallet member.
         THEN: HTTP 200 - Response with correctly formatted decimal values returned.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
 
-        entity = entity_factory(budget=budget)
-        daily_deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, deposit=daily_deposit, category_type=CategoryType.EXPENSE)
+        entity = entity_factory(wallet=wallet)
+        daily_deposit = deposit_factory(wallet=wallet)
+        category = transfer_category_factory(wallet=wallet, deposit=daily_deposit, category_type=CategoryType.EXPENSE)
 
         # Create prediction and expense with precise decimals
         expense_prediction_factory(
@@ -430,7 +424,7 @@ class TestDepositsPredictionsResultsAPIViewIntegration:
 
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_predictions_results_url(budget.id, period.id))
+        response = api_client.get(deposits_predictions_results_url(wallet.id, period.id))
 
         assert response.status_code == status.HTTP_200_OK
 
