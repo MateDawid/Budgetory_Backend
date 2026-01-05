@@ -72,7 +72,7 @@ class Command(BaseCommand):
     def create_daily_expenses_wallet(self, user):
         # Create Wallet
         self.stdout.write("Creating Wallet: Daily expenses")
-        wallet = Wallet.objects.create(name="Daily expenses", currency="zł")
+        wallet = Wallet.objects.create(name="Daily expenses", currency__name="PLN")
         wallet.members.add(user)
         self.objects_ids["wallet_id"] = wallet.id
         # Create Deposits
