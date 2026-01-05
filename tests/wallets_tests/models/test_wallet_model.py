@@ -20,7 +20,6 @@ class TestWalletModel:
         payload = {
             "name": "Home wallet",
             "description": "Wallet with home expenses and incomes",
-            "currency": "PLN",
         }
         wallet = Wallet.objects.create(**payload)
         wallet.members.add(*members)
@@ -40,28 +39,9 @@ class TestWalletModel:
         payload = {
             "name": (max_length + 1) * "a",
             "description": "Wallet with home expenses and incomes",
-            "currency": "PLN",
         }
 
         with pytest.raises(DataError) as exc:
             Wallet.objects.create(**payload)
         assert str(exc.value) == f"value too long for type character varying({max_length})\n"
         assert not Wallet.objects.filter(name=payload["name"]).exists()
-
-    @pytest.mark.django_db(transaction=True)
-    def test_error_currency_too_long(self, user: AbstractUser):
-        """
-        GIVEN: User model instance in database.
-        WHEN: Wallet instance create attempt with currency too long.
-        THEN: DataError raised. Object not created in database.
-        """
-        max_length = Wallet._meta.get_field("currency").max_length
-        payload = {
-            "name": "Home wallet",
-            "description": "Wallet with home expenses and incomes",
-            "currency": (max_length + 100) * "a",
-        }
-        with pytest.raises(DataError) as exc:
-            Wallet.objects.create(**payload)
-        assert str(exc.value) == f"value too long for type character varying({max_length})\n"
-        assert not Wallet.objects.filter(currency=payload["currency"]).exists()

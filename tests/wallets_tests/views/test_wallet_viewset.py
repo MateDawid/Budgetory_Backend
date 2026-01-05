@@ -1,13 +1,3 @@
-"""
-Tests for WalletViewSet:
-* TestWalletViewSetList - GET on list view.
-* TestWalletViewSetMembersList - GET on members view.
-* TestWalletViewSetCreate - POST on list view.
-* TestWalletViewSetDetail - GET on detail view.
-* TestWalletViewSetUpdate - PATCH on detail view.
-* TestWalletViewSetDelete - DELETE on detail view.
-"""
-
 from typing import Any
 
 import pytest
@@ -19,6 +9,7 @@ from rest_framework.test import APIClient
 
 from app_users.models import User
 from app_users.serializers.user_serializer import UserSerializer
+from wallets.models import Currency
 from wallets.models.wallet_model import Wallet
 from wallets.serializers.wallet_serializer import WalletSerializer
 
@@ -106,12 +97,11 @@ class TestWalletViewSetList:
         """
         auth_user = user_factory()
         api_client.force_authenticate(auth_user)
-        wallet_factory(members=[auth_user], name="Wallet 1", description="Some wallet", currency="PLN")
+        wallet_factory(members=[auth_user], name="Wallet 1", description="Some wallet")
         wallet_factory(
             members=[auth_user],
             name="Wallet 2",
             description="Other wallet",
-            currency="eur",
         )
 
         response = api_client.get(WALLETS_URL)
@@ -231,8 +221,8 @@ class TestWalletViewSetCreate:
         payload = {
             "name": "Wallet 1",
             "description": "Some wallet",
-            "currency": "PLN",
             "members": [base_user.id, user_factory().id],
+            "currency": Currency.objects.get(name="PLN").id,
         }
 
         response = api_client.post(WALLETS_URL, payload)
@@ -246,10 +236,32 @@ class TestWalletViewSetCreate:
                 assert members.count() == len(payload[key])
                 for member_id in payload[key]:
                     assert members.filter(id=member_id).exists()
+            elif key == "currency":
+                assert wallet.currency.id == payload[key]
             else:
                 assert getattr(wallet, key) == payload[key]
         serializer = WalletSerializer(wallet)
         assert response.data == serializer.data
+
+    def test_error_no_currency(self, api_client: APIClient, base_user: User, user_factory: FactoryMetaClass):
+        """
+        GIVEN: Authenticated User as request.user. No currency in payload.
+        WHEN: WalletViewSet list endpoint called with POST.
+        THEN: HTTP 400 returned. Wallet not created in database.
+        """
+        api_client.force_authenticate(base_user)
+        payload = {
+            "name": "Some Wallet",
+            "description": "Some wallet",
+            "members": [user_factory().id, user_factory().id],
+        }
+
+        response = api_client.post(WALLETS_URL, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "non_field_errors" in response.data["detail"]
+        assert response.data["detail"]["non_field_errors"][0] == "Currency is required."
+        assert not Wallet.objects.filter(members=base_user).exists()
 
     def test_error_name_too_long(self, api_client: APIClient, base_user: User, user_factory: FactoryMetaClass):
         """
@@ -262,7 +274,6 @@ class TestWalletViewSetCreate:
         payload = {
             "name": (max_length + 1) * "a",
             "description": "Some wallet",
-            "currency": "PLN",
             "members": [user_factory().id, user_factory().id],
         }
 
@@ -383,7 +394,7 @@ class TestWalletViewSetUpdate:
 
     @pytest.mark.parametrize(
         "param, value",
-        [("name", "New name"), ("description", "New description"), ("currency", "PLN")],
+        [("name", "New name"), ("description", "New description")],
     )
     def test_wallet_update_single_field(
         self,
@@ -399,7 +410,7 @@ class TestWalletViewSetUpdate:
         THEN: HTTP 200 returned. Wallet updated in database.
         """
         api_client.force_authenticate(base_user)
-        payload = {"name": "Wallet", "description": "Some wallet", "currency": "eur"}
+        payload = {"name": "Wallet", "description": "Some wallet", "currency": Currency.objects.get(name="PLN")}
         wallet = wallet_factory(members=[base_user], **payload)
         update_payload = {param: value}
         url = wallet_detail_url(wallet.id)
@@ -409,6 +420,29 @@ class TestWalletViewSetUpdate:
         assert response.status_code == status.HTTP_200_OK
         wallet.refresh_from_db()
         assert getattr(wallet, param) == value
+
+    def test_wallet_update_currency(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Wallet owner as request.user. Valid currency param in payload.
+        WHEN: WalletViewSet detail endpoint called with PATCH.
+        THEN: HTTP 200 returned. Wallet currency updated in database.
+        """
+        api_client.force_authenticate(base_user)
+        payload = {"name": "Wallet", "description": "Some wallet", "currency": Currency.objects.get(name="PLN")}
+        wallet = wallet_factory(members=[base_user], **payload)
+        update_payload = {"currency": Currency.objects.get(name="USD").id}
+        url = wallet_detail_url(wallet.id)
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        wallet.refresh_from_db()
+        assert wallet.currency.id == update_payload["currency"]
 
     def test_update_with_members(
         self,
@@ -428,7 +462,6 @@ class TestWalletViewSetUpdate:
         payload = {
             "name": "Wallet",
             "description": "Some wallet",
-            "currency": "eur",
             "members": [base_user.id, user_1.id],
         }
         wallet = wallet_factory(**payload)
@@ -459,11 +492,10 @@ class TestWalletViewSetUpdate:
         payload = {
             "name": "Wallet",
             "description": "Some wallet",
-            "currency": "eur",
             "members": [base_user.id, user_1.id],
         }
         wallet = wallet_factory(**payload)
-        update_payload = {"name": "UPDATE", "description": "Updated wallet", "currency": "pln", "members": [user_2.id]}
+        update_payload = {"name": "UPDATE", "description": "Updated wallet", "members": [user_2.id]}
         url = wallet_detail_url(wallet.id)
 
         response = api_client.patch(url, update_payload)
@@ -480,7 +512,9 @@ class TestWalletViewSetUpdate:
         "param, value",
         [
             ("name", (Wallet._meta.get_field("name").max_length + 1) * "A"),
-            ("currency", (Wallet._meta.get_field("currency").max_length + 1) * "A"),
+            ("currency", ""),
+            ("currency", 0),
+            ("currency", -1),
         ],
     )
     def test_error_on_wallet_update(
@@ -499,9 +533,9 @@ class TestWalletViewSetUpdate:
         """
         user_factory()
         api_client.force_authenticate(base_user)
-        old_payload = {"name": "Old wallet", "description": "Some wallet", "currency": "eur"}
+        old_payload = {"name": "Old wallet", "description": "Some wallet"}
         wallet_factory(members=[base_user], **old_payload)
-        new_payload = {"name": "New wallet", "description": "Some wallet", "currency": "eur"}
+        new_payload = {"name": "New wallet", "description": "Some wallet"}
         wallet = wallet_factory(members=[base_user], **new_payload)
         old_value = getattr(wallet, param)
         payload = {param: value}

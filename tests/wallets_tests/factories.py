@@ -1,9 +1,8 @@
-import random
-import string
-
 import factory
 from app_users_tests.factories import UserFactory
 from django.contrib.auth.models import AbstractUser
+
+from wallets.models import Currency
 
 
 class WalletFactory(factory.django.DjangoModelFactory):
@@ -16,9 +15,8 @@ class WalletFactory(factory.django.DjangoModelFactory):
     description = factory.Faker("text", max_nb_chars=255)
 
     @factory.lazy_attribute
-    def currency(self) -> str:
-        """Generates currency."""
-        return "".join(random.choice(string.ascii_letters) for _ in range(3))
+    def currency(self) -> Currency:
+        return Currency.objects.all().first()
 
     @factory.post_generation
     def members(self, create: bool, users: list[AbstractUser], **kwargs) -> None:
