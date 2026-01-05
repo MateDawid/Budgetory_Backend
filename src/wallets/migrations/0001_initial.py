@@ -3,8 +3,21 @@
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
-from django.db.models.functions import Length
 
+
+def create_currencies(apps, schema_editor):
+    Currency = apps.get_model("wallets", "Currency")
+    Currency.objects.bulk_create([
+        Currency(name="USD"),
+        Currency(name="EUR"),
+        Currency(name="JPY"),
+        Currency(name="GBP"),
+        Currency(name="CAD"),
+        Currency(name="AUD"),
+        Currency(name="CHF"),
+        Currency(name="CNY"),
+        Currency(name="PLN"),
+    ])
 
 class Migration(migrations.Migration):
 
@@ -24,6 +37,10 @@ class Migration(migrations.Migration):
             options={
                 "verbose_name_plural": "currencies",
             },
+        ),
+        migrations.RunPython(
+            code=create_currencies,
+            reverse_code=migrations.RunPython.noop,
         ),
         migrations.CreateModel(
             name="Wallet",

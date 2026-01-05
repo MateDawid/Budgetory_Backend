@@ -8,6 +8,7 @@ from rest_framework import permissions, routers
 
 from app_infrastructure.views.healthcheck_view import HealthcheckView
 from predictions.views.prediction_progress_status_view import PredictionProgressStatusView
+from wallets.views.currency_viewset import CurrencyViewSet
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -38,6 +39,7 @@ urlpatterns = [
     path(
         "api/predictions/progress_statuses/", PredictionProgressStatusView.as_view(), name="prediction-progress-status"
     ),
+    path("api/currencies/", CurrencyViewSet.as_view({"get": "list"}), name="currency"),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
