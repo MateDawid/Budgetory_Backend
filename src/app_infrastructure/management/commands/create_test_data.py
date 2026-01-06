@@ -18,7 +18,7 @@ from periods.models import Period
 from periods.models.choices.period_status import PeriodStatus
 from predictions.models import ExpensePrediction
 from transfers.models import Expense, Income
-from wallets.models import Wallet
+from wallets.models import Currency, Wallet
 
 USER_DATA = {"email": "user@budgetory.com", "username": "User", "password": "P@ssw0rd!"}
 
@@ -72,7 +72,7 @@ class Command(BaseCommand):
     def create_daily_expenses_wallet(self, user):
         # Create Wallet
         self.stdout.write("Creating Wallet: Daily expenses")
-        wallet = Wallet.objects.create(name="Daily expenses", currency__name="PLN")
+        wallet = Wallet.objects.create(name="Daily expenses", currency=Currency.objects.get(name="PLN"))
         wallet.members.add(user)
         self.objects_ids["wallet_id"] = wallet.id
         # Create Deposits
