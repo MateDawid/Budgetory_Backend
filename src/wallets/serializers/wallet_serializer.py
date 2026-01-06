@@ -25,8 +25,7 @@ class WalletSerializer(ModelSerializer):
             OrderedDict: Updated object representation.
         """
         representation = super().to_representation(instance)
-        representation["currency"] = instance.currency.name
-        representation["currency_id"] = instance.currency.id
+        representation["currency_name"] = instance.currency.name
         return representation
 
     def validate(self, attrs: OrderedDict) -> OrderedDict:
