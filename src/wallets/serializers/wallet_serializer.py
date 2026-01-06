@@ -26,6 +26,7 @@ class WalletSerializer(ModelSerializer):
         """
         representation = super().to_representation(instance)
         representation["currency"] = instance.currency.name
+        representation["currency_id"] = instance.currency.id
         return representation
 
     def validate(self, attrs: OrderedDict) -> OrderedDict:
