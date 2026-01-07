@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Any
 
 import pytest
@@ -133,6 +134,60 @@ class TestWalletViewSetList:
         assert response.status_code == status.HTTP_200_OK
         assert response.data == serializer.data
         assert len(response.data) == wallets.count() == 2
+
+    def test_wallet_list_balance_and_deposits_count(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Wallet, Deposits and Transfers created in database for authenticated User.
+        WHEN: WalletViewSet list endpoint called.
+        THEN: HTTP 200. Response includes balance field for each wallet.
+        """
+        api_client.force_authenticate(base_user)
+        wallet_1 = wallet_factory(members=[base_user])
+        wallet_2 = wallet_factory(members=[base_user])
+        for deposits_count, wallet in enumerate([wallet_1, wallet_2], start=1):
+            for deposit_number in range(deposits_count):
+                deposit = deposit_factory(wallet=wallet)
+                income_factory(wallet=wallet, deposit=deposit, value=Decimal("600.00"))
+                income_factory(wallet=wallet, deposit=deposit, value=Decimal("400.00"))
+                expense_factory(wallet=wallet, deposit=deposit, value=Decimal("100.00"))
+                expense_factory(wallet=wallet, deposit=deposit, value=Decimal("800.00"))
+
+        response = api_client.get(WALLETS_URL)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+        for idx, wallet_data in enumerate(response.data, start=1):
+            assert "balance" in response.data[0]
+            assert "deposits_count" in response.data[0]
+            assert wallet_data["deposits_count"] == str(idx)
+            assert wallet_data["balance"] == f"{idx}00.00"
+
+    def test_wallet_list_includes_currency_name(
+        self, api_client: APIClient, base_user: User, wallet_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Wallet created in database for authenticated User.
+        WHEN: WalletViewSet list endpoint called.
+        THEN: HTTP 200. Response includes currency_name field for each wallet.
+        """
+        api_client.force_authenticate(base_user)
+        currency = Currency.objects.get(name="PLN")
+        wallet_factory(members=[base_user], currency=currency)
+
+        response = api_client.get(WALLETS_URL)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert "currency_name" in response.data[0]
+        assert response.data[0]["currency_name"] == "PLN"
 
 
 @pytest.mark.django_db
@@ -284,6 +339,73 @@ class TestWalletViewSetCreate:
         assert response.data["detail"]["name"][0] == f"Ensure this field has no more than {max_length} characters."
         assert not Wallet.objects.filter(members=base_user).exists()
 
+    def test_create_wallet_includes_request_user_as_member(
+        self, api_client: APIClient, base_user: User, user_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Authenticated User as request.user. Valid payload without request user in members.
+        WHEN: WalletViewSet list endpoint called with POST.
+        THEN: HTTP 201 returned. Request user automatically added as wallet member.
+        """
+        api_client.force_authenticate(base_user)
+        other_user = user_factory()
+        payload = {
+            "name": "Wallet 1",
+            "description": "Some wallet",
+            "members": [other_user.id],
+            "currency": Currency.objects.get(name="PLN").id,
+        }
+
+        response = api_client.post(WALLETS_URL, payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        wallet = Wallet.objects.get(id=response.data["id"])
+        assert wallet.members.filter(id=base_user.id).exists()
+        assert wallet.members.filter(id=other_user.id).exists()
+
+    def test_create_wallet_includes_balance_and_deposits_count(self, api_client: APIClient, base_user: User):
+        """
+        GIVEN: Authenticated User as request.user. Valid payload.
+        WHEN: WalletViewSet list endpoint called with POST.
+        THEN: HTTP 201 returned. Response includes balance and deposits_count fields.
+        """
+        api_client.force_authenticate(base_user)
+        payload = {
+            "name": "Wallet 1",
+            "description": "Some wallet",
+            "members": [base_user.id],
+            "currency": Currency.objects.get(name="PLN").id,
+        }
+
+        response = api_client.post(WALLETS_URL, payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert "balance" in response.data
+        assert "deposits_count" in response.data
+        assert response.data["balance"] == "0.00"
+        assert response.data["deposits_count"] == "0"
+
+    def test_create_wallet_includes_currency_name(self, api_client: APIClient, base_user: User):
+        """
+        GIVEN: Authenticated User as request.user. Valid payload with currency.
+        WHEN: WalletViewSet list endpoint called with POST.
+        THEN: HTTP 201 returned. Response includes currency_name field.
+        """
+        api_client.force_authenticate(base_user)
+        currency = Currency.objects.get(name="USD")
+        payload = {
+            "name": "Wallet 1",
+            "description": "Some wallet",
+            "members": [base_user.id],
+            "currency": currency.id,
+        }
+
+        response = api_client.post(WALLETS_URL, payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert "currency_name" in response.data
+        assert response.data["currency_name"] == "USD"
+
 
 @pytest.mark.django_db
 class TestWalletViewSetDetail:
@@ -347,6 +469,96 @@ class TestWalletViewSetDetail:
         response = api_client.get(url)
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_get_wallet_details_with_balance_and_deposits_count(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Wallet, Deposits and Transfers created in database for authenticated User.
+        WHEN: WalletViewSet detail endpoint called by authenticated User.
+        THEN: HTTP 200. Response includes balance field for each wallet.
+        """
+        api_client.force_authenticate(base_user)
+        wallet = wallet_factory(members=[base_user])
+        deposit_1 = deposit_factory(wallet=wallet)
+        income_factory(wallet=wallet, deposit=deposit_1, value=Decimal("600.00"))
+        income_factory(wallet=wallet, deposit=deposit_1, value=Decimal("400.00"))
+        expense_factory(wallet=wallet, deposit=deposit_1, value=Decimal("100.00"))
+        expense_factory(wallet=wallet, deposit=deposit_1, value=Decimal("800.00"))
+        deposit_2 = deposit_factory(wallet=wallet)
+        income_factory(wallet=wallet, deposit=deposit_2, value=Decimal("1000.00"))
+        income_factory(wallet=wallet, deposit=deposit_2, value=Decimal("500.00"))
+        expense_factory(wallet=wallet, deposit=deposit_2, value=Decimal("100.00"))
+        expense_factory(wallet=wallet, deposit=deposit_2, value=Decimal("800.00"))
+
+        url = wallet_detail_url(wallet.id)
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "balance" in response.data
+        assert "deposits_count" in response.data
+        assert response.data["deposits_count"] == "2"
+        assert response.data["balance"] == "700.00"
+
+    def test_get_wallet_details_includes_currency_name(
+        self, api_client: APIClient, base_user: User, wallet_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Wallet owned by authenticated User created in database.
+        WHEN: WalletViewSet detail endpoint called by authenticated User.
+        THEN: HTTP 200. Response includes currency_name field.
+        """
+        api_client.force_authenticate(base_user)
+        currency = Currency.objects.get(name="EUR")
+        wallet = wallet_factory(members=[base_user], currency=currency)
+        url = wallet_detail_url(wallet.id)
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "currency_name" in response.data
+        assert response.data["currency_name"] == "EUR"
+
+    def test_wallet_deposits_count_with_no_deposits(
+        self, api_client: APIClient, base_user: User, wallet_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Wallet with no deposits created in database.
+        WHEN: WalletViewSet detail endpoint called.
+        THEN: HTTP 200 returned. Deposits count is 0.
+        """
+        api_client.force_authenticate(base_user)
+        wallet = wallet_factory(members=[base_user])
+        url = wallet_detail_url(wallet.id)
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["deposits_count"] == "0"
+
+    def test_wallet_balance_with_no_transfers(
+        self, api_client: APIClient, base_user: User, wallet_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Wallet with no transfers created in database.
+        WHEN: WalletViewSet detail endpoint called.
+        THEN: HTTP 200 returned. Balance is 0.00.
+        """
+        api_client.force_authenticate(base_user)
+        wallet = wallet_factory(members=[base_user])
+        url = wallet_detail_url(wallet.id)
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["balance"] == "0.00"
 
 
 @pytest.mark.django_db
@@ -472,7 +684,7 @@ class TestWalletViewSetUpdate:
 
         assert response.status_code == status.HTTP_200_OK
         wallet.refresh_from_db()
-        assert list(wallet.members.all().values_list("id", flat=True)) == update_payload["members"]
+        assert list(wallet.members.all().order_by("id").values_list("id", flat=True)) == update_payload["members"]
 
     def test_wallet_update_many_fields(
         self,
@@ -546,6 +758,132 @@ class TestWalletViewSetUpdate:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         wallet.refresh_from_db()
         assert getattr(wallet, param) == old_value
+
+    def test_update_response_includes_balance_and_deposits_count(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Wallet owner as request.user. Valid update params in payload.
+        WHEN: WalletViewSet detail endpoint called with PATCH.
+        THEN: HTTP 200 returned. Response includes balance and deposits_count fields.
+        """
+        api_client.force_authenticate(base_user)
+        wallet = wallet_factory(members=[base_user], name="Old Name")
+        url = wallet_detail_url(wallet.id)
+        update_payload = {"name": "New Name"}
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "balance" in response.data
+        assert "deposits_count" in response.data
+        assert response.data["balance"] == "0.00"
+        assert response.data["deposits_count"] == "0"
+
+    def test_update_response_includes_currency_name(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Wallet owner as request.user. Valid currency update in payload.
+        WHEN: WalletViewSet detail endpoint called with PATCH.
+        THEN: HTTP 200 returned. Response includes updated currency_name field.
+        """
+        api_client.force_authenticate(base_user)
+        wallet = wallet_factory(members=[base_user], currency=Currency.objects.get(name="PLN"))
+        url = wallet_detail_url(wallet.id)
+        update_payload = {"currency": Currency.objects.get(name="EUR").id}
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "currency_name" in response.data
+        assert response.data["currency_name"] == "EUR"
+
+    def test_error_update_currency_to_null(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Wallet owner as request.user. Null currency value in payload.
+        WHEN: WalletViewSet detail endpoint called with PATCH.
+        THEN: HTTP 400 returned. Currency validation error returned.
+        """
+        api_client.force_authenticate(base_user)
+        wallet = wallet_factory(members=[base_user], currency=Currency.objects.get(name="PLN"))
+        url = wallet_detail_url(wallet.id)
+        update_payload = {"currency": ""}
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "non_field_errors" in response.data["detail"]
+        assert response.data["detail"]["non_field_errors"][0] == "Currency is required."
+
+    def test_balance_field_is_read_only(self, api_client: APIClient, base_user: User, wallet_factory: FactoryMetaClass):
+        """
+        GIVEN: Wallet owner as request.user. Balance value in update payload.
+        WHEN: WalletViewSet detail endpoint called with PATCH.
+        THEN: HTTP 200 returned. Balance not updated (read-only field).
+        """
+        api_client.force_authenticate(base_user)
+        wallet = wallet_factory(members=[base_user])
+        url = wallet_detail_url(wallet.id)
+        update_payload = {"balance": "999.99"}
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        wallet.refresh_from_db()
+        # Balance should remain 0.00 since it's read-only
+        assert response.data["balance"] == "0.00"
+
+    def test_deposits_count_field_is_read_only(
+        self, api_client: APIClient, base_user: User, wallet_factory: FactoryMetaClass
+    ):
+        """
+        GIVEN: Wallet owner as request.user. Deposits count value in update payload.
+        WHEN: WalletViewSet detail endpoint called with PATCH.
+        THEN: HTTP 200 returned. Deposits count not updated (read-only field).
+        """
+        api_client.force_authenticate(base_user)
+        wallet = wallet_factory(members=[base_user])
+        url = wallet_detail_url(wallet.id)
+        update_payload = {"deposits_count": "999"}
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        wallet.refresh_from_db()
+        # Deposits count should remain 0 since it's read-only
+        assert response.data["deposits_count"] == "0"
+
+    def test_id_field_is_read_only(self, api_client: APIClient, base_user: User, wallet_factory: FactoryMetaClass):
+        """
+        GIVEN: Wallet owner as request.user. ID value in update payload.
+        WHEN: WalletViewSet detail endpoint called with PATCH.
+        THEN: HTTP 200 returned. ID not updated (read-only field).
+        """
+        api_client.force_authenticate(base_user)
+        wallet = wallet_factory(members=[base_user])
+        original_id = wallet.id
+        url = wallet_detail_url(wallet.id)
+        update_payload = {"id": 999999}
+
+        response = api_client.patch(url, update_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        wallet.refresh_from_db()
+        # ID should remain unchanged since it's read-only
+        assert wallet.id == original_id
+        assert response.data["id"] == original_id
 
 
 @pytest.mark.django_db

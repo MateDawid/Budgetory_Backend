@@ -1,7 +1,7 @@
 from typing import OrderedDict
 
 from rest_framework.exceptions import ValidationError
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import DecimalField, ModelSerializer
 
 from wallets.models import Wallet
 
@@ -9,10 +9,13 @@ from wallets.models import Wallet
 class WalletSerializer(ModelSerializer):
     """Serializer for Wallet model."""
 
+    balance = DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
+    deposits_count = DecimalField(max_digits=20, decimal_places=0, default=0, read_only=True)
+
     class Meta:
         model = Wallet
-        fields = ["id", "name", "description", "currency", "members"]
-        read_only_fields = ["id"]
+        fields = ["id", "name", "description", "currency", "members", "balance", "deposits_count"]
+        read_only_fields = ["id", "balance", "deposits_count"]
 
     def to_representation(self, instance: Wallet):
         """
