@@ -744,6 +744,17 @@ pipenv = ["pipenv"]
 poetry = ["poetry"]
 
 [[package]]
+name = "drf-flex-fields"
+version = "1.0.2"
+description = "Flexible, dynamic fields and nested resources for Django REST Framework serializers."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "drf-flex-fields-1.0.2.tar.gz", hash = "sha256:48139eeff0b1232fc05a9f353c3c2b570b225985043dedda6ab0d5e8b7a1d7af"},
+]
+
+[[package]]
 name = "drf-nested-routers"
 version = "0.93.5"
 description = "Nested resources for the Django Rest Framework"
@@ -2410,4 +2421,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "362fa139897fe216e75371f9acadcf1a82ea4e5ce6d3490a2c7425174aaff0a1"
+content-hash = "390d736775b00d19be5af7cac28e5e1939d331021ba72ee65e872af88c0d6a61"

@@ -7,9 +7,9 @@ from entities.serializers.entity_serializer import EntitySerializer
 class DepositSerializer(EntitySerializer):
     """Serializer for Deposit."""
 
-    incomes_sum = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
-    expenses_sum = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
     balance = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
+    wallet_balance = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
+    wallet_percentage = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
 
     class Meta:
         model = Deposit
@@ -18,8 +18,10 @@ class DepositSerializer(EntitySerializer):
             "name",
             "description",
             "is_active",
-            "incomes_sum",
-            "expenses_sum",
+            "value",
+            "label",
             "balance",
+            "wallet_balance",
+            "wallet_percentage",
         ]
-        read_only_fields = ["id", "incomes_sum", "expenses_sum", "balance"]
+        read_only_fields = ["id", "value", "label", "balance", "wallet_percentage"]

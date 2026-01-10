@@ -1,19 +1,21 @@
-from collections import OrderedDict
-
-from rest_framework import serializers
+from rest_flex_fields import FlexFieldsModelSerializer
 from rest_framework.exceptions import ValidationError
+from rest_framework.fields import CharField
 
 from entities.models import Deposit
 from entities.models.entity_model import Entity
 
 
-class EntitySerializer(serializers.ModelSerializer):
+class EntitySerializer(FlexFieldsModelSerializer):
     """Serializer for Entity."""
+
+    value = CharField(source="id", read_only=True, help_text="Field for React MUI select fields choice value.")
+    label = CharField(source="name", read_only=True, help_text="Field for React MUI select fields choice label.")
 
     class Meta:
         model = Entity
-        fields = ["id", "name", "description", "is_active", "is_deposit"]
-        read_only_fields = ["id"]
+        fields = ["id", "name", "description", "is_active", "is_deposit", "value", "label"]
+        read_only_fields = ["id", "value", "label"]
 
     def validate_name(self, name: str):
         """
@@ -41,18 +43,3 @@ class EntitySerializer(serializers.ModelSerializer):
                 "{class_name} with given name already exists in Wallet.".format(class_name=self.Meta.model.__name__)
             )
         return name
-
-    def to_representation(self, instance: Entity) -> OrderedDict:
-        """
-        Extends model representation with "value" and "label" fields for React MUI DataGrid filtering purposes.
-
-        Attributes:
-            instance [Entity]: Period model instance
-
-        Returns:
-            OrderedDict: Dictionary containing overridden values.
-        """
-        representation = super().to_representation(instance)
-        representation["value"] = instance.id
-        representation["label"] = instance.name
-        return representation

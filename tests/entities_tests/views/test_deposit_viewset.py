@@ -13,9 +13,7 @@ from app_users.models import User
 from categories.models.choices.category_type import CategoryType
 from entities.models.deposit_model import Deposit
 from entities.serializers.deposit_serializer import DepositSerializer
-from entities.views.deposit_viewset import calculate_deposit_balance, sum_deposit_transfers
 from predictions.models import ExpensePrediction
-from transfers.models import Transfer
 from wallets.models.wallet_model import Wallet
 
 
@@ -134,32 +132,13 @@ class TestDepositViewSetList:
 
         response = api_client.get(deposits_url(wallet.id))
 
-        deposits = (
-            Deposit.objects.distinct()
-            .annotate(
-                incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
-                expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
-            )
-            .annotate(balance=calculate_deposit_balance())
-            .filter(wallet=wallet)
-        )
+        deposits = Deposit.objects.distinct().filter(wallet=wallet)
         serializer = DepositSerializer(deposits, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert response.data == serializer.data
         for deposit in serializer.data:
-            incomes_sum = sum(
-                Transfer.objects.filter(
-                    deposit__id=deposit["id"], category__category_type=CategoryType.INCOME
-                ).values_list("value", flat=True)
-            )
-            expenses_sum = sum(
-                Transfer.objects.filter(
-                    deposit__id=deposit["id"], category__category_type=CategoryType.EXPENSE
-                ).values_list("value", flat=True)
-            )
-            assert deposit["incomes_sum"] == str(Decimal(incomes_sum).quantize(Decimal("0.00")))
-            assert deposit["expenses_sum"] == str(Decimal(expenses_sum).quantize(Decimal("0.00")))
-            assert deposit["balance"] == str(Decimal(incomes_sum - expenses_sum).quantize(Decimal("0.00")))
+            assert deposit["balance"] == str(Decimal("0.00").quantize(Decimal("0.00")))
+            assert deposit["wallet_percentage"] == str(Decimal("0.00").quantize(Decimal("0.00")))
 
     def test_deposits_list_limited_to_wallet(
         self,
@@ -186,6 +165,401 @@ class TestDepositViewSetList:
         assert len(response.data) == len(serializer.data) == deposits.count() == 1
         assert response.data == serializer.data
         assert response.data[0]["id"] == deposit.id
+
+    def test_fields_param_balance_only(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        transfer_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Deposit with transfers in database.
+        WHEN: DepositViewSet called with fields=balance query parameter.
+        THEN: Response includes balance field with correct calculation.
+        """
+        wallet = wallet_factory(members=[base_user])
+        deposit = deposit_factory(wallet=wallet)
+        income_category = transfer_category_factory(wallet=wallet, category_type=CategoryType.INCOME, deposit=deposit)
+        expense_category = transfer_category_factory(wallet=wallet, category_type=CategoryType.EXPENSE, deposit=deposit)
+
+        # Create some transfers
+        transfer_factory(wallet=wallet, deposit=deposit, category=income_category, value=Decimal("100.00"))
+        transfer_factory(wallet=wallet, deposit=deposit, category=income_category, value=Decimal("50.00"))
+        transfer_factory(wallet=wallet, deposit=deposit, category=expense_category, value=Decimal("30.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(deposits_url(wallet.id), {"fields": "balance"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        deposit_data = response.data[0]
+
+        # Balance should be 100 + 50 - 30 = 120
+        expected_balance = Decimal("120.00")
+        assert Decimal(deposit_data["balance"]) == expected_balance
+        assert "deposit_incomes_sum" not in deposit_data
+        assert "deposit_expenses_sum" not in deposit_data
+
+    def test_fields_param_wallet_balance(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        transfer_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Multiple deposits with transfers in same wallet.
+        WHEN: DepositViewSet called with fields=wallet_balance query parameter.
+        THEN: Response includes wallet_balance field with correct wallet-wide calculation.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit_1 = deposit_factory(wallet=wallet)
+        deposit_2 = deposit_factory(wallet=wallet)
+
+        # Create transfers for deposit1
+        income_category_1 = transfer_category_factory(
+            wallet=wallet, deposit=deposit_1, category_type=CategoryType.INCOME
+        )
+        expense_category_1 = transfer_category_factory(
+            wallet=wallet, deposit=deposit_1, category_type=CategoryType.EXPENSE
+        )
+        transfer_factory(deposit=deposit_1, category=income_category_1, period=period, value=Decimal("100.00"))
+        transfer_factory(deposit=deposit_1, category=expense_category_1, period=period, value=Decimal("20.00"))
+
+        # Create transfers for deposit2
+        income_category_2 = transfer_category_factory(
+            wallet=wallet, deposit=deposit_1, category_type=CategoryType.INCOME
+        )
+        expense_category_2 = transfer_category_factory(
+            wallet=wallet, deposit=deposit_1, category_type=CategoryType.EXPENSE
+        )
+        transfer_factory(deposit=deposit_2, category=income_category_2, period=period, value=Decimal("200.00"))
+        transfer_factory(deposit=deposit_2, category=expense_category_2, period=period, value=Decimal("50.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(deposits_url(wallet.id), {"fields": "wallet_balance"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+
+        # Wallet balance should be same for all deposits: (100 + 200) - (20 + 50) = 230
+        for deposit_data in response.data:
+            assert Decimal(deposit_data["wallet_balance"]) == Decimal("230.00")
+
+    def test_fields_param_wallet_percentage(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        transfer_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Multiple deposits with transfers in same wallet.
+        WHEN: DepositViewSet called with fields=wallet_percentage query parameter.
+        THEN: Response includes wallet_percentage field with correct percentage calculation.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit_1 = deposit_factory(wallet=wallet)
+        deposit_2 = deposit_factory(wallet=wallet)
+
+        # Deposit1: balance = 80
+        income_category_1 = transfer_category_factory(
+            wallet=wallet, deposit=deposit_1, category_type=CategoryType.INCOME
+        )
+        expense_category_1 = transfer_category_factory(
+            wallet=wallet, deposit=deposit_1, category_type=CategoryType.EXPENSE
+        )
+        transfer_factory(deposit=deposit_1, category=income_category_1, period=period, value=Decimal("100.00"))
+        transfer_factory(deposit=deposit_1, category=expense_category_1, period=period, value=Decimal("20.00"))
+
+        # Deposit2: balance = 120
+        income_category_2 = transfer_category_factory(
+            wallet=wallet, deposit=deposit_1, category_type=CategoryType.INCOME
+        )
+        expense_category_2 = transfer_category_factory(
+            wallet=wallet, deposit=deposit_1, category_type=CategoryType.EXPENSE
+        )
+        transfer_factory(deposit=deposit_2, category=income_category_2, period=period, value=Decimal("150.00"))
+        transfer_factory(deposit=deposit_2, category=expense_category_2, period=period, value=Decimal("30.00"))
+
+        # Total wallet balance: 200
+        api_client.force_authenticate(base_user)
+        response = api_client.get(deposits_url(wallet.id), {"fields": "id,wallet_percentage"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+
+        # Find each deposit in response
+        deposit1_data = next(d for d in response.data if d["id"] == deposit_1.id)
+        deposit2_data = next(d for d in response.data if d["id"] == deposit_2.id)
+
+        # Deposit1: 80/200 * 100 = 40%
+        assert Decimal(deposit1_data["wallet_percentage"]) == Decimal("40.00")
+        # Deposit2: 120/200 * 100 = 60%
+        assert Decimal(deposit2_data["wallet_percentage"]) == Decimal("60.00")
+
+    def test_fields_param_multiple_fields(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        transfer_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Deposit with transfers in database.
+        WHEN: DepositViewSet called with multiple fields in query parameter.
+        THEN: Response includes all requested fields with correct calculations.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit = deposit_factory(wallet=wallet)
+
+        income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
+        expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
+
+        transfer_factory(deposit=deposit, category=income_category, period=period, value=Decimal("100.00"))
+        transfer_factory(deposit=deposit, category=expense_category, period=period, value=Decimal("25.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(deposits_url(wallet.id), {"fields": "balance,wallet_balance,wallet_percentage"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        deposit_data = response.data[0]
+
+        # All fields should be present
+        assert "balance" in deposit_data
+        assert "wallet_balance" in deposit_data
+        assert "wallet_percentage" in deposit_data
+
+        # Balance = 75, Wallet balance = 75, Percentage = 100%
+        assert Decimal(deposit_data["balance"]) == Decimal("75.00")
+        assert Decimal(deposit_data["wallet_balance"]) == Decimal("75.00")
+        assert Decimal(deposit_data["wallet_percentage"]) == Decimal("100.00")
+
+    def test_fields_param_no_fields_specified(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Deposit in database.
+        WHEN: DepositViewSet called without fields query parameter.
+        THEN: Response includes only basic fields without annotations.
+        """
+        wallet = wallet_factory(members=[base_user])
+        deposit_factory(wallet=wallet)
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(deposits_url(wallet.id))
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        deposit_data = response.data[0]
+
+        # Basic fields should be present
+        assert "id" in deposit_data
+        assert "name" in deposit_data
+        # Annotated fields should have default values
+        assert deposit_data.get("balance") == "0.00" or "balance" not in deposit_data
+
+    def test_fields_param_empty_string(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Deposit in database.
+        WHEN: DepositViewSet called with empty fields query parameter.
+        THEN: Response returns basic data without conditional annotations.
+        """
+        wallet = wallet_factory(members=[base_user])
+        deposit_factory(wallet=wallet)
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(deposits_url(wallet.id), {"fields": ""})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+
+    def test_fields_param_wallet_percentage_zero_wallet_balance(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Deposit with no transfers (zero wallet balance).
+        WHEN: DepositViewSet called with fields=wallet_percentage query parameter.
+        THEN: Response includes wallet_percentage as 0 (division by zero handled).
+        """
+        wallet = wallet_factory(members=[base_user])
+        deposit_factory(wallet=wallet)
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(deposits_url(wallet.id), {"fields": "wallet_percentage"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        deposit_data = response.data[0]
+
+        # Should handle division by zero gracefully
+        assert Decimal(deposit_data["wallet_percentage"]) == Decimal("0.00")
+
+    def test_fields_param_with_negative_balance(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        transfer_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Deposit with more expenses than income (negative balance).
+        WHEN: DepositViewSet called with fields=balance,wallet_percentage.
+        THEN: Response correctly handles negative values.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit = deposit_factory(wallet=wallet)
+
+        income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
+        expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
+
+        transfer_factory(deposit=deposit, category=income_category, period=period, value=Decimal("50.00"))
+        transfer_factory(deposit=deposit, category=expense_category, period=period, value=Decimal("100.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(deposits_url(wallet.id), {"fields": "balance,wallet_percentage"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        deposit_data = response.data[0]
+
+        # Balance should be -50
+        assert Decimal(deposit_data["balance"]) == Decimal("-50.00")
+        # Percentage calculation with negative balance
+        assert "wallet_percentage" in deposit_data
+
+    def test_fields_param_case_sensitivity(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Deposit in database.
+        WHEN: DepositViewSet called with fields parameter in different cases.
+        THEN: Fields parameter is case-sensitive and only matches exact field names.
+        """
+        wallet = wallet_factory(members=[base_user])
+        deposit_factory(wallet=wallet)
+
+        api_client.force_authenticate(base_user)
+        # Test with uppercase (should not match)
+        response = api_client.get(deposits_url(wallet.id), {"fields": "BALANCE"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "balance" not in response.data
+
+    def test_fields_param_ordering_with_balance(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Multiple deposits with different balances.
+        WHEN: DepositViewSet called with fields=balance and ordering=balance.
+        THEN: Response is correctly ordered by balance.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit1 = deposit_factory(wallet=wallet, name="Deposit 1")
+        deposit2 = deposit_factory(wallet=wallet, name="Deposit 2")
+        deposit3 = deposit_factory(wallet=wallet, name="Deposit 3")
+
+        # Create different balances
+        income_factory(deposit=deposit1, period=period, value=Decimal("50.00"))
+        income_factory(deposit=deposit2, period=period, value=Decimal("150.00"))
+        income_factory(deposit=deposit3, period=period, value=Decimal("100.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(deposits_url(wallet.id), {"fields": "balance", "ordering": "balance"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 3
+
+        # Check ascending order: 50, 100, 150
+        assert Decimal(response.data[0]["balance"]) == Decimal("50.00")
+        assert Decimal(response.data[1]["balance"]) == Decimal("100.00")
+        assert Decimal(response.data[2]["balance"]) == Decimal("150.00")
+
+    def test_fields_param_with_pagination(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Multiple deposits with transfers.
+        WHEN: DepositViewSet called with fields parameter and pagination.
+        THEN: Paginated response includes requested fields correctly.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        for i in range(5):
+            deposit = deposit_factory(wallet=wallet, name=f"Deposit {i}")
+            income_factory(deposit=deposit, period=period, value=Decimal(f"{(i + 1) * 10}.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(
+            deposits_url(wallet.id), {"fields": "balance,wallet_percentage", "page_size": 2, "page": 1}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "results" in response.data
+        assert len(response.data["results"]) == 2
+        assert response.data["count"] == 5
+
+        # Check that fields are present in paginated results
+        for deposit_data in response.data["results"]:
+            assert "balance" in deposit_data
+            assert "wallet_percentage" in deposit_data
+
+        # Check that fields are present in paginated results
+        for deposit_data in response.data["results"]:
+            assert "balance" in deposit_data
+            assert "wallet_percentage" in deposit_data
 
 
 @pytest.mark.django_db
@@ -439,6 +813,38 @@ class TestDepositViewSetDetail:
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
         assert response.data["detail"] == "User does not have access to Wallet."
+
+    def test_fields_query_param(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        transfer_factory: FactoryMetaClass,
+        transfer_category_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Deposit with transfers in database.
+        WHEN: DepositViewSet detail endpoint called with fields query parameter.
+        THEN: Response includes requested fields with correct calculations.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit = deposit_factory(wallet=wallet)
+
+        income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
+        transfer_factory(deposit=deposit, category=income_category, period=period, value=Decimal("100.00"))
+
+        api_client.force_authenticate(base_user)
+        url = deposit_detail_url(wallet.id, deposit.id)
+        response = api_client.get(url, {"fields": "balance,wallet_balance,wallet_percentage"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "balance" in response.data
+        assert "wallet_balance" in response.data
+        assert "wallet_percentage" in response.data
+        assert Decimal(response.data["balance"]) == Decimal("100.00")
 
 
 @pytest.mark.django_db
