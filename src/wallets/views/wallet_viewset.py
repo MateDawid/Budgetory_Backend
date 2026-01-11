@@ -82,10 +82,7 @@ class WalletViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     filterset_class = WalletFilterSet
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
-    ordering_fields = (
-        "id",
-        "name",
-    )
+    ordering_fields = ("id", "name", "balance", "deposits_count")
 
     def get_queryset(self) -> QuerySet:
         """
@@ -95,18 +92,18 @@ class WalletViewSet(ModelViewSet):
             QuerySet: QuerySet containing Wallets containing authenticated User as member.
         """
         user = getattr(self.request, "user", None)
-        if user and user.is_authenticated:
-            return (
-                self.queryset.filter(members=user)
-                .order_by("id")
-                .distinct()
-                .annotate(
-                    incomes_sum=get_wallet_transfers_sum(CategoryType.INCOME),
-                    expenses_sum=get_wallet_transfers_sum(CategoryType.EXPENSE),
-                )
-                .annotate(balance=get_wallet_balance(), deposits_count=get_wallet_deposits_count())
-            )
-        return self.queryset.none()  # pragma: no cover
+        if not (user and user.is_authenticated):
+            return self.queryset.none()  # pragma: no cover
+        qs = self.queryset.filter(members=user).order_by("id").distinct()
+        fields = self.request.query_params.get("fields", "").split(",")
+        if "balance" in fields:
+            qs = qs.annotate(
+                incomes_sum=get_wallet_transfers_sum(CategoryType.INCOME),
+                expenses_sum=get_wallet_transfers_sum(CategoryType.EXPENSE),
+            ).annotate(balance=get_wallet_balance())
+        if "deposits_count" in fields:
+            qs = qs.annotate(deposits_count=get_wallet_deposits_count())
+        return qs
 
     @action(detail=True, methods=["GET"])
     def members(self, request: Request, **kwargs: dict) -> Response:

@@ -160,7 +160,7 @@ class TestWalletViewSetList:
                 expense_factory(wallet=wallet, deposit=deposit, value=Decimal("100.00"))
                 expense_factory(wallet=wallet, deposit=deposit, value=Decimal("800.00"))
 
-        response = api_client.get(WALLETS_URL)
+        response = api_client.get(WALLETS_URL, {"fields": "balance,deposits_count"})
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == 2
@@ -188,6 +188,335 @@ class TestWalletViewSetList:
         assert len(response.data) == 1
         assert "currency_name" in response.data[0]
         assert response.data[0]["currency_name"] == "PLN"
+
+    def test_fields_param_balance(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Wallet with transfers in database.
+        WHEN: WalletViewSet called with fields=balance query parameter.
+        THEN: Response includes balance field with correct calculation.
+        """
+        wallet_1 = wallet_factory(members=[base_user])
+        wallet_2 = wallet_factory(members=[base_user])
+
+        # Wallet 1 transfers
+        income_factory(wallet=wallet_1, value=Decimal("200.00"))
+        expense_factory(wallet=wallet_1, value=Decimal("100.00"))
+        expense_factory(wallet=wallet_1, value=Decimal("50.00"))
+
+        # Wallet 2 transfers
+        income_factory(wallet=wallet_2, value=Decimal("200.00"))
+        income_factory(wallet=wallet_2, value=Decimal("100.00"))
+        expense_factory(wallet=wallet_2, value=Decimal("50.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(WALLETS_URL, {"fields": "balance"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+        assert response.data[0].keys() == {"balance"}
+        assert Decimal(response.data[0]["balance"]) == Decimal("50.00")
+        assert Decimal(response.data[1]["balance"]) == Decimal("250.00")
+
+    def test_fields_param_deposits_count(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Wallet with deposits in database.
+        WHEN: WalletViewSet called with fields=deposits_count query parameter.
+        THEN: Response includes deposits_count field with correct calculation.
+        """
+        wallet_1 = wallet_factory(members=[base_user])
+        wallet_2 = wallet_factory(members=[base_user])
+
+        # Wallet 1 deposits
+        wallet_1_deposits = 3
+        for _ in range(wallet_1_deposits):
+            deposit_factory(wallet=wallet_1)
+
+        # Wallet 2 transfers
+        wallet_2_deposits = 5
+        for _ in range(wallet_2_deposits):
+            deposit_factory(wallet=wallet_2)
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(WALLETS_URL, {"fields": "deposits_count"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+        assert response.data[0].keys() == {"deposits_count"}
+        assert Decimal(response.data[0]["deposits_count"]) == wallet_1_deposits
+        assert Decimal(response.data[1]["deposits_count"]) == wallet_2_deposits
+
+    def test_fields_param_multiple_fields(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Wallet with deposits and transfers in database.
+        WHEN: WalletViewSet called with fields=id,balance,deposits_count query parameter.
+        THEN: Response includes all fields with correct calculation.
+        """
+        wallet_1 = wallet_factory(members=[base_user])
+        wallet_2 = wallet_factory(members=[base_user])
+
+        # Wallet 1
+        wallet_1_deposit_1 = deposit_factory(wallet=wallet_1)
+        income_factory(wallet=wallet_1, deposit=wallet_1_deposit_1, value=Decimal("200.00"))
+        expense_factory(wallet=wallet_1, deposit=wallet_1_deposit_1, value=Decimal("100.00"))
+        expense_factory(wallet=wallet_1, deposit=wallet_1_deposit_1, value=Decimal("50.00"))
+
+        # Wallet 2
+        wallet_2_deposit_1 = deposit_factory(wallet=wallet_2)
+        wallet_2_deposit_2 = deposit_factory(wallet=wallet_2)
+        income_factory(wallet=wallet_2, deposit=wallet_2_deposit_1, value=Decimal("200.00"))
+        income_factory(wallet=wallet_2, deposit=wallet_2_deposit_2, value=Decimal("100.00"))
+        expense_factory(wallet=wallet_2, deposit=wallet_2_deposit_2, value=Decimal("50.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(WALLETS_URL, {"fields": "id,balance,deposits_count"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+        assert response.data[0].keys() == {"id", "balance", "deposits_count"}
+        assert Decimal(response.data[0]["balance"]) == Decimal("50.00")
+        assert Decimal(response.data[0]["deposits_count"]) == 1
+        assert Decimal(response.data[1]["balance"]) == Decimal("250.00")
+        assert Decimal(response.data[1]["deposits_count"]) == 2
+
+    def test_fields_param_no_fields_specified(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Wallet with deposit in database.
+        WHEN: WalletViewSet called without fields query parameter.
+        THEN: Response includes all default fields including balance and deposits_count.
+        """
+        wallet = wallet_factory(members=[base_user])
+        deposit_factory(wallet=wallet)
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(WALLETS_URL)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        wallet_data = response.data[0]
+
+        # Default fields should be present
+        assert "id" in wallet_data
+        assert "name" in wallet_data
+        assert "balance" in wallet_data
+        assert "deposits_count" in wallet_data
+        assert wallet_data["balance"] == "0.00"
+        assert wallet_data["deposits_count"] == "0"
+
+    def test_fields_param_empty_string(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Wallet with deposit in database.
+        WHEN: WalletViewSet called with empty fields query parameter.
+        THEN: Response returns empty dicts.
+        """
+        wallet = wallet_factory(members=[base_user])
+        deposit_factory(wallet=wallet)
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(WALLETS_URL, {"fields": ""})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert response.data[0] == {}
+
+    def test_fields_param_invalid_field(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Wallet in database.
+        WHEN: WalletViewSet called with invalid field name in fields parameter.
+        THEN: Response excludes invalid field and only includes valid requested fields.
+        """
+        wallet_factory(members=[base_user])
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(WALLETS_URL, {"fields": "balance,invalid_field"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        # Only valid field should be present
+        assert response.data[0].keys() == {"balance"}
+
+    def test_fields_param_case_sensitivity(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Wallet in database.
+        WHEN: WalletViewSet called with fields parameter in different cases.
+        THEN: Fields parameter is case-sensitive and only matches exact field names.
+        """
+        wallet_factory(members=[base_user])
+
+        api_client.force_authenticate(base_user)
+        # Test with uppercase (should not match)
+        response = api_client.get(WALLETS_URL, {"fields": "BALANCE"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        # Should return empty dict or no balance field since case doesn't match
+        assert "balance" not in response.data[0] or response.data[0] == {}
+
+    def test_fields_param_ordering_with_balance(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Multiple wallets with different balances.
+        WHEN: WalletViewSet called with fields=balance and ordering=balance.
+        THEN: Response is correctly ordered by balance.
+        """
+        wallet_1 = wallet_factory(members=[base_user], name="Wallet 1")
+        wallet_2 = wallet_factory(members=[base_user], name="Wallet 2")
+        wallet_3 = wallet_factory(members=[base_user], name="Wallet 3")
+
+        # Create different balances
+        income_factory(wallet=wallet_1, value=Decimal("50.00"))
+        income_factory(wallet=wallet_2, value=Decimal("150.00"))
+        income_factory(wallet=wallet_3, value=Decimal("100.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(WALLETS_URL, {"fields": "balance", "ordering": "balance"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 3
+
+        # Check ascending order: 50, 100, 150
+        assert Decimal(response.data[0]["balance"]) == Decimal("50.00")
+        assert Decimal(response.data[1]["balance"]) == Decimal("100.00")
+        assert Decimal(response.data[2]["balance"]) == Decimal("150.00")
+
+    def test_fields_param_with_pagination(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Multiple wallets with transfers.
+        WHEN: WalletViewSet called with fields parameter and pagination.
+        THEN: Paginated response includes requested fields correctly.
+        """
+        for i in range(5):
+            wallet = wallet_factory(members=[base_user], name=f"Wallet {i}")
+            income_factory(wallet=wallet, value=Decimal(f"{(i + 1) * 10}.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(WALLETS_URL, {"fields": "balance,deposits_count", "page_size": 2, "page": 1})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "results" in response.data
+        assert len(response.data["results"]) == 2
+        assert response.data["count"] == 5
+
+        # Check that fields are present in paginated results
+        for wallet_data in response.data["results"]:
+            assert "balance" in wallet_data
+            assert "deposits_count" in wallet_data
+
+    def test_fields_param_with_negative_balance(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Wallet with more expenses than income (negative balance).
+        WHEN: WalletViewSet called with fields=balance.
+        THEN: Response correctly handles negative balance values.
+        """
+        wallet = wallet_factory(members=[base_user])
+
+        income_factory(wallet=wallet, value=Decimal("50.00"))
+        expense_factory(wallet=wallet, value=Decimal("100.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(WALLETS_URL, {"fields": "balance"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        wallet_data = response.data[0]
+
+        # Balance should be -50
+        assert Decimal(wallet_data["balance"]) == Decimal("-50.00")
+
+    def test_fields_param_ordering_descending(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Multiple wallets with different deposit counts.
+        WHEN: WalletViewSet called with fields=deposits_count and ordering=-deposits_count.
+        THEN: Response is correctly ordered by deposits_count in descending order.
+        """
+        wallet_1 = wallet_factory(members=[base_user], name="Wallet 1")
+        wallet_2 = wallet_factory(members=[base_user], name="Wallet 2")
+        wallet_3 = wallet_factory(members=[base_user], name="Wallet 3")
+
+        # Create different deposit counts
+        for _ in range(2):
+            deposit_factory(wallet=wallet_1)
+        for _ in range(5):
+            deposit_factory(wallet=wallet_2)
+        for _ in range(3):
+            deposit_factory(wallet=wallet_3)
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(WALLETS_URL, {"fields": "deposits_count", "ordering": "-deposits_count"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 3
+
+        # Check descending order: 5, 3, 2
+        assert Decimal(response.data[0]["deposits_count"]) == 5
+        assert Decimal(response.data[1]["deposits_count"]) == 3
+        assert Decimal(response.data[2]["deposits_count"]) == 2
 
 
 @pytest.mark.django_db
@@ -499,7 +828,7 @@ class TestWalletViewSetDetail:
 
         url = wallet_detail_url(wallet.id)
 
-        response = api_client.get(url)
+        response = api_client.get(url, {"fields": "balance,deposits_count"})
 
         assert response.status_code == status.HTTP_200_OK
         assert "balance" in response.data
@@ -559,6 +888,111 @@ class TestWalletViewSetDetail:
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["balance"] == "0.00"
+
+    def test_fields_query_param(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+        deposit_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Wallet with deposits and transfers in database.
+        WHEN: WalletViewSet detail endpoint called with fields query parameter.
+        THEN: Response includes requested fields with correct calculations.
+        """
+        wallet = wallet_factory(members=[base_user])
+        deposit_1 = deposit_factory(wallet=wallet)
+        deposit_2 = deposit_factory(wallet=wallet)
+
+        # Create transfers for wallet
+        income_factory(wallet=wallet, deposit=deposit_1, value=Decimal("100.00"))
+        income_factory(wallet=wallet, deposit=deposit_2, value=Decimal("50.00"))
+        expense_factory(wallet=wallet, deposit=deposit_1, value=Decimal("30.00"))
+
+        api_client.force_authenticate(base_user)
+        url = wallet_detail_url(wallet.id)
+        response = api_client.get(url, {"fields": "balance,deposits_count"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data.keys() == {"balance", "deposits_count"}
+        assert Decimal(response.data["balance"]) == Decimal("120.00")
+        assert Decimal(response.data["deposits_count"]) == 2
+
+    def test_fields_query_param_single_field(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Wallet with transfers in database.
+        WHEN: WalletViewSet detail endpoint called with fields=balance query parameter.
+        THEN: Response includes only balance field.
+        """
+        wallet = wallet_factory(members=[base_user])
+        income_factory(wallet=wallet, value=Decimal("250.00"))
+
+        api_client.force_authenticate(base_user)
+        url = wallet_detail_url(wallet.id)
+        response = api_client.get(url, {"fields": "balance"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data.keys() == {"balance"}
+        assert Decimal(response.data["balance"]) == Decimal("250.00")
+
+    def test_fields_query_param_id_field(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Wallet in database.
+        WHEN: WalletViewSet detail endpoint called with fields=id,name.
+        THEN: Response includes only id and name fields.
+        """
+        wallet = wallet_factory(members=[base_user], name="Test Wallet")
+
+        api_client.force_authenticate(base_user)
+        url = wallet_detail_url(wallet.id)
+        response = api_client.get(url, {"fields": "id,name"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data.keys() == {"id", "name"}
+        assert response.data["id"] == wallet.id
+        assert response.data["name"] == "Test Wallet"
+
+    def test_fields_query_param_no_fields(
+        self,
+        api_client: APIClient,
+        base_user: User,
+        wallet_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Wallet in database.
+        WHEN: WalletViewSet detail endpoint called without fields query parameter.
+        THEN: Response includes all default fields.
+        """
+        wallet = wallet_factory(members=[base_user])
+
+        api_client.force_authenticate(base_user)
+        url = wallet_detail_url(wallet.id)
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        # Should include all default fields
+        assert "id" in response.data
+        assert "name" in response.data
+        assert "description" in response.data
+        assert "balance" in response.data
+        assert "deposits_count" in response.data
+        assert "currency" in response.data
+        assert "currency_name" in response.data
+        assert "members" in response.data
 
 
 @pytest.mark.django_db

@@ -1,35 +1,23 @@
 from typing import OrderedDict
 
+from rest_flex_fields import FlexFieldsModelSerializer
 from rest_framework.exceptions import ValidationError
-from rest_framework.serializers import DecimalField, ModelSerializer
+from rest_framework.serializers import CharField, DecimalField
 
 from wallets.models import Wallet
 
 
-class WalletSerializer(ModelSerializer):
+class WalletSerializer(FlexFieldsModelSerializer):
     """Serializer for Wallet model."""
 
+    currency_name = CharField(source="currency.name", read_only=True)
     balance = DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
     deposits_count = DecimalField(max_digits=20, decimal_places=0, default=0, read_only=True)
 
     class Meta:
         model = Wallet
-        fields = ["id", "name", "description", "currency", "members", "balance", "deposits_count"]
-        read_only_fields = ["id", "balance", "deposits_count"]
-
-    def to_representation(self, instance: Wallet):
-        """
-        Updates instance representation with Wallet.currency field as Currency.name instead of Currency.id.
-
-        Attributes:
-            instance [Wallet]: Wallet model instance
-
-        Returns:
-            OrderedDict: Updated object representation.
-        """
-        representation = super().to_representation(instance)
-        representation["currency_name"] = instance.currency.name
-        return representation
+        fields = ["id", "name", "description", "currency", "currency_name", "members", "balance", "deposits_count"]
+        read_only_fields = ["id", "balance", "deposits_count", "currency_name"]
 
     def validate(self, attrs: OrderedDict) -> OrderedDict:
         """
