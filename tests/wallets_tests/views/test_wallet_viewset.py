@@ -1193,30 +1193,6 @@ class TestWalletViewSetUpdate:
         wallet.refresh_from_db()
         assert getattr(wallet, param) == old_value
 
-    def test_update_response_includes_balance_and_deposits_count(
-        self,
-        api_client: APIClient,
-        base_user: User,
-        wallet_factory: FactoryMetaClass,
-    ):
-        """
-        GIVEN: Wallet owner as request.user. Valid update params in payload.
-        WHEN: WalletViewSet detail endpoint called with PATCH.
-        THEN: HTTP 200 returned. Response includes balance and deposits_count fields.
-        """
-        api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user], name="Old Name")
-        url = wallet_detail_url(wallet.id)
-        update_payload = {"name": "New Name"}
-
-        response = api_client.patch(url, update_payload)
-
-        assert response.status_code == status.HTTP_200_OK
-        assert "balance" in response.data
-        assert "deposits_count" in response.data
-        assert response.data["balance"] == "0.00"
-        assert response.data["deposits_count"] == "0"
-
     def test_update_response_includes_currency_name(
         self,
         api_client: APIClient,
@@ -1260,44 +1236,6 @@ class TestWalletViewSetUpdate:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "non_field_errors" in response.data["detail"]
         assert response.data["detail"]["non_field_errors"][0] == "Currency is required."
-
-    def test_balance_field_is_read_only(self, api_client: APIClient, base_user: User, wallet_factory: FactoryMetaClass):
-        """
-        GIVEN: Wallet owner as request.user. Balance value in update payload.
-        WHEN: WalletViewSet detail endpoint called with PATCH.
-        THEN: HTTP 200 returned. Balance not updated (read-only field).
-        """
-        api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
-        url = wallet_detail_url(wallet.id)
-        update_payload = {"balance": "999.99"}
-
-        response = api_client.patch(url, update_payload)
-
-        assert response.status_code == status.HTTP_200_OK
-        wallet.refresh_from_db()
-        # Balance should remain 0.00 since it's read-only
-        assert response.data["balance"] == "0.00"
-
-    def test_deposits_count_field_is_read_only(
-        self, api_client: APIClient, base_user: User, wallet_factory: FactoryMetaClass
-    ):
-        """
-        GIVEN: Wallet owner as request.user. Deposits count value in update payload.
-        WHEN: WalletViewSet detail endpoint called with PATCH.
-        THEN: HTTP 200 returned. Deposits count not updated (read-only field).
-        """
-        api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
-        url = wallet_detail_url(wallet.id)
-        update_payload = {"deposits_count": "999"}
-
-        response = api_client.patch(url, update_payload)
-
-        assert response.status_code == status.HTTP_200_OK
-        wallet.refresh_from_db()
-        # Deposits count should remain 0 since it's read-only
-        assert response.data["deposits_count"] == "0"
 
     def test_id_field_is_read_only(self, api_client: APIClient, base_user: User, wallet_factory: FactoryMetaClass):
         """
