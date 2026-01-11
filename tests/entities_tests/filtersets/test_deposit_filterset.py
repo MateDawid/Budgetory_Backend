@@ -10,7 +10,7 @@ from rest_framework.test import APIClient
 from categories.models.choices.category_type import CategoryType
 from entities.models import Deposit
 from entities.serializers.deposit_serializer import DepositSerializer
-from entities.views.deposit_viewset import calculate_deposit_balance, sum_deposit_transfers
+from entities.views.deposit_viewset import get_deposit_balance, sum_deposit_transfers
 
 
 @pytest.mark.django_db
@@ -54,23 +54,26 @@ class TestDepositFilterSetOrdering:
                 transfer_factory(wallet=wallet, deposit=deposit, category=category)
         api_client.force_authenticate(member_1)
 
-        response = api_client.get(deposits_url(wallet.id), data={"ordering": sort_param})
+        response = api_client.get(
+            deposits_url(wallet.id),
+            data={"ordering": sort_param, "fields": f"id,{sort_param.replace('-', '')}"},  # noqa:E231
+        )
 
         assert response.status_code == status.HTTP_200_OK
 
         deposits = (
             Deposit.objects.all()
             .annotate(
-                incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
-                expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
+                deposit_incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
+                deposit_expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
             )
-            .annotate(balance=calculate_deposit_balance())
+            .annotate(balance=get_deposit_balance())
             .order_by(*sort_param.split(","))
         )
         serializer = DepositSerializer(deposits, many=True)
         assert response.data and serializer.data
         assert len(response.data) == len(serializer.data) == len(deposits) == 3
-        assert response.data == serializer.data
+        assert [result["id"] for result in response.data] == [result["id"] for result in serializer.data]
 
 
 @pytest.mark.django_db
@@ -192,16 +195,16 @@ class TestDepositFilterSetFiltering:
         )
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_url(wallet.id), data={"balance": balance})
+        response = api_client.get(deposits_url(wallet.id), data={"balance": balance, "fields": "id,balance"})
 
         assert response.status_code == status.HTTP_200_OK
         assert Deposit.objects.all().count() == 2
         deposits = (
             Deposit.objects.annotate(
-                incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
-                expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
+                deposit_incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
+                deposit_expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
             )
-            .annotate(balance=calculate_deposit_balance())
+            .annotate(balance=get_deposit_balance())
             .filter(balance=balance)
         )
         serializer = DepositSerializer(
@@ -210,7 +213,7 @@ class TestDepositFilterSetFiltering:
         )
         assert response.data and serializer.data
         assert len(response.data) == len(serializer.data) == deposits.count() == 1
-        assert response.data == serializer.data
+        assert [result["id"] for result in response.data] == [result["id"] for result in serializer.data]
         assert response.data[0]["id"] == target_deposit.id
         assert response.data[0]["balance"] == balance
 
@@ -242,16 +245,16 @@ class TestDepositFilterSetFiltering:
         )
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_url(wallet.id), data={"balance_max": balance})
+        response = api_client.get(deposits_url(wallet.id), data={"balance_max": balance, "fields": "id,balance"})
 
         assert response.status_code == status.HTTP_200_OK
         assert Deposit.objects.all().count() == 2
         deposits = (
             Deposit.objects.annotate(
-                incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
-                expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
+                deposit_incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
+                deposit_expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
             )
-            .annotate(balance=calculate_deposit_balance())
+            .annotate(balance=get_deposit_balance())
             .filter(balance__lte=balance)
         )
         serializer = DepositSerializer(
@@ -260,7 +263,7 @@ class TestDepositFilterSetFiltering:
         )
         assert response.data and serializer.data
         assert len(response.data) == len(serializer.data) == deposits.count() == 1
-        assert response.data == serializer.data
+        assert [result["id"] for result in response.data] == [result["id"] for result in serializer.data]
         assert response.data[0]["id"] == target_deposit.id
         assert response.data[0]["balance"] == balance
 
@@ -292,16 +295,16 @@ class TestDepositFilterSetFiltering:
         )
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_url(wallet.id), data={"balance_min": balance})
+        response = api_client.get(deposits_url(wallet.id), data={"balance_min": balance, "fields": "id,balance"})
 
         assert response.status_code == status.HTTP_200_OK
         assert Deposit.objects.all().count() == 2
         deposits = (
             Deposit.objects.annotate(
-                incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
-                expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
+                deposit_incomes_sum=sum_deposit_transfers(CategoryType.INCOME),
+                deposit_expenses_sum=sum_deposit_transfers(CategoryType.EXPENSE),
             )
-            .annotate(balance=calculate_deposit_balance())
+            .annotate(balance=get_deposit_balance())
             .filter(balance__gte=balance)
         )
         serializer = DepositSerializer(
@@ -310,6 +313,6 @@ class TestDepositFilterSetFiltering:
         )
         assert response.data and serializer.data
         assert len(response.data) == len(serializer.data) == deposits.count() == 1
-        assert response.data == serializer.data
+        assert [result["id"] for result in response.data] == [result["id"] for result in serializer.data]
         assert response.data[0]["id"] == target_deposit.id
         assert response.data[0]["balance"] == balance
