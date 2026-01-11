@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 from django.db.models import Q
+from rest_flex_fields import FlexFieldsModelSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -8,10 +9,17 @@ from periods.models import Period
 from periods.models.choices.period_status import PeriodStatus
 
 
-class PeriodSerializer(serializers.ModelSerializer):
+class PeriodSerializer(FlexFieldsModelSerializer):
     """Serializer for Period."""
 
+    value = serializers.CharField(
+        source="id", read_only=True, help_text="Field for React MUI select fields choice value."
+    )
+    label = serializers.CharField(
+        source="name", read_only=True, help_text="Field for React MUI select fields choice label."
+    )
     status = serializers.IntegerField(default=PeriodStatus.DRAFT)
+    status_display = serializers.SerializerMethodField(read_only=True)
     incomes_sum = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
     expenses_sum = serializers.DecimalField(max_digits=20, decimal_places=2, default=0, read_only=True)
 
@@ -108,18 +116,14 @@ class PeriodSerializer(serializers.ModelSerializer):
 
         return super().validate(attrs)
 
-    def to_representation(self, instance: Period) -> OrderedDict:
+    def get_status_display(self, obj: Period) -> str:
         """
-        Extends model representation with "value" and "label" fields for React MUI DataGrid filtering purposes.
+        Retrieves Period status display value.
 
-        Attributes:
-            instance [Period]: Period model instance
+        Args:
+            obj (Period): Period object.
 
         Returns:
-            OrderedDict: Dictionary containing overridden values.
+            str: Period status display value.
         """
-        representation = super().to_representation(instance)
-        representation["status_display"] = PeriodStatus(representation["status"]).label
-        representation["value"] = instance.id
-        representation["label"] = instance.name
-        return representation
+        return PeriodStatus(obj.status).label
