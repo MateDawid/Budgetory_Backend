@@ -97,19 +97,18 @@ class PeriodViewSet(ModelViewSet):
             QuerySet: Filtered Period QuerySet.
         """
         user = getattr(self.request, "user", None)
-        if user and user.is_authenticated:
-            wallet_pk = self.kwargs.get("wallet_pk")
-            if wallet_pk:
-                return (
-                    self.queryset.filter(wallet__members=user, wallet__pk=wallet_pk)
-                    .order_by("-date_start")
-                    .distinct()
-                    .annotate(
-                        incomes_sum=sum_period_transfers(CategoryType.INCOME),
-                        expenses_sum=sum_period_transfers(CategoryType.EXPENSE),
-                    )
-                )
-        return self.queryset.none()  # pragma: no cover
+        if not (user and user.is_authenticated):
+            return self.queryset.none()  # pragma: no cover
+        wallet_pk = self.kwargs.get("wallet_pk")
+        if not wallet_pk:
+            return self.queryset.none()  # pragma: no cover
+        qs = self.queryset.filter(wallet__members=user, wallet__pk=wallet_pk).order_by("-date_start").distinct()
+        fields = self.request.query_params.get("fields", "").split(",")
+        if "incomes_sum" in fields:
+            qs = qs.annotate(incomes_sum=sum_period_transfers(CategoryType.INCOME))
+        if "expenses_sum" in fields:
+            qs = qs.annotate(expenses_sum=sum_period_transfers(CategoryType.EXPENSE))
+        return qs
 
     def perform_create(self, serializer: PeriodSerializer) -> None:
         """
