@@ -1,6 +1,6 @@
 from rest_flex_fields import FlexFieldsModelSerializer
 from rest_framework.exceptions import ValidationError
-from rest_framework.fields import CharField
+from rest_framework.fields import CharField, IntegerField
 
 from entities.models import Deposit
 from entities.models.entity_model import Entity
@@ -9,7 +9,7 @@ from entities.models.entity_model import Entity
 class EntitySerializer(FlexFieldsModelSerializer):
     """Serializer for Entity."""
 
-    value = CharField(source="id", read_only=True, help_text="Field for React MUI select fields choice value.")
+    value = IntegerField(source="id", read_only=True, help_text="Field for React MUI select fields choice value.")
     label = CharField(source="name", read_only=True, help_text="Field for React MUI select fields choice label.")
 
     class Meta:
