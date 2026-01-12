@@ -12,7 +12,7 @@ from periods.models.choices.period_status import PeriodStatus
 class PeriodSerializer(FlexFieldsModelSerializer):
     """Serializer for Period."""
 
-    value = serializers.CharField(
+    value = serializers.IntegerField(
         source="id", read_only=True, help_text="Field for React MUI select fields choice value."
     )
     label = serializers.CharField(
@@ -25,8 +25,19 @@ class PeriodSerializer(FlexFieldsModelSerializer):
 
     class Meta:
         model = Period
-        fields = ["id", "name", "status", "date_start", "date_end", "incomes_sum", "expenses_sum"]
-        read_only_fields = ["id", "incomes_sum", "expenses_sum"]
+        fields = [
+            "id",
+            "name",
+            "status",
+            "date_start",
+            "date_end",
+            "incomes_sum",
+            "expenses_sum",
+            "value",
+            "label",
+            "status_display",
+        ]
+        read_only_fields = ["id", "incomes_sum", "expenses_sum", "value", "label", "status_display"]
 
     def validate_name(self, name: str) -> str:
         """
