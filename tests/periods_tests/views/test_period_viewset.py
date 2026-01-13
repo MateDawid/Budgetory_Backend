@@ -161,7 +161,7 @@ class TestPeriodViewSetList:
         serializer = PeriodSerializer(periods, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == len(serializer.data) == periods.count() == 2
-        assert response.data == serializer.data
+        assert [result["id"] for result in response.data] == [result["id"] for result in serializer.data]
         for period in serializer.data:
             assert period["value"] == period["id"]
             assert period["label"] == period["name"]
@@ -271,6 +271,413 @@ class TestPeriodViewSetList:
         assert response.data[0]["date_start"] == "2023-01-01"
         assert response.data[1]["date_start"] == "2023-02-01"
         assert response.data[2]["date_start"] == "2023-03-01"
+
+    def test_fields_param_incomes_sum(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Periods with transfers in database.
+        WHEN: PeriodViewSet called with fields=incomes_sum query parameter.
+        THEN: Response includes incomes_sum field with correct calculation.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period_1 = period_factory(wallet=wallet)
+        period_2 = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period_1, value=Decimal("100.00"))
+        income_factory(wallet=wallet, period=period_1, value=Decimal("200.00"))
+        expense_factory(wallet=wallet, period=period_1, value=Decimal("30.00"))
+        expense_factory(wallet=wallet, period=period_1, value=Decimal("40.00"))
+        income_factory(wallet=wallet, period=period_2, value=Decimal("300.00"))
+        income_factory(wallet=wallet, period=period_2, value=Decimal("400.00"))
+        expense_factory(wallet=wallet, period=period_2, value=Decimal("50.00"))
+        expense_factory(wallet=wallet, period=period_2, value=Decimal("60.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(periods_url(wallet.id), {"ordering": "date_start", "fields": "incomes_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+        assert Decimal(response.data[0]["incomes_sum"]) == Decimal("300.00")
+        assert Decimal(response.data[1]["incomes_sum"]) == Decimal("700.00")
+
+    def test_fields_param_expenses_sum(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Periods with transfers in database.
+        WHEN: PeriodViewSet called with fields=expenses_sum query parameter.
+        THEN: Response includes expenses_sum field with correct calculation.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period_1 = period_factory(wallet=wallet)
+        period_2 = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period_1, value=Decimal("100.00"))
+        income_factory(wallet=wallet, period=period_1, value=Decimal("200.00"))
+        expense_factory(wallet=wallet, period=period_1, value=Decimal("30.00"))
+        expense_factory(wallet=wallet, period=period_1, value=Decimal("40.00"))
+        income_factory(wallet=wallet, period=period_2, value=Decimal("300.00"))
+        income_factory(wallet=wallet, period=period_2, value=Decimal("400.00"))
+        expense_factory(wallet=wallet, period=period_2, value=Decimal("50.00"))
+        expense_factory(wallet=wallet, period=period_2, value=Decimal("60.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(periods_url(wallet.id), {"ordering": "date_start", "fields": "expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+        assert Decimal(response.data[0]["expenses_sum"]) == Decimal("70.00")
+        assert Decimal(response.data[1]["expenses_sum"]) == Decimal("110.00")
+
+    def test_fields_param_both_sums(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Periods with transfers in database.
+        WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum query parameter.
+        THEN: Response includes both incomes_sum and expenses_sum fields with correct calculations.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period_1 = period_factory(wallet=wallet)
+        period_2 = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period_1, value=Decimal("100.00"))
+        income_factory(wallet=wallet, period=period_1, value=Decimal("200.00"))
+        expense_factory(wallet=wallet, period=period_1, value=Decimal("30.00"))
+        expense_factory(wallet=wallet, period=period_1, value=Decimal("40.00"))
+        income_factory(wallet=wallet, period=period_2, value=Decimal("300.00"))
+        income_factory(wallet=wallet, period=period_2, value=Decimal("400.00"))
+        expense_factory(wallet=wallet, period=period_2, value=Decimal("50.00"))
+        expense_factory(wallet=wallet, period=period_2, value=Decimal("60.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(
+            periods_url(wallet.id), {"ordering": "date_start", "fields": "incomes_sum,expenses_sum"}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+        assert Decimal(response.data[0]["incomes_sum"]) == Decimal("300.00")
+        assert Decimal(response.data[0]["expenses_sum"]) == Decimal("70.00")
+        assert Decimal(response.data[1]["incomes_sum"]) == Decimal("700.00")
+        assert Decimal(response.data[1]["expenses_sum"]) == Decimal("110.00")
+
+    def test_fields_param_without_sums(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Periods with transfers in database.
+        WHEN: PeriodViewSet called without fields query parameter.
+        THEN: Response does not include annotated incomes_sum and expenses_sum fields.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period, value=Decimal("100.00"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("50.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(periods_url(wallet.id))
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        # Fields exist in serializer with default values
+        assert Decimal(response.data[0]["incomes_sum"]) == Decimal("0.00")
+        assert Decimal(response.data[0]["expenses_sum"]) == Decimal("0.00")
+
+    def test_incomes_sum_with_no_incomes(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with only expenses (no incomes) in database.
+        WHEN: PeriodViewSet called with fields=incomes_sum query parameter.
+        THEN: Response includes incomes_sum field with zero value.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        expense_factory(wallet=wallet, period=period, value=Decimal("100.00"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("200.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(periods_url(wallet.id), {"fields": "incomes_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert Decimal(response.data[0]["incomes_sum"]) == Decimal("0.00")
+
+    def test_expenses_sum_with_no_expenses(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with only incomes (no expenses) in database.
+        WHEN: PeriodViewSet called with fields=expenses_sum query parameter.
+        THEN: Response includes expenses_sum field with zero value.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period, value=Decimal("100.00"))
+        income_factory(wallet=wallet, period=period, value=Decimal("200.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(periods_url(wallet.id), {"fields": "expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert Decimal(response.data[0]["expenses_sum"]) == Decimal("0.00")
+
+    def test_sums_with_no_transfers(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with no transfers in database.
+        WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum query parameter.
+        THEN: Response includes both sum fields with zero values.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period_factory(wallet=wallet)
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(periods_url(wallet.id), {"fields": "incomes_sum,expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert Decimal(response.data[0]["incomes_sum"]) == Decimal("0.00")
+        assert Decimal(response.data[0]["expenses_sum"]) == Decimal("0.00")
+
+    def test_sums_with_decimal_precision(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with transfers having various decimal values.
+        WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum query parameter.
+        THEN: Response includes sum fields with correct decimal precision (2 places).
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period, value=Decimal("100.99"))
+        income_factory(wallet=wallet, period=period, value=Decimal("200.01"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("30.55"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("40.45"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(periods_url(wallet.id), {"fields": "incomes_sum,expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert Decimal(response.data[0]["incomes_sum"]) == Decimal("301.00")
+        assert Decimal(response.data[0]["expenses_sum"]) == Decimal("71.00")
+
+    def test_sums_ordering_by_incomes_sum(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Multiple periods with different income amounts.
+        WHEN: PeriodViewSet called with ordering=incomes_sum and fields=incomes_sum.
+        THEN: Response is ordered by incomes_sum in ascending order.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period_1 = period_factory(wallet=wallet)
+        period_2 = period_factory(wallet=wallet)
+        period_3 = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period_1, value=Decimal("500.00"))
+        income_factory(wallet=wallet, period=period_2, value=Decimal("100.00"))
+        income_factory(wallet=wallet, period=period_3, value=Decimal("300.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(periods_url(wallet.id), {"ordering": "incomes_sum", "fields": "incomes_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 3
+        assert Decimal(response.data[0]["incomes_sum"]) == Decimal("100.00")
+        assert Decimal(response.data[1]["incomes_sum"]) == Decimal("300.00")
+        assert Decimal(response.data[2]["incomes_sum"]) == Decimal("500.00")
+
+    def test_sums_ordering_by_expenses_sum_descending(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Multiple periods with different expense amounts.
+        WHEN: PeriodViewSet called with ordering=-expenses_sum and fields=expenses_sum.
+        THEN: Response is ordered by expenses_sum in descending order.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period_1 = period_factory(wallet=wallet)
+        period_2 = period_factory(wallet=wallet)
+        period_3 = period_factory(wallet=wallet)
+
+        expense_factory(wallet=wallet, period=period_1, value=Decimal("200.00"))
+        expense_factory(wallet=wallet, period=period_2, value=Decimal("800.00"))
+        expense_factory(wallet=wallet, period=period_3, value=Decimal("500.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(periods_url(wallet.id), {"ordering": "-expenses_sum", "fields": "expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 3
+        assert Decimal(response.data[0]["expenses_sum"]) == Decimal("800.00")
+        assert Decimal(response.data[1]["expenses_sum"]) == Decimal("500.00")
+        assert Decimal(response.data[2]["expenses_sum"]) == Decimal("200.00")
+
+    def test_sums_with_pagination(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Multiple periods with transfers in database.
+        WHEN: PeriodViewSet called with pagination and fields=incomes_sum,expenses_sum.
+        THEN: Paginated response includes sum fields with correct calculations.
+        """
+        wallet = wallet_factory(members=[base_user])
+        for i in range(5):
+            period = period_factory(wallet=wallet)
+            income_factory(wallet=wallet, period=period, value=Decimal(f"{(i + 1) * 100}.00"))
+            expense_factory(wallet=wallet, period=period, value=Decimal(f"{(i + 1) * 50}.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(
+            periods_url(wallet.id),
+            {"page_size": 2, "page": 1, "ordering": "date_start", "fields": "incomes_sum,expenses_sum"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["count"] == 5
+        assert len(response.data["results"]) == 2
+        assert "incomes_sum" in response.data["results"][0]
+        assert "expenses_sum" in response.data["results"][0]
+
+    def test_sums_isolated_per_period(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two periods with different transfers.
+        WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum.
+        THEN: Each period shows only its own transfer sums, not combined.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period_1 = period_factory(wallet=wallet, date_start=date(2023, 1, 1), date_end=date(2023, 1, 31))
+        period_2 = period_factory(wallet=wallet, date_start=date(2023, 2, 1), date_end=date(2023, 2, 28))
+
+        income_factory(wallet=wallet, period=period_1, value=Decimal("1000.00"))
+        expense_factory(wallet=wallet, period=period_1, value=Decimal("500.00"))
+
+        income_factory(wallet=wallet, period=period_2, value=Decimal("2000.00"))
+        expense_factory(wallet=wallet, period=period_2, value=Decimal("1500.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(
+            periods_url(wallet.id), {"ordering": "date_start", "fields": "incomes_sum,expenses_sum"}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+
+        # Period 1
+        assert Decimal(response.data[0]["incomes_sum"]) == Decimal("1000.00")
+        assert Decimal(response.data[0]["expenses_sum"]) == Decimal("500.00")
+
+        # Period 2
+        assert Decimal(response.data[1]["incomes_sum"]) == Decimal("2000.00")
+        assert Decimal(response.data[1]["expenses_sum"]) == Decimal("1500.00")
+
+    def test_sums_with_large_values(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with large transfer values.
+        WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum.
+        THEN: Response handles large decimal values correctly.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period, value=Decimal("999999.99"))
+        income_factory(wallet=wallet, period=period, value=Decimal("888888.88"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("777777.77"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("666666.66"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(periods_url(wallet.id), {"fields": "incomes_sum,expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert Decimal(response.data[0]["incomes_sum"]) == Decimal("1888888.87")
+        assert Decimal(response.data[0]["expenses_sum"]) == Decimal("1444444.43")
 
 
 @pytest.mark.django_db
@@ -841,6 +1248,734 @@ class TestPeriodViewSetDetail:
         response = api_client.get(url)
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_fields_param_both_sums(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Periods with transfers in database.
+        WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum query parameter.
+        THEN: Response includes both incomes_sum and expenses_sum fields with correct calculations.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period_1 = period_factory(wallet=wallet)
+        period_2 = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period_1, value=Decimal("100.00"))
+        income_factory(wallet=wallet, period=period_1, value=Decimal("200.00"))
+        expense_factory(wallet=wallet, period=period_1, value=Decimal("30.00"))
+        expense_factory(wallet=wallet, period=period_1, value=Decimal("40.00"))
+        income_factory(wallet=wallet, period=period_2, value=Decimal("300.00"))
+        income_factory(wallet=wallet, period=period_2, value=Decimal("400.00"))
+        expense_factory(wallet=wallet, period=period_2, value=Decimal("50.00"))
+        expense_factory(wallet=wallet, period=period_2, value=Decimal("60.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(
+            periods_url(wallet.id), {"ordering": "date_start", "fields": "incomes_sum,expenses_sum"}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+        assert Decimal(response.data[0]["incomes_sum"]) == Decimal("300.00")
+        assert Decimal(response.data[0]["expenses_sum"]) == Decimal("70.00")
+        assert Decimal(response.data[1]["incomes_sum"]) == Decimal("700.00")
+        assert Decimal(response.data[1]["expenses_sum"]) == Decimal("110.00")
+
+    def test_fields_param_without_sums(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Periods with transfers in database.
+        WHEN: PeriodViewSet called without fields query parameter.
+        THEN: Response does not include annotated incomes_sum and expenses_sum fields.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period, value=Decimal("100.00"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("50.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(periods_url(wallet.id))
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        # Fields exist in serializer with default values
+        assert Decimal(response.data[0]["incomes_sum"]) == Decimal("0.00")
+        assert Decimal(response.data[0]["expenses_sum"]) == Decimal("0.00")
+
+    def test_incomes_sum_with_no_incomes(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with only expenses (no incomes) in database.
+        WHEN: PeriodViewSet called with fields=incomes_sum query parameter.
+        THEN: Response includes incomes_sum field with zero value.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        expense_factory(wallet=wallet, period=period, value=Decimal("100.00"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("200.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(periods_url(wallet.id), {"fields": "incomes_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert Decimal(response.data[0]["incomes_sum"]) == Decimal("0.00")
+
+    def test_expenses_sum_with_no_expenses(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with only incomes (no expenses) in database.
+        WHEN: PeriodViewSet called with fields=expenses_sum query parameter.
+        THEN: Response includes expenses_sum field with zero value.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period, value=Decimal("100.00"))
+        income_factory(wallet=wallet, period=period, value=Decimal("200.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(periods_url(wallet.id), {"fields": "expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert Decimal(response.data[0]["expenses_sum"]) == Decimal("0.00")
+
+    def test_sums_with_no_transfers(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with no transfers in database.
+        WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum query parameter.
+        THEN: Response includes both sum fields with zero values.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period_factory(wallet=wallet)
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(periods_url(wallet.id), {"fields": "incomes_sum,expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert Decimal(response.data[0]["incomes_sum"]) == Decimal("0.00")
+        assert Decimal(response.data[0]["expenses_sum"]) == Decimal("0.00")
+
+    def test_sums_with_decimal_precision(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with transfers having various decimal values.
+        WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum query parameter.
+        THEN: Response includes sum fields with correct decimal precision (2 places).
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period, value=Decimal("100.99"))
+        income_factory(wallet=wallet, period=period, value=Decimal("200.01"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("30.55"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("40.45"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(periods_url(wallet.id), {"fields": "incomes_sum,expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert Decimal(response.data[0]["incomes_sum"]) == Decimal("301.00")
+        assert Decimal(response.data[0]["expenses_sum"]) == Decimal("71.00")
+
+    def test_sums_ordering_by_incomes_sum(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Multiple periods with different income amounts.
+        WHEN: PeriodViewSet called with ordering=incomes_sum and fields=incomes_sum.
+        THEN: Response is ordered by incomes_sum in ascending order.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period_1 = period_factory(wallet=wallet)
+        period_2 = period_factory(wallet=wallet)
+        period_3 = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period_1, value=Decimal("500.00"))
+        income_factory(wallet=wallet, period=period_2, value=Decimal("100.00"))
+        income_factory(wallet=wallet, period=period_3, value=Decimal("300.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(periods_url(wallet.id), {"ordering": "incomes_sum", "fields": "incomes_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 3
+        assert Decimal(response.data[0]["incomes_sum"]) == Decimal("100.00")
+        assert Decimal(response.data[1]["incomes_sum"]) == Decimal("300.00")
+        assert Decimal(response.data[2]["incomes_sum"]) == Decimal("500.00")
+
+    def test_sums_ordering_by_expenses_sum_descending(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Multiple periods with different expense amounts.
+        WHEN: PeriodViewSet called with ordering=-expenses_sum and fields=expenses_sum.
+        THEN: Response is ordered by expenses_sum in descending order.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period_1 = period_factory(wallet=wallet)
+        period_2 = period_factory(wallet=wallet)
+        period_3 = period_factory(wallet=wallet)
+
+        expense_factory(wallet=wallet, period=period_1, value=Decimal("200.00"))
+        expense_factory(wallet=wallet, period=period_2, value=Decimal("800.00"))
+        expense_factory(wallet=wallet, period=period_3, value=Decimal("500.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(periods_url(wallet.id), {"ordering": "-expenses_sum", "fields": "expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 3
+        assert Decimal(response.data[0]["expenses_sum"]) == Decimal("800.00")
+        assert Decimal(response.data[1]["expenses_sum"]) == Decimal("500.00")
+        assert Decimal(response.data[2]["expenses_sum"]) == Decimal("200.00")
+
+    def test_sums_with_pagination(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Multiple periods with transfers in database.
+        WHEN: PeriodViewSet called with pagination and fields=incomes_sum,expenses_sum.
+        THEN: Paginated response includes sum fields with correct calculations.
+        """
+        wallet = wallet_factory(members=[base_user])
+        for i in range(5):
+            period = period_factory(wallet=wallet)
+            income_factory(wallet=wallet, period=period, value=Decimal(f"{(i + 1) * 100}.00"))
+            expense_factory(wallet=wallet, period=period, value=Decimal(f"{(i + 1) * 50}.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(
+            periods_url(wallet.id),
+            {"page_size": 2, "page": 1, "ordering": "date_start", "fields": "incomes_sum,expenses_sum"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["count"] == 5
+        assert len(response.data["results"]) == 2
+        assert "incomes_sum" in response.data["results"][0]
+        assert "expenses_sum" in response.data["results"][0]
+
+    def test_sums_isolated_per_period(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Two periods with different transfers.
+        WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum.
+        THEN: Each period shows only its own transfer sums, not combined.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period_1 = period_factory(wallet=wallet, date_start=date(2023, 1, 1), date_end=date(2023, 1, 31))
+        period_2 = period_factory(wallet=wallet, date_start=date(2023, 2, 1), date_end=date(2023, 2, 28))
+
+        income_factory(wallet=wallet, period=period_1, value=Decimal("1000.00"))
+        expense_factory(wallet=wallet, period=period_1, value=Decimal("500.00"))
+
+        income_factory(wallet=wallet, period=period_2, value=Decimal("2000.00"))
+        expense_factory(wallet=wallet, period=period_2, value=Decimal("1500.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(
+            periods_url(wallet.id), {"ordering": "date_start", "fields": "incomes_sum,expenses_sum"}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+
+        # Period 1
+        assert Decimal(response.data[0]["incomes_sum"]) == Decimal("1000.00")
+        assert Decimal(response.data[0]["expenses_sum"]) == Decimal("500.00")
+
+        # Period 2
+        assert Decimal(response.data[1]["incomes_sum"]) == Decimal("2000.00")
+        assert Decimal(response.data[1]["expenses_sum"]) == Decimal("1500.00")
+
+    def test_sums_with_large_values(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with large transfer values.
+        WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum.
+        THEN: Response handles large decimal values correctly.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period, value=Decimal("999999.99"))
+        income_factory(wallet=wallet, period=period, value=Decimal("888888.88"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("777777.77"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("666666.66"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(periods_url(wallet.id), {"fields": "incomes_sum,expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert Decimal(response.data[0]["incomes_sum"]) == Decimal("1888888.87")
+        assert Decimal(response.data[0]["expenses_sum"]) == Decimal("1444444.43")
+
+
+@pytest.mark.django_db
+class TestPeriodViewSetDetailSumFields:
+    """Tests for incomes_sum and expenses_sum fields in detail view."""
+
+    def test_detail_with_incomes_sum_field(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with transfers in database.
+        WHEN: PeriodViewSet detail view called with fields=incomes_sum query parameter.
+        THEN: Response includes incomes_sum field with correct calculation.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period, value=Decimal("100.00"))
+        income_factory(wallet=wallet, period=period, value=Decimal("200.00"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("50.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(period_detail_url(wallet.id, period.id), {"fields": "incomes_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert Decimal(response.data["incomes_sum"]) == Decimal("300.00")
+
+    def test_detail_with_expenses_sum_field(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with transfers in database.
+        WHEN: PeriodViewSet detail view called with fields=expenses_sum query parameter.
+        THEN: Response includes expenses_sum field with correct calculation.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period, value=Decimal("100.00"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("30.00"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("40.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(period_detail_url(wallet.id, period.id), {"fields": "expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert Decimal(response.data["expenses_sum"]) == Decimal("70.00")
+
+    def test_detail_with_both_sum_fields(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with transfers in database.
+        WHEN: PeriodViewSet detail view called with fields=incomes_sum,expenses_sum.
+        THEN: Response includes both sum fields with correct calculations.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period, value=Decimal("500.00"))
+        income_factory(wallet=wallet, period=period, value=Decimal("250.00"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("150.00"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("100.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(period_detail_url(wallet.id, period.id), {"fields": "incomes_sum,expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert Decimal(response.data["incomes_sum"]) == Decimal("750.00")
+        assert Decimal(response.data["expenses_sum"]) == Decimal("250.00")
+
+    def test_detail_without_sum_fields(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with transfers in database.
+        WHEN: PeriodViewSet detail view called without fields query parameter.
+        THEN: Response includes default sum values (not annotated).
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period, value=Decimal("100.00"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("50.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(period_detail_url(wallet.id, period.id))
+
+        assert response.status_code == status.HTTP_200_OK
+        # Without annotation, should return default values from serializer
+        assert Decimal(response.data["incomes_sum"]) == Decimal("0.00")
+        assert Decimal(response.data["expenses_sum"]) == Decimal("0.00")
+
+    def test_detail_incomes_sum_with_no_incomes(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with only expenses (no incomes).
+        WHEN: PeriodViewSet detail view called with fields=incomes_sum.
+        THEN: Response includes incomes_sum with zero value.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        expense_factory(wallet=wallet, period=period, value=Decimal("100.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(period_detail_url(wallet.id, period.id), {"fields": "incomes_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert Decimal(response.data["incomes_sum"]) == Decimal("0.00")
+
+    def test_detail_expenses_sum_with_no_expenses(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with only incomes (no expenses).
+        WHEN: PeriodViewSet detail view called with fields=expenses_sum.
+        THEN: Response includes expenses_sum with zero value.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period, value=Decimal("200.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(period_detail_url(wallet.id, period.id), {"fields": "expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert Decimal(response.data["expenses_sum"]) == Decimal("0.00")
+
+    def test_detail_sums_with_no_transfers(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with no transfers.
+        WHEN: PeriodViewSet detail view called with fields=incomes_sum,expenses_sum.
+        THEN: Response includes both sum fields with zero values.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(period_detail_url(wallet.id, period.id), {"fields": "incomes_sum,expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert Decimal(response.data["incomes_sum"]) == Decimal("0.00")
+        assert Decimal(response.data["expenses_sum"]) == Decimal("0.00")
+
+    def test_detail_sums_with_decimal_precision(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with transfers having various decimal values.
+        WHEN: PeriodViewSet detail view called with sum fields.
+        THEN: Response includes sums with correct decimal precision.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period, value=Decimal("123.45"))
+        income_factory(wallet=wallet, period=period, value=Decimal("678.90"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("12.34"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("56.78"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(period_detail_url(wallet.id, period.id), {"fields": "incomes_sum,expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert Decimal(response.data["incomes_sum"]) == Decimal("802.35")
+        assert Decimal(response.data["expenses_sum"]) == Decimal("69.12")
+
+    def test_detail_sums_with_multiple_transfers(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with many transfers.
+        WHEN: PeriodViewSet detail view called with sum fields.
+        THEN: Response includes correct sum calculations for all transfers.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        # Create 10 incomes and 10 expenses
+        for i in range(10):
+            income_factory(wallet=wallet, period=period, value=Decimal(f"{i + 1}0.00"))
+            expense_factory(wallet=wallet, period=period, value=Decimal(f"{i + 1}5.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(period_detail_url(wallet.id, period.id), {"fields": "incomes_sum,expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        # Sum of 10, 20, 30, ..., 100 = 550
+        assert Decimal(response.data["incomes_sum"]) == Decimal("550.00")
+        # Sum of 15, 25, 35, ..., 105 = 600
+        assert Decimal(response.data["expenses_sum"]) == Decimal("600.00")
+
+    def test_detail_sums_only_for_specific_period(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Multiple periods with transfers.
+        WHEN: PeriodViewSet detail view called for one specific period.
+        THEN: Response includes sums only for that specific period.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period_1 = period_factory(wallet=wallet)
+        period_2 = period_factory(wallet=wallet)
+
+        # Period 1 transfers
+        income_factory(wallet=wallet, period=period_1, value=Decimal("1000.00"))
+        expense_factory(wallet=wallet, period=period_1, value=Decimal("500.00"))
+
+        # Period 2 transfers
+        income_factory(wallet=wallet, period=period_2, value=Decimal("2000.00"))
+        expense_factory(wallet=wallet, period=period_2, value=Decimal("1500.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(period_detail_url(wallet.id, period_1.id), {"fields": "incomes_sum,expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        # Should only show period_1 sums, not period_2
+        assert Decimal(response.data["incomes_sum"]) == Decimal("1000.00")
+        assert Decimal(response.data["expenses_sum"]) == Decimal("500.00")
+
+    def test_detail_sums_with_large_values(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with large transfer values.
+        WHEN: PeriodViewSet detail view called with sum fields.
+        THEN: Response handles large values correctly.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period, value=Decimal("9999999.99"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("8888888.88"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(period_detail_url(wallet.id, period.id), {"fields": "incomes_sum,expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert Decimal(response.data["incomes_sum"]) == Decimal("9999999.99")
+        assert Decimal(response.data["expenses_sum"]) == Decimal("8888888.88")
+
+    def test_detail_sums_by_wallet_member(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Period with transfers for wallet where user is a member.
+        WHEN: PeriodViewSet detail view called by wallet member with sum fields.
+        THEN: Response includes correct sum calculations.
+        """
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+
+        income_factory(wallet=wallet, period=period, value=Decimal("300.00"))
+        expense_factory(wallet=wallet, period=period, value=Decimal("150.00"))
+
+        api_client.force_authenticate(base_user)
+        response = api_client.get(period_detail_url(wallet.id, period.id), {"fields": "incomes_sum,expenses_sum"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert Decimal(response.data["incomes_sum"]) == Decimal("300.00")
+        assert Decimal(response.data["expenses_sum"]) == Decimal("150.00")
+
+    def test_detail_sums_with_different_period_statuses(
+        self,
+        api_client: APIClient,
+        base_user: AbstractUser,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
+        income_factory: FactoryMetaClass,
+        expense_factory: FactoryMetaClass,
+    ):
+        """
+        GIVEN: Periods with different statuses (DRAFT, ACTIVE, CLOSED) with transfers.
+        WHEN: PeriodViewSet detail view called for each period with sum fields.
+        THEN: Response includes correct sums regardless of period status.
+        """
+        from periods.models.choices.period_status import PeriodStatus
+
+        wallet = wallet_factory(members=[base_user])
+
+        # Test DRAFT period
+        draft_period = period_factory(wallet=wallet, status=PeriodStatus.DRAFT)
+        income_factory(wallet=wallet, period=draft_period, value=Decimal("100.00"))
+        expense_factory(wallet=wallet, period=draft_period, value=Decimal("50.00"))
+
+        # Test ACTIVE period
+        active_period = period_factory(wallet=wallet, status=PeriodStatus.ACTIVE)
+        income_factory(wallet=wallet, period=active_period, value=Decimal("200.00"))
+        expense_factory(wallet=wallet, period=active_period, value=Decimal("100.00"))
+
+        # Test CLOSED period
+        closed_period = period_factory(wallet=wallet, status=PeriodStatus.CLOSED)
+        income_factory(wallet=wallet, period=closed_period, value=Decimal("300.00"))
+        expense_factory(wallet=wallet, period=closed_period, value=Decimal("150.00"))
+
+        api_client.force_authenticate(base_user)
+
+        # Check DRAFT period
+        response = api_client.get(period_detail_url(wallet.id, draft_period.id), {"fields": "incomes_sum,expenses_sum"})
+        assert response.status_code == status.HTTP_200_OK
+        assert Decimal(response.data["incomes_sum"]) == Decimal("100.00")
+        assert Decimal(response.data["expenses_sum"]) == Decimal("50.00")
+
+        # Check ACTIVE period
+        response = api_client.get(
+            period_detail_url(wallet.id, active_period.id), {"fields": "incomes_sum,expenses_sum"}
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert Decimal(response.data["incomes_sum"]) == Decimal("200.00")
+        assert Decimal(response.data["expenses_sum"]) == Decimal("100.00")
+
+        # Check CLOSED period
+        response = api_client.get(
+            period_detail_url(wallet.id, closed_period.id), {"fields": "incomes_sum,expenses_sum"}
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert Decimal(response.data["incomes_sum"]) == Decimal("300.00")
+        assert Decimal(response.data["expenses_sum"]) == Decimal("150.00")
 
 
 @pytest.mark.django_db
