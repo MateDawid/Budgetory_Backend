@@ -1,8 +1,8 @@
 import random
 
 import factory.fuzzy
-from budgets_tests.factories import BudgetFactory
 from entities_tests.factories import DepositFactory
+from wallets_tests.factories import WalletFactory
 
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
@@ -22,7 +22,7 @@ class TransferCategoryFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "categories.TransferCategory"
 
-    budget = factory.SubFactory(BudgetFactory)
+    wallet = factory.SubFactory(WalletFactory)
     name = factory.Faker("text", max_nb_chars=128)
     description = factory.Faker("text", max_nb_chars=255)
     is_active = factory.Faker("boolean")
@@ -33,12 +33,12 @@ class TransferCategoryFactory(factory.django.DjangoModelFactory):
         Creates Deposit if not passed to factory.
 
         Returns:
-            Deposit: Deposit instance for Budget.
+            Deposit: Deposit instance for Wallet.
         """
-        budget = self._Resolver__step.builder.extras.get("budget")
-        if not budget:
-            budget = self.budget
-        return DepositFactory(budget=budget)
+        wallet = self._Resolver__step.builder.extras.get("wallet")
+        if not wallet:
+            wallet = self.wallet
+        return DepositFactory(wallet=wallet)
 
     @factory.lazy_attribute
     def category_type(self, *args) -> CategoryType:

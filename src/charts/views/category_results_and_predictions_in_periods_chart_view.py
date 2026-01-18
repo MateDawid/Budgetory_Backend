@@ -8,8 +8,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from app_infrastructure.permissions import UserBelongsToBudgetPermission
-from budgets.models import BudgetingPeriod
+from app_infrastructure.permissions import UserBelongsToWalletPermission
+from periods.models import Period
 from predictions.models import ExpensePrediction
 from transfers.models import Transfer
 
@@ -78,16 +78,16 @@ class CategoryResultsAndPredictionsInPeriodsChartApiView(APIView):
 
     permission_classes = (
         IsAuthenticated,
-        UserBelongsToBudgetPermission,
+        UserBelongsToWalletPermission,
     )
 
-    def get(self, request: Request, budget_pk: int) -> Response:
+    def get(self, request: Request, wallet_pk: int) -> Response:
         """
         Handle GET requests for Period Transfers chart data.
 
         Args:
             request (Request): User Request.
-            budget_pk (int): Budget PK.
+            wallet_pk (int): Wallet PK.
 
         Returns:
             Response: JSON response containing chart data with xAxis (period names),
@@ -106,7 +106,7 @@ class CategoryResultsAndPredictionsInPeriodsChartApiView(APIView):
 
         # Database query
         queryset_fields = ["name"]
-        periods = BudgetingPeriod.objects.filter(budget_id=budget_pk).order_by("-date_start")
+        periods = Period.objects.filter(wallet_id=wallet_pk).order_by("-date_start")
         get_results = partial(get_period_transfers_sum_in_category, category_id=category_id)
         get_predictions = partial(get_period_predictions_for_category, category_id=category_id)
         if display_value == str(DisplayValueChoices.RESULTS.value):

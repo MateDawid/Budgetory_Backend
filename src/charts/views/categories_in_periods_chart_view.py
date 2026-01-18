@@ -8,22 +8,22 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from app_infrastructure.permissions import UserBelongsToBudgetPermission
+from app_infrastructure.permissions import UserBelongsToWalletPermission
 from categories.models import TransferCategory
 from categories.models.choices.category_type import CategoryType
 from charts.views.utils import generate_rgba_value, get_periods
 from transfers.models import Transfer
 
 
-def get_categories(budget_pk: int, category_id: str, category_type: str, deposit_id: str) -> list[dict[str, Any]]:
+def get_categories(wallet_pk: int, category_id: str, category_type: str, deposit_id: str) -> list[dict[str, Any]]:
     """
-    Retrieve categories for a specific budget with optional filtering.
+    Retrieve categories for a specific wallet with optional filtering.
 
-    Filters categories based on budget ID or specific category ID
+    Filters categories based on wallet ID or specific category ID
     from the query parameters. Results are ordered by priority and name for consistent output.
 
     Args:
-        budget_pk (int): Primary key of the budget to filter categories for
+        wallet_pk (int): Primary key of the wallet to filter categories for
         category_id (str): Specific category ID to filter by
         category_type (str): Category type (Expense or Income)
         deposit_id (str): Deposit ID to filter by
@@ -33,7 +33,7 @@ def get_categories(budget_pk: int, category_id: str, category_type: str, deposit
             - pk: Category primary key
             - name: Category name
     """
-    query_filters: dict = {"budget_id": budget_pk}
+    query_filters: dict = {"wallet_id": wallet_pk}
     if category_id:
         query_filters["id"] = category_id
     if category_type:
@@ -77,13 +77,13 @@ def get_chart_data(
 
 
 def get_categories_transfers_sums_in_period(
-    budget_pk: int, categories_ids: list[int], period: dict
+    wallet_pk: int, categories_ids: list[int], period: dict
 ) -> dict[int, float]:
     """
     Calculates passed transfer categories sum of specified in given period.
 
     Args:
-        budget_pk (int): Primary key of the budget to filter categories for
+        wallet_pk (int): Primary key of the wallet to filter categories for
         categories_ids (list[int]): List of TransferCategory IDs
         period (dict): Period data
 
@@ -91,7 +91,7 @@ def get_categories_transfers_sums_in_period(
         dict[int, float]: Dict containing category id as a key and category result as the value.
     """
     period_results = (
-        Transfer.objects.filter(category_id__in=categories_ids, period__budget_id=budget_pk, period_id=period["pk"])
+        Transfer.objects.filter(category_id__in=categories_ids, period__wallet_id=wallet_pk, period_id=period["pk"])
         .values("category_id")
         .annotate(
             result=Coalesce(
@@ -110,7 +110,7 @@ class CategoriesInPeriodsChartAPIView(APIView):
 
     Permissions:
         - User must be authenticated
-        - User must belong to the specified budget
+        - User must belong to the specified wallet
 
     Query Parameters:
         - period_from (optional): Starting period ID for date range filtering
@@ -126,10 +126,10 @@ class CategoriesInPeriodsChartAPIView(APIView):
 
     permission_classes = (
         IsAuthenticated,
-        UserBelongsToBudgetPermission,
+        UserBelongsToWalletPermission,
     )
 
-    def get(self, request: Request, budget_pk: int, **kwargs: dict[str, Any]) -> Response:
+    def get(self, request: Request, wallet_pk: int, **kwargs: dict[str, Any]) -> Response:
         """
         Handle GET requests for category balance results.
 
@@ -139,7 +139,7 @@ class CategoriesInPeriodsChartAPIView(APIView):
 
         Args:
             request (Request): DRF request object containing query parameters
-            budget_pk (int): Primary key of the budget to analyze
+            wallet_pk (int): Primary key of the wallet to analyze
             **kwargs (dict[str, Any]): Additional keyword arguments from URL routing
 
         Returns:
@@ -147,13 +147,13 @@ class CategoriesInPeriodsChartAPIView(APIView):
                      and series (category balance data with colors)
         """
         # Filter out periods
-        periods = get_periods(budget_pk=budget_pk, query_params=request.query_params)
+        periods = get_periods(wallet_pk=wallet_pk, query_params=request.query_params)
         if not periods:
             return Response({"xAxis": [], "series": []})
         # Filter out categories
         category_type = request.query_params.get("category_type")
         categories = get_categories(
-            budget_pk=budget_pk,
+            wallet_pk=wallet_pk,
             category_id=request.query_params.get("category"),
             category_type=category_type,
             deposit_id=request.query_params.get("deposit"),
@@ -163,7 +163,7 @@ class CategoriesInPeriodsChartAPIView(APIView):
         # Prepare service for chart data generation
         chart_data_service = partial(
             get_categories_transfers_sums_in_period,
-            budget_pk=budget_pk,
+            wallet_pk=wallet_pk,
             categories_ids=[category["pk"] for category in categories],
         )
 

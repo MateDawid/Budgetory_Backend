@@ -1,23 +1,25 @@
-from collections import OrderedDict
-
-from rest_framework import serializers
+from rest_flex_fields import FlexFieldsModelSerializer
 from rest_framework.exceptions import ValidationError
+from rest_framework.fields import CharField, IntegerField
 
 from entities.models import Deposit
 from entities.models.entity_model import Entity
 
 
-class EntitySerializer(serializers.ModelSerializer):
+class EntitySerializer(FlexFieldsModelSerializer):
     """Serializer for Entity."""
+
+    value = IntegerField(source="id", read_only=True, help_text="Field for React MUI select fields choice value.")
+    label = CharField(source="name", read_only=True, help_text="Field for React MUI select fields choice label.")
 
     class Meta:
         model = Entity
-        fields = ["id", "name", "description", "is_active", "is_deposit"]
-        read_only_fields = ["id"]
+        fields = ["id", "name", "description", "is_active", "is_deposit", "value", "label"]
+        read_only_fields = ["id", "value", "label"]
 
     def validate_name(self, name: str):
         """
-        Checks if Entity with given name exists in Budget already.
+        Checks if Entity with given name exists in Wallet already.
 
         Args:
             name: Name of Entity.
@@ -26,11 +28,11 @@ class EntitySerializer(serializers.ModelSerializer):
             str: Validated name of Entity.
 
         Raises:
-            ValidationError: Raised if Entity with given name exists in Budget already.
+            ValidationError: Raised if Entity with given name exists in Wallet already.
         """
         if (
             self.Meta.model.objects.filter(
-                budget=self.context["view"].kwargs["budget_pk"],
+                wallet=self.context["view"].kwargs["wallet_pk"],
                 name__iexact=name,
                 is_deposit=self.Meta.model is Deposit,
             )
@@ -38,21 +40,6 @@ class EntitySerializer(serializers.ModelSerializer):
             .exists()
         ):
             raise ValidationError(
-                "{class_name} with given name already exists in Budget.".format(class_name=self.Meta.model.__name__)
+                "{class_name} with given name already exists in Wallet.".format(class_name=self.Meta.model.__name__)
             )
         return name
-
-    def to_representation(self, instance: Entity) -> OrderedDict:
-        """
-        Extends model representation with "value" and "label" fields for React MUI DataGrid filtering purposes.
-
-        Attributes:
-            instance [Entity]: BudgetingPeriod model instance
-
-        Returns:
-            OrderedDict: Dictionary containing overridden values.
-        """
-        representation = super().to_representation(instance)
-        representation["value"] = instance.id
-        representation["label"] = instance.name
-        return representation

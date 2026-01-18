@@ -5,12 +5,12 @@ from categories.models.choices.category_type import CategoryType
 from transfers.models import Transfer
 
 
-def get_deposits_balance_in_period(budget_pk: int, deposit_ids: list[int], period: dict) -> dict[int, float]:
+def get_deposits_balance_in_period(wallet_pk: int, deposit_ids: list[int], period: dict) -> dict[int, float]:
     """
     Calculates passed deposits balances at the end of period.
 
     Args:
-        budget_pk (int): Primary key of the budget to filter deposits for
+        wallet_pk (int): Primary key of the wallet to filter deposits for
         deposit_ids (list[int]): List of deposit IDs
         period (dict): Period data
 
@@ -19,7 +19,7 @@ def get_deposits_balance_in_period(budget_pk: int, deposit_ids: list[int], perio
     """
     period_balances = (
         Transfer.objects.filter(
-            deposit_id__in=deposit_ids, period__budget_id=budget_pk, period__date_end__lte=period["date_end"]
+            deposit_id__in=deposit_ids, period__wallet_id=wallet_pk, period__date_end__lte=period["date_end"]
         )
         .values("deposit_id")
         .annotate(

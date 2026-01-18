@@ -2,14 +2,16 @@ import random
 from datetime import date, timedelta
 
 import factory.fuzzy
-from budgets_tests.factories import BudgetFactory, BudgetingPeriodFactory
 from categories_tests.factories import TransferCategoryFactory
 from entities_tests.factories import DepositFactory, EntityFactory
+from periods_tests.factories import PeriodFactory
+from wallets_tests.factories import WalletFactory
 
-from budgets.models import Budget, BudgetingPeriod
 from categories.models import TransferCategory
 from categories.models.choices.category_type import CategoryType
 from entities.models import Deposit, Entity
+from periods.models import Period
+from wallets.models import Wallet
 
 
 class TransferFactory(factory.django.DjangoModelFactory):
@@ -23,13 +25,13 @@ class TransferFactory(factory.django.DjangoModelFactory):
     value = factory.Faker("pyint", min_value=0, max_value=99999999)
 
     @factory.post_generation
-    def budget(self, create: bool, budget: Budget, **kwargs) -> None:
+    def wallet(self, create: bool, wallet: Wallet, **kwargs) -> None:
         """
-        Enables to pass "budget" as parameter to factory.
+        Enables to pass "wallet" as parameter to factory.
 
         Args:
             create [bool]: Indicates if object is created or updated.
-            budget [Budget]: Budget model instance.
+            wallet [Wallet]: Wallet model instance.
             **kwargs [dict]: Keyword arguments
         """
         pass
@@ -46,10 +48,10 @@ class TransferFactory(factory.django.DjangoModelFactory):
         if period_value:
             day = random.randint(self.period.date_start.day, self.period.date_end.day)
             return date(year=self.period.date_start.year, month=self.period.date_start.month, day=day)
-        budget = self._Resolver__step.builder.extras.get("budget")
-        if not budget:
+        wallet = self._Resolver__step.builder.extras.get("wallet")
+        if not wallet:
             return date.today()
-        last_period_dates = budget.periods.all().order_by("date_start").values("date_start", "date_end").last()
+        last_period_dates = wallet.periods.all().order_by("date_start").values("date_start", "date_end").last()
         if not last_period_dates:
             return date.today()
         last_period_date_start, last_period_date_end = last_period_dates.values()
@@ -60,24 +62,24 @@ class TransferFactory(factory.django.DjangoModelFactory):
         )
 
     @factory.lazy_attribute
-    def period(self, *args) -> BudgetingPeriod | BudgetingPeriodFactory:
+    def period(self, *args) -> Period | PeriodFactory:
         """
-        Returns BudgetingPeriod with the same Budget as prediction category.
+        Returns Period with the same Wallet as prediction category.
 
         Returns:
-            BudgetingPeriod | BudgetingPeriodFactory: BudgetingPeriod with the same Budget as category.
+            Period | PeriodFactory: Period with the same Wallet as category.
         """
-        budget = self._Resolver__step.builder.extras.get("budget")
-        if not budget:
-            budget = BudgetFactory()
+        wallet = self._Resolver__step.builder.extras.get("wallet")
+        if not wallet:
+            wallet = WalletFactory()
         date_value = self._Resolver__step.attributes.get("date")
         if not date_value:
-            return BudgetingPeriodFactory(budget=budget)
+            return PeriodFactory(wallet=wallet)
         try:
-            return BudgetingPeriod.objects.get(budget=budget, date_start__lte=date_value, date_end__gte=date_value)
-        except BudgetingPeriod.DoesNotExist:
-            return BudgetingPeriodFactory(
-                budget=budget,
+            return Period.objects.get(wallet=wallet, date_start__lte=date_value, date_end__gte=date_value)
+        except Period.DoesNotExist:
+            return PeriodFactory(
+                wallet=wallet,
                 date_start=date(year=date_value.year, month=date_value.month, day=1),
                 date_end=date(
                     year=date_value.year,
@@ -92,28 +94,28 @@ class TransferFactory(factory.django.DjangoModelFactory):
     @factory.lazy_attribute
     def entity(self, *args) -> Entity:
         """
-        Returns Entity with the same Budget as prediction period.
+        Returns Entity with the same Wallet as prediction period.
 
         Returns:
-            Entity: Entity with the same Budget as period.
+            Entity: Entity with the same Wallet as period.
         """
-        budget = self._Resolver__step.builder.extras.get("budget")
-        if not budget:
-            budget = self.period.budget
-        return random.choice([None, EntityFactory(budget=budget)])
+        wallet = self._Resolver__step.builder.extras.get("wallet")
+        if not wallet:
+            wallet = self.period.wallet
+        return random.choice([None, EntityFactory(wallet=wallet)])
 
     @factory.lazy_attribute
     def deposit(self, *args) -> Deposit:
         """
-        Returns Deposit with the same Budget as prediction period.
+        Returns Deposit with the same Wallet as prediction period.
 
         Returns:
-            Deposit: Deposit with the same Budget as period.
+            Deposit: Deposit with the same Wallet as period.
         """
-        budget = self._Resolver__step.builder.extras.get("budget")
-        if not budget:
-            budget = self.period.budget
-        return DepositFactory(budget=budget)
+        wallet = self._Resolver__step.builder.extras.get("wallet")
+        if not wallet:
+            wallet = self.period.wallet
+        return DepositFactory(wallet=wallet)
 
     @factory.lazy_attribute
     def transfer_type(self, *args) -> CategoryType:
@@ -130,15 +132,15 @@ class TransferFactory(factory.django.DjangoModelFactory):
     @factory.lazy_attribute
     def category(self, *args) -> TransferCategory:
         """
-        Returns TransferCategory with the same Budget as prediction period.
+        Returns TransferCategory with the same Wallet as prediction period.
 
         Returns:
             TransferCategory: TransferCategory value.
         """
-        budget = self._Resolver__step.builder.extras.get("budget")
-        if not budget:
-            budget = self.period.budget
-        category_kwargs = {"budget": budget, "deposit": self._Resolver__step.attributes.get("deposit")}
+        wallet = self._Resolver__step.builder.extras.get("wallet")
+        if not wallet:
+            wallet = self.period.wallet
+        category_kwargs = {"wallet": wallet, "deposit": self._Resolver__step.attributes.get("deposit")}
         if transfer_type := self._Resolver__step.attributes.get("transfer_type"):
             category_kwargs["category_type"] = transfer_type
         return random.choice([None, TransferCategoryFactory(**category_kwargs)])
@@ -153,13 +155,13 @@ class IncomeFactory(TransferFactory):
     @factory.lazy_attribute
     def category(self, *args) -> TransferCategory:
         """
-        Returns TransferCategory with the same Budget as prediction period and CategoryType.INCOME category_type value.
+        Returns TransferCategory with the same Wallet as prediction period and CategoryType.INCOME category_type value.
 
         Returns:
             TransferCategory: Generated TransferCategory.
         """
         payload = {
-            "budget": self._Resolver__step.builder.extras.get("budget") or self.period.budget,
+            "wallet": self._Resolver__step.builder.extras.get("wallet") or self.period.wallet,
             "deposit": self._Resolver__step.builder.extras.get("deposit") or self.deposit,
         }
         return random.choice([None, TransferCategoryFactory(category_type=CategoryType.INCOME, **payload)])
@@ -184,13 +186,13 @@ class ExpenseFactory(TransferFactory):
     @factory.lazy_attribute
     def category(self, *args) -> TransferCategory:
         """
-        Returns TransferCategory with the same Budget as prediction period and CategoryType.EXPENSE category_type value.
+        Returns TransferCategory with the same Wallet as prediction period and CategoryType.EXPENSE category_type value.
 
         Returns:
             TransferCategory: Generated TransferCategory.
         """
         payload = {
-            "budget": self._Resolver__step.builder.extras.get("budget") or self.period.budget,
+            "wallet": self._Resolver__step.builder.extras.get("wallet") or self.period.wallet,
             "deposit": self._Resolver__step.builder.extras.get("deposit") or self.deposit,
         }
         return random.choice([None, TransferCategoryFactory(category_type=CategoryType.EXPENSE, **payload)])

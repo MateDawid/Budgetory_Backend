@@ -12,7 +12,7 @@ class CustomAutoSchema(SwaggerAutoSchema):
 
         Args:
             operation_keys:  An array of keys derived from the path describing the hierarchical layout
-            of this view in the API; e.g. ``('budgets', 'deposits', 'list')``, etc.
+            of this view in the API; e.g. ``('wallets', 'deposits', 'list')``, etc.
 
         Returns:
             list[str]: List of tags.

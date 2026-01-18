@@ -25,14 +25,14 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = "email"
 
-    def is_budget_member(self, budget_id: str) -> bool:
+    def is_wallet_member(self, wallet_id: str) -> bool:
         """
-        Method to verify if User is member of Budget with given database ID.
+        Method to verify if User is member of Wallet with given database ID.
 
         Args:
-            budget_id [str]: Budget database id.
+            wallet_id [str]: Wallet database id.
 
         Returns:
-            bool: True if User is member of given Budget, False otherwise.
+            bool: True if User is member of given Wallet, False otherwise.
         """
-        return self.budgets.filter(pk=budget_id).exists()  # NOQA
+        return self.wallets.filter(pk=wallet_id).exists()

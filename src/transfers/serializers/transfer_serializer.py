@@ -5,9 +5,9 @@ from django.db.models import Model
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from budgets.models import BudgetingPeriod
 from categories.models import TransferCategory
 from entities.models import Deposit, Entity
+from periods.models import Period
 from transfers.models.transfer_model import Transfer
 
 
@@ -20,14 +20,14 @@ class TransferSerializer(serializers.ModelSerializer):
         read_only_fields: tuple[str] = ("id", "period")
 
     @property
-    def _budget_pk(self) -> int:
+    def _wallet_pk(self) -> int:
         """
-        Property for retrieving Budget primary key passed in URL.
+        Property for retrieving Wallet primary key passed in URL.
 
         Returns:
-            int: Budget model instance PK.
+            int: Wallet model instance PK.
         """
-        return int(getattr(self.context.get("view"), "kwargs", {}).get("budget_pk", 0))
+        return int(getattr(self.context.get("view"), "kwargs", {}).get("wallet_pk", 0))
 
     @staticmethod
     def validate_value(value: Decimal) -> Decimal:
@@ -46,7 +46,7 @@ class TransferSerializer(serializers.ModelSerializer):
 
     def validate_entity(self, entity: Entity) -> Entity:
         """
-        Checks if Entity budget field value contains the same Budget.pk as passed in URL.
+        Checks if Entity wallet field value contains the same Wallet.pk as passed in URL.
 
         Args:
             entity (Entity): Entity model instance.
@@ -55,15 +55,15 @@ class TransferSerializer(serializers.ModelSerializer):
             Entity: Validated Entity.
 
         Raises:
-            ValidationError: Raised on not matching budget_pk values.
+            ValidationError: Raised on not matching wallet_pk values.
         """
-        if entity and entity.budget.pk != self._budget_pk:
-            raise ValidationError("Entity from different Budget.")
+        if entity and entity.wallet.pk != self._wallet_pk:
+            raise ValidationError("Entity from different Wallet.")
         return entity
 
     def validate_deposit(self, deposit: Deposit) -> Deposit:
         """
-        Checks if Deposit budget field value contains the same Budget.pk as passed in URL.
+        Checks if Deposit wallet field value contains the same Wallet.pk as passed in URL.
 
         Args:
             deposit (Deposit): Deposit model instance.
@@ -72,15 +72,15 @@ class TransferSerializer(serializers.ModelSerializer):
             Deposit: Validated Deposit.
 
         Raises:
-            ValidationError: Raised on not matching budget_pk values.
+            ValidationError: Raised on not matching wallet_pk values.
         """
-        if deposit.budget.pk != self._budget_pk:
-            raise ValidationError("Deposit from different Budget.")
+        if deposit.wallet.pk != self._wallet_pk:
+            raise ValidationError("Deposit from different Wallet.")
         return deposit
 
     def validate_category(self, category: TransferCategory) -> TransferCategory:
         """
-        Checks if TransferCategory budget field value contains the same Budget.pk as passed in URL.
+        Checks if TransferCategory wallet field value contains the same Wallet.pk as passed in URL.
 
         Args:
             category (TransferCategory): TransferCategory model instance.
@@ -89,10 +89,10 @@ class TransferSerializer(serializers.ModelSerializer):
             TransferCategory: Validated TransferCategory.
 
         Raises:
-            ValidationError: Raised on not matching budget_pk values.
+            ValidationError: Raised on not matching wallet_pk values.
         """
-        if category and category.budget.pk != self._budget_pk:
-            raise ValidationError("TransferCategory from different Budget.")
+        if category and category.wallet.pk != self._wallet_pk:
+            raise ValidationError("TransferCategory from different Wallet.")
         return category
 
     def validate(self, attrs: OrderedDict) -> OrderedDict:
@@ -107,10 +107,10 @@ class TransferSerializer(serializers.ModelSerializer):
         """
         if "date" in attrs:
             try:
-                attrs["period"] = BudgetingPeriod.objects.get(
-                    budget=self._budget_pk, date_start__lte=attrs["date"], date_end__gte=attrs["date"]
+                attrs["period"] = Period.objects.get(
+                    wallet=self._wallet_pk, date_start__lte=attrs["date"], date_end__gte=attrs["date"]
                 )
-            except BudgetingPeriod.DoesNotExist:
+            except Period.DoesNotExist:
                 raise ValidationError("Period matching given date does not exist.")
         deposit = attrs.get("deposit") or getattr(self.instance, "deposit", None)
         entity = attrs.get("entity") or getattr(self.instance, "entity", None)

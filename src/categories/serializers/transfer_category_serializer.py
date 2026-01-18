@@ -37,7 +37,7 @@ class TransferCategorySerializer(serializers.ModelSerializer):
 
     def validate_deposit(self, deposit: Deposit) -> Deposit:
         """
-        Checks if Deposit Budget and Category Budget are the same.
+        Checks if Deposit Wallet and Category Wallet are the same.
 
         Args:
             deposit (Deposit): Input Deposit.
@@ -46,10 +46,10 @@ class TransferCategorySerializer(serializers.ModelSerializer):
             Deposit: Validated Deposit.
 
         Raises:
-            ValidationError: Raised when input Deposit Budget id different than request one.
+            ValidationError: Raised when input Deposit Wallet id different than request one.
         """
-        if deposit.budget.id != int(getattr(self.context.get("view"), "kwargs", {}).get("budget_pk")):
-            raise ValidationError("Deposit Budget is not the same as Category Budget.", code="deposit-budget-invalid")
+        if deposit.wallet.id != int(getattr(self.context.get("view"), "kwargs", {}).get("wallet_pk")):
+            raise ValidationError("Deposit Wallet is not the same as Category Wallet.", code="deposit-wallet-invalid")
         return deposit
 
     @staticmethod
@@ -80,10 +80,10 @@ class TransferCategorySerializer(serializers.ModelSerializer):
             attrs (OrderedDict): Input parameters.
 
         Raises:
-            ValidationError: Raised when TransferCategory name already used for specified deposit in given Budget.
+            ValidationError: Raised when TransferCategory name already used for specified deposit in given Wallet.
         """
         payload = {
-            "budget_id": getattr(self.context.get("view"), "kwargs", {}).get("budget_pk"),
+            "wallet_id": getattr(self.context.get("view"), "kwargs", {}).get("wallet_pk"),
             "name": attrs.get("name") or getattr(self.instance, "name", None),
         }
         if deposit_id := (attrs.get("deposit") or getattr(self.instance, "deposit", None)):

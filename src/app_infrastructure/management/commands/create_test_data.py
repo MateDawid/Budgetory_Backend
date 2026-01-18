@@ -10,14 +10,15 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from app_users.models import User
-from budgets.models import Budget, BudgetingPeriod
-from budgets.models.choices.period_status import PeriodStatus
 from categories.models import TransferCategory
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from entities.models import Deposit, Entity
+from periods.models import Period
+from periods.models.choices.period_status import PeriodStatus
 from predictions.models import ExpensePrediction
 from transfers.models import Expense, Income
+from wallets.models import Currency, Wallet
 
 USER_DATA = {"email": "user@budgetory.com", "username": "User", "password": "P@ssw0rd!"}
 
@@ -59,7 +60,7 @@ class Command(BaseCommand):
         try:
             user = User.objects.get(email=USER_DATA["email"])
             self.stdout.write(f"Removing {USER_DATA['email']} data from database.")
-            Budget.objects.filter(members=user).delete()
+            Wallet.objects.filter(members=user).delete()
             user.delete()
         except User.DoesNotExist:
             pass
@@ -68,43 +69,43 @@ class Command(BaseCommand):
         self.stdout.write(f"Creating User: {USER_DATA['email']}")
         return User.objects.create_user(**USER_DATA)
 
-    def create_daily_expenses_budget(self, user):
-        # Create Budget
-        self.stdout.write("Creating Budget: Daily expenses")
-        budget = Budget.objects.create(name="Daily expenses", currency="zł")
-        budget.members.add(user)
-        self.objects_ids["budget_id"] = budget.id
+    def create_daily_expenses_wallet(self, user):
+        # Create Wallet
+        self.stdout.write("Creating Wallet: Daily expenses")
+        wallet = Wallet.objects.create(name="Daily expenses", currency=Currency.objects.get(name="PLN"))
+        wallet.members.add(user)
+        self.objects_ids["wallet_id"] = wallet.id
         # Create Deposits
         self.stdout.write("Creating Deposits")
         deposit_personal = Deposit.objects.create(
-            budget_id=self.objects_ids["budget_id"],
+            wallet_id=self.objects_ids["wallet_id"],
             name="Users account",
             description="Account for personal User expenses and incomes.",
         )
         deposit_common = Deposit.objects.create(
-            budget_id=self.objects_ids["budget_id"],
+            wallet_id=self.objects_ids["wallet_id"],
             name="Common account",
             description="Account for common expenses and incomes.",
         )
         # Create Entities
         self.stdout.write("Creating Entities")
-        entity_employer = Entity.objects.create(budget=budget, name="Employer", description="Employer hiring User.")
+        entity_employer = Entity.objects.create(wallet=wallet, name="Employer", description="Employer hiring User.")
         entity_buyer = Entity.objects.create(
-            budget=budget, name="Buyer", description="Buyer of stuff that User's selling."
+            wallet=wallet, name="Buyer", description="Buyer of stuff that User's selling."
         )
         entity_food_seller = Entity.objects.create(
-            budget=budget, name="Food seller", description="Seller that sells food."
+            wallet=wallet, name="Food seller", description="Seller that sells food."
         )
         entity_bills_taker = Entity.objects.create(
-            budget=budget, name="Bills taker", description="Entity that receives bills."
+            wallet=wallet, name="Bills taker", description="Entity that receives bills."
         )
         entity_unexpected = Entity.objects.create(
-            budget=budget, name="Unexpected entity", description="Entity that charges unexpectedly."
+            wallet=wallet, name="Unexpected entity", description="Entity that charges unexpectedly."
         )
         # Create Income TransferCategories for Personal Account
         self.stdout.write("Creating Income TransferCategories for Personal Account")
         personal_income_category_salary = TransferCategory.objects.create(
-            budget=budget,
+            wallet=wallet,
             name="Salary",
             description="Monthly salary.",
             deposit=deposit_personal,
@@ -112,7 +113,7 @@ class Command(BaseCommand):
             priority=CategoryPriority.REGULAR,
         )
         personal_income_category_sell = TransferCategory.objects.create(
-            budget=budget,
+            wallet=wallet,
             name="Sell",
             description="Cash earned from selling stuff.",
             deposit=deposit_personal,
@@ -122,7 +123,7 @@ class Command(BaseCommand):
         # Create Expense TransferCategories for Personal Account
         self.stdout.write("Creating Expense TransferCategories for Personal Account")
         personal_expense_category_food = TransferCategory.objects.create(
-            budget=budget,
+            wallet=wallet,
             name="Food",
             description="Food expenses",
             deposit=deposit_personal,
@@ -130,7 +131,7 @@ class Command(BaseCommand):
             priority=CategoryPriority.MOST_IMPORTANT,
         )
         personal_expense_category_transfer_to_common_account = TransferCategory.objects.create(
-            budget=budget,
+            wallet=wallet,
             name="Transfer to Common Account",
             description="Transfer to Common Account for common monthly expenses.",
             deposit=deposit_personal,
@@ -138,7 +139,7 @@ class Command(BaseCommand):
             priority=CategoryPriority.MOST_IMPORTANT,
         )
         personal_expense_category_unexpected = TransferCategory.objects.create(
-            budget=budget,
+            wallet=wallet,
             name="Unexpected",
             description="Unexpected expenses.",
             deposit=deposit_personal,
@@ -148,7 +149,7 @@ class Command(BaseCommand):
         # Create Income TransferCategories for Common Account
         self.stdout.write("Creating Income TransferCategories for Common Account")
         common_income_category_from_user = TransferCategory.objects.create(
-            budget=budget,
+            wallet=wallet,
             name="Transfer from User",
             description="Monthly transfer from User.",
             deposit=deposit_common,
@@ -158,7 +159,7 @@ class Command(BaseCommand):
         # Create Expense TransferCategories for Common Account
         self.stdout.write("Creating Expense TransferCategories for Common Account")
         common_expense_category_bills = TransferCategory.objects.create(
-            budget=budget,
+            wallet=wallet,
             name="Bills",
             description="Bills expenses",
             deposit=deposit_common,
@@ -166,7 +167,7 @@ class Command(BaseCommand):
             priority=CategoryPriority.MOST_IMPORTANT,
         )
         common_expense_category_unexpected = TransferCategory.objects.create(
-            budget=budget,
+            wallet=wallet,
             name="Unexpected",
             description="Unexpected expenses.",
             deposit=deposit_common,
@@ -174,12 +175,12 @@ class Command(BaseCommand):
             priority=CategoryPriority.OTHERS,
         )
 
-        # Create BudgetingPeriods
-        self.stdout.write("Creating BudgetingPeriods")
-        period_2025_12 = BudgetingPeriod.objects.create(budget=budget, **PERIOD_2025_12_DATA)
-        period_2026_01 = BudgetingPeriod.objects.create(budget=budget, **PERIOD_2026_01_DATA)
-        period_2026_02 = BudgetingPeriod.objects.create(budget=budget, **PERIOD_2026_02_DATA)
-        period_2026_03 = BudgetingPeriod.objects.create(budget=budget, **PERIOD_2026_03_DATA)
+        # Create Periods
+        self.stdout.write("Creating Periods")
+        period_2025_12 = Period.objects.create(wallet=wallet, **PERIOD_2025_12_DATA)
+        period_2026_01 = Period.objects.create(wallet=wallet, **PERIOD_2026_01_DATA)
+        period_2026_02 = Period.objects.create(wallet=wallet, **PERIOD_2026_02_DATA)
+        period_2026_03 = Period.objects.create(wallet=wallet, **PERIOD_2026_03_DATA)
         # Create ExpensePrediction
         self.stdout.write("Creating ExpensePredictions")
         predictions = [
@@ -392,7 +393,7 @@ class Command(BaseCommand):
         # Create Incomes
         self.stdout.write("Creating Incomes")
         incomes = [
-            # Incomes for Personal Account for BudgetingPeriod 2025_12
+            # Incomes for Personal Account for Period 2025_12
             Income(
                 transfer_type=CategoryType.INCOME,
                 name="Salary",
@@ -415,7 +416,7 @@ class Command(BaseCommand):
                 category=personal_income_category_sell,
                 description="Selling stuff.",
             ),
-            # Incomes for Common Account for BudgetingPeriod 2025_12
+            # Incomes for Common Account for Period 2025_12
             Income(
                 transfer_type=CategoryType.INCOME,
                 name="Transfer from User",
@@ -427,7 +428,7 @@ class Command(BaseCommand):
                 category=common_income_category_from_user,
                 description="Income from User for 2025.12",
             ),
-            # Incomes for Personal Account for BudgetingPeriod 2026_01
+            # Incomes for Personal Account for Period 2026_01
             Income(
                 transfer_type=CategoryType.INCOME,
                 name="Salary",
@@ -439,7 +440,7 @@ class Command(BaseCommand):
                 category=personal_income_category_salary,
                 description="Salary for 2025.12",
             ),
-            # Incomes for Common Account for BudgetingPeriod 2026_01
+            # Incomes for Common Account for Period 2026_01
             Income(
                 transfer_type=CategoryType.INCOME,
                 name="Transfer from User",
@@ -451,7 +452,7 @@ class Command(BaseCommand):
                 category=common_income_category_from_user,
                 description="Income from User for 2026.01",
             ),
-            # Incomes for Personal Account for BudgetingPeriod 2026_02
+            # Incomes for Personal Account for Period 2026_02
             Income(
                 transfer_type=CategoryType.INCOME,
                 name="Salary",
@@ -463,7 +464,7 @@ class Command(BaseCommand):
                 category=personal_income_category_salary,
                 description="Salary for 2026.01",
             ),
-            # Incomes for Common Account for BudgetingPeriod 2026_02
+            # Incomes for Common Account for Period 2026_02
             Income(
                 transfer_type=CategoryType.INCOME,
                 name="Transfer from User",
@@ -480,7 +481,7 @@ class Command(BaseCommand):
         # Create Expenses
         self.stdout.write("Creating Expenses")
         expenses = [
-            # Expenses for Personal Account for BudgetingPeriod 2025_12,
+            # Expenses for Personal Account for Period 2025_12,
             Expense(
                 transfer_type=CategoryType.EXPENSE,
                 name="Transfer to Common Account",
@@ -550,7 +551,7 @@ class Command(BaseCommand):
                 category=None,
                 description="Not categorized expense",
             ),
-            # Expenses for Common Account for BudgetingPeriod 2025_12,
+            # Expenses for Common Account for Period 2025_12,
             Expense(
                 transfer_type=CategoryType.EXPENSE,
                 name="Flat",
@@ -584,7 +585,7 @@ class Command(BaseCommand):
                 category=common_expense_category_unexpected,
                 description="Unexpected expense.",
             ),
-            # Expenses for Personal Account for BudgetingPeriod 2026_01
+            # Expenses for Personal Account for Period 2026_01
             Expense(
                 transfer_type=CategoryType.EXPENSE,
                 name="Transfer to Common Account",
@@ -643,7 +644,7 @@ class Command(BaseCommand):
                 category=None,
                 description="Not categorized expense",
             ),
-            # Expenses for Common Account for BudgetingPeriod 2026_01
+            # Expenses for Common Account for Period 2026_01
             Expense(
                 transfer_type=CategoryType.EXPENSE,
                 name="Flat",
@@ -688,7 +689,7 @@ class Command(BaseCommand):
                 category=common_expense_category_unexpected,
                 description="Unexpected expense.",
             ),
-            # Expenses for Personal Account for BudgetingPeriod 2026_02
+            # Expenses for Personal Account for Period 2026_02
             Expense(
                 transfer_type=CategoryType.EXPENSE,
                 name="Transfer to Common Account",
@@ -725,7 +726,7 @@ class Command(BaseCommand):
                 category=personal_expense_category_unexpected,
                 description="Not expected expense",
             ),
-            # Expenses for Common Account for BudgetingPeriod 2026_02
+            # Expenses for Common Account for Period 2026_02
             Expense(
                 transfer_type=CategoryType.EXPENSE,
                 name="Flat",
@@ -756,4 +757,4 @@ class Command(BaseCommand):
         with transaction.atomic():
             self.remove_existing_data()
             user = self.create_user()
-            self.create_daily_expenses_budget(user)
+            self.create_daily_expenses_wallet(user)

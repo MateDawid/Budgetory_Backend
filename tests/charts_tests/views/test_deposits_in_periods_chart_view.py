@@ -16,24 +16,24 @@ from charts.views.deposits_in_periods_chart_view.services.deposits_transfers_sum
 )
 
 
-def deposits_results_url(budget_id: int) -> str:
+def deposits_results_url(wallet_id: int) -> str:
     """Create and return a deposits results URL."""
-    return reverse("charts:deposits-in-periods-chart", args=[budget_id])
+    return reverse("charts:deposits-in-periods-chart", args=[wallet_id])
 
 
 @pytest.mark.django_db
 class TestDepositsInPeriodsChartAPIView:
     """Tests for DepositsInPeriodsChartAPIView."""
 
-    def test_auth_required(self, api_client: APIClient, budget_factory: FactoryMetaClass):
+    def test_auth_required(self, api_client: APIClient, wallet_factory: FactoryMetaClass):
         """
-        GIVEN: Budget instance in database.
+        GIVEN: Wallet instance in database.
         WHEN: DepositsInPeriodsChartAPIView called with GET without authentication.
         THEN: Unauthorized HTTP 401 returned.
         """
-        budget = budget_factory()
+        wallet = wallet_factory()
 
-        response = api_client.get(deposits_results_url(budget.id))
+        response = api_client.get(deposits_results_url(wallet.id))
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -41,55 +41,55 @@ class TestDepositsInPeriodsChartAPIView:
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
     ):
         """
         GIVEN: User's JWT in request headers as HTTP_AUTHORIZATION.
         WHEN: DepositsInPeriodsChartAPIView endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(members=[base_user])
-        url = deposits_results_url(budget.id)
+        wallet = wallet_factory(members=[base_user])
+        url = deposits_results_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
 
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
 
         assert response.status_code == status.HTTP_200_OK
 
-    def test_user_not_budget_member(
+    def test_user_not_wallet_member(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget instance in database.
-        WHEN: DepositsInPeriodsChartAPIView called with GET by User not belonging to given Budget.
+        GIVEN: Wallet instance in database.
+        WHEN: DepositsInPeriodsChartAPIView called with GET by User not belonging to given Wallet.
         THEN: Forbidden HTTP 403 returned.
         """
-        budget = budget_factory()
+        wallet = wallet_factory()
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_results_url(budget.id))
+        response = api_client.get(deposits_results_url(wallet.id))
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["detail"] == "User does not have access to Budget."
+        assert response.data["detail"] == "User does not have access to Wallet."
 
-    def test_get_deposits_results_empty_budget(
+    def test_get_deposits_results_empty_wallet(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with no periods and no deposits in database.
-        WHEN: DepositsInPeriodsChartAPIView called by Budget member.
+        GIVEN: Wallet with no periods and no deposits in database.
+        WHEN: DepositsInPeriodsChartAPIView called by Wallet member.
         THEN: HTTP 200 - Response with empty xAxis and series arrays returned.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_results_url(budget.id))
+        response = api_client.get(deposits_results_url(wallet.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["xAxis"] == []
@@ -99,19 +99,19 @@ class TestDepositsInPeriodsChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with deposits but no periods in database.
-        WHEN: DepositsInPeriodsChartAPIView called by Budget member.
+        GIVEN: Wallet with deposits but no periods in database.
+        WHEN: DepositsInPeriodsChartAPIView called by Wallet member.
         THEN: HTTP 200 - Response with empty xAxis and series arrays returned.
         """
-        budget = budget_factory(members=[base_user])
-        deposit_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        deposit_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_results_url(budget.id))
+        response = api_client.get(deposits_results_url(wallet.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["xAxis"] == []
@@ -121,19 +121,19 @@ class TestDepositsInPeriodsChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with periods but no deposits in database.
-        WHEN: DepositsInPeriodsChartAPIView called by Budget member.
+        GIVEN: Wallet with periods but no deposits in database.
+        WHEN: DepositsInPeriodsChartAPIView called by Wallet member.
         THEN: HTTP 200 - Response with empty xAxis and series arrays returned.
         """
-        budget = budget_factory(members=[base_user])
-        budgeting_period_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        period_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_results_url(budget.id))
+        response = api_client.get(deposits_results_url(wallet.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["xAxis"] == []
@@ -143,23 +143,23 @@ class TestDepositsInPeriodsChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with periods and deposits but no transfers.
-        WHEN: DepositsInPeriodsChartAPIView called by Budget member.
+        GIVEN: Wallet with periods and deposits but no transfers.
+        WHEN: DepositsInPeriodsChartAPIView called by Wallet member.
         THEN: HTTP 200 - Response with periods on xAxis and deposits with zero balances in series.
         """
-        budget = budget_factory(members=[base_user])
-        budgeting_period_factory(budget=budget, name="Jan 2024")
-        budgeting_period_factory(budget=budget, name="Feb 2024")
-        deposit_factory(budget=budget, name="Checking Account")
+        wallet = wallet_factory(members=[base_user])
+        period_factory(wallet=wallet, name="Jan 2024")
+        period_factory(wallet=wallet, name="Feb 2024")
+        deposit_factory(wallet=wallet, name="Checking Account")
 
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_results_url(budget.id))
+        response = api_client.get(deposits_results_url(wallet.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["xAxis"] == ["Jan 2024", "Feb 2024"]
@@ -172,46 +172,46 @@ class TestDepositsInPeriodsChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with periods, deposits, and transfers.
-        WHEN: DepositsInPeriodsChartAPIView called by Budget member.
+        GIVEN: Wallet with periods, deposits, and transfers.
+        WHEN: DepositsInPeriodsChartAPIView called by Wallet member.
         THEN: HTTP 200 - Response with correct cumulative balance calculations.
         """
-        budget = budget_factory(members=[base_user])
-        period1 = budgeting_period_factory(
-            budget=budget, name="Jan 2024", date_start=date(2024, 1, 1), date_end=date(2024, 1, 31)
+        wallet = wallet_factory(members=[base_user])
+        period1 = period_factory(
+            wallet=wallet, name="Jan 2024", date_start=date(2024, 1, 1), date_end=date(2024, 1, 31)
         )
-        period2 = budgeting_period_factory(
-            budget=budget, name="Feb 2024", date_start=date(2024, 2, 1), date_end=date(2024, 2, 29)
+        period2 = period_factory(
+            wallet=wallet, name="Feb 2024", date_start=date(2024, 2, 1), date_end=date(2024, 2, 29)
         )
-        period3 = budgeting_period_factory(
-            budget=budget, name="Mar 2024", date_start=date(2024, 3, 1), date_end=date(2024, 3, 31)
+        period3 = period_factory(
+            wallet=wallet, name="Mar 2024", date_start=date(2024, 3, 1), date_end=date(2024, 3, 31)
         )
 
         # Create deposits
-        user_daily_expenses_deposit = deposit_factory(budget=budget, name="User Daily Expenses")
-        common_daily_expenses_deposit = deposit_factory(budget=budget, name="Common Daily Expenses")
-        deposit_factory(budget=budget, name="Common Other")
-        deposit_factory(budget=budget, name="User Savings")
+        user_daily_expenses_deposit = deposit_factory(wallet=wallet, name="User Daily Expenses")
+        common_daily_expenses_deposit = deposit_factory(wallet=wallet, name="Common Daily Expenses")
+        deposit_factory(wallet=wallet, name="Common Other")
+        deposit_factory(wallet=wallet, name="User Savings")
 
         # Create categories
         user_income = transfer_category_factory(
-            budget=budget, deposit=user_daily_expenses_deposit, category_type=CategoryType.INCOME
+            wallet=wallet, deposit=user_daily_expenses_deposit, category_type=CategoryType.INCOME
         )
         user_expense = transfer_category_factory(
-            budget=budget, deposit=user_daily_expenses_deposit, category_type=CategoryType.EXPENSE
+            wallet=wallet, deposit=user_daily_expenses_deposit, category_type=CategoryType.EXPENSE
         )
         common_income = transfer_category_factory(
-            budget=budget, deposit=common_daily_expenses_deposit, category_type=CategoryType.INCOME
+            wallet=wallet, deposit=common_daily_expenses_deposit, category_type=CategoryType.INCOME
         )
         common_expense = transfer_category_factory(
-            budget=budget, deposit=common_daily_expenses_deposit, category_type=CategoryType.EXPENSE
+            wallet=wallet, deposit=common_daily_expenses_deposit, category_type=CategoryType.EXPENSE
         )
 
         # Transfers for Period 1
@@ -259,7 +259,7 @@ class TestDepositsInPeriodsChartAPIView:
         api_client.force_authenticate(base_user)
 
         # Test without filtering - all deposits and periods
-        response = api_client.get(deposits_results_url(budget.id))
+        response = api_client.get(deposits_results_url(wallet.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["xAxis"] == ["Jan 2024", "Feb 2024", "Mar 2024"]
@@ -278,13 +278,13 @@ class TestDepositsInPeriodsChartAPIView:
         assert common_other_series["data"] == [0.0, 0.0, 0.0]
 
         # Test with period filtering
-        response = api_client.get(deposits_results_url(budget.id), {"period_from": period2.id, "period_to": period3.id})
+        response = api_client.get(deposits_results_url(wallet.id), {"period_from": period2.id, "period_to": period3.id})
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["xAxis"] == ["Feb 2024", "Mar 2024"]
 
         # Test with specific deposit filtering
-        response = api_client.get(deposits_results_url(budget.id), {"deposit": user_daily_expenses_deposit.id})
+        response = api_client.get(deposits_results_url(wallet.id), {"deposit": user_daily_expenses_deposit.id})
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data["series"]) == 1
@@ -294,24 +294,24 @@ class TestDepositsInPeriodsChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with many periods, deposits, and transfers to simulate real-world load.
-        WHEN: DepositsInPeriodsChartAPIView called by Budget member.
+        GIVEN: Wallet with many periods, deposits, and transfers to simulate real-world load.
+        WHEN: DepositsInPeriodsChartAPIView called by Wallet member.
         THEN: HTTP 200 - Response returned efficiently with correct calculations.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
 
         # Create 12 periods (full year)
         periods = []
         for month in range(1, 13):
-            period = budgeting_period_factory(
-                budget=budget,
+            period = period_factory(
+                wallet=wallet,
                 name=f"2024-{month:02d}",  # noqa
                 date_start=date(2024, month, 1),
                 date_end=date(2024, month, 28),  # Simplified for testing
@@ -322,11 +322,11 @@ class TestDepositsInPeriodsChartAPIView:
         deposits = []
         for i in range(5):
             deposit = deposit_factory(
-                budget=budget,
+                wallet=wallet,
                 name=f"Account {i+1}",
             )
-            transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
-            transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+            transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
+            transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
             deposits.append(deposit)
 
         # Create transfers for each period and deposit combination (realistic scenario)
@@ -353,7 +353,7 @@ class TestDepositsInPeriodsChartAPIView:
 
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_results_url(budget.id))
+        response = api_client.get(deposits_results_url(wallet.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data["xAxis"]) == 12  # All 12 periods
@@ -370,33 +370,33 @@ class TestDepositsInPeriodsChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with various edge cases (zero balances, negative balances, missing data).
-        WHEN: DepositsInPeriodsChartAPIView called by Budget member.
+        GIVEN: Wallet with various edge cases (zero balances, negative balances, missing data).
+        WHEN: DepositsInPeriodsChartAPIView called by Wallet member.
         THEN: HTTP 200 - Response handles edge cases gracefully with correct calculations.
         """
-        budget = budget_factory(members=[base_user])
-        period1 = budgeting_period_factory(budget=budget, name="Period 1")
-        period2 = budgeting_period_factory(budget=budget, name="Period 2")
+        wallet = wallet_factory(members=[base_user])
+        period1 = period_factory(wallet=wallet, name="Period 1")
+        period2 = period_factory(wallet=wallet, name="Period 2")
 
         # Deposits with different scenarios
-        zero_balance_deposit = deposit_factory(budget=budget, name="Zero Balance")
-        transfer_category_factory(budget=budget, deposit=zero_balance_deposit, category_type=CategoryType.EXPENSE)
-        transfer_category_factory(budget=budget, deposit=zero_balance_deposit, category_type=CategoryType.INCOME)
+        zero_balance_deposit = deposit_factory(wallet=wallet, name="Zero Balance")
+        transfer_category_factory(wallet=wallet, deposit=zero_balance_deposit, category_type=CategoryType.EXPENSE)
+        transfer_category_factory(wallet=wallet, deposit=zero_balance_deposit, category_type=CategoryType.INCOME)
 
-        negative_deposit = deposit_factory(budget=budget, name="Negative Balance")
-        transfer_category_factory(budget=budget, deposit=negative_deposit, category_type=CategoryType.EXPENSE)
-        transfer_category_factory(budget=budget, deposit=negative_deposit, category_type=CategoryType.INCOME)
+        negative_deposit = deposit_factory(wallet=wallet, name="Negative Balance")
+        transfer_category_factory(wallet=wallet, deposit=negative_deposit, category_type=CategoryType.EXPENSE)
+        transfer_category_factory(wallet=wallet, deposit=negative_deposit, category_type=CategoryType.INCOME)
 
-        normal_deposit = deposit_factory(budget=budget, name="Normal Balance")
-        transfer_category_factory(budget=budget, deposit=normal_deposit, category_type=CategoryType.EXPENSE)
-        transfer_category_factory(budget=budget, deposit=normal_deposit, category_type=CategoryType.INCOME)
+        normal_deposit = deposit_factory(wallet=wallet, name="Normal Balance")
+        transfer_category_factory(wallet=wallet, deposit=normal_deposit, category_type=CategoryType.EXPENSE)
+        transfer_category_factory(wallet=wallet, deposit=normal_deposit, category_type=CategoryType.INCOME)
 
         # Zero deposit: no transactions (should remain 0)
         # Negative deposit: only expenses
@@ -435,7 +435,7 @@ class TestDepositsInPeriodsChartAPIView:
 
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(deposits_results_url(budget.id))
+        response = api_client.get(deposits_results_url(wallet.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data["series"]) == 3
@@ -453,8 +453,8 @@ class TestDepositsInPeriodsChartAPIView:
     def test_empty_period_no_transfers(
         self,
         base_user: User,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
     ):
         """
@@ -462,12 +462,12 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called for any transfer type.
         THEN: Empty dict returned.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet, name="Jan 2024")
+        deposit = deposit_factory(wallet=wallet)
 
         result = get_deposits_transfers_sums_in_period(
-            budget_pk=budget.id,
+            wallet_pk=wallet.id,
             deposit_ids=[deposit.id],
             period={"pk": period.id, "name": period.name, "date_end": period.date_end},
             transfer_type=CategoryType.INCOME,
@@ -478,8 +478,8 @@ class TestDepositsInPeriodsChartAPIView:
     def test_single_deposit_single_income_transfer(
         self,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
@@ -489,14 +489,14 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called for INCOME type.
         THEN: Dict with deposit_id and correct sum returned.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet, name="Jan 2024")
+        deposit = deposit_factory(wallet=wallet)
+        category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
         transfer_factory(period=period, category=category, value=Decimal("500.00"), deposit=deposit)
 
         result = get_deposits_transfers_sums_in_period(
-            budget_pk=budget.id,
+            wallet_pk=wallet.id,
             deposit_ids=[deposit.id],
             period={"pk": period.id, "name": period.name, "date_end": period.date_end},
             transfer_type=CategoryType.INCOME,
@@ -507,8 +507,8 @@ class TestDepositsInPeriodsChartAPIView:
     def test_single_deposit_single_expense_transfer(
         self,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
@@ -518,14 +518,14 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called for EXPENSE type.
         THEN: Dict with deposit_id and correct sum returned.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet, name="Jan 2024")
+        deposit = deposit_factory(wallet=wallet)
+        category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
         transfer_factory(period=period, category=category, value=Decimal("250.00"), deposit=deposit)
 
         result = get_deposits_transfers_sums_in_period(
-            budget_pk=budget.id,
+            wallet_pk=wallet.id,
             deposit_ids=[deposit.id],
             period={"pk": period.id, "name": period.name, "date_end": period.date_end},
             transfer_type=CategoryType.EXPENSE,
@@ -536,8 +536,8 @@ class TestDepositsInPeriodsChartAPIView:
     def test_multiple_transfers_same_type_aggregation(
         self,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
@@ -547,17 +547,17 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called for INCOME type.
         THEN: Dict with deposit_id and aggregated sum returned.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet, name="Jan 2024")
+        deposit = deposit_factory(wallet=wallet)
+        category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
 
         transfer_factory(period=period, category=category, value=Decimal("100.00"), deposit=deposit)
         transfer_factory(period=period, category=category, value=Decimal("200.00"), deposit=deposit)
         transfer_factory(period=period, category=category, value=Decimal("150.50"), deposit=deposit)
 
         result = get_deposits_transfers_sums_in_period(
-            budget_pk=budget.id,
+            wallet_pk=wallet.id,
             deposit_ids=[deposit.id],
             period={"pk": period.id, "name": period.name, "date_end": period.date_end},
             transfer_type=CategoryType.INCOME,
@@ -568,8 +568,8 @@ class TestDepositsInPeriodsChartAPIView:
     def test_wrong_transfer_type_filtering(
         self,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
@@ -579,18 +579,18 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called for INCOME type only.
         THEN: Only income transfers summed, expenses ignored.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet, name="Jan 2024")
+        deposit = deposit_factory(wallet=wallet)
 
-        income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
-        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
+        expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
 
         transfer_factory(period=period, category=income_category, value=Decimal("500.00"), deposit=deposit)
         transfer_factory(period=period, category=expense_category, value=Decimal("300.00"), deposit=deposit)
 
         result = get_deposits_transfers_sums_in_period(
-            budget_pk=budget.id,
+            wallet_pk=wallet.id,
             deposit_ids=[deposit.id],
             period={"pk": period.id, "name": period.name, "date_end": period.date_end},
             transfer_type=CategoryType.INCOME,
@@ -601,8 +601,8 @@ class TestDepositsInPeriodsChartAPIView:
     def test_multiple_deposits_same_period(
         self,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
@@ -612,23 +612,23 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called with all deposit IDs.
         THEN: Dict with all deposit_ids and their respective sums returned.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, name="Jan 2024")
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet, name="Jan 2024")
 
-        deposit1 = deposit_factory(budget=budget, name="Deposit 1")
-        deposit2 = deposit_factory(budget=budget, name="Deposit 2")
-        deposit3 = deposit_factory(budget=budget, name="Deposit 3")
+        deposit1 = deposit_factory(wallet=wallet, name="Deposit 1")
+        deposit2 = deposit_factory(wallet=wallet, name="Deposit 2")
+        deposit3 = deposit_factory(wallet=wallet, name="Deposit 3")
 
-        category1 = transfer_category_factory(budget=budget, deposit=deposit1, category_type=CategoryType.INCOME)
-        category2 = transfer_category_factory(budget=budget, deposit=deposit2, category_type=CategoryType.INCOME)
-        category3 = transfer_category_factory(budget=budget, deposit=deposit3, category_type=CategoryType.INCOME)
+        category1 = transfer_category_factory(wallet=wallet, deposit=deposit1, category_type=CategoryType.INCOME)
+        category2 = transfer_category_factory(wallet=wallet, deposit=deposit2, category_type=CategoryType.INCOME)
+        category3 = transfer_category_factory(wallet=wallet, deposit=deposit3, category_type=CategoryType.INCOME)
 
         transfer_factory(period=period, category=category1, value=Decimal("100.00"), deposit=deposit1)
         transfer_factory(period=period, category=category2, value=Decimal("200.00"), deposit=deposit2)
         transfer_factory(period=period, category=category3, value=Decimal("300.00"), deposit=deposit3)
 
         result = get_deposits_transfers_sums_in_period(
-            budget_pk=budget.id,
+            wallet_pk=wallet.id,
             deposit_ids=[deposit1.id, deposit2.id, deposit3.id],
             period={"pk": period.id, "name": period.name, "date_end": period.date_end},
             transfer_type=CategoryType.INCOME,
@@ -639,8 +639,8 @@ class TestDepositsInPeriodsChartAPIView:
     def test_deposit_with_no_transfers_excluded(
         self,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
@@ -650,19 +650,19 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called.
         THEN: Only deposits with transfers appear in result dict.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, name="Jan 2024")
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet, name="Jan 2024")
 
-        deposit_with_transfer = deposit_factory(budget=budget, name="With Transfer")
-        deposit_without_transfer = deposit_factory(budget=budget, name="Without Transfer")
+        deposit_with_transfer = deposit_factory(wallet=wallet, name="With Transfer")
+        deposit_without_transfer = deposit_factory(wallet=wallet, name="Without Transfer")
 
         category = transfer_category_factory(
-            budget=budget, deposit=deposit_with_transfer, category_type=CategoryType.INCOME
+            wallet=wallet, deposit=deposit_with_transfer, category_type=CategoryType.INCOME
         )
         transfer_factory(period=period, category=category, value=Decimal("500.00"), deposit=deposit_with_transfer)
 
         result = get_deposits_transfers_sums_in_period(
-            budget_pk=budget.id,
+            wallet_pk=wallet.id,
             deposit_ids=[deposit_with_transfer.id, deposit_without_transfer.id],
             period={"pk": period.id, "name": period.name, "date_end": period.date_end},
             transfer_type=CategoryType.INCOME,
@@ -675,8 +675,8 @@ class TestDepositsInPeriodsChartAPIView:
     def test_different_periods_isolation(
         self,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
@@ -686,18 +686,18 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called for specific period.
         THEN: Only transfers from specified period included in sum.
         """
-        budget = budget_factory(members=[base_user])
-        period1 = budgeting_period_factory(budget=budget, name="Jan 2024")
-        period2 = budgeting_period_factory(budget=budget, name="Feb 2024")
+        wallet = wallet_factory(members=[base_user])
+        period1 = period_factory(wallet=wallet, name="Jan 2024")
+        period2 = period_factory(wallet=wallet, name="Feb 2024")
 
-        deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
+        deposit = deposit_factory(wallet=wallet)
+        category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
 
         transfer_factory(period=period1, category=category, value=Decimal("100.00"), deposit=deposit)
         transfer_factory(period=period2, category=category, value=Decimal("200.00"), deposit=deposit)
 
         result = get_deposits_transfers_sums_in_period(
-            budget_pk=budget.id,
+            wallet_pk=wallet.id,
             deposit_ids=[deposit.id],
             period={"pk": period1.id, "name": period1.name, "date_end": period1.date_end},
             transfer_type=CategoryType.INCOME,
@@ -705,37 +705,37 @@ class TestDepositsInPeriodsChartAPIView:
 
         assert result == {deposit.id: 100.0}
 
-    def test_different_budgets_isolation(
+    def test_different_wallets_isolation(
         self,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Multiple budgets with deposits and transfers.
-        WHEN: get_deposits_transfers_sums_in_period called for specific budget.
-        THEN: Only transfers from specified budget included.
+        GIVEN: Multiple wallets with deposits and transfers.
+        WHEN: get_deposits_transfers_sums_in_period called for specific wallet.
+        THEN: Only transfers from specified wallet included.
         """
-        budget1 = budget_factory(members=[base_user])
-        budget2 = budget_factory(members=[base_user])
+        wallet1 = wallet_factory(members=[base_user])
+        wallet2 = wallet_factory(members=[base_user])
 
-        period1 = budgeting_period_factory(budget=budget1, name="Jan 2024")
-        period2 = budgeting_period_factory(budget=budget2, name="Jan 2024")
+        period1 = period_factory(wallet=wallet1, name="Jan 2024")
+        period2 = period_factory(wallet=wallet2, name="Jan 2024")
 
-        deposit1 = deposit_factory(budget=budget1)
-        deposit2 = deposit_factory(budget=budget2)
+        deposit1 = deposit_factory(wallet=wallet1)
+        deposit2 = deposit_factory(wallet=wallet2)
 
-        category1 = transfer_category_factory(budget=budget1, deposit=deposit1, category_type=CategoryType.INCOME)
-        category2 = transfer_category_factory(budget=budget2, deposit=deposit2, category_type=CategoryType.INCOME)
+        category1 = transfer_category_factory(wallet=wallet1, deposit=deposit1, category_type=CategoryType.INCOME)
+        category2 = transfer_category_factory(wallet=wallet2, deposit=deposit2, category_type=CategoryType.INCOME)
 
         transfer_factory(period=period1, category=category1, value=Decimal("100.00"), deposit=deposit1)
         transfer_factory(period=period2, category=category2, value=Decimal("200.00"), deposit=deposit2)
 
         result = get_deposits_transfers_sums_in_period(
-            budget_pk=budget1.id,
+            wallet_pk=wallet1.id,
             deposit_ids=[deposit1.id],
             period={"pk": period1.id, "name": period1.name, "date_end": period1.date_end},
             transfer_type=CategoryType.INCOME,
@@ -747,8 +747,8 @@ class TestDepositsInPeriodsChartAPIView:
     def test_decimal_precision_handling(
         self,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
@@ -758,16 +758,16 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called.
         THEN: Result maintains proper decimal precision as float.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet, name="Jan 2024")
+        deposit = deposit_factory(wallet=wallet)
+        category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
 
         transfer_factory(period=period, category=category, value=Decimal("100.33"), deposit=deposit)
         transfer_factory(period=period, category=category, value=Decimal("200.67"), deposit=deposit)
 
         result = get_deposits_transfers_sums_in_period(
-            budget_pk=budget.id,
+            wallet_pk=wallet.id,
             deposit_ids=[deposit.id],
             period={"pk": period.id, "name": period.name, "date_end": period.date_end},
             transfer_type=CategoryType.INCOME,
@@ -778,8 +778,8 @@ class TestDepositsInPeriodsChartAPIView:
     def test_large_number_of_transfers(
         self,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
@@ -789,10 +789,10 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called.
         THEN: All transfers correctly aggregated.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget)
-        category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet, name="Jan 2024")
+        deposit = deposit_factory(wallet=wallet)
+        category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
 
         # Create 50 transfers
         expected_sum = 0.0
@@ -802,7 +802,7 @@ class TestDepositsInPeriodsChartAPIView:
             expected_sum += float(value)
 
         result = get_deposits_transfers_sums_in_period(
-            budget_pk=budget.id,
+            wallet_pk=wallet.id,
             deposit_ids=[deposit.id],
             period={"pk": period.id, "name": period.name, "date_end": period.date_end},
             transfer_type=CategoryType.EXPENSE,
@@ -813,19 +813,19 @@ class TestDepositsInPeriodsChartAPIView:
     def test_empty_deposit_ids_list(
         self,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Empty list of deposit IDs.
         WHEN: get_deposits_transfers_sums_in_period called.
         THEN: Empty dict returned.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, name="Jan 2024")
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet, name="Jan 2024")
 
         result = get_deposits_transfers_sums_in_period(
-            budget_pk=budget.id,
+            wallet_pk=wallet.id,
             deposit_ids=[],
             period={"pk": period.id, "name": period.name, "date_end": period.date_end},
             transfer_type=CategoryType.INCOME,
@@ -836,19 +836,19 @@ class TestDepositsInPeriodsChartAPIView:
     def test_nonexistent_deposit_ids(
         self,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Non-existent deposit IDs.
         WHEN: get_deposits_transfers_sums_in_period called.
         THEN: Empty dict returned.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, name="Jan 2024")
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet, name="Jan 2024")
 
         result = get_deposits_transfers_sums_in_period(
-            budget_pk=budget.id,
+            wallet_pk=wallet.id,
             deposit_ids=[999999, 999998],
             period={"pk": period.id, "name": period.name, "date_end": period.date_end},
             transfer_type=CategoryType.INCOME,

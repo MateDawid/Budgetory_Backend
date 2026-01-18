@@ -12,24 +12,24 @@ from app_users.models import User
 from categories.models.choices.category_type import CategoryType
 
 
-def top_entities_chart_url(budget_id: int) -> str:
+def top_entities_chart_url(wallet_id: int) -> str:
     """Create and return a top entities in period chart URL."""
-    return reverse("charts:top-entities-in-period-chart", args=[budget_id])
+    return reverse("charts:top-entities-in-period-chart", args=[wallet_id])
 
 
 @pytest.mark.django_db
 class TestTopEntitiesInPeriodChartAPIView:
     """Tests for TopEntitiesInPeriodChartAPIView."""
 
-    def test_auth_required(self, api_client: APIClient, budget_factory: FactoryMetaClass):
+    def test_auth_required(self, api_client: APIClient, wallet_factory: FactoryMetaClass):
         """
-        GIVEN: Budget instance in database.
+        GIVEN: Wallet instance in database.
         WHEN: TopEntitiesInPeriodChartAPIView called with GET without authentication.
         THEN: Unauthorized HTTP 401 returned.
         """
-        budget = budget_factory()
+        wallet = wallet_factory()
 
-        response = api_client.get(top_entities_chart_url(budget.id))
+        response = api_client.get(top_entities_chart_url(wallet.id))
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -37,17 +37,17 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
     ):
         """
         GIVEN: User's JWT in request headers as HTTP_AUTHORIZATION.
         WHEN: TopEntitiesInPeriodChartAPIView endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        url = top_entities_chart_url(budget.id)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        url = top_entities_chart_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
 
         response = api_client.get(
@@ -58,45 +58,45 @@ class TestTopEntitiesInPeriodChartAPIView:
 
         assert response.status_code == status.HTTP_200_OK
 
-    def test_user_not_budget_member(
+    def test_user_not_wallet_member(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget instance in database.
-        WHEN: TopEntitiesInPeriodChartAPIView called with GET by User not belonging to given Budget.
+        GIVEN: Wallet instance in database.
+        WHEN: TopEntitiesInPeriodChartAPIView called with GET by User not belonging to given Wallet.
         THEN: Forbidden HTTP 403 returned.
         """
-        budget = budget_factory()
-        period = budgeting_period_factory(budget=budget)
+        wallet = wallet_factory()
+        period = period_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {"period": str(period.id), "transfer_type": str(CategoryType.EXPENSE.value)},
         )
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["detail"] == "User does not have access to Budget."
+        assert response.data["detail"] == "User does not have access to Wallet."
 
     def test_missing_required_parameters(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget in database.
+        GIVEN: Wallet in database.
         WHEN: TopEntitiesInPeriodChartAPIView called without required parameters.
         THEN: HTTP 200 - Response with empty xAxis and series arrays.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(top_entities_chart_url(budget.id))
+        response = api_client.get(top_entities_chart_url(wallet.id))
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["xAxis"] == []
@@ -106,17 +106,17 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget in database.
+        GIVEN: Wallet in database.
         WHEN: TopEntitiesInPeriodChartAPIView called without period parameter.
         THEN: HTTP 200 - Response with empty arrays.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(top_entities_chart_url(budget.id), {"transfer_type": str(CategoryType.EXPENSE.value)})
+        response = api_client.get(top_entities_chart_url(wallet.id), {"transfer_type": str(CategoryType.EXPENSE.value)})
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["xAxis"] == []
@@ -126,19 +126,19 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with period in database.
+        GIVEN: Wallet with period in database.
         WHEN: TopEntitiesInPeriodChartAPIView called without transfer_type parameter.
         THEN: HTTP 200 - Response with empty arrays.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(top_entities_chart_url(budget.id), {"period": str(period.id)})
+        response = api_client.get(top_entities_chart_url(wallet.id), {"period": str(period.id)})
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["xAxis"] == []
@@ -148,20 +148,20 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with period but no entities in database.
-        WHEN: TopEntitiesInPeriodChartAPIView called by Budget member.
+        GIVEN: Wallet with period but no entities in database.
+        WHEN: TopEntitiesInPeriodChartAPIView called by Wallet member.
         THEN: HTTP 200 - Response with empty xAxis and series arrays.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, name="Jan 2024")
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet, name="Jan 2024")
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {"period": str(period.id), "transfer_type": str(CategoryType.EXPENSE.value)},
         )
 
@@ -173,23 +173,23 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with period and entities but no transfers in database.
-        WHEN: TopEntitiesInPeriodChartAPIView called by Budget member.
+        GIVEN: Wallet with period and entities but no transfers in database.
+        WHEN: TopEntitiesInPeriodChartAPIView called by Wallet member.
         THEN: HTTP 200 - Response with empty xAxis and series arrays.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        entity_factory(budget=budget, name="Entity 1")
-        entity_factory(budget=budget, name="Entity 2")
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet, name="Jan 2024")
+        entity_factory(wallet=wallet, name="Entity 1")
+        entity_factory(wallet=wallet, name="Entity 2")
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {"period": str(period.id), "transfer_type": str(CategoryType.EXPENSE.value)},
         )
 
@@ -201,26 +201,26 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with period, entities, and expense transfers.
+        GIVEN: Wallet with period, entities, and expense transfers.
         WHEN: TopEntitiesInPeriodChartAPIView called with transfer_type=EXPENSE.
         THEN: HTTP 200 - Response with top entities by expense amount.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget)
-        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet, name="Jan 2024")
+        deposit = deposit_factory(wallet=wallet)
+        expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
 
-        entity1 = entity_factory(budget=budget, name="Entity A")
-        entity2 = entity_factory(budget=budget, name="Entity B")
-        entity3 = entity_factory(budget=budget, name="Entity C")
+        entity1 = entity_factory(wallet=wallet, name="Entity A")
+        entity2 = entity_factory(wallet=wallet, name="Entity B")
+        entity3 = entity_factory(wallet=wallet, name="Entity C")
 
         transfer_factory(
             period=period, category=expense_category, value=Decimal("500.00"), deposit=deposit, entity=entity1
@@ -235,7 +235,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {"period": str(period.id), "transfer_type": str(CategoryType.EXPENSE.value)},
         )
 
@@ -247,26 +247,26 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with period, entities, and income transfers.
+        GIVEN: Wallet with period, entities, and income transfers.
         WHEN: TopEntitiesInPeriodChartAPIView called with transfer_type=INCOME.
         THEN: HTTP 200 - Response with top entities by income amount.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget, name="Jan 2024")
-        deposit = deposit_factory(budget=budget)
-        income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet, name="Jan 2024")
+        deposit = deposit_factory(wallet=wallet)
+        income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
 
-        entity1 = entity_factory(budget=budget, name="Source A")
-        entity2 = entity_factory(budget=budget, name="Source B")
-        entity3 = entity_factory(budget=budget, name="Source C")
+        entity1 = entity_factory(wallet=wallet, name="Source A")
+        entity2 = entity_factory(wallet=wallet, name="Source B")
+        entity3 = entity_factory(wallet=wallet, name="Source C")
 
         transfer_factory(
             period=period, category=income_category, value=Decimal("1200.00"), deposit=deposit, entity=entity1
@@ -281,7 +281,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {"period": str(period.id), "transfer_type": str(CategoryType.INCOME.value)},
         )
 
@@ -293,25 +293,25 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with 8 entities with transfers.
+        GIVEN: Wallet with 8 entities with transfers.
         WHEN: TopEntitiesInPeriodChartAPIView called without entities_count parameter.
         THEN: HTTP 200 - Response with top 5 entities (default).
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget)
-        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit = deposit_factory(wallet=wallet)
+        expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
 
         for i in range(8):
-            entity = entity_factory(budget=budget, name=f"Entity {i+1}")
+            entity = entity_factory(wallet=wallet, name=f"Entity {i+1}")
             transfer_factory(
                 period=period,
                 category=expense_category,
@@ -323,7 +323,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {"period": str(period.id), "transfer_type": str(CategoryType.EXPENSE.value)},
         )
 
@@ -342,20 +342,20 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with period in database.
+        GIVEN: Wallet with period in database.
         WHEN: TopEntitiesInPeriodChartAPIView called with invalid period ID.
         THEN: HTTP 200 - Response with empty arrays.
         """
-        budget = budget_factory(members=[base_user])
-        budgeting_period_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        period_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {"period": "99999", "transfer_type": str(CategoryType.EXPENSE.value)},
         )
 
@@ -367,23 +367,23 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with entity transfers.
+        GIVEN: Wallet with entity transfers.
         WHEN: TopEntitiesInPeriodChartAPIView called with nonexistent deposit ID.
         THEN: HTTP 200 - Response with empty arrays (no matches).
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget)
-        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
-        entity = entity_factory(budget=budget, name="Entity 1")
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit = deposit_factory(wallet=wallet)
+        expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
+        entity = entity_factory(wallet=wallet, name="Entity 1")
 
         transfer_factory(
             period=period, category=expense_category, value=Decimal("500.00"), deposit=deposit, entity=entity
@@ -393,10 +393,10 @@ class TestTopEntitiesInPeriodChartAPIView:
 
         from entities.models import Deposit
 
-        nonexistent_id = Deposit.objects.filter(budget=budget).order_by("-id").first().id + 1
+        nonexistent_id = Deposit.objects.filter(wallet=wallet).order_by("-id").first().id + 1
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {
                 "period": str(period.id),
                 "transfer_type": str(CategoryType.EXPENSE.value),
@@ -412,23 +412,23 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with entity transfers.
+        GIVEN: Wallet with entity transfers.
         WHEN: TopEntitiesInPeriodChartAPIView called with entities_count=0.
         THEN: HTTP 200 - Response with empty arrays.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget)
-        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
-        entity = entity_factory(budget=budget, name="Entity 1")
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit = deposit_factory(wallet=wallet)
+        expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
+        entity = entity_factory(wallet=wallet, name="Entity 1")
 
         transfer_factory(
             period=period, category=expense_category, value=Decimal("100.00"), deposit=deposit, entity=entity
@@ -437,7 +437,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {"period": str(period.id), "transfer_type": str(CategoryType.EXPENSE.value), "entities_count": 0},
         )
 
@@ -449,26 +449,26 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with multiple entities having same transfer amounts.
+        GIVEN: Wallet with multiple entities having same transfer amounts.
         WHEN: TopEntitiesInPeriodChartAPIView called.
         THEN: HTTP 200 - Response with entities ordered by transfer amount (ties handled by database).
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget)
-        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit = deposit_factory(wallet=wallet)
+        expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
 
-        entity1 = entity_factory(budget=budget, name="Entity A")
-        entity2 = entity_factory(budget=budget, name="Entity B")
-        entity3 = entity_factory(budget=budget, name="Entity C")
+        entity1 = entity_factory(wallet=wallet, name="Entity A")
+        entity2 = entity_factory(wallet=wallet, name="Entity B")
+        entity3 = entity_factory(wallet=wallet, name="Entity C")
 
         # All entities have same transfer amount
         transfer_factory(
@@ -484,7 +484,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {"period": str(period.id), "transfer_type": str(CategoryType.EXPENSE.value)},
         )
 
@@ -497,25 +497,25 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with entity having both income and expense transfers.
+        GIVEN: Wallet with entity having both income and expense transfers.
         WHEN: TopEntitiesInPeriodChartAPIView called with transfer_type=EXPENSE.
         THEN: HTTP 200 - Response includes only expense transfers for the entity.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget)
-        income_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.INCOME)
-        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit = deposit_factory(wallet=wallet)
+        income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
+        expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
 
-        entity = entity_factory(budget=budget, name="Mixed Entity")
+        entity = entity_factory(wallet=wallet, name="Mixed Entity")
 
         # Income transfers (should be ignored when filtering by EXPENSE)
         transfer_factory(
@@ -533,7 +533,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {"period": str(period.id), "transfer_type": str(CategoryType.EXPENSE.value)},
         )
 
@@ -545,26 +545,26 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with entities having different transfer amounts.
+        GIVEN: Wallet with entities having different transfer amounts.
         WHEN: TopEntitiesInPeriodChartAPIView called.
         THEN: HTTP 200 - Response with entities ordered ascending (insert at 0).
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget)
-        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit = deposit_factory(wallet=wallet)
+        expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
 
-        entity1 = entity_factory(budget=budget, name="Low")
-        entity2 = entity_factory(budget=budget, name="High")
-        entity3 = entity_factory(budget=budget, name="Medium")
+        entity1 = entity_factory(wallet=wallet, name="Low")
+        entity2 = entity_factory(wallet=wallet, name="High")
+        entity3 = entity_factory(wallet=wallet, name="Medium")
 
         transfer_factory(
             period=period, category=expense_category, value=Decimal("100.00"), deposit=deposit, entity=entity1
@@ -579,7 +579,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {"period": str(period.id), "transfer_type": str(CategoryType.EXPENSE.value)},
         )
 
@@ -592,25 +592,25 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with 8 entities with transfers.
+        GIVEN: Wallet with 8 entities with transfers.
         WHEN: TopEntitiesInPeriodChartAPIView called with entities_count=3.
         THEN: HTTP 200 - Response with top 3 entities.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget)
-        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit = deposit_factory(wallet=wallet)
+        expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
 
         for i in range(8):
-            entity = entity_factory(budget=budget, name=f"Entity {i}")
+            entity = entity_factory(wallet=wallet, name=f"Entity {i}")
             transfer_factory(
                 period=period,
                 category=expense_category,
@@ -622,7 +622,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {"period": str(period.id), "transfer_type": str(CategoryType.EXPENSE.value), "entities_count": 3},
         )
 
@@ -635,26 +635,26 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with 3 entities with transfers.
+        GIVEN: Wallet with 3 entities with transfers.
         WHEN: TopEntitiesInPeriodChartAPIView called with entities_count=10.
         THEN: HTTP 200 - Response with all 3 available entities.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget)
-        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit = deposit_factory(wallet=wallet)
+        expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
 
-        entity1 = entity_factory(budget=budget, name="Entity 1")
-        entity2 = entity_factory(budget=budget, name="Entity 2")
-        entity3 = entity_factory(budget=budget, name="Entity 3")
+        entity1 = entity_factory(wallet=wallet, name="Entity 1")
+        entity2 = entity_factory(wallet=wallet, name="Entity 2")
+        entity3 = entity_factory(wallet=wallet, name="Entity 3")
 
         transfer_factory(
             period=period, category=expense_category, value=Decimal("100.00"), deposit=deposit, entity=entity1
@@ -669,7 +669,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {"period": str(period.id), "transfer_type": str(CategoryType.EXPENSE.value), "entities_count": 10},
         )
 
@@ -681,25 +681,25 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with entity having multiple transfers in same period.
+        GIVEN: Wallet with entity having multiple transfers in same period.
         WHEN: TopEntitiesInPeriodChartAPIView called.
         THEN: HTTP 200 - Response with correctly summed values per entity.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget)
-        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit = deposit_factory(wallet=wallet)
+        expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
 
-        entity1 = entity_factory(budget=budget, name="Entity 1")
-        entity2 = entity_factory(budget=budget, name="Entity 2")
+        entity1 = entity_factory(wallet=wallet, name="Entity 1")
+        entity2 = entity_factory(wallet=wallet, name="Entity 2")
 
         # Multiple transfers for entity1
         transfer_factory(
@@ -720,7 +720,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {"period": str(period.id), "transfer_type": str(CategoryType.EXPENSE.value)},
         )
 
@@ -732,33 +732,33 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with multiple deposits and entity transfers.
+        GIVEN: Wallet with multiple deposits and entity transfers.
         WHEN: TopEntitiesInPeriodChartAPIView called with deposit filter.
         THEN: HTTP 200 - Response with data only from specified deposit.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
 
-        deposit1 = deposit_factory(budget=budget)
-        deposit2 = deposit_factory(budget=budget)
+        deposit1 = deposit_factory(wallet=wallet)
+        deposit2 = deposit_factory(wallet=wallet)
 
         expense_category1 = transfer_category_factory(
-            budget=budget, deposit=deposit1, category_type=CategoryType.EXPENSE
+            wallet=wallet, deposit=deposit1, category_type=CategoryType.EXPENSE
         )
         expense_category2 = transfer_category_factory(
-            budget=budget, deposit=deposit2, category_type=CategoryType.EXPENSE
+            wallet=wallet, deposit=deposit2, category_type=CategoryType.EXPENSE
         )
 
-        entity1 = entity_factory(budget=budget, name="Entity 1")
-        entity2 = entity_factory(budget=budget, name="Entity 2")
+        entity1 = entity_factory(wallet=wallet, name="Entity 1")
+        entity2 = entity_factory(wallet=wallet, name="Entity 2")
 
         # Transfers for deposit1
         transfer_factory(
@@ -773,7 +773,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {
                 "period": str(period.id),
                 "transfer_type": str(CategoryType.EXPENSE.value),
@@ -789,32 +789,32 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with entity having transfers in multiple deposits.
+        GIVEN: Wallet with entity having transfers in multiple deposits.
         WHEN: TopEntitiesInPeriodChartAPIView called with deposit filter.
         THEN: HTTP 200 - Response with entity data only from specified deposit.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
 
-        deposit1 = deposit_factory(budget=budget)
-        deposit2 = deposit_factory(budget=budget)
+        deposit1 = deposit_factory(wallet=wallet)
+        deposit2 = deposit_factory(wallet=wallet)
 
         expense_category1 = transfer_category_factory(
-            budget=budget, deposit=deposit1, category_type=CategoryType.EXPENSE
+            wallet=wallet, deposit=deposit1, category_type=CategoryType.EXPENSE
         )
         expense_category2 = transfer_category_factory(
-            budget=budget, deposit=deposit2, category_type=CategoryType.EXPENSE
+            wallet=wallet, deposit=deposit2, category_type=CategoryType.EXPENSE
         )
 
-        entity = entity_factory(budget=budget, name="Entity 1")
+        entity = entity_factory(wallet=wallet, name="Entity 1")
 
         # Multiple transfers in deposit1
         transfer_factory(
@@ -832,7 +832,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {
                 "period": str(period.id),
                 "transfer_type": str(CategoryType.EXPENSE.value),
@@ -848,24 +848,24 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with entity transfers containing decimal values.
+        GIVEN: Wallet with entity transfers containing decimal values.
         WHEN: TopEntitiesInPeriodChartAPIView called.
         THEN: HTTP 200 - Response with correct decimal precision.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget)
-        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit = deposit_factory(wallet=wallet)
+        expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
 
-        entity = entity_factory(budget=budget, name="Entity 1")
+        entity = entity_factory(wallet=wallet, name="Entity 1")
 
         transfer_factory(
             period=period, category=expense_category, value=Decimal("123.45"), deposit=deposit, entity=entity
@@ -877,7 +877,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {"period": str(period.id), "transfer_type": str(CategoryType.EXPENSE.value)},
         )
 
@@ -888,24 +888,24 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with entity transfers containing large monetary values.
+        GIVEN: Wallet with entity transfers containing large monetary values.
         WHEN: TopEntitiesInPeriodChartAPIView called.
         THEN: HTTP 200 - Response with correct calculations for large values.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget)
-        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit = deposit_factory(wallet=wallet)
+        expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
 
-        entity = entity_factory(budget=budget, name="Big Spender")
+        entity = entity_factory(wallet=wallet, name="Big Spender")
 
         transfer_factory(
             period=period, category=expense_category, value=Decimal("999999.99"), deposit=deposit, entity=entity
@@ -914,7 +914,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {"period": str(period.id), "transfer_type": str(CategoryType.EXPENSE.value)},
         )
 
@@ -925,26 +925,26 @@ class TestTopEntitiesInPeriodChartAPIView:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Budget with entities, some with transfers and some without.
+        GIVEN: Wallet with entities, some with transfers and some without.
         WHEN: TopEntitiesInPeriodChartAPIView called.
         THEN: HTTP 200 - Response only includes entities with transfers > 0.
         """
-        budget = budget_factory(members=[base_user])
-        period = budgeting_period_factory(budget=budget)
-        deposit = deposit_factory(budget=budget)
-        expense_category = transfer_category_factory(budget=budget, deposit=deposit, category_type=CategoryType.EXPENSE)
+        wallet = wallet_factory(members=[base_user])
+        period = period_factory(wallet=wallet)
+        deposit = deposit_factory(wallet=wallet)
+        expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
 
-        entity1 = entity_factory(budget=budget, name="Entity 1")
-        entity2 = entity_factory(budget=budget, name="Entity 2")
-        entity_factory(budget=budget, name="Entity 3")  # No transfers
+        entity1 = entity_factory(wallet=wallet, name="Entity 1")
+        entity2 = entity_factory(wallet=wallet, name="Entity 2")
+        entity_factory(wallet=wallet, name="Entity 3")  # No transfers
 
         transfer_factory(
             period=period, category=expense_category, value=Decimal("100.00"), deposit=deposit, entity=entity1
@@ -956,7 +956,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         api_client.force_authenticate(base_user)
 
         response = api_client.get(
-            top_entities_chart_url(budget.id),
+            top_entities_chart_url(wallet.id),
             {"period": str(period.id), "transfer_type": str(CategoryType.EXPENSE.value)},
         )
 

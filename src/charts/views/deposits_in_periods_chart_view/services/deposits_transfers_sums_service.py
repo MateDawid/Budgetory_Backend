@@ -6,13 +6,13 @@ from transfers.models import Transfer
 
 
 def get_deposits_transfers_sums_in_period(
-    budget_pk: int, deposit_ids: list[int], period: dict, transfer_type: CategoryType
+    wallet_pk: int, deposit_ids: list[int], period: dict, transfer_type: CategoryType
 ) -> dict[int, float]:
     """
     Calculates passed deposits sum of specified transfer type in given period.
 
     Args:
-        budget_pk (int): Primary key of the budget to filter deposits for
+        wallet_pk (int): Primary key of the wallet to filter deposits for
         deposit_ids (list[int]): List of deposit IDs
         period (dict): Period data
         transfer_type (CategoryType): Transfer type
@@ -22,7 +22,7 @@ def get_deposits_transfers_sums_in_period(
     """
     period_results = (
         Transfer.objects.filter(
-            deposit_id__in=deposit_ids, period__budget_id=budget_pk, period_id=period["pk"], transfer_type=transfer_type
+            deposit_id__in=deposit_ids, period__wallet_id=wallet_pk, period_id=period["pk"], transfer_type=transfer_type
         )
         .values("deposit_id")
         .annotate(

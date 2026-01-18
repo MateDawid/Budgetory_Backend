@@ -4,7 +4,7 @@ from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
-from app_infrastructure.permissions import UserBelongsToBudgetPermission
+from app_infrastructure.permissions import UserBelongsToWalletPermission
 from categories.filtersets.transfer_category_filterset import TransferCategoryFilterSet
 from categories.serializers.transfer_category_serializer import TransferCategorySerializer
 
@@ -14,29 +14,29 @@ class TransferCategoryViewSet(ModelViewSet):
 
     serializer_class = TransferCategorySerializer
     filterset_class = TransferCategoryFilterSet
-    permission_classes = (IsAuthenticated, UserBelongsToBudgetPermission)
+    permission_classes = (IsAuthenticated, UserBelongsToWalletPermission)
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
     ordering_fields = ("id", "name", "category_type", "priority", "deposit")
 
     def get_queryset(self) -> QuerySet:
         """
-        Retrieve TransferCategories for Budget passed in URL.
+        Retrieve TransferCategories for Wallet passed in URL.
 
         Returns:
             QuerySet: Filtered TransferCategory QuerySet.
         """
         return (
-            self.serializer_class.Meta.model.objects.prefetch_related("budget", "deposit")
-            .filter(budget__pk=self.kwargs.get("budget_pk"))
+            self.serializer_class.Meta.model.objects.prefetch_related("wallet", "deposit")
+            .filter(wallet__pk=self.kwargs.get("wallet_pk"))
             .distinct()
             .annotate(deposit_display=F("deposit__name"))
         )
 
     def perform_create(self, serializer: TransferCategorySerializer) -> None:
         """
-        Additionally save Budget from URL on TransferCategory instance during saving serializer.
+        Additionally save Wallet from URL on TransferCategory instance during saving serializer.
 
         Args:
             serializer [TransferCategorySerializer]: Serializer for TransferCategory model.
         """
-        serializer.save(budget_id=self.kwargs.get("budget_pk"))
+        serializer.save(wallet_id=self.kwargs.get("wallet_pk"))

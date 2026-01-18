@@ -6,7 +6,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from app_infrastructure.permissions import UserBelongsToBudgetPermission
+from app_infrastructure.permissions import UserBelongsToWalletPermission
 from categories.models.choices.category_type import CategoryType
 from charts.views.deposits_in_periods_chart_view.services.deposits_balances_service import (
     get_deposits_balance_in_period,
@@ -18,15 +18,15 @@ from charts.views.utils import generate_rgba_value, get_periods
 from entities.models import Deposit
 
 
-def get_deposits(budget_pk: int, deposit_id: str) -> list[dict[str, Any]]:
+def get_deposits(wallet_pk: int, deposit_id: str) -> list[dict[str, Any]]:
     """
-    Retrieve deposits for a specific budget with optional filtering.
+    Retrieve deposits for a specific wallet with optional filtering.
 
-    Filters deposits based on budget ID and optional deposit type or specific deposit ID
+    Filters deposits based on wallet ID and optional deposit type or specific deposit ID
     from the query parameters. Results are ordered by deposit type and name for consistent output.
 
     Args:
-        budget_pk (int): Primary key of the budget to filter deposits for
+        wallet_pk (int): Primary key of the wallet to filter deposits for
         deposit_id (str): Specific deposit ID to filter by
 
     Returns:
@@ -34,7 +34,7 @@ def get_deposits(budget_pk: int, deposit_id: str) -> list[dict[str, Any]]:
             - pk: Deposit primary key
             - name: Deposit name
     """
-    query_filters: dict = {"budget_id": budget_pk}
+    query_filters: dict = {"wallet_id": wallet_pk}
     if deposit_id:
         query_filters["id"] = deposit_id
     return list(Deposit.objects.filter(**query_filters).order_by("name").values("pk", "name"))
@@ -74,7 +74,7 @@ class DepositsInPeriodsChartAPIView(APIView):
 
     Permissions:
         - User must be authenticated
-        - User must belong to the specified budget
+        - User must belong to the specified wallet
 
     Query Parameters:
         - period_from (optional): Starting period ID for date range filtering
@@ -89,10 +89,10 @@ class DepositsInPeriodsChartAPIView(APIView):
 
     permission_classes = (
         IsAuthenticated,
-        UserBelongsToBudgetPermission,
+        UserBelongsToWalletPermission,
     )
 
-    def get(self, request: Request, budget_pk: int, **kwargs: dict[str, Any]) -> Response:
+    def get(self, request: Request, wallet_pk: int, **kwargs: dict[str, Any]) -> Response:
         """
         Handle GET requests for deposit balance results.
 
@@ -102,7 +102,7 @@ class DepositsInPeriodsChartAPIView(APIView):
 
         Args:
             request (Request): DRF request object containing query parameters
-            budget_pk (int): Primary key of the budget to analyze
+            wallet_pk (int): Primary key of the wallet to analyze
             **kwargs (dict[str, Any]): Additional keyword arguments from URL routing
 
         Returns:
@@ -110,11 +110,11 @@ class DepositsInPeriodsChartAPIView(APIView):
                      and series (deposit balance data with colors)
         """
         # Filter out periods
-        periods = get_periods(budget_pk=budget_pk, query_params=request.query_params)
+        periods = get_periods(wallet_pk=wallet_pk, query_params=request.query_params)
         if not periods:
             return Response({"xAxis": [], "series": []})
         # Filter out deposits
-        deposits = get_deposits(budget_pk=budget_pk, deposit_id=request.query_params.get("deposit"))
+        deposits = get_deposits(wallet_pk=wallet_pk, deposit_id=request.query_params.get("deposit"))
         if not deposits:
             return Response({"xAxis": [], "series": []})
         # Select proper service chart data generation
@@ -122,12 +122,12 @@ class DepositsInPeriodsChartAPIView(APIView):
         if display_value := request.query_params.get("display_value"):
             chart_data_service = partial(
                 get_deposits_transfers_sums_in_period,
-                budget_pk=budget_pk,
+                wallet_pk=wallet_pk,
                 deposit_ids=deposits_ids,
                 transfer_type=display_value,
             )
         else:
-            chart_data_service = partial(get_deposits_balance_in_period, budget_pk=budget_pk, deposit_ids=deposits_ids)
+            chart_data_service = partial(get_deposits_balance_in_period, wallet_pk=wallet_pk, deposit_ids=deposits_ids)
 
         # Get chart data
         formatted_deposits_results: list[dict[str, Any]] = []

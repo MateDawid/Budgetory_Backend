@@ -5,11 +5,11 @@ from django.db.models import Model
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from budgets.models import BudgetingPeriod
-from budgets.models.choices.period_status import PeriodStatus
 from categories.models import TransferCategory
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
+from periods.models import Period
+from periods.models.choices.period_status import PeriodStatus
 from predictions.models.expense_prediction_model import NOT_CATEGORIZED_CATEGORY_NAME, ExpensePrediction
 
 
@@ -71,27 +71,27 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
             raise ValidationError("Incorrect category provided. Please provide expense category.")
         return category
 
-    def validate_period(self, period: BudgetingPeriod) -> BudgetingPeriod:
+    def validate_period(self, period: Period) -> Period:
         """
         Validates "period" field.
 
         Args:
-            period [BudgetingPeriod]: BudgetingPeriod of given ExpensePrediction.
+            period [Period]: Period of given ExpensePrediction.
 
         Returns:
-            BudgetingPeriod: Validated category of ExpensePrediction.
+            Period: Validated category of ExpensePrediction.
 
         Raises:
             ValidationError: Raised when:
-                * User tries to change BudgetingPeriod of existing ExpensePrediction
-                * User tries to create ExpensePrediction in ACTIVE or CLOSED BudgetingPeriod
+                * User tries to change Period of existing ExpensePrediction
+                * User tries to create ExpensePrediction in ACTIVE or CLOSED Period
         """
         if self.instance and self.instance.period != period:
-            raise ValidationError("Budgeting Period for Expense Prediction cannot be changed.")
+            raise ValidationError("Period for Expense Prediction cannot be changed.")
         if not self.instance and period.status == PeriodStatus.ACTIVE:
-            raise ValidationError("New Expense Prediction cannot be added to active Budgeting Period.")
+            raise ValidationError("New Expense Prediction cannot be added to active Period.")
         elif not self.instance and period.status == PeriodStatus.CLOSED:
-            raise ValidationError("New Expense Prediction cannot be added to closed Budgeting Period.")
+            raise ValidationError("New Expense Prediction cannot be added to closed Period.")
         return period
 
     @staticmethod
@@ -114,7 +114,7 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs: OrderedDict) -> OrderedDict:
         """
-        Validates if BudgetingPeriod of ExpensePrediction status is CLOSED, to stop further validations.
+        Validates if Period of ExpensePrediction status is CLOSED, to stop further validations.
 
         Args:
             attrs (OrderedDict): Provided ExpensePrediction values.
@@ -126,7 +126,7 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
             ValidationError: Raised when ExpensePrediction's period status is CLOSED.
         """
         if self.instance and self.instance.period.status == PeriodStatus.CLOSED:
-            raise ValidationError("Expense Prediction cannot be changed when Budgeting Period is closed.")
+            raise ValidationError("Expense Prediction cannot be changed when Period is closed.")
         return attrs
 
     def to_representation(self, instance: ExpensePrediction) -> OrderedDict:
@@ -134,7 +134,7 @@ class ExpensePredictionSerializer(serializers.ModelSerializer):
         Extends model representation with "value" and "label" fields for React MUI DataGrid filtering purposes.
 
         Attributes:
-            instance [BudgetingPeriod]: BudgetingPeriod model instance
+            instance [Period]: Period model instance
 
         Returns:
             OrderedDict: Dictionary containing overridden values.

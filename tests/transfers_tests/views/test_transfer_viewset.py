@@ -15,118 +15,118 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from app_users.models import User
-from budgets.models.budget_model import Budget
 from categories.models.choices.category_type import CategoryType
 from transfers.models import Expense, Income
 from transfers.models.transfer_model import Transfer
 from transfers.serializers.expense_serializer import ExpenseSerializer
 from transfers.serializers.income_serializer import IncomeSerializer
+from wallets.models.wallet_model import Wallet
 
 
-def expenses_list_url(budget_id: int) -> str:
+def expenses_list_url(wallet_id: int) -> str:
     """
     Create and return an Transfer list URL.
 
     Args:
-        budget_id (int): Budget ID.
+        wallet_id (int): Wallet ID.
 
     Returns:
         str: Relative url to list view.
     """
-    return reverse("budgets:expense-list", args=[budget_id])
+    return reverse("wallets:expense-list", args=[wallet_id])
 
 
-def incomes_list_url(budget_id: int) -> str:
+def incomes_list_url(wallet_id: int) -> str:
     """
     Create and return an Income list URL.
 
     Args:
-        budget_id (int): Budget ID.
+        wallet_id (int): Wallet ID.
 
     Returns:
         str: Relative url to list view.
     """
-    return reverse("budgets:income-list", args=[budget_id])
+    return reverse("wallets:income-list", args=[wallet_id])
 
 
-def expense_detail_url(budget_id: int, transfer_id: int) -> str:
+def expense_detail_url(wallet_id: int, transfer_id: int) -> str:
     """
     Create and return an Transfer detail URL.
 
     Args:
-        budget_id (int): Budget ID.
+        wallet_id (int): Wallet ID.
         transfer_id (int): Transfer ID.
 
     Returns:
         str: Relative url to detail view.
     """
-    return reverse("budgets:expense-detail", args=[budget_id, transfer_id])
+    return reverse("wallets:expense-detail", args=[wallet_id, transfer_id])
 
 
-def income_detail_url(budget_id: int, transfer_id: int) -> str:
+def income_detail_url(wallet_id: int, transfer_id: int) -> str:
     """
     Create and return an Income detail URL.
 
     Args:
-        budget_id (int): Budget ID.
+        wallet_id (int): Wallet ID.
         transfer_id (int): Transfer ID.
 
     Returns:
         str: Relative url to detail view.
     """
-    return reverse("budgets:income-detail", args=[budget_id, transfer_id])
+    return reverse("wallets:income-detail", args=[wallet_id, transfer_id])
 
 
-def expense_bulk_delete_url(budget_id: int) -> str:
+def expense_bulk_delete_url(wallet_id: int) -> str:
     """
     Create and return an Transfer bulk delete URL.
 
     Args:
-        budget_id (int): Budget ID.
+        wallet_id (int): Wallet ID.
 
     Returns:
         str: Relative url to bulk delete view.
     """
-    return reverse("budgets:expense-bulk-delete", args=[budget_id])
+    return reverse("wallets:expense-bulk-delete", args=[wallet_id])
 
 
-def income_bulk_delete_url(budget_id: int) -> str:
+def income_bulk_delete_url(wallet_id: int) -> str:
     """
     Create and return an Income bulk delete URL.
 
     Args:
-        budget_id (int): Budget ID.
+        wallet_id (int): Wallet ID.
 
     Returns:
         str: Relative url to bulk delete view.
     """
-    return reverse("budgets:income-bulk-delete", args=[budget_id])
+    return reverse("wallets:income-bulk-delete", args=[wallet_id])
 
 
-def expense_copy_url(budget_id: int) -> str:
+def expense_copy_url(wallet_id: int) -> str:
     """
     Create and return an Expense copy URL.
 
     Args:
-        budget_id (int): Budget ID.
+        wallet_id (int): Wallet ID.
 
     Returns:
         str: Relative url to copy view.
     """
-    return reverse("budgets:expense-copy", args=[budget_id])
+    return reverse("wallets:expense-copy", args=[wallet_id])
 
 
-def income_copy_url(budget_id: int) -> str:
+def income_copy_url(wallet_id: int) -> str:
     """
     Create and return an Income copy URL.
 
     Args:
-        budget_id (int): Budget ID.
+        wallet_id (int): Wallet ID.
 
     Returns:
         str: Relative url to copy view.
     """
-    return reverse("budgets:income-copy", args=[budget_id])
+    return reverse("wallets:income-copy", args=[wallet_id])
 
 
 @pytest.fixture(
@@ -173,26 +173,26 @@ def get_transfer_type_from_url_fixture(url_fixture: Callable):
 class TestTransferViewSetList:
     """Tests for list view on TransferViewSet."""
 
-    def test_auth_required(self, api_client: APIClient, budget: Budget, transfer_list_url: Callable):
+    def test_auth_required(self, api_client: APIClient, wallet: Wallet, transfer_list_url: Callable):
         """
-        GIVEN: Budget model instance in database.
+        GIVEN: Wallet model instance in database.
         WHEN: TransferViewSet list view called with GET without authentication.
         THEN: Unauthorized HTTP 401 returned.
         """
-        res = api_client.get(transfer_list_url(budget.id))
+        res = api_client.get(transfer_list_url(wallet.id))
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_auth_with_jwt(
-        self, api_client: APIClient, base_user: User, budget_factory: FactoryMetaClass, transfer_list_url: Callable
+        self, api_client: APIClient, base_user: User, wallet_factory: FactoryMetaClass, transfer_list_url: Callable
     ):
         """
         GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
         WHEN: TransferViewSet list endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(members=[base_user])
-        url = transfer_list_url(budget.id)
+        wallet = wallet_factory(members=[base_user])
+        url = transfer_list_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
         assert response.status_code == status.HTTP_200_OK
@@ -201,19 +201,19 @@ class TestTransferViewSetList:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         transfer_list_url: Callable,
     ):
         """
-        GIVEN: Ten Transfer model instances for single Budget created in database.
-        WHEN: TransferViewSet called by Budget member without pagination parameters.
+        GIVEN: Ten Transfer model instances for single Wallet created in database.
+        WHEN: TransferViewSet called by Wallet member without pagination parameters.
         THEN: HTTP 200 - Response with all objects returned.
         """
-        budget = budget_factory(members=[base_user])
-        url = transfer_list_url(budget.id)
+        wallet = wallet_factory(members=[base_user])
+        url = transfer_list_url(wallet.id)
         for _ in range(10):
-            transfer_factory(budget=budget, transfer_type=get_transfer_type_from_url_fixture(transfer_list_url))
+            transfer_factory(wallet=wallet, transfer_type=get_transfer_type_from_url_fixture(transfer_list_url))
         api_client.force_authenticate(base_user)
 
         response = api_client.get(url)
@@ -227,71 +227,71 @@ class TestTransferViewSetList:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         transfer_list_url: Callable,
     ):
         """
-        GIVEN: Ten Transfer model instances for single Budget created in database.
-        WHEN: TransferViewSet called by Budget member with pagination parameters - page_size and page.
+        GIVEN: Ten Transfer model instances for single Wallet created in database.
+        WHEN: TransferViewSet called by Wallet member with pagination parameters - page_size and page.
         THEN: HTTP 200 - Paginated response returned.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         for _ in range(10):
-            transfer_factory(budget=budget, transfer_type=get_transfer_type_from_url_fixture(transfer_list_url))
+            transfer_factory(wallet=wallet, transfer_type=get_transfer_type_from_url_fixture(transfer_list_url))
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(transfer_list_url(budget.id), data={"page_size": 2, "page": 1})
+        response = api_client.get(transfer_list_url(wallet.id), data={"page_size": 2, "page": 1})
 
         assert response.status_code == status.HTTP_200_OK
         assert "results" in response.data
         assert response.data["count"] == 10
 
-    def test_user_not_budget_member(
+    def test_user_not_wallet_member(
         self,
         api_client: APIClient,
         user_factory: FactoryMetaClass,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_list_url: Callable,
     ):
         """
-        GIVEN: Budget model instance in database.
-        WHEN: TransferViewSet list view called with GET by User not belonging to given Budget.
+        GIVEN: Wallet model instance in database.
+        WHEN: TransferViewSet list view called with GET by User not belonging to given Wallet.
         THEN: Forbidden HTTP 403 returned.
         """
-        budget_owner = user_factory()
+        wallet_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(members=[budget_owner])
+        wallet = wallet_factory(members=[wallet_owner])
         api_client.force_authenticate(other_user)
 
-        response = api_client.get(transfer_list_url(budget.id))
+        response = api_client.get(transfer_list_url(wallet.id))
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["detail"] == "User does not have access to Budget."
+        assert response.data["detail"] == "User does not have access to Wallet."
 
     def test_retrieve_transfer_list(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         transfer_list_url: Callable,
     ):
         """
-        GIVEN: Two Transfer model instances for single Budget created in database.
-        WHEN: TransferViewSet called by Budget owner.
-        THEN: Response with serialized Budget Transfer list returned.
+        GIVEN: Two Transfer model instances for single Wallet created in database.
+        WHEN: TransferViewSet called by Wallet owner.
+        THEN: Response with serialized Wallet Transfer list returned.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         api_client.force_authenticate(base_user)
-        url = transfer_list_url(budget.id)
+        url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
         for _ in range(2):
-            transfer_factory(budget=budget, transfer_type=transfer_type)
+            transfer_factory(wallet=wallet, transfer_type=transfer_type)
 
         response = api_client.get(url)
 
-        transfers = Transfer.objects.filter(period__budget=budget).order_by("id")
+        transfers = Transfer.objects.filter(period__wallet=wallet).order_by("id")
         if transfer_type == CategoryType.EXPENSE:
             serializer = ExpenseSerializer(transfers, many=True)
         else:
@@ -299,29 +299,29 @@ class TestTransferViewSetList:
         assert response.status_code == status.HTTP_200_OK
         assert response.data == serializer.data
 
-    def test_transfers_list_limited_to_budget(
+    def test_transfers_list_limited_to_wallet(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         transfer_list_url: Callable,
     ):
         """
-        GIVEN: Two Transfer model instances for different Budgets created in database.
-        WHEN: TransferViewSet called by one of Budgets owner.
-        THEN: Response with serialized Transfer list (only from given Budget) returned.
+        GIVEN: Two Transfer model instances for different Wallets created in database.
+        WHEN: TransferViewSet called by one of Wallets owner.
+        THEN: Response with serialized Transfer list (only from given Wallet) returned.
         """
-        budget = budget_factory(members=[base_user])
-        url = transfer_list_url(budget.id)
+        wallet = wallet_factory(members=[base_user])
+        url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
-        transfer = transfer_factory(budget=budget, transfer_type=transfer_type)
+        transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type)
         transfer_factory(transfer_type=transfer_type)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(url)
 
-        transfers = Transfer.objects.filter(period__budget=budget)
+        transfers = Transfer.objects.filter(period__wallet=wallet)
         if transfer_type == CategoryType.EXPENSE:
             serializer = ExpenseSerializer(transfers, many=True)
         else:
@@ -335,23 +335,23 @@ class TestTransferViewSetList:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
         income_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: One Expense and one Income models instances for the same Budget created in database.
-        WHEN: ExpenseViewSet called by one of Budgets owner.
-        THEN: Response with serialized Expense list (only from given Budget) returned without Income.
+        GIVEN: One Expense and one Income models instances for the same Wallet created in database.
+        WHEN: ExpenseViewSet called by one of Wallets owner.
+        THEN: Response with serialized Expense list (only from given Wallet) returned without Income.
         """
-        budget = budget_factory(members=[base_user])
-        expense_factory(budget=budget)
-        income_transfer = income_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        expense_factory(wallet=wallet)
+        income_transfer = income_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(expenses_list_url(budget.id))
+        response = api_client.get(expenses_list_url(wallet.id))
 
-        expense_transfers = Expense.objects.filter(period__budget=budget)
+        expense_transfers = Expense.objects.filter(period__wallet=wallet)
         serializer = ExpenseSerializer(expense_transfers, many=True)
         assert Transfer.objects.all().count() == 2
         assert response.status_code == status.HTTP_200_OK
@@ -363,23 +363,23 @@ class TestTransferViewSetList:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         expense_factory: FactoryMetaClass,
         income_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: One Income and one Expense models instances for the same Budget created in database.
-        WHEN: IncomeViewSet called by one of Budgets owner.
-        THEN: Response with serialized Income list (only from given Budget) returned without Expense.
+        GIVEN: One Income and one Expense models instances for the same Wallet created in database.
+        WHEN: IncomeViewSet called by one of Wallets owner.
+        THEN: Response with serialized Income list (only from given Wallet) returned without Expense.
         """
-        budget = budget_factory(members=[base_user])
-        income_factory(budget=budget)
-        expense_transfer = expense_factory(budget=budget)
+        wallet = wallet_factory(members=[base_user])
+        income_factory(wallet=wallet)
+        expense_transfer = expense_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(incomes_list_url(budget.id))
+        response = api_client.get(incomes_list_url(wallet.id))
 
-        income_transfers = Income.objects.filter(period__budget=budget)
+        income_transfers = Income.objects.filter(period__wallet=wallet)
         serializer = IncomeSerializer(income_transfers, many=True)
         assert Transfer.objects.all().count() == 2
         assert response.status_code == status.HTTP_200_OK
@@ -398,59 +398,59 @@ class TestTransferViewSetCreate:
         "value": Decimal(1000),
     }
 
-    def test_auth_required(self, api_client: APIClient, budget: Budget, transfer_list_url: Callable):
+    def test_auth_required(self, api_client: APIClient, wallet: Wallet, transfer_list_url: Callable):
         """
-        GIVEN: Budget model instance in database.
+        GIVEN: Wallet model instance in database.
         WHEN: TransferViewSet list view called with POST without authentication.
         THEN: Unauthorized HTTP 401 returned.
         """
-        res = api_client.post(transfer_list_url(budget.id), data={})
+        res = api_client.post(transfer_list_url(wallet.id), data={})
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_auth_with_jwt(
-        self, api_client: APIClient, base_user: User, budget_factory: FactoryMetaClass, transfer_list_url: Callable
+        self, api_client: APIClient, base_user: User, wallet_factory: FactoryMetaClass, transfer_list_url: Callable
     ):
         """
         GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
         WHEN: TransferViewSet list endpoint called with GET.
         THEN: HTTP 400 returned - access granted, but data invalid.
         """
-        budget = budget_factory(members=[base_user])
-        url = transfer_list_url(budget.id)
+        wallet = wallet_factory(members=[base_user])
+        url = transfer_list_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.post(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_user_not_budget_member(
+    def test_user_not_wallet_member(
         self,
         api_client: APIClient,
         user_factory: FactoryMetaClass,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_list_url: Callable,
     ):
         """
-        GIVEN: Budget model instance in database.
-        WHEN: TransferViewSet list view called with POST by User not belonging to given Budget.
+        GIVEN: Wallet model instance in database.
+        WHEN: TransferViewSet list view called with POST by User not belonging to given Wallet.
         THEN: Forbidden HTTP 403 returned.
         """
-        budget_owner = user_factory()
+        wallet_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(members=[budget_owner])
+        wallet = wallet_factory(members=[wallet_owner])
         api_client.force_authenticate(other_user)
 
-        response = api_client.post(transfer_list_url(budget.id), data={})
+        response = api_client.post(transfer_list_url(wallet.id), data={})
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["detail"] == "User does not have access to Budget."
+        assert response.data["detail"] == "User does not have access to Wallet."
 
     @pytest.mark.parametrize("value", [Decimal("0.01"), Decimal("99999999.99")])
     def test_create_single_transfer_successfully(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
@@ -458,36 +458,36 @@ class TestTransferViewSetCreate:
         transfer_list_url: Callable,
     ):
         """
-        GIVEN: Budget instance created in database. Valid payload prepared for Transfer.
-        WHEN: TransferViewSet called with POST by User belonging to Budget with valid payload.
+        GIVEN: Wallet instance created in database. Valid payload prepared for Transfer.
+        WHEN: TransferViewSet called with POST by User belonging to Wallet with valid payload.
         THEN: Transfer object created in database with given payload.
         """
-        budget = budget_factory(members=[base_user])
-        url = transfer_list_url(budget.id)
+        wallet = wallet_factory(members=[base_user])
+        url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
-        period = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        period = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["entity"] = entity_factory(budget=budget).pk
-        deposit = deposit_factory(budget=budget)
+        payload["entity"] = entity_factory(wallet=wallet).pk
+        deposit = deposit_factory(wallet=wallet)
         payload["deposit"] = deposit.pk
-        payload["category"] = transfer_category_factory(budget=budget, deposit=deposit, category_type=transfer_type).pk
+        payload["category"] = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=transfer_type).pk
         payload["value"] = value
 
         response = api_client.post(url, data=payload)
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert Transfer.objects.filter(transfer_type=transfer_type, period__budget=budget).count() == 1
+        assert Transfer.objects.filter(transfer_type=transfer_type, period__wallet=wallet).count() == 1
         match transfer_type:
             case CategoryType.EXPENSE:
-                assert Transfer.expenses.filter(period__budget=budget).count() == 1
-                assert Transfer.incomes.filter(period__budget=budget).count() == 0
+                assert Transfer.expenses.filter(period__wallet=wallet).count() == 1
+                assert Transfer.incomes.filter(period__wallet=wallet).count() == 0
             case CategoryType.INCOME:
-                assert Transfer.expenses.filter(period__budget=budget).count() == 0
-                assert Transfer.incomes.filter(period__budget=budget).count() == 1
+                assert Transfer.expenses.filter(period__wallet=wallet).count() == 0
+                assert Transfer.incomes.filter(period__wallet=wallet).count() == 1
         transfer = Transfer.objects.get(id=response.data["id"])
         assert transfer.period == period
         for key in payload:
@@ -505,34 +505,34 @@ class TestTransferViewSetCreate:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_list_url: Callable,
     ):
         """
-        GIVEN: Budget instance created in database. Valid payload prepared for Transfer without 'entity' value.
-        WHEN: TransferViewSet called with POST by User belonging to Budget with valid payload.
+        GIVEN: Wallet instance created in database. Valid payload prepared for Transfer without 'entity' value.
+        WHEN: TransferViewSet called with POST by User belonging to Wallet with valid payload.
         THEN: Transfer object created in database with given payload and entity value None.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
-        period = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        period = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        deposit = deposit_factory(budget=budget)
+        deposit = deposit_factory(wallet=wallet)
         payload["deposit"] = deposit.pk
-        payload["category"] = transfer_category_factory(budget=budget, deposit=deposit, category_type=transfer_type).pk
+        payload["category"] = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=transfer_type).pk
         payload["value"] = Decimal("0.01")
 
-        response = api_client.post(transfer_list_url(budget.id), data=payload)
+        response = api_client.post(transfer_list_url(wallet.id), data=payload)
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert Transfer.objects.filter(transfer_type=transfer_type, period__budget=budget).count() == 1
+        assert Transfer.objects.filter(transfer_type=transfer_type, period__wallet=wallet).count() == 1
         transfer = Transfer.objects.get(id=response.data["id"])
         assert transfer.period == period
         assert transfer.entity is None
@@ -546,35 +546,35 @@ class TestTransferViewSetCreate:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         transfer_list_url: Callable,
     ):
         """
-        GIVEN: Budget instance created in database. Valid payload prepared for Transfer without 'category' value.
-        WHEN: TransferViewSet called with POST by User belonging to Budget with valid payload.
+        GIVEN: Wallet instance created in database. Valid payload prepared for Transfer without 'category' value.
+        WHEN: TransferViewSet called with POST by User belonging to Wallet with valid payload.
         THEN: Transfer object created in database with given payload and category value None.
         """
-        budget = budget_factory(members=[base_user])
-        url = transfer_list_url(budget.id)
+        wallet = wallet_factory(members=[base_user])
+        url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
-        period = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        period = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        deposit = deposit_factory(budget=budget)
+        deposit = deposit_factory(wallet=wallet)
         payload["deposit"] = deposit.pk
-        payload["entity"] = entity_factory(budget=budget).pk
+        payload["entity"] = entity_factory(wallet=wallet).pk
         payload["value"] = Decimal("0.01")
 
         response = api_client.post(url, data=payload)
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert Transfer.objects.filter(transfer_type=transfer_type, period__budget=budget).count() == 1
+        assert Transfer.objects.filter(transfer_type=transfer_type, period__wallet=wallet).count() == 1
         transfer = Transfer.objects.get(id=response.data["id"])
         assert transfer.period == period
         assert transfer.category is None
@@ -589,17 +589,17 @@ class TestTransferViewSetCreate:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         field_name: str,
         transfer_list_url: Callable,
     ):
         """
-        GIVEN: Budget instance created in database. Payload for Transfer with field value too long.
-        WHEN: TransferViewSet called with POST by User belonging to Budget with invalid payload.
+        GIVEN: Wallet instance created in database. Payload for Transfer with field value too long.
+        WHEN: TransferViewSet called with POST by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        budget = budget_factory(members=[base_user])
-        url = transfer_list_url(budget.id)
+        wallet = wallet_factory(members=[base_user])
+        url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
         api_client.force_authenticate(base_user)
         max_length = Transfer._meta.get_field(field_name).max_length
@@ -611,15 +611,15 @@ class TestTransferViewSetCreate:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert field_name in response.data["detail"]
         assert response.data["detail"][field_name][0] == f"Ensure this field has no more than {max_length} characters."
-        assert not Transfer.objects.filter(transfer_type=transfer_type, period__budget=budget).exists()
+        assert not Transfer.objects.filter(transfer_type=transfer_type, period__wallet=wallet).exists()
 
     @pytest.mark.parametrize("value", [Decimal("0.00"), Decimal("-0.01")])
     def test_error_value_lower_than_min(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
@@ -627,22 +627,20 @@ class TestTransferViewSetCreate:
         transfer_list_url: Callable,
     ):
         """
-        GIVEN: Budget instance created in database. Payload for Transfer with "value" too low.
-        WHEN: TransferViewSet called with POST by User belonging to Budget with invalid payload.
+        GIVEN: Wallet instance created in database. Payload for Transfer with "value" too low.
+        WHEN: TransferViewSet called with POST by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        budget = budget_factory(members=[base_user])
-        url = transfer_list_url(budget.id)
+        wallet = wallet_factory(members=[base_user])
+        url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
-        budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
-        )
+        period_factory(wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30))
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["entity"] = entity_factory(budget=budget).pk
-        payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = transfer_category_factory(budget=budget, category_type=transfer_type).pk
+        payload["entity"] = entity_factory(wallet=wallet).pk
+        payload["deposit"] = deposit_factory(wallet=wallet).pk
+        payload["category"] = transfer_category_factory(wallet=wallet, category_type=transfer_type).pk
 
         payload["value"] = value
 
@@ -651,36 +649,34 @@ class TestTransferViewSetCreate:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "value" in response.data["detail"]
         assert response.data["detail"]["value"][0] == "Value should be higher than 0.00."
-        assert not Transfer.objects.filter(transfer_type=transfer_type, period__budget=budget).exists()
+        assert not Transfer.objects.filter(transfer_type=transfer_type, period__wallet=wallet).exists()
 
     def test_error_value_higher_than_max(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_list_url: Callable,
     ):
         """
-        GIVEN: Budget instance created in database. Payload for Transfer with value too big.
-        WHEN: TransferViewSet called with POST by User belonging to Budget with invalid payload.
+        GIVEN: Wallet instance created in database. Payload for Transfer with value too big.
+        WHEN: TransferViewSet called with POST by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        budget = budget_factory(members=[base_user])
-        url = transfer_list_url(budget.id)
+        wallet = wallet_factory(members=[base_user])
+        url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
-        budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
-        )
+        period_factory(wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30))
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["entity"] = entity_factory(budget=budget).pk
-        payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = transfer_category_factory(budget=budget, category_type=transfer_type).pk
+        payload["entity"] = entity_factory(wallet=wallet).pk
+        payload["deposit"] = deposit_factory(wallet=wallet).pk
+        payload["category"] = transfer_category_factory(wallet=wallet, category_type=transfer_type).pk
 
         payload["value"] = Decimal("100000000.00")
 
@@ -688,38 +684,36 @@ class TestTransferViewSetCreate:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "value" in response.data["detail"]
-        assert not Transfer.objects.filter(transfer_type=transfer_type, period__budget=budget).exists()
+        assert not Transfer.objects.filter(transfer_type=transfer_type, period__wallet=wallet).exists()
 
     def test_error_invalid_category(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_list_url: Callable,
     ):
         """
-        GIVEN: Budget instance created in database. Invalid Category in payload for Transfer.
-        WHEN: TransferViewSet called with POST by User belonging to Budget.
+        GIVEN: Wallet instance created in database. Invalid Category in payload for Transfer.
+        WHEN: TransferViewSet called with POST by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        budget = budget_factory(members=[base_user])
-        url = transfer_list_url(budget.id)
+        wallet = wallet_factory(members=[base_user])
+        url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
-        budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
-        )
+        period_factory(wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30))
         api_client.force_authenticate(base_user)
-        deposit = deposit_factory(budget=budget)
+        deposit = deposit_factory(wallet=wallet)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["entity"] = entity_factory(budget=budget).pk
+        payload["entity"] = entity_factory(wallet=wallet).pk
         payload["deposit"] = deposit.pk
         payload["category"] = transfer_category_factory(
-            budget=budget,
+            wallet=wallet,
             deposit=deposit,
             category_type=CategoryType.EXPENSE if transfer_type == CategoryType.INCOME else CategoryType.INCOME,
         ).pk
@@ -733,50 +727,48 @@ class TestTransferViewSetCreate:
             response.data["detail"]["category"][0] == f"Invalid TransferCategory for "
             f"{'Income' if transfer_type == CategoryType.INCOME else 'Expense'} provided."
         )
-        assert not Transfer.objects.filter(transfer_type=transfer_type, period__budget=budget).exists()
+        assert not Transfer.objects.filter(transfer_type=transfer_type, period__wallet=wallet).exists()
 
-    def test_error_category_from_outer_budget(
+    def test_error_category_from_outer_wallet(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_list_url: Callable,
     ):
         """
-        GIVEN: TransferCategory from outer Budget in payload for Transfer.
-        WHEN: TransferViewSet called with POST by User belonging to Budget.
+        GIVEN: TransferCategory from outer Wallet in payload for Transfer.
+        WHEN: TransferViewSet called with POST by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        budget = budget_factory(members=[base_user])
-        url = transfer_list_url(budget.id)
+        wallet = wallet_factory(members=[base_user])
+        url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
-        budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
-        )
+        period_factory(wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30))
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["entity"] = entity_factory(budget=budget).pk
-        payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = transfer_category_factory(budget=budget_factory(), category_type=transfer_type).pk
+        payload["entity"] = entity_factory(wallet=wallet).pk
+        payload["deposit"] = deposit_factory(wallet=wallet).pk
+        payload["category"] = transfer_category_factory(wallet=wallet_factory(), category_type=transfer_type).pk
 
         api_client.post(url, payload)
         response = api_client.post(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "category" in response.data["detail"]
-        assert response.data["detail"]["category"][0] == "TransferCategory from different Budget."
-        assert not Transfer.objects.filter(transfer_type=transfer_type, period__budget=budget).exists()
+        assert response.data["detail"]["category"][0] == "TransferCategory from different Wallet."
+        assert not Transfer.objects.filter(transfer_type=transfer_type, period__wallet=wallet).exists()
 
     def test_error_period_matching_given_date_does_not_exist(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
@@ -784,18 +776,18 @@ class TestTransferViewSetCreate:
     ):
         """
         GIVEN: Date that does not match any Period in payload for Transfer.
-        WHEN: TransferViewSet called with POST by User belonging to Budget.
+        WHEN: TransferViewSet called with POST by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        budget = budget_factory(members=[base_user])
-        url = transfer_list_url(budget.id)
+        wallet = wallet_factory(members=[base_user])
+        url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["entity"] = entity_factory(budget=budget).pk
-        payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = transfer_category_factory(budget=budget, category_type=transfer_type).pk
+        payload["entity"] = entity_factory(wallet=wallet).pk
+        payload["deposit"] = deposit_factory(wallet=wallet).pk
+        payload["category"] = transfer_category_factory(wallet=wallet, category_type=transfer_type).pk
 
         api_client.post(url, payload)
         response = api_client.post(url, payload)
@@ -803,88 +795,84 @@ class TestTransferViewSetCreate:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "non_field_errors" in response.data["detail"]
         assert response.data["detail"]["non_field_errors"][0] == "Period matching given date does not exist."
-        assert not Transfer.objects.filter(transfer_type=transfer_type, period__budget=budget).exists()
+        assert not Transfer.objects.filter(transfer_type=transfer_type, period__wallet=wallet).exists()
 
-    def test_error_deposit_from_outer_budget(
+    def test_error_deposit_from_outer_wallet(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_list_url: Callable,
     ):
         """
-        GIVEN: Deposit from outer Budget in payload for Transfer.
-        WHEN: TransferViewSet called with POST by User belonging to Budget.
+        GIVEN: Deposit from outer Wallet in payload for Transfer.
+        WHEN: TransferViewSet called with POST by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        budget = budget_factory(members=[base_user])
-        url = transfer_list_url(budget.id)
+        wallet = wallet_factory(members=[base_user])
+        url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
-        budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
-        )
+        period_factory(wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30))
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["entity"] = entity_factory(budget=budget).pk
-        payload["deposit"] = deposit_factory(budget=budget_factory()).pk
-        payload["category"] = transfer_category_factory(budget=budget, category_type=transfer_type).pk
+        payload["entity"] = entity_factory(wallet=wallet).pk
+        payload["deposit"] = deposit_factory(wallet=wallet_factory()).pk
+        payload["category"] = transfer_category_factory(wallet=wallet, category_type=transfer_type).pk
 
         api_client.post(url, payload)
         response = api_client.post(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "deposit" in response.data["detail"]
-        assert response.data["detail"]["deposit"][0] == "Deposit from different Budget."
-        assert not Transfer.objects.filter(transfer_type=transfer_type, period__budget=budget).exists()
+        assert response.data["detail"]["deposit"][0] == "Deposit from different Wallet."
+        assert not Transfer.objects.filter(transfer_type=transfer_type, period__wallet=wallet).exists()
 
-    def test_error_entity_from_outer_budget(
+    def test_error_entity_from_outer_wallet(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_list_url: Callable,
     ):
         """
-        GIVEN: Entity from outer Budget in payload for Transfer.
-        WHEN: TransferViewSet called with POST by User belonging to Budget.
+        GIVEN: Entity from outer Wallet in payload for Transfer.
+        WHEN: TransferViewSet called with POST by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        budget = budget_factory(members=[base_user])
-        url = transfer_list_url(budget.id)
+        wallet = wallet_factory(members=[base_user])
+        url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
-        budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
-        )
+        period_factory(wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30))
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["entity"] = entity_factory(budget=budget_factory()).pk
-        payload["deposit"] = deposit_factory(budget=budget).pk
-        payload["category"] = transfer_category_factory(budget=budget, category_type=transfer_type).pk
+        payload["entity"] = entity_factory(wallet=wallet_factory()).pk
+        payload["deposit"] = deposit_factory(wallet=wallet).pk
+        payload["category"] = transfer_category_factory(wallet=wallet, category_type=transfer_type).pk
 
         api_client.post(url, payload)
         response = api_client.post(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "entity" in response.data["detail"]
-        assert response.data["detail"]["entity"][0] == "Entity from different Budget."
-        assert not Transfer.objects.filter(transfer_type=transfer_type, period__budget=budget).exists()
+        assert response.data["detail"]["entity"][0] == "Entity from different Wallet."
+        assert not Transfer.objects.filter(transfer_type=transfer_type, period__wallet=wallet).exists()
 
     def test_error_deposit_different_from_category_deposit(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
@@ -892,22 +880,20 @@ class TestTransferViewSetCreate:
     ):
         """
         GIVEN: Category Deposit different from Transfer Deposit in payload for Transfer.
-        WHEN: TransferViewSet called with POST by User belonging to Budget.
+        WHEN: TransferViewSet called with POST by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        budget = budget_factory(members=[base_user])
-        url = transfer_list_url(budget.id)
+        wallet = wallet_factory(members=[base_user])
+        url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
-        budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
-        )
+        period_factory(wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30))
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["entity"] = entity_factory(budget=budget).pk
-        payload["deposit"] = deposit_factory(budget=budget).pk
+        payload["entity"] = entity_factory(wallet=wallet).pk
+        payload["deposit"] = deposit_factory(wallet=wallet).pk
         payload["category"] = transfer_category_factory(
-            budget=budget, deposit=deposit_factory(budget=budget), category_type=transfer_type
+            wallet=wallet, deposit=deposit_factory(wallet=wallet), category_type=transfer_type
         ).pk
 
         api_client.post(url, payload)
@@ -919,7 +905,7 @@ class TestTransferViewSetCreate:
             response.data["detail"]["non_field_errors"][0]
             == "Transfer Deposit and Transfer Category Deposit has to be the same."
         )
-        assert not Transfer.objects.filter(period__budget=budget).exists()
+        assert not Transfer.objects.filter(period__wallet=wallet).exists()
 
 
 @pytest.mark.django_db
@@ -930,13 +916,13 @@ class TestTransferViewSetDetail:
         self, api_client: APIClient, transfer_factory: FactoryMetaClass, transfer_detail_url: Callable
     ):
         """
-        GIVEN: Budget model instance in database.
+        GIVEN: Wallet model instance in database.
         WHEN: TransferViewSet detail view called with GET without authentication.
         THEN: Unauthorized HTTP 401 returned.
         """
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         transfer = transfer_factory(transfer_type=transfer_type)
-        res = api_client.get(transfer_detail_url(transfer.period.budget.id, transfer.id))
+        res = api_client.get(transfer_detail_url(transfer.period.wallet.id, transfer.id))
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -944,7 +930,7 @@ class TestTransferViewSetDetail:
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         transfer_detail_url: Callable,
     ):
@@ -953,58 +939,58 @@ class TestTransferViewSetDetail:
         WHEN: TransferViewSet detail endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
-        transfer = transfer_factory(budget=budget, transfer_type=transfer_type)
-        url = transfer_detail_url(budget.id, transfer.id)
+        transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type)
+        url = transfer_detail_url(wallet.id, transfer.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
         assert response.status_code == status.HTTP_200_OK
 
-    def test_user_not_budget_member(
+    def test_user_not_wallet_member(
         self,
         api_client: APIClient,
         user_factory: FactoryMetaClass,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         transfer_detail_url: Callable,
     ):
         """
-        GIVEN: Budget model instance in database.
-        WHEN: TransferViewSet detail view called with GET by User not belonging to given Budget.
+        GIVEN: Wallet model instance in database.
+        WHEN: TransferViewSet detail view called with GET by User not belonging to given Wallet.
         THEN: Forbidden HTTP 403 returned.
         """
-        budget_owner = user_factory()
+        wallet_owner = user_factory()
         other_user = user_factory()
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
-        budget = budget_factory(members=[budget_owner])
-        transfer = transfer_factory(transfer_type=transfer_type, budget=budget)
+        wallet = wallet_factory(members=[wallet_owner])
+        transfer = transfer_factory(transfer_type=transfer_type, wallet=wallet)
         api_client.force_authenticate(other_user)
-        url = transfer_detail_url(budget.id, transfer.id)
+        url = transfer_detail_url(wallet.id, transfer.id)
 
         response = api_client.get(url)
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["detail"] == "User does not have access to Budget."
+        assert response.data["detail"] == "User does not have access to Wallet."
 
     def test_get_transfer_details(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         transfer_detail_url: Callable,
     ):
         """
-        GIVEN: Transfer instance for Budget created in database.
-        WHEN: TransferViewSet detail view called by User belonging to Budget.
+        GIVEN: Transfer instance for Wallet created in database.
+        WHEN: TransferViewSet detail view called by User belonging to Wallet.
         THEN: HTTP 200, Transfer details returned.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
-        transfer = transfer_factory(transfer_type=transfer_type, budget=budget)
+        transfer = transfer_factory(transfer_type=transfer_type, wallet=wallet)
         api_client.force_authenticate(base_user)
-        url = transfer_detail_url(budget.id, transfer.id)
+        url = transfer_detail_url(wallet.id, transfer.id)
 
         response = api_client.get(url)
         if transfer_type == CategoryType.EXPENSE:
@@ -1030,13 +1016,13 @@ class TestTransferViewSetUpdate:
         self, api_client: APIClient, transfer_factory: FactoryMetaClass, transfer_detail_url: Callable
     ):
         """
-        GIVEN: Budget model instance in database.
+        GIVEN: Wallet model instance in database.
         WHEN: TransferViewSet detail view called with PATCH without authentication.
         THEN: Unauthorized HTTP 401 returned.
         """
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         transfer = transfer_factory(transfer_type=transfer_type)
-        res = api_client.patch(transfer_detail_url(transfer.period.budget.id, transfer.id), data={})
+        res = api_client.patch(transfer_detail_url(transfer.period.wallet.id, transfer.id), data={})
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -1044,7 +1030,7 @@ class TestTransferViewSetUpdate:
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         transfer_detail_url: Callable,
     ):
@@ -1053,39 +1039,39 @@ class TestTransferViewSetUpdate:
         WHEN: TransferViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
-        transfer = transfer_factory(budget=budget, transfer_type=transfer_type)
-        url = transfer_detail_url(budget.id, transfer.id)
+        transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type)
+        url = transfer_detail_url(wallet.id, transfer.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.patch(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
         assert response.status_code == status.HTTP_200_OK
 
-    def test_user_not_budget_member(
+    def test_user_not_wallet_member(
         self,
         api_client: APIClient,
         user_factory: FactoryMetaClass,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         transfer_detail_url: Callable,
     ):
         """
-        GIVEN: Budget model instance in database.
-        WHEN: TransferViewSet detail view called with PATCH by User not belonging to given Budget.
+        GIVEN: Wallet model instance in database.
+        WHEN: TransferViewSet detail view called with PATCH by User not belonging to given Wallet.
         THEN: Forbidden HTTP 403 returned.
         """
-        budget_owner = user_factory()
+        wallet_owner = user_factory()
         other_user = user_factory()
-        budget = budget_factory(members=[budget_owner])
+        wallet = wallet_factory(members=[wallet_owner])
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
-        transfer = transfer_factory(budget=budget, transfer_type=transfer_type)
+        transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type)
         api_client.force_authenticate(other_user)
-        url = transfer_detail_url(budget.id, transfer.id)
+        url = transfer_detail_url(wallet.id, transfer.id)
 
         response = api_client.patch(url)
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["detail"] == "User does not have access to Budget."
+        assert response.data["detail"] == "User does not have access to Wallet."
 
     @pytest.mark.parametrize(
         "param, value",
@@ -1101,8 +1087,8 @@ class TestTransferViewSetUpdate:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
@@ -1112,26 +1098,26 @@ class TestTransferViewSetUpdate:
         transfer_detail_url: Callable,
     ):
         """
-        GIVEN: Transfer instance for Budget created in database.
-        WHEN: TransferViewSet detail view called with PATCH by User belonging to Budget.
+        GIVEN: Transfer instance for Wallet created in database.
+        WHEN: TransferViewSet detail view called with PATCH by User belonging to Wallet.
         THEN: HTTP 200, Transfer updated.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
-        period = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        period = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
+        payload["entity"] = entity_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
         payload["category"] = transfer_category_factory(
-            budget=budget, deposit=payload["deposit"], category_type=transfer_type
+            wallet=wallet, deposit=payload["deposit"], category_type=transfer_type
         )
-        transfer = transfer_factory(budget=budget, transfer_type=transfer_type, **payload)
+        transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type, **payload)
         update_payload = {param: value}
         api_client.force_authenticate(base_user)
-        url = transfer_detail_url(budget.id, transfer.id)
+        url = transfer_detail_url(wallet.id, transfer.id)
 
         response = api_client.patch(url, update_payload)
 
@@ -1145,8 +1131,8 @@ class TestTransferViewSetUpdate:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
@@ -1154,31 +1140,31 @@ class TestTransferViewSetUpdate:
         transfer_detail_url: Callable,
     ):
         """
-        GIVEN: Transfer instance for Budget created in database.
-        WHEN: TransferViewSet detail view called with PATCH with invalid BudgetingPeriod.
+        GIVEN: Transfer instance for Wallet created in database.
+        WHEN: TransferViewSet detail view called with PATCH with invalid Period.
         THEN: HTTP 400, Transfer not updated.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
-        period = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        period = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
-        new_period = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 10, 1), date_end=datetime.date(2024, 10, 31)
+        new_period = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 10, 1), date_end=datetime.date(2024, 10, 31)
         )
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
+        payload["entity"] = entity_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
         payload["category"] = transfer_category_factory(
-            budget=budget, deposit=payload["deposit"], category_type=transfer_type
+            wallet=wallet, deposit=payload["deposit"], category_type=transfer_type
         )
-        transfer = transfer_factory(budget=budget, transfer_type=transfer_type, period=period, **payload)
+        transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type, period=period, **payload)
 
         new_date = datetime.date(2024, 10, 1)
         update_payload = {"date": new_date}
         api_client.force_authenticate(base_user)
-        url = transfer_detail_url(budget.id, transfer.id)
+        url = transfer_detail_url(wallet.id, transfer.id)
 
         response = api_client.patch(url, update_payload)
 
@@ -1192,8 +1178,8 @@ class TestTransferViewSetUpdate:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
@@ -1201,27 +1187,27 @@ class TestTransferViewSetUpdate:
         transfer_detail_url: Callable,
     ):
         """
-        GIVEN: Transfer instance for Budget created in database.
+        GIVEN: Transfer instance for Wallet created in database.
         WHEN: TransferViewSet detail view called with PATCH with valid Entity.
         THEN: HTTP 200, Transfer updated.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        payload["period"] = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
+        payload["entity"] = entity_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
         payload["category"] = transfer_category_factory(
-            budget=budget, deposit=payload["deposit"], category_type=transfer_type
+            wallet=wallet, deposit=payload["deposit"], category_type=transfer_type
         )
-        transfer = transfer_factory(budget=budget, transfer_type=transfer_type, **payload)
-        new_entity = entity_factory(budget=budget)
+        transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type, **payload)
+        new_entity = entity_factory(wallet=wallet)
         update_payload = {"entity": new_entity.pk}
         api_client.force_authenticate(base_user)
-        url = transfer_detail_url(budget.id, transfer.id)
+        url = transfer_detail_url(wallet.id, transfer.id)
 
         response = api_client.patch(url, update_payload)
 
@@ -1234,8 +1220,8 @@ class TestTransferViewSetUpdate:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
@@ -1243,25 +1229,25 @@ class TestTransferViewSetUpdate:
         transfer_detail_url: Callable,
     ):
         """
-        GIVEN: Transfer instance for Budget created in database.
+        GIVEN: Transfer instance for Wallet created in database.
         WHEN: TransferViewSet detail view called with PATCH with the same Deposit in "entity" field as already
         assigned in "deposit" field.
         THEN: HTTP 400, Transfer not updated.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        payload["period"] = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, category_type=transfer_type)
-        transfer = transfer_factory(budget=budget, transfer_type=transfer_type, **payload)
+        payload["entity"] = entity_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
+        payload["category"] = transfer_category_factory(wallet=wallet, category_type=transfer_type)
+        transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type, **payload)
         update_payload = {"entity": payload["deposit"].pk}
         api_client.force_authenticate(base_user)
-        url = transfer_detail_url(budget.id, transfer.id)
+        url = transfer_detail_url(wallet.id, transfer.id)
 
         response = api_client.patch(url, update_payload)
 
@@ -1278,33 +1264,33 @@ class TestTransferViewSetUpdate:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         transfer_detail_url: Callable,
     ):
         """
-        GIVEN: Transfer instance for Budget created in database.
+        GIVEN: Transfer instance for Wallet created in database.
         WHEN: TransferViewSet detail view called with PATCH with the same Deposit in "deposit" field as already
         assigned in "entity" field.
         THEN: HTTP 400, Transfer not updated.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        payload["period"] = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
-        payload["entity"] = deposit_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, category_type=transfer_type)
-        transfer = transfer_factory(budget=budget, transfer_type=transfer_type, **payload)
+        payload["entity"] = deposit_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
+        payload["category"] = transfer_category_factory(wallet=wallet, category_type=transfer_type)
+        transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type, **payload)
         update_payload = {"deposit": payload["entity"].pk}
         api_client.force_authenticate(base_user)
-        url = transfer_detail_url(budget.id, transfer.id)
+        url = transfer_detail_url(wallet.id, transfer.id)
 
         response = api_client.patch(url, update_payload)
 
@@ -1321,8 +1307,8 @@ class TestTransferViewSetUpdate:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
@@ -1330,26 +1316,26 @@ class TestTransferViewSetUpdate:
         transfer_detail_url: Callable,
     ):
         """
-        GIVEN: Transfer instance for Budget created in database.
+        GIVEN: Transfer instance for Wallet created in database.
         WHEN: TransferViewSet detail view called with PATCH with the same Entity with is_deposit=False in
         "deposit" field.
         THEN: HTTP 400, Transfer not updated.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        payload["period"] = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, category_type=transfer_type)
-        transfer = transfer_factory(budget=budget, transfer_type=transfer_type, **payload)
-        new_deposit = entity_factory(budget=budget, is_deposit=False)
+        payload["entity"] = entity_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
+        payload["category"] = transfer_category_factory(wallet=wallet, category_type=transfer_type)
+        transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type, **payload)
+        new_deposit = entity_factory(wallet=wallet, is_deposit=False)
         update_payload = {"deposit": new_deposit.pk}
         api_client.force_authenticate(base_user)
-        url = transfer_detail_url(budget.id, transfer.id)
+        url = transfer_detail_url(wallet.id, transfer.id)
 
         response = api_client.patch(url, update_payload)
 
@@ -1362,8 +1348,8 @@ class TestTransferViewSetUpdate:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
@@ -1371,31 +1357,31 @@ class TestTransferViewSetUpdate:
         transfer_detail_url: Callable,
     ):
         """
-        GIVEN: Transfer instance for Budget created in database.
+        GIVEN: Transfer instance for Wallet created in database.
         WHEN: TransferViewSet detail view called with PATCH with invalid TransferCategory.
         THEN: HTTP 200, Transfer updated.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        payload["period"] = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
+        payload["entity"] = entity_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
         payload["category"] = transfer_category_factory(
-            budget=budget,
+            wallet=wallet,
             category_type=CategoryType.INCOME if transfer_type == CategoryType.INCOME else CategoryType.EXPENSE,
         )
-        transfer = transfer_factory(budget=budget, transfer_type=transfer_type, **payload)
+        transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type, **payload)
         new_category = transfer_category_factory(
-            budget=budget,
+            wallet=wallet,
             category_type=CategoryType.EXPENSE if transfer_type == CategoryType.INCOME else CategoryType.INCOME,
         )
         update_payload = {"category": new_category.pk}
         api_client.force_authenticate(base_user)
-        url = transfer_detail_url(budget.id, transfer.id)
+        url = transfer_detail_url(wallet.id, transfer.id)
 
         response = api_client.patch(url, update_payload)
 
@@ -1407,8 +1393,8 @@ class TestTransferViewSetUpdate:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
@@ -1416,26 +1402,26 @@ class TestTransferViewSetUpdate:
         transfer_detail_url: Callable,
     ):
         """
-        GIVEN: Transfer instance for Budget created in database.
+        GIVEN: Transfer instance for Wallet created in database.
         WHEN: TransferViewSet detail view called with PATCH with valid payload with many fields.
         THEN: HTTP 200, Transfer updated.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        payload["period"] = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
+        payload["entity"] = entity_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
         payload["category"] = transfer_category_factory(
-            budget=budget, deposit=payload["deposit"], category_type=transfer_type
+            wallet=wallet, deposit=payload["deposit"], category_type=transfer_type
         )
-        transfer = transfer_factory(budget=budget, transfer_type=transfer_type, **payload)
-        update_deposit = deposit_factory(budget=budget)
-        update_period = budgeting_period_factory(
-            budget=budget,
+        transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type, **payload)
+        update_deposit = deposit_factory(wallet=wallet)
+        update_period = period_factory(
+            wallet=wallet,
             date_start=datetime.date(2024, 10, 1),
             date_end=datetime.date(2024, 10, 31),
         )
@@ -1444,14 +1430,14 @@ class TestTransferViewSetUpdate:
             "description": "New description",
             "value": Decimal(1000),
             "date": datetime.date(year=2024, month=10, day=1),
-            "entity": entity_factory(budget=budget).pk,
+            "entity": entity_factory(wallet=wallet).pk,
             "deposit": update_deposit.pk,
             "category": transfer_category_factory(
-                budget=budget, deposit=update_deposit, category_type=transfer_type
+                wallet=wallet, deposit=update_deposit, category_type=transfer_type
             ).pk,
         }
         api_client.force_authenticate(base_user)
-        url = transfer_detail_url(budget.id, transfer.id)
+        url = transfer_detail_url(wallet.id, transfer.id)
 
         response = api_client.patch(url, update_payload)
 
@@ -1473,8 +1459,8 @@ class TestTransferViewSetUpdate:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
@@ -1482,25 +1468,25 @@ class TestTransferViewSetUpdate:
         transfer_detail_url: Callable,
     ):
         """
-        GIVEN: BudgetingPeriod from outer Budget in upload payload for Transfer.
-        WHEN: TransferViewSet called with PATCH by User belonging to Budget.
+        GIVEN: Period from outer Wallet in upload payload for Transfer.
+        WHEN: TransferViewSet called with PATCH by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        payload["period"] = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, category_type=transfer_type)
-        transfer = transfer_factory(budget=budget, transfer_type=transfer_type, **payload)
+        payload["entity"] = entity_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
+        payload["category"] = transfer_category_factory(wallet=wallet, category_type=transfer_type)
+        transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type, **payload)
         update_payload = {"date": datetime.date(2024, 10, 1)}
         api_client.force_authenticate(base_user)
-        url = transfer_detail_url(budget.id, transfer.id)
+        url = transfer_detail_url(wallet.id, transfer.id)
 
         response = api_client.patch(url, update_payload)
 
@@ -1510,12 +1496,12 @@ class TestTransferViewSetUpdate:
         assert getattr(transfer, "date") == payload["date"]
         assert getattr(transfer, "period") == payload["period"]
 
-    def test_error_category_from_outer_budget(
+    def test_error_category_from_outer_wallet(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
@@ -1523,40 +1509,40 @@ class TestTransferViewSetUpdate:
         transfer_detail_url: Callable,
     ):
         """
-        GIVEN: TransferCategory from outer Budget in upload payload for Transfer.
-        WHEN: TransferViewSet called with PATCH by User belonging to Budget.
+        GIVEN: TransferCategory from outer Wallet in upload payload for Transfer.
+        WHEN: TransferViewSet called with PATCH by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        payload["period"] = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, category_type=transfer_type)
-        transfer = transfer_factory(budget=budget, transfer_type=transfer_type, **payload)
-        new_category = transfer_category_factory(budget=budget_factory(), category_type=transfer_type)
+        payload["entity"] = entity_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
+        payload["category"] = transfer_category_factory(wallet=wallet, category_type=transfer_type)
+        transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type, **payload)
+        new_category = transfer_category_factory(wallet=wallet_factory(), category_type=transfer_type)
         update_payload = {"category": new_category.pk}
         api_client.force_authenticate(base_user)
-        url = transfer_detail_url(budget.id, transfer.id)
+        url = transfer_detail_url(wallet.id, transfer.id)
 
         response = api_client.patch(url, update_payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert response.data["detail"]["category"][0] == "TransferCategory from different Budget."
+        assert response.data["detail"]["category"][0] == "TransferCategory from different Wallet."
         transfer.refresh_from_db()
         assert getattr(transfer, "category") == payload["category"]
 
-    def test_error_deposit_from_outer_budget(
+    def test_error_deposit_from_outer_wallet(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
@@ -1564,40 +1550,40 @@ class TestTransferViewSetUpdate:
         transfer_detail_url: Callable,
     ):
         """
-        GIVEN: Deposit from outer Budget in upload payload for Transfer.
-        WHEN: TransferViewSet called with PATCH by User belonging to Budget.
+        GIVEN: Deposit from outer Wallet in upload payload for Transfer.
+        WHEN: TransferViewSet called with PATCH by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        payload["period"] = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, category_type=transfer_type)
-        transfer = transfer_factory(budget=budget, transfer_type=transfer_type, **payload)
-        new_deposit = deposit_factory(budget=budget_factory())
+        payload["entity"] = entity_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
+        payload["category"] = transfer_category_factory(wallet=wallet, category_type=transfer_type)
+        transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type, **payload)
+        new_deposit = deposit_factory(wallet=wallet_factory())
         update_payload = {"deposit": new_deposit.pk}
         api_client.force_authenticate(base_user)
-        url = transfer_detail_url(budget.id, transfer.id)
+        url = transfer_detail_url(wallet.id, transfer.id)
 
         response = api_client.patch(url, update_payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert response.data["detail"]["deposit"][0] == "Deposit from different Budget."
+        assert response.data["detail"]["deposit"][0] == "Deposit from different Wallet."
         transfer.refresh_from_db()
         assert getattr(transfer, "deposit") == payload["deposit"]
 
-    def test_error_entity_from_outer_budget(
+    def test_error_entity_from_outer_wallet(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
@@ -1605,31 +1591,31 @@ class TestTransferViewSetUpdate:
         transfer_detail_url: Callable,
     ):
         """
-        GIVEN: Entity from outer Budget in upload payload for Transfer.
-        WHEN: TransferViewSet called with PATCH by User belonging to Budget.
+        GIVEN: Entity from outer Wallet in upload payload for Transfer.
+        WHEN: TransferViewSet called with PATCH by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        payload["period"] = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
-        payload["category"] = transfer_category_factory(budget=budget, category_type=transfer_type)
-        transfer = transfer_factory(budget=budget, transfer_type=transfer_type, **payload)
-        new_entity = entity_factory(budget=budget_factory())
+        payload["entity"] = entity_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
+        payload["category"] = transfer_category_factory(wallet=wallet, category_type=transfer_type)
+        transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type, **payload)
+        new_entity = entity_factory(wallet=wallet_factory())
         update_payload = {"entity": new_entity.pk}
         api_client.force_authenticate(base_user)
-        url = transfer_detail_url(budget.id, transfer.id)
+        url = transfer_detail_url(wallet.id, transfer.id)
 
         response = api_client.patch(url, update_payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert response.data["detail"]["entity"][0] == "Entity from different Budget."
+        assert response.data["detail"]["entity"][0] == "Entity from different Wallet."
         transfer.refresh_from_db()
         assert getattr(transfer, "entity") == payload["entity"]
 
@@ -1637,8 +1623,8 @@ class TestTransferViewSetUpdate:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
-        budgeting_period_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
         transfer_category_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         deposit_factory: FactoryMetaClass,
@@ -1647,27 +1633,27 @@ class TestTransferViewSetUpdate:
     ):
         """
         GIVEN: Category Deposit different from Transfer Deposit in payload for Transfer.
-        WHEN: TransferViewSet called with PATCH by User belonging to Budget.
+        WHEN: TransferViewSet called with PATCH by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not updated in database.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
-        payload["period"] = budgeting_period_factory(
-            budget=budget, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
+        payload["period"] = period_factory(
+            wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
         )
-        payload["entity"] = entity_factory(budget=budget)
-        payload["deposit"] = deposit_factory(budget=budget)
+        payload["entity"] = entity_factory(wallet=wallet)
+        payload["deposit"] = deposit_factory(wallet=wallet)
         payload["category"] = transfer_category_factory(
-            budget=budget, deposit=payload["deposit"], category_type=transfer_type
+            wallet=wallet, deposit=payload["deposit"], category_type=transfer_type
         )
-        transfer = transfer_factory(budget=budget, transfer_type=transfer_type, **payload)
-        new_deposit = deposit_factory(budget=budget)
+        transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type, **payload)
+        new_deposit = deposit_factory(wallet=wallet)
         update_payload = {"deposit": new_deposit.pk}
         api_client.force_authenticate(base_user)
-        url = transfer_detail_url(budget.id, transfer.id)
+        url = transfer_detail_url(wallet.id, transfer.id)
 
         response = api_client.patch(url, update_payload)
 
@@ -1693,13 +1679,13 @@ class TestTransferViewSetDelete:
         transfer_detail_url: Callable,
     ):
         """
-        GIVEN: Transfer instance for Budget created in database.
+        GIVEN: Transfer instance for Wallet created in database.
         WHEN: TransferViewSet detail view called with PUT without authentication.
         THEN: Unauthorized HTTP 401.
         """
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         transfer = transfer_factory(transfer_type=transfer_type)
-        url = transfer_detail_url(transfer.period.budget.id, transfer.id)
+        url = transfer_detail_url(transfer.period.wallet.id, transfer.id)
 
         response = api_client.delete(url)
 
@@ -1709,7 +1695,7 @@ class TestTransferViewSetDelete:
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         transfer_detail_url: Callable,
     ):
@@ -1718,55 +1704,55 @@ class TestTransferViewSetDelete:
         WHEN: TransferViewSet detail endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
-        transfer = transfer_factory(transfer_type=transfer_type, budget=budget)
-        url = transfer_detail_url(budget.id, transfer.id)
+        transfer = transfer_factory(transfer_type=transfer_type, wallet=wallet)
+        url = transfer_detail_url(wallet.id, transfer.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.delete(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
-    def test_user_not_budget_member(
+    def test_user_not_wallet_member(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         transfer_detail_url: Callable,
     ):
         """
-        GIVEN: Transfer instance for Budget created in database.
-        WHEN: TransferViewSet detail view called with DELETE by User not belonging to Budget.
+        GIVEN: Transfer instance for Wallet created in database.
+        WHEN: TransferViewSet detail view called with DELETE by User not belonging to Wallet.
         THEN: Forbidden HTTP 403 returned.
         """
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
-        transfer = transfer_factory(transfer_type=transfer_type, budget=budget_factory())
+        transfer = transfer_factory(transfer_type=transfer_type, wallet=wallet_factory())
         api_client.force_authenticate(base_user)
-        url = transfer_detail_url(transfer.period.budget.id, transfer.id)
+        url = transfer_detail_url(transfer.period.wallet.id, transfer.id)
 
         response = api_client.delete(url)
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["detail"] == "User does not have access to Budget."
+        assert response.data["detail"] == "User does not have access to Wallet."
 
     def test_delete_transfer(
         self,
         api_client: APIClient,
         base_user: Any,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         transfer_detail_url: Callable,
     ):
         """
-        GIVEN: Transfer instance for Budget created in database.
-        WHEN: TransferViewSet detail view called with DELETE by User belonging to Budget.
+        GIVEN: Transfer instance for Wallet created in database.
+        WHEN: TransferViewSet detail view called with DELETE by User belonging to Wallet.
         THEN: No content HTTP 204, Transfer deleted.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
-        transfer = transfer_factory(transfer_type=transfer_type, budget=budget)
+        transfer = transfer_factory(transfer_type=transfer_type, wallet=wallet)
         api_client.force_authenticate(base_user)
-        url = transfer_detail_url(budget.id, transfer.id)
+        url = transfer_detail_url(wallet.id, transfer.id)
 
         assert Transfer.objects.filter(transfer_type=transfer_type).count() == 1
 
@@ -1788,13 +1774,13 @@ class TestTransferViewSetBulkDelete:
         transfer_bulk_delete_url: Callable,
     ):
         """
-        GIVEN: Transfer instance for Budget created in database.
+        GIVEN: Transfer instance for Wallet created in database.
         WHEN: Transfer bulk delete view called with DELETE without authentication.
         THEN: Unauthorized HTTP 401.
         """
         transfer_type = get_transfer_type_from_url_fixture(transfer_bulk_delete_url)
         transfer = transfer_factory(transfer_type=transfer_type)
-        url = transfer_bulk_delete_url(transfer.period.budget.id)
+        url = transfer_bulk_delete_url(transfer.period.wallet.id)
 
         response = api_client.delete(url)
 
@@ -1804,7 +1790,7 @@ class TestTransferViewSetBulkDelete:
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         transfer_bulk_delete_url: Callable,
     ):
@@ -1813,56 +1799,56 @@ class TestTransferViewSetBulkDelete:
         WHEN: TransferViewSet bulk delete endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_bulk_delete_url)
-        transfer = transfer_factory(transfer_type=transfer_type, budget=budget)
-        url = transfer_bulk_delete_url(budget.id)
+        transfer = transfer_factory(transfer_type=transfer_type, wallet=wallet)
+        url = transfer_bulk_delete_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.delete(
             url, data={"objects_ids": [transfer.id]}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}", format="json"
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
-    def test_user_not_budget_member(
+    def test_user_not_wallet_member(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_bulk_delete_url: Callable,
     ):
         """
-        GIVEN: Transfer instance for Budget created in database.
-        WHEN: TransferViewSet bulk delete view called with DELETE by User not belonging to Budget.
+        GIVEN: Transfer instance for Wallet created in database.
+        WHEN: TransferViewSet bulk delete view called with DELETE by User not belonging to Wallet.
         THEN: Forbidden HTTP 403 returned.
         """
-        budget = budget_factory()
+        wallet = wallet_factory()
         api_client.force_authenticate(base_user)
-        url = transfer_bulk_delete_url(budget.id)
+        url = transfer_bulk_delete_url(wallet.id)
 
         response = api_client.delete(url)
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["detail"] == "User does not have access to Budget."
+        assert response.data["detail"] == "User does not have access to Wallet."
 
     def test_bulk_delete_transfers(
         self,
         api_client: APIClient,
         base_user: Any,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         transfer_bulk_delete_url: Callable,
     ):
         """
-        GIVEN: Transfer instances for Budget created in database.
-        WHEN: TransferViewSet bulk delete view called with DELETE by User belonging to Budget.
+        GIVEN: Transfer instances for Wallet created in database.
+        WHEN: TransferViewSet bulk delete view called with DELETE by User belonging to Wallet.
         THEN: No content HTTP 204, Transfers deleted.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_bulk_delete_url)
-        transfer_1 = transfer_factory(transfer_type=transfer_type, budget=budget)
-        transfer_2 = transfer_factory(transfer_type=transfer_type, budget=budget)
+        transfer_1 = transfer_factory(transfer_type=transfer_type, wallet=wallet)
+        transfer_2 = transfer_factory(transfer_type=transfer_type, wallet=wallet)
         api_client.force_authenticate(base_user)
-        url = transfer_bulk_delete_url(budget.id)
+        url = transfer_bulk_delete_url(wallet.id)
 
         assert Transfer.objects.filter(transfer_type=transfer_type).count() == 2
 
@@ -1885,18 +1871,18 @@ class TestTransferViewSetBulkDelete:
         self,
         api_client: APIClient,
         base_user: Any,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         objects_ids: Any,
         transfer_bulk_delete_url: Callable,
     ):
         """
-        GIVEN: Budget created in database.
-        WHEN: TransferViewSet bulk delete view called with DELETE by User belonging to Budget with invalid input.
+        GIVEN: Wallet created in database.
+        WHEN: TransferViewSet bulk delete view called with DELETE by User belonging to Wallet with invalid input.
         THEN: HTTP 400, Transfers not copied.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         api_client.force_authenticate(base_user)
-        url = transfer_bulk_delete_url(budget.id)
+        url = transfer_bulk_delete_url(wallet.id)
 
         response = api_client.delete(url, data={"objects_ids": objects_ids}, format="json")
 
@@ -1915,13 +1901,13 @@ class TestTransferViewSetCopy:
         transfer_copy_url: Callable,
     ):
         """
-        GIVEN: Transfer instance for Budget created in database.
+        GIVEN: Transfer instance for Wallet created in database.
         WHEN: Transfer copy view called with POST without authentication.
         THEN: Unauthorized HTTP 401.
         """
         transfer_type = get_transfer_type_from_url_fixture(transfer_copy_url)
         transfer = transfer_factory(transfer_type=transfer_type)
-        url = transfer_copy_url(transfer.period.budget.id)
+        url = transfer_copy_url(transfer.period.wallet.id)
 
         response = api_client.post(url)
 
@@ -1931,7 +1917,7 @@ class TestTransferViewSetCopy:
         self,
         api_client: APIClient,
         base_user: User,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         transfer_copy_url: Callable,
     ):
@@ -1940,56 +1926,56 @@ class TestTransferViewSetCopy:
         WHEN: TransferViewSet copy endpoint called with POST.
         THEN: HTTP 201 returned.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_copy_url)
-        transfer = transfer_factory(transfer_type=transfer_type, budget=budget)
-        url = transfer_copy_url(budget.id)
+        transfer = transfer_factory(transfer_type=transfer_type, wallet=wallet)
+        url = transfer_copy_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.post(
             url, data={"objects_ids": [transfer.id]}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}", format="json"
         )
         assert response.status_code == status.HTTP_201_CREATED
 
-    def test_user_not_budget_member(
+    def test_user_not_wallet_member(
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_copy_url: Callable,
     ):
         """
-        GIVEN: Transfer instance for Budget created in database.
-        WHEN: TransferViewSet copy view called with POST by User not belonging to Budget.
+        GIVEN: Transfer instance for Wallet created in database.
+        WHEN: TransferViewSet copy view called with POST by User not belonging to Wallet.
         THEN: Forbidden HTTP 403 returned.
         """
-        budget = budget_factory()
+        wallet = wallet_factory()
         api_client.force_authenticate(base_user)
-        url = transfer_copy_url(budget.id)
+        url = transfer_copy_url(wallet.id)
 
         response = api_client.post(url)
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["detail"] == "User does not have access to Budget."
+        assert response.data["detail"] == "User does not have access to Wallet."
 
     def test_copy_transfers(
         self,
         api_client: APIClient,
         base_user: Any,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         transfer_factory: FactoryMetaClass,
         transfer_copy_url: Callable,
     ):
         """
-        GIVEN: Transfer instances for Budget created in database.
-        WHEN: TransferViewSet copy view called with POST by User belonging to Budget.
+        GIVEN: Transfer instances for Wallet created in database.
+        WHEN: TransferViewSet copy view called with POST by User belonging to Wallet.
         THEN: No content HTTP 201, Transfers copied.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         transfer_type = get_transfer_type_from_url_fixture(transfer_copy_url)
-        transfer_1 = transfer_factory(transfer_type=transfer_type, budget=budget)
-        transfer_2 = transfer_factory(transfer_type=transfer_type, budget=budget)
+        transfer_1 = transfer_factory(transfer_type=transfer_type, wallet=wallet)
+        transfer_2 = transfer_factory(transfer_type=transfer_type, wallet=wallet)
         api_client.force_authenticate(base_user)
-        url = transfer_copy_url(budget.id)
+        url = transfer_copy_url(wallet.id)
 
         assert Transfer.objects.filter(transfer_type=transfer_type).count() == 2
 
@@ -2018,18 +2004,18 @@ class TestTransferViewSetCopy:
         self,
         api_client: APIClient,
         base_user: Any,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         objects_ids: Any,
         transfer_copy_url: Callable,
     ):
         """
-        GIVEN: Budget created in database.
-        WHEN: TransferViewSet copy view called with POST by User belonging to Budget with invalid input.
+        GIVEN: Wallet created in database.
+        WHEN: TransferViewSet copy view called with POST by User belonging to Wallet with invalid input.
         THEN: HTTP 400, Transfers not copied.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         api_client.force_authenticate(base_user)
-        url = transfer_copy_url(budget.id)
+        url = transfer_copy_url(wallet.id)
 
         response = api_client.post(url, data={"objects_ids": objects_ids}, format="json")
 

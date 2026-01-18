@@ -8,9 +8,9 @@ NOT_CATEGORIZED_CATEGORY_NAME = "❗Not categorized"
 
 
 class ExpensePrediction(models.Model):
-    """ExpensePrediction model for planned expenses in particular BudgetingPeriod."""
+    """ExpensePrediction model for planned expenses in particular Period."""
 
-    period = models.ForeignKey("budgets.BudgetingPeriod", on_delete=models.CASCADE, related_name="expense_predictions")
+    period = models.ForeignKey("periods.Period", on_delete=models.CASCADE, related_name="expense_predictions")
     deposit = models.ForeignKey("entities.Deposit", on_delete=models.CASCADE, related_name="expense_predictions")
     category = models.ForeignKey(
         "categories.TransferCategory",
@@ -54,14 +54,14 @@ class ExpensePrediction(models.Model):
 
     def _validate_category(self) -> None:
         """
-        Checks if category Budget and period Budget are the same.
+        Checks if category Wallet and period Wallet are the same.
 
         Raises:
-            ValidationError: Raised when category Budget and period Budget are not the same.
+            ValidationError: Raised when category Wallet and period Wallet are not the same.
         """
         if self.category is None:
             return
-        if self.category.budget != self.period.budget:
-            raise ValidationError("Budget for period and category fields is not the same.", code="budget-invalid")
+        if self.category.wallet != self.period.wallet:
+            raise ValidationError("Wallet for period and category fields is not the same.", code="wallet-invalid")
         if self.category.deposit != self.deposit:
             raise ValidationError("Category Deposit different than Prediction Deposit", code="deposit-invalid")

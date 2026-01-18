@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("entities", "0001_initial"),
-        ("budgets", "0001_initial"),
+        ("wallets", "0001_initial"),
     ]
 
     operations = [
@@ -35,11 +35,11 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "budget",
+                    "wallet",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="transfer_categories",
-                        to="budgets.budget",
+                        to="wallets.wallet",
                     ),
                 ),
                 (
@@ -70,7 +70,7 @@ class Migration(migrations.Migration):
             model_name="transfercategory",
             constraint=models.UniqueConstraint(
                 condition=models.Q(("deposit__isnull", False)),
-                fields=("budget", "category_type", "name", "deposit"),
+                fields=("wallet", "category_type", "name", "deposit"),
                 name="categories_transfercategory_name_unique_for_deposit",
             ),
         ),

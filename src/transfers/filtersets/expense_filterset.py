@@ -24,9 +24,9 @@ class ExpenseFilterSet(TransferFilterSet):
         Returns:
             QuerySet: Filtered QuerySet.
         """
-        budget_pk = self.request.parser_context.get("kwargs", {}).get("budget_pk")
+        wallet_pk = self.request.parser_context.get("kwargs", {}).get("wallet_pk")
         if value == Decimal("-1"):
-            return queryset.filter(period__budget__pk=budget_pk, category__isnull=True)
+            return queryset.filter(period__wallet__pk=wallet_pk, category__isnull=True)
         return queryset.filter(
-            period__budget__pk=budget_pk, category__id=value, category__category_type=CategoryType.EXPENSE
+            period__wallet__pk=wallet_pk, category__id=value, category__category_type=CategoryType.EXPENSE
         )

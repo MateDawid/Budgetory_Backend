@@ -27,7 +27,7 @@ class TestEntityFilterSetOrdering:
         self,
         api_client: APIClient,
         user_factory: FactoryMetaClass,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         sort_param: str,
     ):
@@ -38,12 +38,12 @@ class TestEntityFilterSetOrdering:
         """
         member_1 = user_factory(email="bob@bob.com")
         member_2 = user_factory(email="alice@alice.com")
-        budget = budget_factory(members=[member_1, member_2])
+        wallet = wallet_factory(members=[member_1, member_2])
         for _ in range(3):
-            entity_factory(budget=budget)
+            entity_factory(wallet=wallet)
         api_client.force_authenticate(member_1)
 
-        response = api_client.get(entities_url(budget.id), data={"ordering": sort_param})
+        response = api_client.get(entities_url(wallet.id), data={"ordering": sort_param})
 
         assert response.status_code == status.HTTP_200_OK
         entities = Entity.objects.all().order_by(*sort_param.split(","))
@@ -80,27 +80,27 @@ class TestEntityFilterSetFiltering:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         param: str,
         filter_value: str,
     ):
         """
-        GIVEN: Two Entity objects for single Budget.
+        GIVEN: Two Entity objects for single Wallet.
         WHEN: The EntityViewSet list view is called with CharFilter.
-        THEN: Response must contain all Entity existing in database assigned to Budget containing given
+        THEN: Response must contain all Entity existing in database assigned to Wallet containing given
         "name" value in name param.
         """
-        budget = budget_factory(members=[base_user])
-        matching_entity = entity_factory(budget=budget, **{param: "Some entity"})
-        entity_factory(budget=budget, **{param: "Other one"})
+        wallet = wallet_factory(members=[base_user])
+        matching_entity = entity_factory(wallet=wallet, **{param: "Some entity"})
+        entity_factory(wallet=wallet, **{param: "Other one"})
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(entities_url(budget.id), data={param: filter_value})
+        response = api_client.get(entities_url(wallet.id), data={param: filter_value})
 
         assert response.status_code == status.HTTP_200_OK
         assert Entity.objects.all().count() == 2
-        entities = Entity.objects.filter(budget=budget, id=matching_entity.id)
+        entities = Entity.objects.filter(wallet=wallet, id=matching_entity.id)
         serializer = EntitySerializer(
             entities,
             many=True,
@@ -115,26 +115,26 @@ class TestEntityFilterSetFiltering:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         filter_value: bool,
     ):
         """
-        GIVEN: Two Entity objects for single Budget.
+        GIVEN: Two Entity objects for single Wallet.
         WHEN: The EntityViewSet list view is called with "is_active" filter.
-        THEN: Response must contain all Entity existing in database assigned to Budget with
+        THEN: Response must contain all Entity existing in database assigned to Wallet with
         matching "is_active" value.
         """
-        budget = budget_factory(members=[base_user])
-        matching_entity = entity_factory(budget=budget, name="Some entity", is_active=filter_value)
-        entity_factory(budget=budget, name="Other one", is_active=not filter_value)
+        wallet = wallet_factory(members=[base_user])
+        matching_entity = entity_factory(wallet=wallet, name="Some entity", is_active=filter_value)
+        entity_factory(wallet=wallet, name="Other one", is_active=not filter_value)
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(entities_url(budget.id), data={"is_active": filter_value})
+        response = api_client.get(entities_url(wallet.id), data={"is_active": filter_value})
 
         assert response.status_code == status.HTTP_200_OK
         assert Entity.objects.all().count() == 2
-        entities = Entity.objects.filter(budget=budget, id=matching_entity.id)
+        entities = Entity.objects.filter(wallet=wallet, id=matching_entity.id)
         serializer = EntitySerializer(
             entities,
             many=True,
@@ -149,34 +149,34 @@ class TestEntityFilterSetFiltering:
         self,
         api_client: APIClient,
         base_user: AbstractUser,
-        budget_factory: FactoryMetaClass,
+        wallet_factory: FactoryMetaClass,
         entity_factory: FactoryMetaClass,
         filter_value: bool,
     ):
         """
-        GIVEN: Two Entity objects for single Budget.
+        GIVEN: Two Entity objects for single Wallet.
         WHEN: The EntityViewSet list view is called with "is_deposit" filter.
-        THEN: Response must contain all Entity existing in database assigned to Budget with
+        THEN: Response must contain all Entity existing in database assigned to Wallet with
         matching "is_deposit" value.
         """
-        budget = budget_factory(members=[base_user])
+        wallet = wallet_factory(members=[base_user])
         matching_entity = entity_factory(
-            budget=budget,
+            wallet=wallet,
             name="Some entity",
             is_deposit=filter_value,
         )
         entity_factory(
-            budget=budget,
+            wallet=wallet,
             name="Other one",
             is_deposit=not filter_value,
         )
         api_client.force_authenticate(base_user)
 
-        response = api_client.get(entities_url(budget.id), data={"is_deposit": filter_value})
+        response = api_client.get(entities_url(wallet.id), data={"is_deposit": filter_value})
 
         assert response.status_code == status.HTTP_200_OK
         assert Entity.objects.all().count() == 2
-        entities = Entity.objects.filter(budget=budget, id=matching_entity.id)
+        entities = Entity.objects.filter(wallet=wallet, id=matching_entity.id)
         serializer = EntitySerializer(
             entities,
             many=True,
