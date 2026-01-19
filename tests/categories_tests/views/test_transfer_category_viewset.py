@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Any
 
 import pytest
@@ -18,6 +19,7 @@ from categories.models import TransferCategory
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from categories.serializers.transfer_category_serializer import TransferCategorySerializer
+from periods.models.choices.period_status import PeriodStatus
 from wallets.models.wallet_model import Wallet
 
 
@@ -256,6 +258,7 @@ class TestTransferCategoryViewSetCreate:
         category_type: CategoryType,
         priority: CategoryPriority,
         deposit_factory: FactoryMetaClass,
+        period_factory: FactoryMetaClass,
     ):
         """
         GIVEN: Wallet instance created in database. Valid payload prepared for TransferCategory.
@@ -266,6 +269,9 @@ class TestTransferCategoryViewSetCreate:
         payload["category_type"] = category_type
         payload["priority"] = priority
         wallet = wallet_factory(members=[base_user])
+        closed_period = period_factory(wallet=wallet, status=PeriodStatus.CLOSED)
+        active_period = period_factory(wallet=wallet, status=PeriodStatus.ACTIVE)
+        draft_period = period_factory(wallet=wallet, status=PeriodStatus.DRAFT)
         payload["deposit"] = deposit_factory(wallet=wallet).id
         api_client.force_authenticate(base_user)
 
@@ -282,6 +288,23 @@ class TestTransferCategoryViewSetCreate:
             assert getattr(category, key) == payload[key]
         serializer = TransferCategorySerializer(category)
         assert response.data == serializer.data
+        # Check creation of zero predictions for past periods
+        assert closed_period.expense_predictions.all().count() == 1
+        assert (
+            closed_period.expense_predictions.filter(
+                category__id=category.id, initial_plan=Decimal("0.00"), current_plan=Decimal("0.00")
+            ).count()
+            == 1
+        )
+        assert active_period.expense_predictions.all().count() == 1
+        assert (
+            active_period.expense_predictions.filter(
+                category__id=category.id, initial_plan=Decimal("0.00"), current_plan=Decimal("0.00")
+            ).count()
+            == 1
+        )
+        assert active_period.expense_predictions.all().count() == 1
+        assert draft_period.expense_predictions.all().count() == 0
 
     @pytest.mark.parametrize("field_name", ["name", "description"])
     def test_error_value_too_long(
