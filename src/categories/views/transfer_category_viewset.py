@@ -1,3 +1,6 @@
+from decimal import Decimal
+
+from django.db import transaction
 from django.db.models import F, QuerySet
 from django_filters import rest_framework as filters
 from rest_framework.filters import OrderingFilter
@@ -7,6 +10,9 @@ from rest_framework.viewsets import ModelViewSet
 from app_infrastructure.permissions import UserBelongsToWalletPermission
 from categories.filtersets.transfer_category_filterset import TransferCategoryFilterSet
 from categories.serializers.transfer_category_serializer import TransferCategorySerializer
+from periods.models import Period
+from periods.models.choices.period_status import PeriodStatus
+from predictions.models import ExpensePrediction
 
 
 class TransferCategoryViewSet(ModelViewSet):
@@ -39,4 +45,18 @@ class TransferCategoryViewSet(ModelViewSet):
         Args:
             serializer [TransferCategorySerializer]: Serializer for TransferCategory model.
         """
-        serializer.save(wallet_id=self.kwargs.get("wallet_pk"))
+        wallet_pk = self.kwargs.get("wallet_pk")
+        with transaction.atomic():
+            category = serializer.save(wallet_id=wallet_pk)
+            ExpensePrediction.objects.bulk_create(
+                ExpensePrediction(
+                    deposit_id=category.deposit.pk,
+                    category=category,
+                    period_id=period_id,
+                    initial_plan=Decimal("0.00"),
+                    current_plan=Decimal("0.00"),
+                )
+                for period_id in Period.objects.filter(
+                    wallet_id=wallet_pk, status__in=[PeriodStatus.ACTIVE, PeriodStatus.CLOSED]
+                ).values_list("id", flat=True)
+            )
