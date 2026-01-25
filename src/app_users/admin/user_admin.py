@@ -10,7 +10,7 @@ class UserAdmin(BaseUserAdmin):
     """Custom admin view for User model."""
 
     ordering = ["id"]
-    list_display = ["email", "username", "created_at", "updated_at"]
+    list_display = ["email", "username", "created_at", "updated_at", "is_demo"]
     fieldsets = (
         (None, {"fields": ("email", "username", "password")}),
         (
@@ -18,6 +18,7 @@ class UserAdmin(BaseUserAdmin):
             {
                 "fields": (
                     "is_active",
+                    "is_demo",
                     "is_staff",
                     "is_superuser",
                 )
@@ -31,7 +32,16 @@ class UserAdmin(BaseUserAdmin):
             None,
             {
                 "classes": ("wide",),
-                "fields": ("email", "username", "password1", "password2", "is_active", "is_staff", "is_superuser"),
+                "fields": (
+                    "email",
+                    "username",
+                    "password1",
+                    "password2",
+                    "is_active",
+                    "is_demo",
+                    "is_staff",
+                    "is_superuser",
+                ),
             },
         ),
     )
