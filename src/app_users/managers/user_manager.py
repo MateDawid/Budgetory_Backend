@@ -65,8 +65,8 @@ class UserManager(BaseUserManager):
         for attempt in range(1, MAX_DEMO_USER_CREATE_ATTEMPTS + 1):
             unique_id = uuid.uuid4().hex[:8]
             user_data = {
-                "username": f"demo_user_{unique_id}",
-                "email": f"demo_{unique_id}@example.com",
+                "username": unique_id,
+                "email": f"{unique_id}@budgetory_demo.com",
                 "password": generate_random_password(),
                 "is_demo": True,
                 "is_active": True,
