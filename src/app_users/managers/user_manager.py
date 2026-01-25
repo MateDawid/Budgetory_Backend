@@ -63,7 +63,7 @@ class UserManager(BaseUserManager):
             IntegrityError: If unable to create unique user after max_attempts.
         """
         for attempt in range(1, MAX_DEMO_USER_CREATE_ATTEMPTS + 1):
-            unique_id = uuid.uuid4().hex[:8]
+            unique_id = uuid.uuid4().hex[:16]
             user_data = {
                 "username": unique_id,
                 "email": f"{unique_id}@budgetory_demo.com",
