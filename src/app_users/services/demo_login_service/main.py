@@ -5,7 +5,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from app_users.services.demo_login_service.demo_user_initial_data_service import create_initial_data_for_demo_user
 
 
-def main() -> dict[str, str] | None:
+def get_demo_user_token() -> dict[str, str] | None:
     """
     Main function of demo login service. Creates demo User, initial data and returns demo User token.
 
