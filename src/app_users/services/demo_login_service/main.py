@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from app_users.services.demo_login_service.demo_user_initial_data_service import create_initial_data_for_demo_user
+from app_users.services.demo_login_service.demo_user_initial_data_service import DemoUserInitialDataService
 
 
 def get_demo_user_token() -> dict[str, str] | None:
@@ -14,7 +14,8 @@ def get_demo_user_token() -> dict[str, str] | None:
     """
     try:
         user = get_user_model().objects.create_demo_user()
-        create_initial_data_for_demo_user(user=user)
+        service = DemoUserInitialDataService(user=user)
+        service.create_initial_data_for_demo_user()
     except IntegrityError:
         return None
     refresh = RefreshToken.for_user(user)

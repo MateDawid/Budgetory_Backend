@@ -1,107 +1,56 @@
 from app_users.models import User
-from entities.models import Entity
-from wallets.models import Currency, Wallet
+from app_users.services.demo_login_service.factories.entities import create_deposits_and_entities
+from app_users.services.demo_login_service.factories.wallets import WalletName, create_wallets
 
 
-def create_initial_data_for_demo_user(user: User):
+class DemoUserInitialDataService:
     """
-    Creates initial data for demo user.
-
-    Args:
-        user (User): User instance.
+    Service to create initial data for demo User.
     """
-    daily_wallet, long_term_wallet = create_two_demo_wallets(user)
-    create_demo_entities(daily_wallet, long_term_wallet)
 
+    def __init__(self, user):
+        """
+        Saves demo User and inits dicts storing created objects in class context.
 
-def create_two_demo_wallets(user: User) -> tuple[Wallet, Wallet]:
-    """
-    Creates Wallets for demo User.
+        Args:
+            user (User): Demo User for which data will be created.
+        """
+        self.user: User = user
+        self.wallets = {}
+        self.deposits = {}
+        self.entities = {}
 
-    Args:
-        user (User): User instance.
+    def create_initial_data_for_demo_user(self) -> None:
+        """
+        Main function of DemoUserInitialDataService. Creates initial data for demo user.
+        """
+        self.create_demo_wallets()
+        self.create_demo_entities()
 
-    Returns:
-        tuple[Wallet, Wallet]: Two Wallets for demo User.
-    """
-    currency = Currency.objects.get(name="EUR")
-    daily_wallet = Wallet.objects.create(name="Daily", currency=currency, description="Wallet for daily expenses.")
-    daily_wallet.members.add(user)
-    long_term_wallet = Wallet.objects.create(
-        name="Long term", currency=currency, description="Wallet for long term investments and savings."
-    )
-    long_term_wallet.members.add(user)
-    return daily_wallet, long_term_wallet
+    def create_demo_wallets(self) -> None:
+        """
+        Creates Wallets for demo User.
+        """
+        daily_wallet, long_term_wallet = create_wallets()
+        daily_wallet.members.add(self.user)
+        long_term_wallet.members.add(self.user)
+        self.wallets[daily_wallet.name] = daily_wallet
+        self.wallets[long_term_wallet.name] = long_term_wallet
 
+    def create_demo_entities(self) -> None:
+        """
+        Creates Deposits and Entities for demo User.
+        """
+        deposits, entities = create_deposits_and_entities(
+            daily_wallet=self.wallets[WalletName.DAILY], long_term_wallet=self.wallets[WalletName.LONG_TERM]
+        )
+        for deposit in deposits:
+            self.deposits[deposit.name] = deposit
+        for entity in entities:
+            self.entities[entity.name] = entity
 
-def create_demo_entities(daily_wallet: Wallet, long_term_wallet: Wallet):
-    """
-    Creates data for demo Daily expenses wallet.
-
-    Args:
-        daily_wallet (Wallet): "Daily" Wallet instance.
-        long_term_wallet (Wallet): "Long term" Wallet instance.
-    """
-    return Entity.objects.bulk_create(
-        [
-            # Deposits for "Daily Wallet"
-            Entity(
-                wallet=daily_wallet,
-                name="Personal account",
-                description="Account for personal User expenses and incomes.",
-                is_deposit=True,
-            ),
-            Entity(
-                wallet=daily_wallet,
-                name="Common account",
-                description="Account for common expenses and incomes.",
-                is_deposit=True,
-            ),
-            # Deposits for "Long term" Wallet
-            Entity(
-                wallet=long_term_wallet,
-                name="Treasury bonds",
-                description="Funds allocated in treasury bonds.",
-                is_deposit=True,
-            ),
-            Entity(
-                wallet=long_term_wallet,
-                name="ETF",
-                description="Funds allocated in ETF.",
-                is_deposit=True,
-            ),
-            Entity(
-                wallet=long_term_wallet,
-                name="Gold",
-                description="Funds allocated in gold.",
-                is_deposit=True,
-            ),
-            # Entities for "Daily" Wallet
-            Entity(wallet=daily_wallet, name="Employer", description="Employer hiring User."),
-            Entity(wallet=daily_wallet, name="Buyer", description="Buyer of stuff that User's selling."),
-            Entity(wallet=daily_wallet, name="Food seller", description="Seller that sells food."),
-            Entity(wallet=daily_wallet, name="Bills taker", description="Entity that receives bills."),
-            Entity(wallet=daily_wallet, name="Unexpected entity", description="Entity that charges unexpectedly."),
-            # Entities for "Long term" Wallet
-            Entity(
-                wallet=long_term_wallet, name="Treasury bonds seller", description="Entity that sells treasury bonds."
-            ),
-            Entity(
-                wallet=long_term_wallet,
-                name="Treasury bonds value change",
-                description="Entity for handling changes of treasury bonds value.",
-            ),
-            Entity(wallet=long_term_wallet, name="ETF seller", description="Entity that sells ETF."),
-            Entity(
-                wallet=long_term_wallet,
-                name="ETF value change",
-                description="Entity for handling changes of ETF value.",
-            ),
-            Entity(wallet=long_term_wallet, name="Gold seller", description="Entity that sells Gold."),
-            Entity(
-                wallet=long_term_wallet,
-                name="Gold value change",
-                description="Entity for handling changes of Gold value.",
-            ),
-        ]
-    )
+    # def create_categories_entities(self):
+    #     """
+    #     Creates Categories for demo User.
+    #     """
+    #     categories = create_categories(deposits=self.deposits)
