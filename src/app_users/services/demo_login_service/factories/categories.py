@@ -51,16 +51,16 @@ class ExpenseCategoryName(StrEnum):
 
 def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[TransferCategory], list[TransferCategory]]:
     """
-    Service to create Deposits and Entities for demo User.
+    Service to create Transfer Categories for demo User.
 
-    Uses bulk create to create Deposits and Entities at once. Deposits and Entities are returned separately
+    Uses bulk create to create Income and Expense Categories at once. Both Categories types are returned separately
     for further processing.
 
     Args:
-        deposits:
+        deposits (dict[DepositName, Deposit]): Dictionary containing mapping of DepositName to Deposit.
 
     Returns:
-        tuple[list[TransferCategory], list[TransferCategory]]: Tuple consisting of Deposits and Entities lists.
+        tuple[list[TransferCategory], list[TransferCategory]]: Tuple consisting of Income and Expense Categories lists.
     """
     income_categories_count = 12
     all_categories = TransferCategory.objects.bulk_create(
