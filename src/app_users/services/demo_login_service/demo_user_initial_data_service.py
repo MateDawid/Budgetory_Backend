@@ -1,4 +1,5 @@
 from app_users.models import User
+from app_users.services.demo_login_service.factories.categories import create_categories
 from app_users.services.demo_login_service.factories.entities import create_deposits_and_entities
 from app_users.services.demo_login_service.factories.wallets import WalletName, create_wallets
 
@@ -19,6 +20,8 @@ class DemoUserInitialDataService:
         self.wallets = {}
         self.deposits = {}
         self.entities = {}
+        self.income_categories = {}
+        self.expense_categories = {}
 
     def create_initial_data_for_demo_user(self) -> None:
         """
@@ -26,6 +29,7 @@ class DemoUserInitialDataService:
         """
         self.create_demo_wallets()
         self.create_demo_entities()
+        self.create_demo_categories()
 
     def create_demo_wallets(self) -> None:
         """
@@ -49,8 +53,12 @@ class DemoUserInitialDataService:
         for entity in entities:
             self.entities[entity.name] = entity
 
-    # def create_categories_entities(self):
-    #     """
-    #     Creates Categories for demo User.
-    #     """
-    #     categories = create_categories(deposits=self.deposits)
+    def create_demo_categories(self):
+        """
+        Creates Categories for demo User.
+        """
+        income_categories, expense_categories = create_categories(deposits=self.deposits)
+        for income_category in income_categories:
+            self.income_categories[income_category.name] = income_category
+        for expense_category in expense_categories:
+            self.expense_categories[expense_category.name] = expense_category
