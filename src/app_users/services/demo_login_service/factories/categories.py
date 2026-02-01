@@ -31,13 +31,13 @@ class ExpenseCategoryName(StrEnum):
     # Categories for PERSONAL Deposit
     FOOD = "Food"
     TO_COMMON_ACCOUNT = "Transfer to Common Account Deposit"
-    PERSONAL_UNEXPECTED = "Unexpected expenses"
+    PERSONAL_UNEXPECTED = "Personal unexpected expenses"
     # Categories for COMMON Deposit
     BILLS = "Bills"
     TREASURY_BONDS_PURCHASE = 'Treasury Bonds purchase in "Long term" Wallet'
     ETF_PURCHASE = 'ETF purchase purchase in "Long term" Wallet'
     GOLD_PURCHASE = 'Gold purchase purchase in "Long term" Wallet'
-    COMMON_UNEXPECTED = "Unexpected expenses"
+    COMMON_UNEXPECTED = "Common unexpected expenses"
     # Categories for TREASURY_BONDS Deposit
     TREASURY_BONDS_SELL = "Treasury Bonds sell"
     TREASURY_BONDS_VALUE_DECREASE = "Treasury bonds value decrease"
