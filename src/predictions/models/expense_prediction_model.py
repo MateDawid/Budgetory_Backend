@@ -24,7 +24,7 @@ class ExpensePrediction(models.Model):
     description = models.TextField(blank=True, null=True)
 
     class Meta:
-        unique_together = ("period", "category")
+        unique_together = ("period", "category", "deposit")
         constraints = (
             CheckConstraint(
                 check=Q(initial_plan__gte=Decimal("0.00")),
