@@ -13,11 +13,11 @@ def create_predictions(
     daily_wallet_periods: dict[PeriodName, Period],
     deposits: dict[DepositName, Deposit],
     expense_categories: dict[ExpenseCategoryName, TransferCategory],
-):
+) -> None:
     """
     Service to create Predictions for demo User.
     """
-    return ExpensePrediction.objects.bulk_create(
+    ExpensePrediction.objects.bulk_create(
         [
             # PERSONAL Deposit 2026_01 Predictions
             ExpensePrediction(
