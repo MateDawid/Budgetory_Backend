@@ -5,6 +5,7 @@ from categories.models import TransferCategory
 from categories.models.choices.category_priority import CategoryPriority
 from categories.models.choices.category_type import CategoryType
 from entities.models import Deposit
+from wallets.models import Wallet
 
 
 class IncomeCategoryName(StrEnum):
@@ -49,7 +50,9 @@ class ExpenseCategoryName(StrEnum):
     GOLD_VALUE_DECREASE = "Gold value decrease"
 
 
-def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[TransferCategory], list[TransferCategory]]:
+def create_categories(
+    daily_wallet: Wallet, long_term_wallet: Wallet, deposits: dict[DepositName, Deposit]
+) -> tuple[list[TransferCategory], list[TransferCategory]]:
     """
     Service to create Transfer Categories for demo User.
 
@@ -72,7 +75,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.INCOME,
                 priority=CategoryPriority.REGULAR,
                 deposit=deposits[DepositName.PERSONAL],
-                wallet=deposits[DepositName.PERSONAL].wallet,
+                wallet=daily_wallet,
             ),
             TransferCategory(
                 name=IncomeCategoryName.SELL,
@@ -80,7 +83,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.INCOME,
                 priority=CategoryPriority.IRREGULAR,
                 deposit=deposits[DepositName.PERSONAL],
-                wallet=deposits[DepositName.PERSONAL].wallet,
+                wallet=daily_wallet,
             ),
             # Income Categories for COMMON Deposit
             TransferCategory(
@@ -89,7 +92,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.INCOME,
                 priority=CategoryPriority.REGULAR,
                 deposit=deposits[DepositName.COMMON],
-                wallet=deposits[DepositName.COMMON].wallet,
+                wallet=daily_wallet,
             ),
             TransferCategory(
                 name=IncomeCategoryName.TREASURY_BONDS_SELL,
@@ -97,7 +100,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.INCOME,
                 priority=CategoryPriority.IRREGULAR,
                 deposit=deposits[DepositName.COMMON],
-                wallet=deposits[DepositName.COMMON].wallet,
+                wallet=daily_wallet,
             ),
             TransferCategory(
                 name=IncomeCategoryName.ETF_SELL,
@@ -105,7 +108,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.INCOME,
                 priority=CategoryPriority.IRREGULAR,
                 deposit=deposits[DepositName.COMMON],
-                wallet=deposits[DepositName.COMMON].wallet,
+                wallet=daily_wallet,
             ),
             TransferCategory(
                 name=IncomeCategoryName.GOLD_SELL,
@@ -113,7 +116,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.INCOME,
                 priority=CategoryPriority.IRREGULAR,
                 deposit=deposits[DepositName.COMMON],
-                wallet=deposits[DepositName.COMMON].wallet,
+                wallet=daily_wallet,
             ),
             # Income Categories for TREASURY_BONDS Deposit
             TransferCategory(
@@ -122,7 +125,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.INCOME,
                 priority=CategoryPriority.IRREGULAR,
                 deposit=deposits[DepositName.TREASURY_BONDS],
-                wallet=deposits[DepositName.TREASURY_BONDS].wallet,
+                wallet=long_term_wallet,
             ),
             TransferCategory(
                 name=IncomeCategoryName.TREASURY_BONDS_VALUE_INCREASE,
@@ -130,7 +133,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.INCOME,
                 priority=CategoryPriority.REGULAR,
                 deposit=deposits[DepositName.TREASURY_BONDS],
-                wallet=deposits[DepositName.TREASURY_BONDS].wallet,
+                wallet=long_term_wallet,
             ),
             # Income Categories for ETF Deposit
             TransferCategory(
@@ -139,7 +142,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.INCOME,
                 priority=CategoryPriority.IRREGULAR,
                 deposit=deposits[DepositName.ETF],
-                wallet=deposits[DepositName.ETF].wallet,
+                wallet=long_term_wallet,
             ),
             TransferCategory(
                 name=IncomeCategoryName.ETF_VALUE_INCREASE,
@@ -147,7 +150,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.INCOME,
                 priority=CategoryPriority.REGULAR,
                 deposit=deposits[DepositName.ETF],
-                wallet=deposits[DepositName.ETF].wallet,
+                wallet=long_term_wallet,
             ),
             # Income Categories for GOLD Deposit
             TransferCategory(
@@ -156,7 +159,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.INCOME,
                 priority=CategoryPriority.IRREGULAR,
                 deposit=deposits[DepositName.GOLD],
-                wallet=deposits[DepositName.GOLD].wallet,
+                wallet=long_term_wallet,
             ),
             TransferCategory(
                 name=IncomeCategoryName.GOLD_VALUE_INCREASE,
@@ -164,7 +167,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.INCOME,
                 priority=CategoryPriority.REGULAR,
                 deposit=deposits[DepositName.GOLD],
-                wallet=deposits[DepositName.GOLD].wallet,
+                wallet=long_term_wallet,
             ),
             # Expense categories for PERSONAL Deposit
             TransferCategory(
@@ -173,7 +176,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.EXPENSE,
                 priority=CategoryPriority.MOST_IMPORTANT,
                 deposit=deposits[DepositName.PERSONAL],
-                wallet=deposits[DepositName.PERSONAL].wallet,
+                wallet=daily_wallet,
             ),
             TransferCategory(
                 name=ExpenseCategoryName.TO_COMMON_ACCOUNT,
@@ -181,7 +184,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.EXPENSE,
                 priority=CategoryPriority.MOST_IMPORTANT,
                 deposit=deposits[DepositName.PERSONAL],
-                wallet=deposits[DepositName.PERSONAL].wallet,
+                wallet=daily_wallet,
             ),
             TransferCategory(
                 name=ExpenseCategoryName.PERSONAL_UNEXPECTED,
@@ -189,7 +192,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.EXPENSE,
                 priority=CategoryPriority.OTHERS,
                 deposit=deposits[DepositName.PERSONAL],
-                wallet=deposits[DepositName.PERSONAL].wallet,
+                wallet=daily_wallet,
             ),
             # Expense categories for COMMON Deposit
             TransferCategory(
@@ -198,7 +201,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.EXPENSE,
                 priority=CategoryPriority.MOST_IMPORTANT,
                 deposit=deposits[DepositName.COMMON],
-                wallet=deposits[DepositName.COMMON].wallet,
+                wallet=daily_wallet,
             ),
             TransferCategory(
                 name=ExpenseCategoryName.TREASURY_BONDS_PURCHASE,
@@ -206,7 +209,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.EXPENSE,
                 priority=CategoryPriority.SAVINGS,
                 deposit=deposits[DepositName.COMMON],
-                wallet=deposits[DepositName.COMMON].wallet,
+                wallet=daily_wallet,
             ),
             TransferCategory(
                 name=ExpenseCategoryName.ETF_PURCHASE,
@@ -214,7 +217,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.EXPENSE,
                 priority=CategoryPriority.SAVINGS,
                 deposit=deposits[DepositName.COMMON],
-                wallet=deposits[DepositName.COMMON].wallet,
+                wallet=daily_wallet,
             ),
             TransferCategory(
                 name=ExpenseCategoryName.GOLD_PURCHASE,
@@ -222,7 +225,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.EXPENSE,
                 priority=CategoryPriority.SAVINGS,
                 deposit=deposits[DepositName.COMMON],
-                wallet=deposits[DepositName.COMMON].wallet,
+                wallet=daily_wallet,
             ),
             TransferCategory(
                 name=ExpenseCategoryName.COMMON_UNEXPECTED,
@@ -230,7 +233,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.EXPENSE,
                 priority=CategoryPriority.OTHERS,
                 deposit=deposits[DepositName.COMMON],
-                wallet=deposits[DepositName.COMMON].wallet,
+                wallet=daily_wallet,
             ),
             # Expense categories for TREASURY_BONDS Deposit
             TransferCategory(
@@ -239,7 +242,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.EXPENSE,
                 priority=CategoryPriority.OTHERS,
                 deposit=deposits[DepositName.TREASURY_BONDS],
-                wallet=deposits[DepositName.TREASURY_BONDS].wallet,
+                wallet=long_term_wallet,
             ),
             TransferCategory(
                 name=ExpenseCategoryName.TREASURY_BONDS_VALUE_DECREASE,
@@ -247,7 +250,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.EXPENSE,
                 priority=CategoryPriority.OTHERS,
                 deposit=deposits[DepositName.TREASURY_BONDS],
-                wallet=deposits[DepositName.TREASURY_BONDS].wallet,
+                wallet=long_term_wallet,
             ),
             # Expense categories for ETF Deposit
             TransferCategory(
@@ -256,7 +259,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.EXPENSE,
                 priority=CategoryPriority.OTHERS,
                 deposit=deposits[DepositName.ETF],
-                wallet=deposits[DepositName.ETF].wallet,
+                wallet=long_term_wallet,
             ),
             TransferCategory(
                 name=ExpenseCategoryName.ETF_VALUE_DECREASE,
@@ -264,7 +267,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.EXPENSE,
                 priority=CategoryPriority.OTHERS,
                 deposit=deposits[DepositName.ETF],
-                wallet=deposits[DepositName.ETF].wallet,
+                wallet=long_term_wallet,
             ),
             # Expense categories for GOLD Deposit
             TransferCategory(
@@ -273,7 +276,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.EXPENSE,
                 priority=CategoryPriority.OTHERS,
                 deposit=deposits[DepositName.GOLD],
-                wallet=deposits[DepositName.GOLD].wallet,
+                wallet=long_term_wallet,
             ),
             TransferCategory(
                 name=ExpenseCategoryName.GOLD_VALUE_DECREASE,
@@ -281,7 +284,7 @@ def create_categories(deposits: dict[DepositName, Deposit]) -> tuple[list[Transf
                 category_type=CategoryType.EXPENSE,
                 priority=CategoryPriority.OTHERS,
                 deposit=deposits[DepositName.GOLD],
-                wallet=deposits[DepositName.GOLD].wallet,
+                wallet=long_term_wallet,
             ),
         ]
     )
