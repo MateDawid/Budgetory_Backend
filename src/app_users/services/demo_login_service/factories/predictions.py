@@ -74,8 +74,8 @@ def create_predictions(
                 period=daily_wallet_periods[PeriodName._2026_02],
                 deposit=deposits[DepositName.PERSONAL],
                 category=expense_categories[ExpenseCategoryName.PERSONAL_UNEXPECTED],
-                initial_plan=Decimal("700.00"),
-                current_plan=Decimal("600.00"),
+                initial_plan=Decimal("950.00"),
+                current_plan=Decimal("850.00"),
             ),
             # PERSONAL Deposit 2026_03 Predictions
             ExpensePrediction(
@@ -103,8 +103,8 @@ def create_predictions(
                 period=daily_wallet_periods[PeriodName._2026_03],
                 deposit=deposits[DepositName.PERSONAL],
                 category=expense_categories[ExpenseCategoryName.PERSONAL_UNEXPECTED],
-                initial_plan=Decimal("700.00"),
-                current_plan=Decimal("700.00"),
+                initial_plan=Decimal("1250.00"),
+                current_plan=Decimal("1250.00"),
             ),
             # COMMON Deposit 2026_01 Predictions
             ExpensePrediction(
@@ -190,7 +190,7 @@ def create_predictions(
                 deposit=deposits[DepositName.COMMON],
                 category=expense_categories[ExpenseCategoryName.COMMON_UNEXPECTED],
                 initial_plan=Decimal("500.00"),
-                current_plan=Decimal("500.00"),
+                current_plan=Decimal("700.00"),
             ),
             # COMMON Deposit 2026_03 Predictions
             ExpensePrediction(
@@ -232,8 +232,8 @@ def create_predictions(
                 period=daily_wallet_periods[PeriodName._2026_03],
                 deposit=deposits[DepositName.COMMON],
                 category=expense_categories[ExpenseCategoryName.COMMON_UNEXPECTED],
-                initial_plan=Decimal("500.00"),
-                current_plan=Decimal("500.00"),
+                initial_plan=Decimal("700.00"),
+                current_plan=Decimal("700.00"),
             ),
         ]
     )

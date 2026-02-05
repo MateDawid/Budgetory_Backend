@@ -1,6 +1,7 @@
 from app_users.models import User
 from app_users.services.demo_login_service.factories.categories import create_categories
 from app_users.services.demo_login_service.factories.entities import create_deposits_and_entities
+from app_users.services.demo_login_service.factories.expenses import create_expenses
 from app_users.services.demo_login_service.factories.incomes import create_incomes
 from app_users.services.demo_login_service.factories.periods import create_periods
 from app_users.services.demo_login_service.factories.predictions import create_predictions
@@ -38,6 +39,7 @@ class DemoUserInitialDataService:
         self.create_demo_categories()
         self.create_demo_incomes()
         self.create_demo_predictions()
+        self.create_demo_expenses()
 
     def create_demo_wallets(self) -> None:
         """
@@ -113,4 +115,10 @@ class DemoUserInitialDataService:
         """
         Creates Expenses for demo User.
         """
-        ...
+        create_expenses(
+            daily_wallet_periods=self.daily_wallet_periods,
+            long_term_wallet_periods=self.long_term_wallet_periods,
+            deposits=self.deposits,
+            entities=self.entities,
+            expense_categories=self.expense_categories,
+        )

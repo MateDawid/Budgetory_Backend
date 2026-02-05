@@ -123,7 +123,7 @@ def create_incomes(
                 period=long_term_wallet_periods[PeriodName._2026_01],
                 value=Decimal("1000.00"),
                 deposit=deposits[DepositName.TREASURY_BONDS],
-                entity=deposits[DepositName.COMMON],
+                entity=entities[EntityName.LONG_TERM_WALLET_TREASURY_BONDS_SELLER],
                 category=income_categories[IncomeCategoryName.TREASURY_BONDS_PURCHASE],
             ),
             Income(
@@ -144,7 +144,7 @@ def create_incomes(
                 period=long_term_wallet_periods[PeriodName._2026_02],
                 value=Decimal("1000.00"),
                 deposit=deposits[DepositName.TREASURY_BONDS],
-                entity=deposits[DepositName.COMMON],
+                entity=entities[EntityName.LONG_TERM_WALLET_TREASURY_BONDS_SELLER],
                 category=income_categories[IncomeCategoryName.TREASURY_BONDS_PURCHASE],
             ),
             Income(
@@ -165,7 +165,7 @@ def create_incomes(
                 period=long_term_wallet_periods[PeriodName._2026_03],
                 value=Decimal("1250.00"),
                 deposit=deposits[DepositName.TREASURY_BONDS],
-                entity=deposits[DepositName.COMMON],
+                entity=entities[EntityName.LONG_TERM_WALLET_TREASURY_BONDS_SELLER],
                 category=income_categories[IncomeCategoryName.TREASURY_BONDS_PURCHASE],
             ),
             Income(
@@ -186,7 +186,7 @@ def create_incomes(
                 period=long_term_wallet_periods[PeriodName._2026_01],
                 value=Decimal("1000.00"),
                 deposit=deposits[DepositName.ETF],
-                entity=deposits[DepositName.COMMON],
+                entity=entities[EntityName.LONG_TERM_WALLET_ETF_SELLER],
                 category=income_categories[IncomeCategoryName.ETF_PURCHASE],
             ),
             Income(
@@ -207,7 +207,7 @@ def create_incomes(
                 period=long_term_wallet_periods[PeriodName._2026_02],
                 value=Decimal("1000.00"),
                 deposit=deposits[DepositName.ETF],
-                entity=deposits[DepositName.COMMON],
+                entity=entities[EntityName.LONG_TERM_WALLET_ETF_SELLER],
                 category=income_categories[IncomeCategoryName.ETF_PURCHASE],
             ),
             # LONG TERM Wallet ETF Deposit 2026_03 Incomes
@@ -218,7 +218,7 @@ def create_incomes(
                 period=long_term_wallet_periods[PeriodName._2026_03],
                 value=Decimal("1250.00"),
                 deposit=deposits[DepositName.ETF],
-                entity=deposits[DepositName.COMMON],
+                entity=entities[EntityName.LONG_TERM_WALLET_ETF_SELLER],
                 category=income_categories[IncomeCategoryName.ETF_PURCHASE],
             ),
             # LONG TERM Wallet GOLD Deposit 2026_01 Incomes
@@ -229,7 +229,7 @@ def create_incomes(
                 period=long_term_wallet_periods[PeriodName._2026_01],
                 value=Decimal("500.00"),
                 deposit=deposits[DepositName.GOLD],
-                entity=deposits[DepositName.COMMON],
+                entity=entities[EntityName.LONG_TERM_WALLET_GOLD_SELLER],
                 category=income_categories[IncomeCategoryName.GOLD_PURCHASE],
             ),
             # LONG TERM Wallet ETF Deposit 2026_02 Incomes
@@ -240,7 +240,7 @@ def create_incomes(
                 period=long_term_wallet_periods[PeriodName._2026_02],
                 value=Decimal("500.00"),
                 deposit=deposits[DepositName.GOLD],
-                entity=deposits[DepositName.COMMON],
+                entity=entities[EntityName.LONG_TERM_WALLET_GOLD_SELLER],
                 category=income_categories[IncomeCategoryName.GOLD_PURCHASE],
             ),
             # LONG TERM Wallet GOLD Deposit 2026_03 Incomes
@@ -251,7 +251,7 @@ def create_incomes(
                 period=long_term_wallet_periods[PeriodName._2026_03],
                 value=Decimal("500.00"),
                 deposit=deposits[DepositName.GOLD],
-                entity=deposits[DepositName.COMMON],
+                entity=entities[EntityName.LONG_TERM_WALLET_GOLD_SELLER],
                 category=income_categories[IncomeCategoryName.GOLD_PURCHASE],
             ),
             Income(

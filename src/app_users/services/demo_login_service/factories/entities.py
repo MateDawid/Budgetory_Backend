@@ -21,12 +21,15 @@ class EntityName(StrEnum):
     FOOD_SELLER = "Food seller"
     BILLS_TAKER = "Bills taker"
     UNEXPECTED_ENTITY = "Unexpected entity"
+    DAILY_WALLET_TREASURY_BONDS_SELLER = "Seller of Treasury bonds"
+    DAILY_WALLET_ETF_SELLER = "Seller of ETF"
+    DAILY_WALLET_GOLD_SELLER = "Seller of Gold"
     # Entities for "Long term" Wallet
-    TREASURY_BONDS_SELLER = "Treasury bonds seller"
+    LONG_TERM_WALLET_TREASURY_BONDS_SELLER = "Treasury bonds seller"
     TREASURY_BONDS_VALUE_CHANGE = "Treasury bonds value change"
-    ETF_SELLER = "ETF Seller"
+    LONG_TERM_WALLET_ETF_SELLER = "ETF Seller"
     ETF_VALUE_CHANGE = "ETF value change"
-    GOLD_SELLER = "Gold seller"
+    LONG_TERM_WALLET_GOLD_SELLER = "Gold seller"
     GOLD_VALUE_CHANGE = "Gold value change"
 
 
@@ -87,10 +90,19 @@ def create_deposits_and_entities(daily_wallet: Wallet, long_term_wallet: Wallet)
             Entity(
                 wallet=daily_wallet, name=EntityName.UNEXPECTED_ENTITY, description="Entity that charges unexpectedly."
             ),
+            Entity(
+                wallet=daily_wallet,
+                name=EntityName.DAILY_WALLET_TREASURY_BONDS_SELLER,
+                description="Entity that sells treasury bonds.",
+            ),
+            Entity(wallet=daily_wallet, name=EntityName.DAILY_WALLET_ETF_SELLER, description="Entity that sells ETF."),
+            Entity(
+                wallet=daily_wallet, name=EntityName.DAILY_WALLET_GOLD_SELLER, description="Entity that sells Gold."
+            ),
             # Entities for "Long term" Wallet
             Entity(
                 wallet=long_term_wallet,
-                name=EntityName.TREASURY_BONDS_SELLER,
+                name=EntityName.LONG_TERM_WALLET_TREASURY_BONDS_SELLER,
                 description="Entity that sells treasury bonds.",
             ),
             Entity(
@@ -98,13 +110,21 @@ def create_deposits_and_entities(daily_wallet: Wallet, long_term_wallet: Wallet)
                 name=EntityName.TREASURY_BONDS_VALUE_CHANGE,
                 description="Entity for handling changes of treasury bonds value.",
             ),
-            Entity(wallet=long_term_wallet, name=EntityName.ETF_SELLER, description="Entity that sells ETF."),
+            Entity(
+                wallet=long_term_wallet,
+                name=EntityName.LONG_TERM_WALLET_ETF_SELLER,
+                description="Entity that sells ETF.",
+            ),
             Entity(
                 wallet=long_term_wallet,
                 name=EntityName.ETF_VALUE_CHANGE,
                 description="Entity for handling changes of ETF value.",
             ),
-            Entity(wallet=long_term_wallet, name=EntityName.GOLD_SELLER, description="Entity that sells Gold."),
+            Entity(
+                wallet=long_term_wallet,
+                name=EntityName.LONG_TERM_WALLET_GOLD_SELLER,
+                description="Entity that sells Gold.",
+            ),
             Entity(
                 wallet=long_term_wallet,
                 name=EntityName.GOLD_VALUE_CHANGE,
