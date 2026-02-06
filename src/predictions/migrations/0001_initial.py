@@ -68,6 +68,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterUniqueTogether(
             name="expenseprediction",
-            unique_together={("period", "category")},
+            unique_together={("period", "category", "deposit")},
         ),
     ]
