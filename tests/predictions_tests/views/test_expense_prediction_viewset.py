@@ -54,7 +54,7 @@ class TestExpensePredictionViewSetList:
         WHEN: ExpensePredictionViewSet list endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = expense_prediction_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -72,7 +72,7 @@ class TestExpensePredictionViewSetList:
         WHEN: ExpensePredictionViewSet called by Wallet member without pagination parameters.
         THEN: HTTP 200 - Response with all objects returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         for _ in range(10):
             expense_prediction_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -96,7 +96,7 @@ class TestExpensePredictionViewSetList:
         WHEN: ExpensePredictionViewSet called by Wallet member with pagination parameters - page_size and page.
         THEN: HTTP 200 - Paginated response returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         for _ in range(10):
             expense_prediction_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -142,7 +142,7 @@ class TestExpensePredictionViewSetList:
         THEN: Response with serialized Wallet ExpensePrediction list returned.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         expense_prediction_factory(
             wallet=wallet,
             category=transfer_category_factory(wallet=wallet, category_type=CategoryType.EXPENSE),
@@ -178,7 +178,7 @@ class TestExpensePredictionViewSetList:
         WHEN: ExpensePredictionViewSet called by one of Wallets owner.
         THEN: Response with serialized ExpensePrediction list (only from given Wallet) returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         prediction = expense_prediction_factory(wallet=wallet)
         expense_prediction_factory()
         api_client.force_authenticate(base_user)
@@ -207,7 +207,7 @@ class TestExpensePredictionViewSetList:
         THEN: Response with serialized ExpensePrediction list containing calculated "previous_plan" field returned.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         category = transfer_category_factory(wallet=wallet, category_type=CategoryType.EXPENSE)
         previous_period = period_factory(wallet=wallet, date_start=date(2025, 6, 1), date_end=date(2025, 6, 30))
         current_period = period_factory(wallet=wallet, date_start=date(2025, 7, 1), date_end=date(2025, 7, 31))
@@ -252,7 +252,7 @@ class TestExpensePredictionViewSetList:
         and "previous_result" field returned.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
         previous_period = period_factory(wallet=wallet, date_start=date(2025, 6, 1), date_end=date(2025, 6, 30))
@@ -334,7 +334,7 @@ class TestExpensePredictionViewSetCreate:
         WHEN: ExpensePredictionViewSet list endpoint called with POST.
         THEN: HTTP 400 returned - access granted, but input invalid.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = expense_prediction_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.post(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -378,8 +378,7 @@ class TestExpensePredictionViewSetCreate:
         WHEN: ExpensePredictionViewSet called with POST by User belonging to Wallet with valid payload.
         THEN: ExpensePrediction object created in database with given payload
         """
-        other_user = user_factory()
-        wallet = wallet_factory(members=[base_user, other_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         period = period_factory(wallet=wallet, status=PeriodStatus.DRAFT)
         category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -419,7 +418,7 @@ class TestExpensePredictionViewSetCreate:
         WHEN: ExpensePredictionViewSet called with POST by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, category_type=CategoryType.EXPENSE)
         api_client.force_authenticate(base_user)
@@ -449,7 +448,7 @@ class TestExpensePredictionViewSetCreate:
         WHEN: ExpensePredictionViewSet called with POST by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, category_type=CategoryType.INCOME)
         api_client.force_authenticate(base_user)
@@ -478,7 +477,7 @@ class TestExpensePredictionViewSetCreate:
         WHEN: ExpensePredictionViewSet called with POST by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, status=PeriodStatus.CLOSED)
         category = transfer_category_factory(wallet=wallet, category_type=CategoryType.EXPENSE)
         api_client.force_authenticate(base_user)
@@ -507,7 +506,7 @@ class TestExpensePredictionViewSetCreate:
         WHEN: ExpensePredictionViewSet called with POST by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, status=PeriodStatus.ACTIVE)
         category = transfer_category_factory(wallet=wallet, category_type=CategoryType.EXPENSE)
         api_client.force_authenticate(base_user)
@@ -550,7 +549,7 @@ class TestExpensePredictionViewSetDetail:
         WHEN: ExpensePredictionViewSet detail endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         expense_prediction = expense_prediction_factory(wallet=wallet)
         url = expense_prediction_detail_url(expense_prediction.period.wallet.id, expense_prediction.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -594,9 +593,9 @@ class TestExpensePredictionViewSetDetail:
         THEN: HTTP 200, ExpensePrediction details returned.
         """
         if user_type == "owner":
-            wallet = wallet_factory(members=[base_user])
+            wallet = wallet_factory(owner=base_user)
         else:
-            wallet = wallet_factory(members=[base_user])
+            wallet = wallet_factory(owner=base_user)
         prediction = expense_prediction_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
         url = expense_prediction_detail_url(wallet.id, prediction.id)
@@ -682,7 +681,7 @@ class TestExpensePredictionViewSetUpdate:
         WHEN: ExpensePredictionViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         expense_prediction = expense_prediction_factory(wallet=wallet)
         url = expense_prediction_detail_url(expense_prediction.period.wallet.id, expense_prediction.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -732,7 +731,7 @@ class TestExpensePredictionViewSetUpdate:
         WHEN: ExpensePredictionViewSet detail view called with PATCH by User belonging to Wallet.
         THEN: HTTP 200, ExpensePrediction updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         prediction = expense_prediction_factory(wallet=wallet, **self.PAYLOAD)
         update_payload = {param: value}
         api_client.force_authenticate(base_user)
@@ -758,7 +757,7 @@ class TestExpensePredictionViewSetUpdate:
         WHEN: ExpensePredictionViewSet detail view called with PATCH by User belonging to Wallet with valid payload.
         THEN: HTTP 200, Deposit updated with "category" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
         prediction = expense_prediction_factory(wallet=wallet, deposit=deposit, **self.PAYLOAD)
@@ -786,7 +785,7 @@ class TestExpensePredictionViewSetUpdate:
         WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         prediction = expense_prediction_factory(wallet=wallet)
         payload = {"category": transfer_category_factory(category_type=CategoryType.EXPENSE).id}
         api_client.force_authenticate(base_user)
@@ -813,7 +812,7 @@ class TestExpensePredictionViewSetUpdate:
         WHEN: ExpensePredictionViewSet called with PATCH by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         prediction = expense_prediction_factory(wallet=wallet)
         payload = {"category": transfer_category_factory(wallet=wallet, category_type=CategoryType.INCOME).id}
         api_client.force_authenticate(base_user)
@@ -839,7 +838,7 @@ class TestExpensePredictionViewSetUpdate:
         the Period of prediction is CLOSED.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, status=PeriodStatus.DRAFT)
         prediction = expense_prediction_factory(period=period)
         period.status = PeriodStatus.CLOSED
@@ -871,7 +870,7 @@ class TestExpensePredictionViewSetUpdate:
         the Period of prediction is ACTIVE.
         THEN: HTTP 200 returned. ExpensePrediction updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, status=PeriodStatus.DRAFT)
         prediction = expense_prediction_factory(period=period, current_plan=Decimal("100.00"))
         period.status = PeriodStatus.ACTIVE
@@ -900,7 +899,7 @@ class TestExpensePredictionViewSetUpdate:
         in payload.
         THEN: Bad request HTTP 400 returned. ExpensePrediction not updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         prediction = expense_prediction_factory(period=period)
         payload = {"period": period_factory(wallet=wallet).id}
@@ -945,7 +944,7 @@ class TestExpensePredictionViewSetDelete:
         WHEN: ExpensePredictionViewSet detail endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         expense_prediction = expense_prediction_factory(wallet=wallet)
         url = expense_prediction_detail_url(expense_prediction.period.wallet.id, expense_prediction.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -985,7 +984,7 @@ class TestExpensePredictionViewSetDelete:
         WHEN: ExpensePredictionViewSet detail view called with DELETE by User belonging to Wallet.
         THEN: No content HTTP 204, ExpensePrediction deleted.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         prediction = expense_prediction_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
         url = expense_prediction_detail_url(wallet.id, prediction.id)

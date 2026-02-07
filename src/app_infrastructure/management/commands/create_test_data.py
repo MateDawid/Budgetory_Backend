@@ -60,7 +60,7 @@ class Command(BaseCommand):
         try:
             user = User.objects.get(email=USER_DATA["email"])
             self.stdout.write(f"Removing {USER_DATA['email']} data from database.")
-            Wallet.objects.filter(members=user).delete()
+            Wallet.objects.filter(owner=user).delete()
             user.delete()
         except User.DoesNotExist:
             pass
@@ -72,8 +72,7 @@ class Command(BaseCommand):
     def create_daily_expenses_wallet(self, user):
         # Create Wallet
         self.stdout.write("Creating Wallet: Daily expenses")
-        wallet = Wallet.objects.create(name="Daily expenses", currency=Currency.objects.get(name="PLN"))
-        wallet.members.add(user)
+        wallet = Wallet.objects.create(name="Daily expenses", currency=Currency.objects.get(name="PLN"), owner=user)
         self.objects_ids["wallet_id"] = wallet.id
         # Create Deposits
         self.stdout.write("Creating Deposits")

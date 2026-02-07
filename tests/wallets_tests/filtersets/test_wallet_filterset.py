@@ -32,7 +32,7 @@ class TestWalletFilterSetOrdering:
         THEN: Response must contain all Wallet existing in database sorted by given param.
         """
         for _ in range(5):
-            wallet_factory(members=[base_user])
+            wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(WALLETS_URL, data={"ordering": sort_param})
@@ -77,8 +77,8 @@ class TestWalletFilterSetFiltering:
         THEN: Response must contain all Wallet existing in database containing given
         "name" value in name param.
         """
-        matching_wallet = wallet_factory(members=[base_user], name="Some wallet")
-        wallet_factory(members=[base_user], name="Other one")
+        matching_wallet = wallet_factory(owner=base_user, name="Some wallet")
+        wallet_factory(owner=base_user, name="Other one")
         api_client.force_authenticate(base_user)
 
         response = api_client.get(WALLETS_URL, data={"name": filter_value})

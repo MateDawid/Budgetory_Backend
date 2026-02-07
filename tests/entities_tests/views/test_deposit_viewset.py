@@ -42,7 +42,7 @@ class TestDepositViewSetList:
         WHEN: DepositViewSet list endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = deposits_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -60,7 +60,7 @@ class TestDepositViewSetList:
         WHEN: DepositViewSet called by Wallet member without pagination parameters.
         THEN: HTTP 200 - Response with all objects returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         for _ in range(10):
             deposit_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -84,7 +84,7 @@ class TestDepositViewSetList:
         WHEN: DepositViewSet called by Wallet member with pagination parameters - page_size and page.
         THEN: HTTP 200 - Paginated response returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         for _ in range(10):
             deposit_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -105,7 +105,7 @@ class TestDepositViewSetList:
         """
         wallet_owner = user_factory()
         other_user = user_factory()
-        wallet = wallet_factory(members=[wallet_owner])
+        wallet = wallet_factory(owner=wallet_owner)
         api_client.force_authenticate(other_user)
 
         response = api_client.get(deposits_url(wallet.id))
@@ -125,7 +125,7 @@ class TestDepositViewSetList:
         WHEN: DepositViewSet called by Wallet owner.
         THEN: Response with serialized Wallet Deposit list returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         for _ in range(2):
             deposit_factory(wallet=wallet)
@@ -152,7 +152,7 @@ class TestDepositViewSetList:
         WHEN: DepositViewSet called by one of Wallets owner.
         THEN: Response with serialized Deposit list (only from given Wallet) returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         deposit_factory()
         api_client.force_authenticate(base_user)
@@ -180,7 +180,7 @@ class TestDepositViewSetList:
         WHEN: DepositViewSet called with fields=balance query parameter.
         THEN: Response includes balance field with correct calculation.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         income_category = transfer_category_factory(wallet=wallet, category_type=CategoryType.INCOME, deposit=deposit)
         expense_category = transfer_category_factory(wallet=wallet, category_type=CategoryType.EXPENSE, deposit=deposit)
@@ -218,7 +218,7 @@ class TestDepositViewSetList:
         WHEN: DepositViewSet called with fields=wallet_balance query parameter.
         THEN: Response includes wallet_balance field with correct wallet-wide calculation.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit_1 = deposit_factory(wallet=wallet)
         deposit_2 = deposit_factory(wallet=wallet)
@@ -268,7 +268,7 @@ class TestDepositViewSetList:
         WHEN: DepositViewSet called with fields=wallet_percentage query parameter.
         THEN: Response includes wallet_percentage field with correct percentage calculation.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit_1 = deposit_factory(wallet=wallet)
         deposit_2 = deposit_factory(wallet=wallet)
@@ -324,7 +324,7 @@ class TestDepositViewSetList:
         WHEN: DepositViewSet called with multiple fields in query parameter.
         THEN: Response includes all requested fields with correct calculations.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit = deposit_factory(wallet=wallet)
 
@@ -363,7 +363,7 @@ class TestDepositViewSetList:
         WHEN: DepositViewSet called without fields query parameter.
         THEN: Response includes only basic fields without annotations.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit_factory(wallet=wallet)
 
         api_client.force_authenticate(base_user)
@@ -391,7 +391,7 @@ class TestDepositViewSetList:
         WHEN: DepositViewSet called with empty fields query parameter.
         THEN: Response returns basic data without conditional annotations.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit_factory(wallet=wallet)
 
         api_client.force_authenticate(base_user)
@@ -412,7 +412,7 @@ class TestDepositViewSetList:
         WHEN: DepositViewSet called with fields=wallet_percentage query parameter.
         THEN: Response includes wallet_percentage as 0 (division by zero handled).
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit_factory(wallet=wallet)
 
         api_client.force_authenticate(base_user)
@@ -440,7 +440,7 @@ class TestDepositViewSetList:
         WHEN: DepositViewSet called with fields=balance,wallet_percentage.
         THEN: Response correctly handles negative values.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit = deposit_factory(wallet=wallet)
 
@@ -474,7 +474,7 @@ class TestDepositViewSetList:
         WHEN: DepositViewSet called with fields parameter in different cases.
         THEN: Fields parameter is case-sensitive and only matches exact field names.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit_factory(wallet=wallet)
 
         api_client.force_authenticate(base_user)
@@ -498,7 +498,7 @@ class TestDepositViewSetList:
         WHEN: DepositViewSet called with fields=balance and ordering=balance.
         THEN: Response is correctly ordered by balance.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit1 = deposit_factory(wallet=wallet, name="Deposit 1")
         deposit2 = deposit_factory(wallet=wallet, name="Deposit 2")
@@ -534,7 +534,7 @@ class TestDepositViewSetList:
         WHEN: DepositViewSet called with fields parameter and pagination.
         THEN: Paginated response includes requested fields correctly.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         for i in range(5):
@@ -593,7 +593,7 @@ class TestDepositViewSetCreate:
         WHEN: DepositViewSet list endpoint called with POST.
         THEN: HTTP 400 returned - access granted, but invalid input.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = deposits_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.post(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -609,7 +609,7 @@ class TestDepositViewSetCreate:
         """
         wallet_owner = user_factory()
         other_user = user_factory()
-        wallet = wallet_factory(members=[wallet_owner])
+        wallet = wallet_factory(owner=wallet_owner)
         api_client.force_authenticate(other_user)
 
         response = api_client.post(deposits_url(wallet.id), data={})
@@ -629,7 +629,7 @@ class TestDepositViewSetCreate:
         WHEN: DepositViewSet called with POST by User belonging to Wallet with valid payload.
         THEN: Deposit object created in database with given payload. Initial categories for Deposit created.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_1 = period_factory(wallet=wallet)
         period_2 = period_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -664,7 +664,7 @@ class TestDepositViewSetCreate:
         WHEN: DepositViewSet called with POST by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. Deposit not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         max_length = Deposit._meta.get_field(field_name).max_length
         payload = self.PAYLOAD.copy()
@@ -685,7 +685,7 @@ class TestDepositViewSetCreate:
         WHEN: DepositViewSet called twice with POST by User belonging to Wallet with the same payload.
         THEN: Bad request HTTP 400 returned. Only one Deposit created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
 
@@ -724,7 +724,7 @@ class TestDepositViewSetDetail:
         WHEN: DepositViewSet detail endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         url = deposit_detail_url(deposit.wallet.id, deposit.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -745,7 +745,7 @@ class TestDepositViewSetDetail:
         """
         wallet_owner = user_factory()
         other_user = user_factory()
-        wallet = wallet_factory(members=[wallet_owner])
+        wallet = wallet_factory(owner=wallet_owner)
         deposit = deposit_factory(wallet=wallet)
         api_client.force_authenticate(other_user)
         url = deposit_detail_url(deposit.wallet.id, deposit.id)
@@ -767,7 +767,7 @@ class TestDepositViewSetDetail:
         WHEN: DepositViewSet detail view called by User belonging to Wallet.
         THEN: HTTP 200, Deposit details returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
         url = deposit_detail_url(wallet.id, deposit.id)
@@ -829,7 +829,7 @@ class TestDepositViewSetDetail:
         WHEN: DepositViewSet detail endpoint called with fields query parameter.
         THEN: Response includes requested fields with correct calculations.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit = deposit_factory(wallet=wallet)
 
@@ -880,7 +880,7 @@ class TestDepositViewSetUpdate:
         WHEN: DepositViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         url = deposit_detail_url(deposit.wallet.id, deposit.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -901,7 +901,7 @@ class TestDepositViewSetUpdate:
         """
         wallet_owner = user_factory()
         other_user = user_factory()
-        wallet = wallet_factory(members=[wallet_owner])
+        wallet = wallet_factory(owner=wallet_owner)
         deposit = deposit_factory(wallet=wallet)
         api_client.force_authenticate(other_user)
         url = deposit_detail_url(deposit.wallet.id, deposit.id)
@@ -935,7 +935,7 @@ class TestDepositViewSetUpdate:
         WHEN: DepositViewSet detail view called with PATCH by User belonging to Wallet.
         THEN: HTTP 200, Deposit updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet, **self.PAYLOAD)
         update_payload = {param: value}
         api_client.force_authenticate(base_user)
@@ -959,7 +959,7 @@ class TestDepositViewSetUpdate:
         WHEN: DepositViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned. Deposit updated in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         deposit = deposit_factory(wallet=wallet, **payload)
@@ -994,7 +994,7 @@ class TestDepositViewSetUpdate:
         with invalid payload.
         THEN: Bad request HTTP 400, Deposit not updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit_factory(wallet=wallet, **self.PAYLOAD)
         deposit = deposit_factory(wallet=wallet)
         old_value = getattr(deposit, param)
@@ -1038,7 +1038,7 @@ class TestDepositViewSetDelete:
         WHEN: DepositViewSet detail endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         url = deposit_detail_url(deposit.wallet.id, deposit.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -1078,7 +1078,7 @@ class TestDepositViewSetDelete:
         WHEN: DepositViewSet detail view called with DELETE by User belonging to Wallet.
         THEN: No content HTTP 204, Deposit deleted.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
         url = deposit_detail_url(wallet.id, deposit.id)

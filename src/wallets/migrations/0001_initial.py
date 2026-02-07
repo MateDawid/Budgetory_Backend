@@ -31,8 +31,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Currency",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("name", models.CharField(help_text="Name of currency in ISO 4217 format.", unique=True)),
+                ("name", models.CharField(primary_key=True, serialize=False, help_text="Name of currency in ISO 4217 format.", unique=True)),
             ],
             options={
                 "verbose_name_plural": "currencies",
@@ -57,7 +56,12 @@ class Migration(migrations.Migration):
                         to="wallets.currency",
                     ),
                 ),
-                ("members", models.ManyToManyField(blank=True, related_name="wallets", to=settings.AUTH_USER_MODEL)),
+                ("owner", models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="wallets",
+                to=settings.AUTH_USER_MODEL,
+                blank=False, null=False
+            )),
             ],
         ),
         migrations.AddConstraint(

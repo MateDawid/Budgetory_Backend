@@ -46,7 +46,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = period_transfers_chart_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
 
@@ -84,7 +84,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called by Wallet member.
         THEN: HTTP 200 - Response with empty xAxis, expense_series, and income_series arrays returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(period_transfers_chart_url(wallet.id))
@@ -106,7 +106,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called by Wallet member.
         THEN: HTTP 200 - Response with periods on xAxis and zero values in series.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_factory(wallet=wallet, name="Jan 2024")
         period_factory(wallet=wallet, name="Feb 2024")
         api_client.force_authenticate(base_user)
@@ -133,7 +133,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called by Wallet member.
         THEN: HTTP 200 - Response with correct expense and income calculations.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period1 = period_factory(
             wallet=wallet, name="Jan 2024", date_start=date(2024, 1, 1), date_end=date(2024, 1, 31)
         )
@@ -177,7 +177,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called by Wallet member.
         THEN: HTTP 200 - Response with aggregated expenses and incomes from all deposits.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
 
         # Create two deposits with categories and transfers
@@ -222,7 +222,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called by Wallet member.
         THEN: HTTP 200 - Response with periods ordered by date_start.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
 
         # Create periods in non-chronological order
         period_factory(wallet=wallet, name="Mar 2024", date_start=date(2024, 3, 1), date_end=date(2024, 3, 31))
@@ -251,7 +251,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called by Wallet member.
         THEN: HTTP 200 - Response with expenses and zero incomes.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -281,7 +281,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called by Wallet member.
         THEN: HTTP 200 - Response with incomes and zero expenses.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
@@ -311,7 +311,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called by Wallet member.
         THEN: HTTP 200 - Response with correct decimal precision in calculations.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
@@ -346,7 +346,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called by Wallet member.
         THEN: HTTP 200 - Response with correct calculations for large values.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
@@ -378,7 +378,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called with deposit query parameter.
         THEN: HTTP 200 - Response with data only from specified deposit.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
 
         # Create two deposits with categories and transfers
@@ -426,7 +426,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called with nonexistent deposit ID.
         THEN: HTTP 200 - Response with zero values for all periods.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
@@ -460,7 +460,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called with deposit filter.
         THEN: HTTP 200 - Response with filtered data across all periods.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period1 = period_factory(
             wallet=wallet, name="Jan 2024", date_start=date(2024, 1, 1), date_end=date(2024, 1, 31)
         )
@@ -503,7 +503,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called with periods_count=3.
         THEN: HTTP 200 - Response with only last 3 periods.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
 
         # Create 8 periods
         for month in range(1, 9):
@@ -534,7 +534,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called with periods_count=0.
         THEN: HTTP 200 - Response with empty arrays.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_factory(wallet=wallet, name="Jan 2024")
         period_factory(wallet=wallet, name="Feb 2024")
 
@@ -559,7 +559,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called with periods_count=10.
         THEN: HTTP 200 - Response with all 3 available periods.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_factory(wallet=wallet, name="Jan 2024", date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
         period_factory(wallet=wallet, name="Feb 2024", date_start=date(2024, 2, 1), date_end=date(2024, 2, 29))
         period_factory(wallet=wallet, name="Mar 2024", date_start=date(2024, 3, 1), date_end=date(2024, 3, 31))
@@ -587,7 +587,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called with periods_count=1.
         THEN: HTTP 200 - Response with only the most recent period.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period1 = period_factory(
             wallet=wallet, name="Jan 2024", date_start=date(2024, 1, 1), date_end=date(2024, 1, 31)
         )
@@ -625,7 +625,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called with both deposit and periods_count parameters.
         THEN: HTTP 200 - Response with filtered deposit data for specified number of periods.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
 
         # Create 5 periods
         periods = []
@@ -680,7 +680,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called with empty string deposit parameter.
         THEN: HTTP 200 - Response should handle empty deposit filter appropriately.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
@@ -710,7 +710,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called with transfer_type=INCOME filter.
         THEN: HTTP 200 - Response with only income_series populated, expense_series empty.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
@@ -745,7 +745,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called with transfer_type=EXPENSE filter.
         THEN: HTTP 200 - Response with only expense_series populated, income_series empty.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
@@ -780,7 +780,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called with invalid transfer_type value.
         THEN: HTTP 200 - Response with both series populated (falls back to default behavior).
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
@@ -814,7 +814,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called with entity query parameter.
         THEN: HTTP 200 - Response with data only from specified entity.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
 
@@ -865,7 +865,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called with both deposit and entity parameters.
         THEN: HTTP 200 - Response with data filtered by both deposit and entity.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
 
         deposit1 = deposit_factory(wallet=wallet)
@@ -918,7 +918,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called with deposit, entity, transfer_type, and periods_count.
         THEN: HTTP 200 - Response with data filtered by all parameters.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
 
         periods = []
         for month in range(1, 4):
@@ -1007,7 +1007,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called by Wallet member.
         THEN: HTTP 200 - Response with correctly summed values.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
@@ -1042,7 +1042,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called with nonexistent entity ID.
         THEN: HTTP 200 - Response with zero values for all periods.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         entity = entity_factory(wallet=wallet)
@@ -1081,7 +1081,7 @@ class TestTransfersInPeriodsChartApiView:
         WHEN: TransfersInPeriodsChartApiView called with transfer_type=INCOME and periods_count=2.
         THEN: HTTP 200 - Response with only income data for last 2 periods.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
         expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)

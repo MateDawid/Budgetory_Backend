@@ -48,7 +48,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: DepositsInPeriodsChartAPIView endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = deposits_results_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
 
@@ -86,7 +86,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: DepositsInPeriodsChartAPIView called by Wallet member.
         THEN: HTTP 200 - Response with empty xAxis and series arrays returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(deposits_results_url(wallet.id))
@@ -107,7 +107,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: DepositsInPeriodsChartAPIView called by Wallet member.
         THEN: HTTP 200 - Response with empty xAxis and series arrays returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
 
@@ -129,7 +129,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: DepositsInPeriodsChartAPIView called by Wallet member.
         THEN: HTTP 200 - Response with empty xAxis and series arrays returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
 
@@ -152,7 +152,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: DepositsInPeriodsChartAPIView called by Wallet member.
         THEN: HTTP 200 - Response with periods on xAxis and deposits with zero balances in series.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_factory(wallet=wallet, name="Jan 2024")
         period_factory(wallet=wallet, name="Feb 2024")
         deposit_factory(wallet=wallet, name="Checking Account")
@@ -183,7 +183,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: DepositsInPeriodsChartAPIView called by Wallet member.
         THEN: HTTP 200 - Response with correct cumulative balance calculations.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period1 = period_factory(
             wallet=wallet, name="Jan 2024", date_start=date(2024, 1, 1), date_end=date(2024, 1, 31)
         )
@@ -305,7 +305,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: DepositsInPeriodsChartAPIView called by Wallet member.
         THEN: HTTP 200 - Response returned efficiently with correct calculations.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
 
         # Create 12 periods (full year)
         periods = []
@@ -381,7 +381,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: DepositsInPeriodsChartAPIView called by Wallet member.
         THEN: HTTP 200 - Response handles edge cases gracefully with correct calculations.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period1 = period_factory(wallet=wallet, name="Period 1")
         period2 = period_factory(wallet=wallet, name="Period 2")
 
@@ -462,7 +462,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called for any transfer type.
         THEN: Empty dict returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
 
@@ -489,7 +489,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called for INCOME type.
         THEN: Dict with deposit_id and correct sum returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
@@ -518,7 +518,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called for EXPENSE type.
         THEN: Dict with deposit_id and correct sum returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -547,7 +547,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called for INCOME type.
         THEN: Dict with deposit_id and aggregated sum returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
@@ -579,7 +579,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called for INCOME type only.
         THEN: Only income transfers summed, expenses ignored.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
 
@@ -612,7 +612,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called with all deposit IDs.
         THEN: Dict with all deposit_ids and their respective sums returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
 
         deposit1 = deposit_factory(wallet=wallet, name="Deposit 1")
@@ -650,7 +650,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called.
         THEN: Only deposits with transfers appear in result dict.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
 
         deposit_with_transfer = deposit_factory(wallet=wallet, name="With Transfer")
@@ -686,7 +686,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called for specific period.
         THEN: Only transfers from specified period included in sum.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period1 = period_factory(wallet=wallet, name="Jan 2024")
         period2 = period_factory(wallet=wallet, name="Feb 2024")
 
@@ -719,8 +719,8 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called for specific wallet.
         THEN: Only transfers from specified wallet included.
         """
-        wallet1 = wallet_factory(members=[base_user])
-        wallet2 = wallet_factory(members=[base_user])
+        wallet1 = wallet_factory(owner=base_user)
+        wallet2 = wallet_factory(owner=base_user)
 
         period1 = period_factory(wallet=wallet1, name="Jan 2024")
         period2 = period_factory(wallet=wallet2, name="Jan 2024")
@@ -758,7 +758,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called.
         THEN: Result maintains proper decimal precision as float.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
@@ -789,7 +789,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called.
         THEN: All transfers correctly aggregated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -821,7 +821,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called.
         THEN: Empty dict returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
 
         result = get_deposits_transfers_sums_in_period(
@@ -844,7 +844,7 @@ class TestDepositsInPeriodsChartAPIView:
         WHEN: get_deposits_transfers_sums_in_period called.
         THEN: Empty dict returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
 
         result = get_deposits_transfers_sums_in_period(

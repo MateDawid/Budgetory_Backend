@@ -57,7 +57,7 @@ class TestExpensePredictionFilterSetOrdering:
         WHEN: The ExpensePredictionViewSet list view is called with sorting by given param and without any filters.
         THEN: Response must contain all ExpensePrediction existing in database sorted by given param.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_1 = period_factory(wallet=wallet, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
         period_2 = period_factory(wallet=wallet, date_start=date(2024, 2, 1), date_end=date(2024, 2, 28))
         category_1 = transfer_category_factory(
@@ -114,7 +114,7 @@ class TestExpensePredictionFilterSetFiltering:
         THEN: Response must contain all ExpensePrediction existing in database assigned to Wallet matching given
         period value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Test name")
         prediction = expense_prediction_factory(wallet=wallet, period=period)
         expense_prediction_factory(wallet=wallet, period=period_factory(wallet=wallet, name="Other period"))
@@ -150,7 +150,7 @@ class TestExpensePredictionFilterSetFiltering:
         THEN: Response must contain all ExpensePrediction existing in database assigned to Wallet matching given
         category value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         category = transfer_category_factory(wallet=wallet, name="Test name", category_type=CategoryType.EXPENSE)
         prediction = expense_prediction_factory(wallet=wallet, category=category)
         expense_prediction_factory(
@@ -190,7 +190,7 @@ class TestExpensePredictionFilterSetFiltering:
         THEN: Response must contain all ExpensePrediction existing in database assigned to Wallet matching given
         deposit value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         matching_category = transfer_category_factory(
             wallet=wallet, name="Matching", deposit=deposit, category_type=CategoryType.EXPENSE
@@ -246,7 +246,7 @@ class TestExpensePredictionFilterSetFiltering:
         THEN: Response must contain all ExpensePrediction existing in database assigned to Wallet matching given
         progress status.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
 
         # NOT_USED: current_funds_left == current_plan
@@ -309,7 +309,7 @@ class TestExpensePredictionFilterSetFiltering:
         THEN: Response must contain all ExpensePrediction existing in database assigned to Wallet matching given
         Decimal value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         value = "123.45"
         prediction = expense_prediction_factory(wallet=wallet, **{field: Decimal(value)})
         expense_prediction_factory(wallet=wallet, **{field: Decimal("234.56")})
@@ -345,7 +345,7 @@ class TestExpensePredictionFilterSetFiltering:
         THEN: Response must contain all ExpensePrediction existing in database assigned to Wallet matching given
         Decimal value MAX value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         value = "123.45"
         prediction = expense_prediction_factory(wallet=wallet, **{field: Decimal(value)})
         expense_prediction_factory(wallet=wallet, **{field: Decimal("234.56")})
@@ -381,7 +381,7 @@ class TestExpensePredictionFilterSetFiltering:
         THEN: Response must contain all ExpensePrediction existing in database assigned to Wallet matching given
         Decimal value MIN value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         value = "234.56"
         prediction = expense_prediction_factory(wallet=wallet, **{field: Decimal(value)})
         expense_prediction_factory(wallet=wallet, **{field: Decimal("123.45")})
@@ -416,7 +416,7 @@ class TestExpensePredictionFilterSetFiltering:
         THEN: Response must contain all ExpensePrediction existing in database assigned to Wallet matching given
         category_priority value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         category = transfer_category_factory(
             wallet=wallet, category_type=CategoryType.EXPENSE, priority=CategoryPriority.MOST_IMPORTANT
         )

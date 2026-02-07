@@ -7,7 +7,9 @@ class Wallet(models.Model):
 
     name = models.CharField(max_length=128)
     description = models.TextField(null=True, blank=True, max_length=300)
-    members = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="wallets", blank=True)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, related_name="wallets", on_delete=models.CASCADE, null=False, blank=False
+    )
     currency = models.ForeignKey(
         "wallets.Currency", on_delete=models.SET_NULL, related_name="wallets", null=True, blank=False
     )

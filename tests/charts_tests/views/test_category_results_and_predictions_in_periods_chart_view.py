@@ -46,7 +46,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = category_results_predictions_chart_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
 
@@ -84,7 +84,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called without category query parameter.
         THEN: HTTP 200 - Response with empty arrays returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(category_results_predictions_chart_url(wallet.id))
@@ -107,7 +107,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called by Wallet member with category.
         THEN: HTTP 200 - Response with empty xAxis, results_series, and predictions_series arrays returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit)
         api_client.force_authenticate(base_user)
@@ -133,7 +133,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called by Wallet member.
         THEN: HTTP 200 - Response with periods on xAxis and zero values in series.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit)
         period_factory(wallet=wallet, name="Jan 2024")
@@ -163,7 +163,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called by Wallet member.
         THEN: HTTP 200 - Response with correct results and predictions calculations.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period1 = period_factory(
             wallet=wallet, name="Jan 2024", date_start=date(2024, 1, 1), date_end=date(2024, 1, 31)
         )
@@ -205,7 +205,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called by Wallet member.
         THEN: HTTP 200 - Response with periods ordered by date_start.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit)
 
@@ -236,7 +236,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called by Wallet member.
         THEN: HTTP 200 - Response with results and zero predictions.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -266,7 +266,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called by Wallet member.
         THEN: HTTP 200 - Response with predictions and zero results.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -297,7 +297,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called by Wallet member.
         THEN: HTTP 200 - Response with correct decimal precision in calculations.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -331,7 +331,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called by Wallet member.
         THEN: HTTP 200 - Response with correct calculations for large values.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -363,7 +363,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called with display_value=DisplayValueChoices.RESULTS.
         THEN: HTTP 200 - Response with only results_series populated, predictions_series empty.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -400,7 +400,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         with display_value=DisplayValueChoices.PREDICTIONS.
         THEN: HTTP 200 - Response with only predictions_series populated, results_series empty.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -436,7 +436,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called with invalid display_value.
         THEN: HTTP 200 - Response with both series populated (falls back to default behavior).
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -469,7 +469,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called with periods_count=3.
         THEN: HTTP 200 - Response with only last 3 periods.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit)
 
@@ -507,7 +507,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called with periods_count=0.
         THEN: HTTP 200 - Response with empty arrays.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit)
         period_factory(wallet=wallet, name="Jan 2024")
@@ -539,7 +539,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called with periods_count=10.
         THEN: HTTP 200 - Response with all 3 available periods.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit)
         period_factory(wallet=wallet, name="Jan 2024", date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
@@ -573,7 +573,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called with periods_count=1.
         THEN: HTTP 200 - Response with only the most recent period.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
 
@@ -618,7 +618,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called with both display_value and periods_count.
         THEN: HTTP 200 - Response with filtered data for specified display_value and number of periods.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
 
@@ -666,7 +666,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called by Wallet member.
         THEN: HTTP 200 - Response with correctly summed transfer values.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -700,7 +700,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called with nonexistent category ID.
         THEN: HTTP 200 - Response with zero values for all periods.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit)
@@ -736,7 +736,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called for income category.
         THEN: HTTP 200 - Response with correct income data.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
@@ -770,7 +770,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called by Wallet member.
         THEN: HTTP 200 - Response with correct values, including zeros for periods without data.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
 
@@ -812,7 +812,7 @@ class TestCategoryResultsAndPredictionsInPeriodsChartApiView:
         WHEN: CategoryResultsAndPredictionsInPeriodsChartApiView called with empty string category parameter.
         THEN: HTTP 200 - Response with empty arrays (same as no category parameter).
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_factory(wallet=wallet, name="Jan 2024")
 
         api_client.force_authenticate(base_user)

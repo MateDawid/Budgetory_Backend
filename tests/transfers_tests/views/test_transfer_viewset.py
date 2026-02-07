@@ -191,7 +191,7 @@ class TestTransferViewSetList:
         WHEN: TransferViewSet list endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = transfer_list_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -210,7 +210,7 @@ class TestTransferViewSetList:
         WHEN: TransferViewSet called by Wallet member without pagination parameters.
         THEN: HTTP 200 - Response with all objects returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = transfer_list_url(wallet.id)
         for _ in range(10):
             transfer_factory(wallet=wallet, transfer_type=get_transfer_type_from_url_fixture(transfer_list_url))
@@ -236,7 +236,7 @@ class TestTransferViewSetList:
         WHEN: TransferViewSet called by Wallet member with pagination parameters - page_size and page.
         THEN: HTTP 200 - Paginated response returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         for _ in range(10):
             transfer_factory(wallet=wallet, transfer_type=get_transfer_type_from_url_fixture(transfer_list_url))
         api_client.force_authenticate(base_user)
@@ -261,7 +261,7 @@ class TestTransferViewSetList:
         """
         wallet_owner = user_factory()
         other_user = user_factory()
-        wallet = wallet_factory(members=[wallet_owner])
+        wallet = wallet_factory(owner=wallet_owner)
         api_client.force_authenticate(other_user)
 
         response = api_client.get(transfer_list_url(wallet.id))
@@ -282,7 +282,7 @@ class TestTransferViewSetList:
         WHEN: TransferViewSet called by Wallet owner.
         THEN: Response with serialized Wallet Transfer list returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
@@ -312,7 +312,7 @@ class TestTransferViewSetList:
         WHEN: TransferViewSet called by one of Wallets owner.
         THEN: Response with serialized Transfer list (only from given Wallet) returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
         transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type)
@@ -344,7 +344,7 @@ class TestTransferViewSetList:
         WHEN: ExpenseViewSet called by one of Wallets owner.
         THEN: Response with serialized Expense list (only from given Wallet) returned without Income.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         expense_factory(wallet=wallet)
         income_transfer = income_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -372,7 +372,7 @@ class TestTransferViewSetList:
         WHEN: IncomeViewSet called by one of Wallets owner.
         THEN: Response with serialized Income list (only from given Wallet) returned without Expense.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         income_factory(wallet=wallet)
         expense_transfer = expense_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -416,7 +416,7 @@ class TestTransferViewSetCreate:
         WHEN: TransferViewSet list endpoint called with GET.
         THEN: HTTP 400 returned - access granted, but data invalid.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = transfer_list_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.post(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -436,7 +436,7 @@ class TestTransferViewSetCreate:
         """
         wallet_owner = user_factory()
         other_user = user_factory()
-        wallet = wallet_factory(members=[wallet_owner])
+        wallet = wallet_factory(owner=wallet_owner)
         api_client.force_authenticate(other_user)
 
         response = api_client.post(transfer_list_url(wallet.id), data={})
@@ -462,7 +462,7 @@ class TestTransferViewSetCreate:
         WHEN: TransferViewSet called with POST by User belonging to Wallet with valid payload.
         THEN: Transfer object created in database with given payload.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
         period = period_factory(
@@ -516,7 +516,7 @@ class TestTransferViewSetCreate:
         WHEN: TransferViewSet called with POST by User belonging to Wallet with valid payload.
         THEN: Transfer object created in database with given payload and entity value None.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
         period = period_factory(
             wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
@@ -557,7 +557,7 @@ class TestTransferViewSetCreate:
         WHEN: TransferViewSet called with POST by User belonging to Wallet with valid payload.
         THEN: Transfer object created in database with given payload and category value None.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
         period = period_factory(
@@ -598,7 +598,7 @@ class TestTransferViewSetCreate:
         WHEN: TransferViewSet called with POST by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
         api_client.force_authenticate(base_user)
@@ -631,7 +631,7 @@ class TestTransferViewSetCreate:
         WHEN: TransferViewSet called with POST by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
         period_factory(wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30))
@@ -667,7 +667,7 @@ class TestTransferViewSetCreate:
         WHEN: TransferViewSet called with POST by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
         period_factory(wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30))
@@ -702,7 +702,7 @@ class TestTransferViewSetCreate:
         WHEN: TransferViewSet called with POST by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
         period_factory(wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30))
@@ -745,7 +745,7 @@ class TestTransferViewSetCreate:
         WHEN: TransferViewSet called with POST by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
         period_factory(wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30))
@@ -779,7 +779,7 @@ class TestTransferViewSetCreate:
         WHEN: TransferViewSet called with POST by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
         api_client.force_authenticate(base_user)
@@ -813,7 +813,7 @@ class TestTransferViewSetCreate:
         WHEN: TransferViewSet called with POST by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
         period_factory(wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30))
@@ -848,7 +848,7 @@ class TestTransferViewSetCreate:
         WHEN: TransferViewSet called with POST by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
         period_factory(wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30))
@@ -883,7 +883,7 @@ class TestTransferViewSetCreate:
         WHEN: TransferViewSet called with POST by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = transfer_list_url(wallet.id)
         transfer_type = get_transfer_type_from_url_fixture(transfer_list_url)
         period_factory(wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30))
@@ -939,7 +939,7 @@ class TestTransferViewSetDetail:
         WHEN: TransferViewSet detail endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type)
         url = transfer_detail_url(wallet.id, transfer.id)
@@ -963,7 +963,7 @@ class TestTransferViewSetDetail:
         wallet_owner = user_factory()
         other_user = user_factory()
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
-        wallet = wallet_factory(members=[wallet_owner])
+        wallet = wallet_factory(owner=wallet_owner)
         transfer = transfer_factory(transfer_type=transfer_type, wallet=wallet)
         api_client.force_authenticate(other_user)
         url = transfer_detail_url(wallet.id, transfer.id)
@@ -986,7 +986,7 @@ class TestTransferViewSetDetail:
         WHEN: TransferViewSet detail view called by User belonging to Wallet.
         THEN: HTTP 200, Transfer details returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         transfer = transfer_factory(transfer_type=transfer_type, wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -1039,7 +1039,7 @@ class TestTransferViewSetUpdate:
         WHEN: TransferViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type)
         url = transfer_detail_url(wallet.id, transfer.id)
@@ -1062,7 +1062,7 @@ class TestTransferViewSetUpdate:
         """
         wallet_owner = user_factory()
         other_user = user_factory()
-        wallet = wallet_factory(members=[wallet_owner])
+        wallet = wallet_factory(owner=wallet_owner)
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         transfer = transfer_factory(wallet=wallet, transfer_type=transfer_type)
         api_client.force_authenticate(other_user)
@@ -1102,7 +1102,7 @@ class TestTransferViewSetUpdate:
         WHEN: TransferViewSet detail view called with PATCH by User belonging to Wallet.
         THEN: HTTP 200, Transfer updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         period = period_factory(
             wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
@@ -1144,7 +1144,7 @@ class TestTransferViewSetUpdate:
         WHEN: TransferViewSet detail view called with PATCH with invalid Period.
         THEN: HTTP 400, Transfer not updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         period = period_factory(
             wallet=wallet, date_start=datetime.date(2024, 9, 1), date_end=datetime.date(2024, 9, 30)
@@ -1191,7 +1191,7 @@ class TestTransferViewSetUpdate:
         WHEN: TransferViewSet detail view called with PATCH with valid Entity.
         THEN: HTTP 200, Transfer updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -1234,7 +1234,7 @@ class TestTransferViewSetUpdate:
         assigned in "deposit" field.
         THEN: HTTP 400, Transfer not updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -1277,7 +1277,7 @@ class TestTransferViewSetUpdate:
         assigned in "entity" field.
         THEN: HTTP 400, Transfer not updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -1321,7 +1321,7 @@ class TestTransferViewSetUpdate:
         "deposit" field.
         THEN: HTTP 400, Transfer not updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -1361,7 +1361,7 @@ class TestTransferViewSetUpdate:
         WHEN: TransferViewSet detail view called with PATCH with invalid TransferCategory.
         THEN: HTTP 200, Transfer updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -1406,7 +1406,7 @@ class TestTransferViewSetUpdate:
         WHEN: TransferViewSet detail view called with PATCH with valid payload with many fields.
         THEN: HTTP 200, Transfer updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         payload = self.PAYLOAD.copy()
         payload["date"] = datetime.date(2024, 9, 1)
@@ -1472,7 +1472,7 @@ class TestTransferViewSetUpdate:
         WHEN: TransferViewSet called with PATCH by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
@@ -1513,7 +1513,7 @@ class TestTransferViewSetUpdate:
         WHEN: TransferViewSet called with PATCH by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
@@ -1554,7 +1554,7 @@ class TestTransferViewSetUpdate:
         WHEN: TransferViewSet called with PATCH by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
@@ -1595,7 +1595,7 @@ class TestTransferViewSetUpdate:
         WHEN: TransferViewSet called with PATCH by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
@@ -1636,7 +1636,7 @@ class TestTransferViewSetUpdate:
         WHEN: TransferViewSet called with PATCH by User belonging to Wallet.
         THEN: Bad request HTTP 400 returned. Transfer not updated in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
@@ -1704,7 +1704,7 @@ class TestTransferViewSetDelete:
         WHEN: TransferViewSet detail endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         transfer = transfer_factory(transfer_type=transfer_type, wallet=wallet)
         url = transfer_detail_url(wallet.id, transfer.id)
@@ -1748,7 +1748,7 @@ class TestTransferViewSetDelete:
         WHEN: TransferViewSet detail view called with DELETE by User belonging to Wallet.
         THEN: No content HTTP 204, Transfer deleted.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_detail_url)
         transfer = transfer_factory(transfer_type=transfer_type, wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -1799,7 +1799,7 @@ class TestTransferViewSetBulkDelete:
         WHEN: TransferViewSet bulk delete endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_bulk_delete_url)
         transfer = transfer_factory(transfer_type=transfer_type, wallet=wallet)
         url = transfer_bulk_delete_url(wallet.id)
@@ -1843,7 +1843,7 @@ class TestTransferViewSetBulkDelete:
         WHEN: TransferViewSet bulk delete view called with DELETE by User belonging to Wallet.
         THEN: No content HTTP 204, Transfers deleted.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_bulk_delete_url)
         transfer_1 = transfer_factory(transfer_type=transfer_type, wallet=wallet)
         transfer_2 = transfer_factory(transfer_type=transfer_type, wallet=wallet)
@@ -1880,7 +1880,7 @@ class TestTransferViewSetBulkDelete:
         WHEN: TransferViewSet bulk delete view called with DELETE by User belonging to Wallet with invalid input.
         THEN: HTTP 400, Transfers not copied.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         url = transfer_bulk_delete_url(wallet.id)
 
@@ -1926,7 +1926,7 @@ class TestTransferViewSetCopy:
         WHEN: TransferViewSet copy endpoint called with POST.
         THEN: HTTP 201 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_copy_url)
         transfer = transfer_factory(transfer_type=transfer_type, wallet=wallet)
         url = transfer_copy_url(wallet.id)
@@ -1970,7 +1970,7 @@ class TestTransferViewSetCopy:
         WHEN: TransferViewSet copy view called with POST by User belonging to Wallet.
         THEN: No content HTTP 201, Transfers copied.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         transfer_type = get_transfer_type_from_url_fixture(transfer_copy_url)
         transfer_1 = transfer_factory(transfer_type=transfer_type, wallet=wallet)
         transfer_2 = transfer_factory(transfer_type=transfer_type, wallet=wallet)
@@ -2013,7 +2013,7 @@ class TestTransferViewSetCopy:
         WHEN: TransferViewSet copy view called with POST by User belonging to Wallet with invalid input.
         THEN: HTTP 400, Transfers not copied.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         url = transfer_copy_url(wallet.id)
 

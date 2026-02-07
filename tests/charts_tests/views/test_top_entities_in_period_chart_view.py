@@ -45,7 +45,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         url = top_entities_chart_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -93,7 +93,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called without required parameters.
         THEN: HTTP 200 - Response with empty xAxis and series arrays.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(top_entities_chart_url(wallet.id))
@@ -113,7 +113,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called without period parameter.
         THEN: HTTP 200 - Response with empty arrays.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(top_entities_chart_url(wallet.id), {"transfer_type": str(CategoryType.EXPENSE.value)})
@@ -134,7 +134,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called without transfer_type parameter.
         THEN: HTTP 200 - Response with empty arrays.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
 
@@ -156,7 +156,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called by Wallet member.
         THEN: HTTP 200 - Response with empty xAxis and series arrays.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         api_client.force_authenticate(base_user)
 
@@ -182,7 +182,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called by Wallet member.
         THEN: HTTP 200 - Response with empty xAxis and series arrays.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         entity_factory(wallet=wallet, name="Entity 1")
         entity_factory(wallet=wallet, name="Entity 2")
@@ -213,7 +213,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called with transfer_type=EXPENSE.
         THEN: HTTP 200 - Response with top entities by expense amount.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -259,7 +259,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called with transfer_type=INCOME.
         THEN: HTTP 200 - Response with top entities by income amount.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, name="Jan 2024")
         deposit = deposit_factory(wallet=wallet)
         income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
@@ -305,7 +305,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called without entities_count parameter.
         THEN: HTTP 200 - Response with top 5 entities (default).
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit = deposit_factory(wallet=wallet)
         expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -350,7 +350,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called with invalid period ID.
         THEN: HTTP 200 - Response with empty arrays.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
 
@@ -379,7 +379,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called with nonexistent deposit ID.
         THEN: HTTP 200 - Response with empty arrays (no matches).
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit = deposit_factory(wallet=wallet)
         expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -424,7 +424,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called with entities_count=0.
         THEN: HTTP 200 - Response with empty arrays.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit = deposit_factory(wallet=wallet)
         expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -461,7 +461,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called.
         THEN: HTTP 200 - Response with entities ordered by transfer amount (ties handled by database).
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit = deposit_factory(wallet=wallet)
         expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -509,7 +509,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called with transfer_type=EXPENSE.
         THEN: HTTP 200 - Response includes only expense transfers for the entity.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit = deposit_factory(wallet=wallet)
         income_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.INCOME)
@@ -557,7 +557,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called.
         THEN: HTTP 200 - Response with entities ordered ascending (insert at 0).
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit = deposit_factory(wallet=wallet)
         expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -604,7 +604,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called with entities_count=3.
         THEN: HTTP 200 - Response with top 3 entities.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit = deposit_factory(wallet=wallet)
         expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -647,7 +647,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called with entities_count=10.
         THEN: HTTP 200 - Response with all 3 available entities.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit = deposit_factory(wallet=wallet)
         expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -693,7 +693,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called.
         THEN: HTTP 200 - Response with correctly summed values per entity.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit = deposit_factory(wallet=wallet)
         expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -744,7 +744,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called with deposit filter.
         THEN: HTTP 200 - Response with data only from specified deposit.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         deposit1 = deposit_factory(wallet=wallet)
@@ -801,7 +801,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called with deposit filter.
         THEN: HTTP 200 - Response with entity data only from specified deposit.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         deposit1 = deposit_factory(wallet=wallet)
@@ -860,7 +860,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called.
         THEN: HTTP 200 - Response with correct decimal precision.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit = deposit_factory(wallet=wallet)
         expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -900,7 +900,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called.
         THEN: HTTP 200 - Response with correct calculations for large values.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit = deposit_factory(wallet=wallet)
         expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)
@@ -937,7 +937,7 @@ class TestTopEntitiesInPeriodChartAPIView:
         WHEN: TopEntitiesInPeriodChartAPIView called.
         THEN: HTTP 200 - Response only includes entities with transfers > 0.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit = deposit_factory(wallet=wallet)
         expense_category = transfer_category_factory(wallet=wallet, deposit=deposit, category_type=CategoryType.EXPENSE)

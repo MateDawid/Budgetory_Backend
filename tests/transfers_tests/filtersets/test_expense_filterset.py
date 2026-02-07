@@ -61,7 +61,7 @@ class TestExpenseFilterSetOrdering:
         WHEN: The ExpenseViewSet list view is called with sorting by given param and without any filters.
         THEN: Response must contain all Expense existing in database sorted by given param.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         for _ in range(5):
             expense_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -110,7 +110,7 @@ class TestExpenseFilterSetFiltering:
         THEN: Response must contain all Expense existing in database assigned to Wallet containing given
         "name" value in name param.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         matching_transfer = expense_factory(wallet=wallet, name="Some transfer")
         expense_factory(wallet=wallet, name="Other one")
         api_client.force_authenticate(base_user)
@@ -143,7 +143,7 @@ class TestExpenseFilterSetFiltering:
         THEN: Response contains all Expenses existing in database assigned to Wallet matching given
         "period" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         other_period = period_factory(wallet=wallet, date_start=date(2024, 9, 1), date_end=date(2024, 9, 30))
         matching_period = period_factory(wallet=wallet, date_start=date(2024, 10, 1), date_end=date(2024, 10, 31))
         expense_factory(wallet=wallet, period=other_period)
@@ -178,7 +178,7 @@ class TestExpenseFilterSetFiltering:
         THEN: Response contains all Expenses existing in database assigned to Wallet matching given
         "entity" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         other_entity = entity_factory(wallet=wallet)
         matching_entity = entity_factory(wallet=wallet)
         expense_factory(wallet=wallet, entity=other_entity)
@@ -214,7 +214,7 @@ class TestExpenseFilterSetFiltering:
         "entity" value.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         other_wallet = wallet_factory()
         expense_factory(wallet=other_wallet, entity=entity_factory(wallet=other_wallet))
         expense_factory(wallet=other_wallet, entity=None)
@@ -250,7 +250,7 @@ class TestExpenseFilterSetFiltering:
         THEN: Response contains all Expenses existing in database assigned to Wallet matching given
         "deposit" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         other_deposit = deposit_factory(wallet=wallet)
         matching_deposit = deposit_factory(wallet=wallet)
         expense_factory(wallet=wallet, deposit=other_deposit)
@@ -285,7 +285,7 @@ class TestExpenseFilterSetFiltering:
         THEN: Response contains all Expenses existing in database assigned to Wallet matching given
         "category" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         other_category = transfer_category_factory(wallet=wallet, category_type=CategoryType.EXPENSE)
         matching_category = transfer_category_factory(wallet=wallet, category_type=CategoryType.EXPENSE)
         expense_factory(wallet=wallet, category=other_category)
@@ -321,7 +321,7 @@ class TestExpenseFilterSetFiltering:
         "category" value.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         other_wallet = wallet_factory()
         expense_factory(
             wallet=other_wallet,
@@ -362,7 +362,7 @@ class TestExpenseFilterSetFiltering:
         THEN: Response contains all Expenses existing in database assigned to Wallet matching given
         "date" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, date_start=date(2024, 10, 1), date_end=date(2024, 10, 30))
         other_date = date(year=2024, month=10, day=11)
         matching_date = date(year=2024, month=10, day=10)
@@ -400,7 +400,7 @@ class TestExpenseFilterSetFiltering:
         THEN: Response contains all Expenses existing in database assigned to Wallet matching given
         "value" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         matching_value = Decimal("100.00")
 
         expense_factory(wallet=wallet, value=Decimal("1.0"))

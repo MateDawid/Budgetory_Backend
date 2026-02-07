@@ -61,7 +61,7 @@ class TestIncomeFilterSetOrdering:
         WHEN: The IncomeViewSet list view is called with sorting by given param and without any filters.
         THEN: Response must contain all Income existing in database sorted by given param.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         for _ in range(5):
             income_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -109,7 +109,7 @@ class TestIncomeFilterSetFiltering:
         THEN: Response must contain all Income existing in database assigned to Wallet containing given
         "name" value in name param.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         matching_transfer = income_factory(wallet=wallet, name="Some transfer")
         income_factory(wallet=wallet, name="Other one")
         api_client.force_authenticate(base_user)
@@ -142,7 +142,7 @@ class TestIncomeFilterSetFiltering:
         THEN: Response contains all Incomes existing in database assigned to Wallet matching given
         "period" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         other_period = period_factory(wallet=wallet, date_start=date(2024, 9, 1), date_end=date(2024, 9, 30))
         matching_period = period_factory(wallet=wallet, date_start=date(2024, 10, 1), date_end=date(2024, 10, 31))
         income_factory(wallet=wallet, period=other_period)
@@ -177,7 +177,7 @@ class TestIncomeFilterSetFiltering:
         THEN: Response contains all Incomes existing in database assigned to Wallet matching given
         "entity" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         other_entity = entity_factory(wallet=wallet)
         matching_entity = entity_factory(wallet=wallet)
         income_factory(wallet=wallet, entity=other_entity)
@@ -213,7 +213,7 @@ class TestIncomeFilterSetFiltering:
         "entity" value.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         other_wallet = wallet_factory()
         income_factory(wallet=other_wallet, entity=entity_factory(wallet=other_wallet))
         income_factory(wallet=other_wallet, entity=None)
@@ -249,7 +249,7 @@ class TestIncomeFilterSetFiltering:
         THEN: Response contains all Incomes existing in database assigned to Wallet matching given
         "deposit" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         other_deposit = deposit_factory(wallet=wallet)
         matching_deposit = deposit_factory(wallet=wallet)
         income_factory(wallet=wallet, deposit=other_deposit)
@@ -284,7 +284,7 @@ class TestIncomeFilterSetFiltering:
         THEN: Response contains all Incomes existing in database assigned to Wallet matching given
         "category" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         other_category = transfer_category_factory(wallet=wallet, category_type=CategoryType.INCOME)
         matching_category = transfer_category_factory(wallet=wallet, category_type=CategoryType.INCOME)
         income_factory(wallet=wallet, category=other_category)
@@ -320,7 +320,7 @@ class TestIncomeFilterSetFiltering:
         "category" value.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         other_wallet = wallet_factory()
         income_factory(
             wallet=other_wallet,
@@ -361,7 +361,7 @@ class TestIncomeFilterSetFiltering:
         THEN: Response contains all Incomes existing in database assigned to Wallet matching given
         "date" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet, date_start=date(2024, 10, 1), date_end=date(2024, 10, 30))
         other_date = date(year=2024, month=10, day=11)
         matching_date = date(year=2024, month=10, day=10)
@@ -399,7 +399,7 @@ class TestIncomeFilterSetFiltering:
         THEN: Response contains all Incomes existing in database assigned to Wallet matching given
         "value" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         matching_value = Decimal("100.00")
 
         income_factory(wallet=wallet, value=Decimal("1.0"))
