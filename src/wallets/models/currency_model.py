@@ -5,7 +5,7 @@ from django.db.models import CheckConstraint, Q
 class Currency(models.Model):
     """Model for currency used in Wallet."""
 
-    name = models.CharField(unique=True, help_text="Name of currency in ISO 4217 format.")
+    name = models.CharField(primary_key=True, unique=True, help_text="Name of currency in ISO 4217 format.")
 
     class Meta:
         verbose_name_plural = "currencies"

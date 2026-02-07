@@ -67,7 +67,7 @@ class TestPeriodViewSetList:
         WHEN: PeriodViewSet list endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = periods_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -85,7 +85,7 @@ class TestPeriodViewSetList:
         WHEN: PeriodViewSet called by Wallet member without pagination parameters.
         THEN: HTTP 200 - Response with all objects returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         for _ in range(10):
             period_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -109,7 +109,7 @@ class TestPeriodViewSetList:
         WHEN: PeriodViewSet called by Wallet member with pagination parameters - page_size and page.
         THEN: HTTP 200 - Paginated response returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         for _ in range(10):
             period_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -133,7 +133,7 @@ class TestPeriodViewSetList:
         WHEN: PeriodViewSet list view for Wallet id called by authenticated Wallet owner.
         THEN: List of Periods for given Wallet id sorted from newest to oldest returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         periods = [
             period_factory(
@@ -197,7 +197,7 @@ class TestPeriodViewSetList:
         WHEN: PeriodViewSet list view for Wallet id called by authenticated Wallet member.
         THEN: List of Periods for given Wallet id sorted from newest to oldest returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         period_factory(
             wallet=wallet, date_start=date(2023, 1, 1), date_end=date(2023, 1, 31), status=PeriodStatus.CLOSED
@@ -230,7 +230,7 @@ class TestPeriodViewSetList:
         # Other period
         period_factory()
         # Auth User period
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
         url = periods_url(wallet.id)
@@ -257,7 +257,7 @@ class TestPeriodViewSetList:
         WHEN: PeriodViewSet list view called with ordering parameter.
         THEN: List of Periods ordered by date_start returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         period_factory(wallet=wallet, date_start=date(2023, 3, 1), date_end=date(2023, 3, 31))
         period_factory(wallet=wallet, date_start=date(2023, 1, 1), date_end=date(2023, 1, 31))
@@ -286,7 +286,7 @@ class TestPeriodViewSetList:
         WHEN: PeriodViewSet called with fields=incomes_sum query parameter.
         THEN: Response includes incomes_sum field with correct calculation.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_1 = period_factory(wallet=wallet)
         period_2 = period_factory(wallet=wallet)
 
@@ -321,7 +321,7 @@ class TestPeriodViewSetList:
         WHEN: PeriodViewSet called with fields=expenses_sum query parameter.
         THEN: Response includes expenses_sum field with correct calculation.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_1 = period_factory(wallet=wallet)
         period_2 = period_factory(wallet=wallet)
 
@@ -356,7 +356,7 @@ class TestPeriodViewSetList:
         WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum query parameter.
         THEN: Response includes both incomes_sum and expenses_sum fields with correct calculations.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_1 = period_factory(wallet=wallet)
         period_2 = period_factory(wallet=wallet)
 
@@ -395,7 +395,7 @@ class TestPeriodViewSetList:
         WHEN: PeriodViewSet called without fields query parameter.
         THEN: Response does not include annotated incomes_sum and expenses_sum fields.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         income_factory(wallet=wallet, period=period, value=Decimal("100.00"))
@@ -423,7 +423,7 @@ class TestPeriodViewSetList:
         WHEN: PeriodViewSet called with fields=incomes_sum query parameter.
         THEN: Response includes incomes_sum field with zero value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         expense_factory(wallet=wallet, period=period, value=Decimal("100.00"))
@@ -449,7 +449,7 @@ class TestPeriodViewSetList:
         WHEN: PeriodViewSet called with fields=expenses_sum query parameter.
         THEN: Response includes expenses_sum field with zero value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         income_factory(wallet=wallet, period=period, value=Decimal("100.00"))
@@ -474,7 +474,7 @@ class TestPeriodViewSetList:
         WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum query parameter.
         THEN: Response includes both sum fields with zero values.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_factory(wallet=wallet)
 
         api_client.force_authenticate(base_user)
@@ -499,7 +499,7 @@ class TestPeriodViewSetList:
         WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum query parameter.
         THEN: Response includes sum fields with correct decimal precision (2 places).
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         income_factory(wallet=wallet, period=period, value=Decimal("100.99"))
@@ -528,7 +528,7 @@ class TestPeriodViewSetList:
         WHEN: PeriodViewSet called with ordering=incomes_sum and fields=incomes_sum.
         THEN: Response is ordered by incomes_sum in ascending order.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_1 = period_factory(wallet=wallet)
         period_2 = period_factory(wallet=wallet)
         period_3 = period_factory(wallet=wallet)
@@ -559,7 +559,7 @@ class TestPeriodViewSetList:
         WHEN: PeriodViewSet called with ordering=-expenses_sum and fields=expenses_sum.
         THEN: Response is ordered by expenses_sum in descending order.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_1 = period_factory(wallet=wallet)
         period_2 = period_factory(wallet=wallet)
         period_3 = period_factory(wallet=wallet)
@@ -591,7 +591,7 @@ class TestPeriodViewSetList:
         WHEN: PeriodViewSet called with pagination and fields=incomes_sum,expenses_sum.
         THEN: Paginated response includes sum fields with correct calculations.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         for i in range(5):
             period = period_factory(wallet=wallet)
             income_factory(wallet=wallet, period=period, value=Decimal(f"{(i + 1) * 100}.00"))
@@ -623,7 +623,7 @@ class TestPeriodViewSetList:
         WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum.
         THEN: Each period shows only its own transfer sums, not combined.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_1 = period_factory(wallet=wallet, date_start=date(2023, 1, 1), date_end=date(2023, 1, 31))
         period_2 = period_factory(wallet=wallet, date_start=date(2023, 2, 1), date_end=date(2023, 2, 28))
 
@@ -663,7 +663,7 @@ class TestPeriodViewSetList:
         WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum.
         THEN: Response handles large decimal values correctly.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         income_factory(wallet=wallet, period=period, value=Decimal("999999.99"))
@@ -707,7 +707,7 @@ class TestPeriodViewSetCreate:
         WHEN: PeriodViewSet list endpoint called with POST.
         THEN: HTTP 400 returned - access granted, but data invalid.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = periods_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.post(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -726,7 +726,7 @@ class TestPeriodViewSetCreate:
         valid data.
         THEN: Period for Wallet created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit_1 = deposit_factory(wallet=wallet)
         deposit_2 = deposit_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -768,7 +768,7 @@ class TestPeriodViewSetCreate:
         with valid data two times.
         THEN: One DRAFT Period for Wallet created in database, second one not created.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         payload_1 = {
             "name": "2023_01",
@@ -807,10 +807,10 @@ class TestPeriodViewSetCreate:
             "date_end": date(2023, 1, 31),
         }
         api_client.force_authenticate(base_user)
-        wallet_1 = wallet_factory(members=[base_user])
+        wallet_1 = wallet_factory(owner=base_user)
         url = periods_url(wallet_1.id)
         api_client.post(url, payload)
-        wallet_2 = wallet_factory(members=[base_user])
+        wallet_2 = wallet_factory(owner=base_user)
         url = periods_url(wallet_2.id)
         api_client.post(url, payload)
 
@@ -829,7 +829,7 @@ class TestPeriodViewSetCreate:
         too long in passed data.
         THEN: Bad request 400 returned, no object in database created.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         max_length = Period._meta.get_field("name").max_length
         payload = {
@@ -855,7 +855,7 @@ class TestPeriodViewSetCreate:
         for existing Period in passed data.
         THEN: Bad request 400 returned, no object in database created.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         payload = {
             "name": "2023_01",
@@ -895,7 +895,7 @@ class TestPeriodViewSetCreate:
         to create Period with not DRAFT status.
         THEN: Bad request 400 returned, period not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         payload = {
             "name": "2023_02",
@@ -927,7 +927,7 @@ class TestPeriodViewSetCreate:
         Period with one of or both dates blank.
         THEN: Bad request 400 returned, no object in database created.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         payload = {"name": "2023_01", "date_start": date_start, "date_end": date_end, "status": PeriodStatus.CLOSED}
         url = periods_url(wallet.id)
@@ -952,7 +952,7 @@ class TestPeriodViewSetCreate:
         Period with date_end before date_start.
         THEN: Bad request 400 returned, no object in database created.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         payload = {
             "name": "2023_01",
@@ -1022,7 +1022,7 @@ class TestPeriodViewSetCreate:
         Period with dates colliding with existing Periods.
         THEN: Bad request 400 returned, no object in database created.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         payload_1 = {
             "name": "2023_06",
             "status": PeriodStatus.CLOSED,
@@ -1076,7 +1076,7 @@ class TestPeriodViewSetCreate:
         Period with dates earlier than any existing Period.
         THEN: Bad request 400 returned, no object in database created.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         payload = {
             "name": "2023_06",
             "status": PeriodStatus.CLOSED,
@@ -1116,7 +1116,7 @@ class TestPeriodViewSetCreate:
         THEN: Forbidden HTTP 403 returned.
         """
         other_user = user_factory()
-        wallet = wallet_factory(members=[other_user])
+        wallet = wallet_factory(owner=other_user)
         api_client.force_authenticate(base_user)
         payload = {
             "name": "2023_01",
@@ -1160,7 +1160,7 @@ class TestPeriodViewSetDetail:
         WHEN: PeriodViewSet detail endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         url = period_detail_url(wallet.id, period.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -1179,7 +1179,7 @@ class TestPeriodViewSetDetail:
         WHEN: PeriodViewSet detail view called for Period by authenticated User (owner of Wallet).
         THEN: Period details returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
         url = period_detail_url(wallet.id, period.id)
@@ -1202,7 +1202,7 @@ class TestPeriodViewSetDetail:
         WHEN: PeriodViewSet detail view called for Period by authenticated User (member of Wallet).
         THEN: Period details returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
         url = period_detail_url(wallet.id, period.id)
@@ -1241,7 +1241,7 @@ class TestPeriodViewSetDetail:
         """
         user_1 = user_factory()
         user_2 = user_factory()
-        period = period_factory(wallet=wallet_factory(members=[user_1]))
+        period = period_factory(wallet=wallet_factory(owner=user_1))
         api_client.force_authenticate(user_2)
 
         url = period_detail_url(period.wallet.id, period.id)
@@ -1263,7 +1263,7 @@ class TestPeriodViewSetDetail:
         WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum query parameter.
         THEN: Response includes both incomes_sum and expenses_sum fields with correct calculations.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_1 = period_factory(wallet=wallet)
         period_2 = period_factory(wallet=wallet)
 
@@ -1302,7 +1302,7 @@ class TestPeriodViewSetDetail:
         WHEN: PeriodViewSet called without fields query parameter.
         THEN: Response does not include annotated incomes_sum and expenses_sum fields.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         income_factory(wallet=wallet, period=period, value=Decimal("100.00"))
@@ -1330,7 +1330,7 @@ class TestPeriodViewSetDetail:
         WHEN: PeriodViewSet called with fields=incomes_sum query parameter.
         THEN: Response includes incomes_sum field with zero value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         expense_factory(wallet=wallet, period=period, value=Decimal("100.00"))
@@ -1356,7 +1356,7 @@ class TestPeriodViewSetDetail:
         WHEN: PeriodViewSet called with fields=expenses_sum query parameter.
         THEN: Response includes expenses_sum field with zero value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         income_factory(wallet=wallet, period=period, value=Decimal("100.00"))
@@ -1381,7 +1381,7 @@ class TestPeriodViewSetDetail:
         WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum query parameter.
         THEN: Response includes both sum fields with zero values.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_factory(wallet=wallet)
 
         api_client.force_authenticate(base_user)
@@ -1406,7 +1406,7 @@ class TestPeriodViewSetDetail:
         WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum query parameter.
         THEN: Response includes sum fields with correct decimal precision (2 places).
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         income_factory(wallet=wallet, period=period, value=Decimal("100.99"))
@@ -1435,7 +1435,7 @@ class TestPeriodViewSetDetail:
         WHEN: PeriodViewSet called with ordering=incomes_sum and fields=incomes_sum.
         THEN: Response is ordered by incomes_sum in ascending order.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_1 = period_factory(wallet=wallet)
         period_2 = period_factory(wallet=wallet)
         period_3 = period_factory(wallet=wallet)
@@ -1466,7 +1466,7 @@ class TestPeriodViewSetDetail:
         WHEN: PeriodViewSet called with ordering=-expenses_sum and fields=expenses_sum.
         THEN: Response is ordered by expenses_sum in descending order.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_1 = period_factory(wallet=wallet)
         period_2 = period_factory(wallet=wallet)
         period_3 = period_factory(wallet=wallet)
@@ -1498,7 +1498,7 @@ class TestPeriodViewSetDetail:
         WHEN: PeriodViewSet called with pagination and fields=incomes_sum,expenses_sum.
         THEN: Paginated response includes sum fields with correct calculations.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         for i in range(5):
             period = period_factory(wallet=wallet)
             income_factory(wallet=wallet, period=period, value=Decimal(f"{(i + 1) * 100}.00"))
@@ -1530,7 +1530,7 @@ class TestPeriodViewSetDetail:
         WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum.
         THEN: Each period shows only its own transfer sums, not combined.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_1 = period_factory(wallet=wallet, date_start=date(2023, 1, 1), date_end=date(2023, 1, 31))
         period_2 = period_factory(wallet=wallet, date_start=date(2023, 2, 1), date_end=date(2023, 2, 28))
 
@@ -1570,7 +1570,7 @@ class TestPeriodViewSetDetail:
         WHEN: PeriodViewSet called with fields=incomes_sum,expenses_sum.
         THEN: Response handles large decimal values correctly.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         income_factory(wallet=wallet, period=period, value=Decimal("999999.99"))
@@ -1605,7 +1605,7 @@ class TestPeriodViewSetDetailSumFields:
         WHEN: PeriodViewSet detail view called with fields=incomes_sum query parameter.
         THEN: Response includes incomes_sum field with correct calculation.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         income_factory(wallet=wallet, period=period, value=Decimal("100.00"))
@@ -1632,7 +1632,7 @@ class TestPeriodViewSetDetailSumFields:
         WHEN: PeriodViewSet detail view called with fields=expenses_sum query parameter.
         THEN: Response includes expenses_sum field with correct calculation.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         income_factory(wallet=wallet, period=period, value=Decimal("100.00"))
@@ -1659,7 +1659,7 @@ class TestPeriodViewSetDetailSumFields:
         WHEN: PeriodViewSet detail view called with fields=incomes_sum,expenses_sum.
         THEN: Response includes both sum fields with correct calculations.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         income_factory(wallet=wallet, period=period, value=Decimal("500.00"))
@@ -1688,7 +1688,7 @@ class TestPeriodViewSetDetailSumFields:
         WHEN: PeriodViewSet detail view called without fields query parameter.
         THEN: Response includes default sum values (not annotated).
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         income_factory(wallet=wallet, period=period, value=Decimal("100.00"))
@@ -1715,7 +1715,7 @@ class TestPeriodViewSetDetailSumFields:
         WHEN: PeriodViewSet detail view called with fields=incomes_sum.
         THEN: Response includes incomes_sum with zero value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         expense_factory(wallet=wallet, period=period, value=Decimal("100.00"))
@@ -1739,7 +1739,7 @@ class TestPeriodViewSetDetailSumFields:
         WHEN: PeriodViewSet detail view called with fields=expenses_sum.
         THEN: Response includes expenses_sum with zero value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         income_factory(wallet=wallet, period=period, value=Decimal("200.00"))
@@ -1762,7 +1762,7 @@ class TestPeriodViewSetDetailSumFields:
         WHEN: PeriodViewSet detail view called with fields=incomes_sum,expenses_sum.
         THEN: Response includes both sum fields with zero values.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         api_client.force_authenticate(base_user)
@@ -1786,7 +1786,7 @@ class TestPeriodViewSetDetailSumFields:
         WHEN: PeriodViewSet detail view called with sum fields.
         THEN: Response includes sums with correct decimal precision.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         income_factory(wallet=wallet, period=period, value=Decimal("123.45"))
@@ -1815,7 +1815,7 @@ class TestPeriodViewSetDetailSumFields:
         WHEN: PeriodViewSet detail view called with sum fields.
         THEN: Response includes correct sum calculations for all transfers.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         # Create 10 incomes and 10 expenses
@@ -1846,7 +1846,7 @@ class TestPeriodViewSetDetailSumFields:
         WHEN: PeriodViewSet detail view called for one specific period.
         THEN: Response includes sums only for that specific period.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_1 = period_factory(wallet=wallet)
         period_2 = period_factory(wallet=wallet)
 
@@ -1880,7 +1880,7 @@ class TestPeriodViewSetDetailSumFields:
         WHEN: PeriodViewSet detail view called with sum fields.
         THEN: Response handles large values correctly.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         income_factory(wallet=wallet, period=period, value=Decimal("9999999.99"))
@@ -1907,7 +1907,7 @@ class TestPeriodViewSetDetailSumFields:
         WHEN: PeriodViewSet detail view called by wallet member with sum fields.
         THEN: Response includes correct sum calculations.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         income_factory(wallet=wallet, period=period, value=Decimal("300.00"))
@@ -1936,7 +1936,7 @@ class TestPeriodViewSetDetailSumFields:
         """
         from periods.models.choices.period_status import PeriodStatus
 
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
 
         # Test DRAFT period
         draft_period = period_factory(wallet=wallet, status=PeriodStatus.DRAFT)
@@ -2006,7 +2006,7 @@ class TestPeriodViewSetUpdate:
         WHEN: PeriodViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         url = period_detail_url(wallet.id, period.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -2034,7 +2034,7 @@ class TestPeriodViewSetUpdate:
         """
         api_client.force_authenticate(base_user)
         period = period_factory(
-            wallet=wallet_factory(members=[base_user]),
+            wallet=wallet_factory(owner=base_user),
             date_start=date(2024, 1, 1),
             date_end=date(2024, 1, 31),
             status=PeriodStatus.ACTIVE,
@@ -2069,7 +2069,7 @@ class TestPeriodViewSetUpdate:
         """
         api_client.force_authenticate(base_user)
         period = period_factory(
-            wallet=wallet_factory(members=[base_user]),
+            wallet=wallet_factory(owner=base_user),
             date_start=date(2024, 1, 1),
             date_end=date(2024, 1, 31),
             status=PeriodStatus.ACTIVE,
@@ -2098,7 +2098,7 @@ class TestPeriodViewSetUpdate:
         """
         api_client.force_authenticate(base_user)
         period = period_factory(
-            wallet=wallet_factory(members=[base_user]),
+            wallet=wallet_factory(owner=base_user),
             date_start=date(2024, 1, 1),
             date_end=date(2024, 1, 31),
             status=PeriodStatus.ACTIVE,
@@ -2138,7 +2138,7 @@ class TestPeriodViewSetUpdate:
         THEN: Bad request HTTP 400 returned.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_factory(
             wallet=wallet, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), status=PeriodStatus.ACTIVE
         )
@@ -2169,7 +2169,7 @@ class TestPeriodViewSetUpdate:
         THEN: Bad request 400 returned, not updated in database.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(
             wallet=wallet, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), status=PeriodStatus.CLOSED
         )
@@ -2200,7 +2200,7 @@ class TestPeriodViewSetUpdate:
         THEN: Bad request 400 returned, not updated in database.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(
             wallet=wallet, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), status=PeriodStatus.ACTIVE
         )
@@ -2231,7 +2231,7 @@ class TestPeriodViewSetUpdate:
         THEN: Bad request 400 returned, not updated in database.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(
             wallet=wallet, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), status=PeriodStatus.DRAFT
         )
@@ -2262,7 +2262,7 @@ class TestPeriodViewSetUpdate:
         THEN: Bad request 400 returned, not updated in database.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_factory(
             wallet=wallet, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31), status=PeriodStatus.ACTIVE
         )
@@ -2298,7 +2298,7 @@ class TestPeriodViewSetUpdate:
         """
         api_client.force_authenticate(base_user)
         period = period_factory(
-            wallet=wallet_factory(members=[base_user]),
+            wallet=wallet_factory(owner=base_user),
             date_start=date(2024, 1, 1),
             date_end=date(2024, 1, 31),
             status=PeriodStatus.DRAFT,
@@ -2334,7 +2334,7 @@ class TestPeriodViewSetUpdate:
         from predictions.models import ExpensePrediction
 
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(
             wallet=wallet,
             date_start=date(2024, 1, 1),
@@ -2372,7 +2372,7 @@ class TestPeriodViewSetUpdate:
         THEN: Forbidden HTTP 403 returned.
         """
         other_user = user_factory()
-        wallet = wallet_factory(members=[other_user])
+        wallet = wallet_factory(owner=other_user)
         period = period_factory(wallet=wallet, status=PeriodStatus.DRAFT)
         api_client.force_authenticate(base_user)
         payload = {"name": "Updated Name"}
@@ -2413,7 +2413,7 @@ class TestPeriodViewSetDelete:
         WHEN: PeriodViewSet detail endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         url = period_detail_url(wallet.id, period.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -2434,7 +2434,7 @@ class TestPeriodViewSetDelete:
         THEN: Period deleted from database.
         """
         api_client.force_authenticate(base_user)
-        period = period_factory(wallet=wallet_factory(members=[base_user]))
+        period = period_factory(wallet=wallet_factory(owner=base_user))
         url = period_detail_url(period.wallet.id, period.id)
 
         assert Period.objects.all().count() == 1
@@ -2458,7 +2458,7 @@ class TestPeriodViewSetDelete:
         THEN: Period deleted from database.
         """
         api_client.force_authenticate(base_user)
-        period = period_factory(wallet=wallet_factory(members=[base_user]))
+        period = period_factory(wallet=wallet_factory(owner=base_user))
         url = period_detail_url(period.wallet.id, period.id)
 
         assert Period.objects.all().count() == 1
@@ -2481,7 +2481,7 @@ class TestPeriodViewSetDelete:
         nor member) by DELETE.
         THEN: Forbidden HTTP 403 returned, Period not deleted.
         """
-        period = period_factory(wallet=wallet_factory(members=[user_factory()]))
+        period = period_factory(wallet=wallet_factory())
         url = period_detail_url(period.wallet.id, period.id)
         api_client.force_authenticate(user_factory())
 

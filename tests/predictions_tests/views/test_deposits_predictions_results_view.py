@@ -49,7 +49,7 @@ class TestDepositsPredictionsResultsAPIView:
         WHEN: DepositsPredictionsResultsAPIView endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         url = deposits_predictions_results_url(wallet.id, period.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -92,7 +92,7 @@ class TestDepositsPredictionsResultsAPIView:
         WHEN: DepositsPredictionsResultsAPIView called by Wallet member.
         THEN: HTTP 200 - Response with deposit data containing zero values returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit = deposit_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -122,7 +122,7 @@ class TestDepositsPredictionsResultsAPIView:
         WHEN: DepositsPredictionsResultsAPIView called by Wallet member.
         THEN: HTTP 200 - Response with all deposits data returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit_1 = deposit_factory(wallet=wallet)
         deposit_2 = deposit_factory(wallet=wallet)
@@ -154,7 +154,7 @@ class TestDepositsPredictionsResultsAPIView:
         WHEN: DepositsPredictionsResultsAPIView called by Wallet member.
         THEN: HTTP 200 - Response with correct predictions_sum values for each deposit returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit_1 = deposit_factory(wallet=wallet)
         deposit_2 = deposit_factory(wallet=wallet)
@@ -193,7 +193,7 @@ class TestDepositsPredictionsResultsAPIView:
         WHEN: DepositsPredictionsResultsAPIView called by Wallet member.
         THEN: HTTP 200 - Response with correct period_balance calculation based on date filtering.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_1 = period_factory(wallet=wallet, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
         period_2 = period_factory(wallet=wallet, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29))
         current_period = period_factory(wallet=wallet, date_start=date(2024, 3, 1), date_end=date(2024, 3, 31))
@@ -243,7 +243,7 @@ class TestDepositsPredictionsResultsAPIView:
         WHEN: DepositsPredictionsResultsAPIView called by Wallet member.
         THEN: HTTP 200 - Response with correct structure for each user returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         deposit_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -282,7 +282,7 @@ class TestDepositsPredictionsResultsAPIView:
         WHEN: DepositsPredictionsResultsAPIView called with non-existent period_pk.
         THEN: HTTP 404 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit_factory(wallet=wallet)
         non_existent_period_id = 99999
         api_client.force_authenticate(base_user)
@@ -315,8 +315,7 @@ class TestDepositsPredictionsResultsAPIViewIntegration:
         WHEN: DepositsPredictionsResultsAPIView called by Wallet member.
         THEN: HTTP 200 - Response with accurate calculations for all deposits returned.
         """
-        other_user = user_factory(username="otheruser")
-        wallet = wallet_factory(members=[base_user, other_user])
+        wallet = wallet_factory(owner=base_user)
 
         previous_period = period_factory(wallet=wallet, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
         current_period = period_factory(wallet=wallet, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29))
@@ -403,7 +402,7 @@ class TestDepositsPredictionsResultsAPIViewIntegration:
         WHEN: DepositsPredictionsResultsAPIView called by Wallet member.
         THEN: HTTP 200 - Response with correctly formatted decimal values returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
 
         entity = entity_factory(wallet=wallet)

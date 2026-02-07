@@ -16,7 +16,7 @@ class WalletSerializer(FlexFieldsModelSerializer):
 
     class Meta:
         model = Wallet
-        fields = ["id", "name", "description", "currency", "currency_name", "members", "balance", "deposits_count"]
+        fields = ["id", "name", "description", "currency", "currency_name", "balance", "deposits_count"]
         read_only_fields = ["id", "balance", "deposits_count", "currency_name"]
 
     def validate(self, attrs: OrderedDict) -> OrderedDict:

@@ -43,7 +43,7 @@ class TestPeriodFilterSetOrdering:
         WHEN: The PeriodViewSet list view is called with sorting by given param and without any filters.
         THEN: Response must contain all Period existing in database sorted by given param.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         for _ in range(5):
             period_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -91,7 +91,7 @@ class TestPeriodFilterSetFiltering:
         THEN: Response must contain all Period existing in database assigned to Wallet containing given
         "name" value in name param.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         matching_period = period_factory(wallet=wallet, name="Some period")
         period_factory(wallet=wallet, name="Other one")
         api_client.force_authenticate(base_user)
@@ -125,7 +125,7 @@ class TestPeriodFilterSetFiltering:
         THEN: Response contains all Periods existing in database assigned to Wallet matching given
         date value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         other_date_start, other_date_end = date(year=2024, month=10, day=1), date(year=2024, month=10, day=31)
         matching_date_start, matching_date_end = date(year=2024, month=11, day=1), date(year=2024, month=11, day=30)
 
@@ -165,7 +165,7 @@ class TestPeriodFilterSetFiltering:
         WHEN: The PeriodViewSet list view is called with status filter.
         THEN: Response must contain all Period existing in database with specified status value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period_factory(
             wallet=wallet,
             status=PeriodStatus.CLOSED,

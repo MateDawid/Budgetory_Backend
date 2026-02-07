@@ -9,7 +9,6 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from app_users.models import User
-from app_users.serializers.user_serializer import UserSerializer
 from wallets.models import Currency
 from wallets.models.wallet_model import Wallet
 from wallets.serializers.wallet_serializer import WalletSerializer
@@ -20,11 +19,6 @@ WALLETS_URL = reverse("wallets:wallet-list")
 def wallet_detail_url(wallet_id):
     """Creates and returns Wallet detail URL."""
     return reverse("wallets:wallet-detail", args=[wallet_id])
-
-
-def wallet_members_url(wallet_id):
-    """Creates and returns Wallet members URL."""
-    return reverse("wallets:wallet-members", args=[wallet_id])
 
 
 @pytest.mark.django_db
@@ -60,7 +54,7 @@ class TestWalletViewSetList:
         THEN: HTTP 200 - Response with all objects returned.
         """
         for _ in range(10):
-            wallet_factory(members=[base_user])
+            wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(WALLETS_URL)
@@ -79,7 +73,7 @@ class TestWalletViewSetList:
         THEN: HTTP 200 - Paginated response returned.
         """
         for _ in range(10):
-            wallet_factory(members=[base_user])
+            wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
 
         response = api_client.get(WALLETS_URL, data={"page_size": 2, "page": 1})
@@ -98,16 +92,16 @@ class TestWalletViewSetList:
         """
         auth_user = user_factory()
         api_client.force_authenticate(auth_user)
-        wallet_factory(members=[auth_user], name="Wallet 1", description="Some wallet")
+        wallet_factory(owner=auth_user, name="Wallet 1", description="Some wallet")
         wallet_factory(
-            members=[auth_user],
+            owner=auth_user,
             name="Wallet 2",
             description="Other wallet",
         )
 
         response = api_client.get(WALLETS_URL)
 
-        wallets = Wallet.objects.filter(members=auth_user).order_by("id").distinct()
+        wallets = Wallet.objects.filter(owner=auth_user).order_by("id").distinct()
         serializer = WalletSerializer(wallets, many=True)
         assert response.status_code == status.HTTP_200_OK
         assert response.data == serializer.data
@@ -121,19 +115,18 @@ class TestWalletViewSetList:
         THEN: HTTP 200. List of User Wallets only returned.
         """
         auth_user = user_factory()
-        wallet_factory(members=[auth_user])
-        wallet_factory(members=[user_factory(), auth_user])
+        wallet_factory(owner=auth_user)
         wallet_factory()
         api_client.force_authenticate(auth_user)
 
         response = api_client.get(WALLETS_URL)
 
-        wallets = Wallet.objects.filter(members=auth_user).order_by("id").distinct()
+        wallets = Wallet.objects.filter(owner=auth_user).order_by("id").distinct()
         serializer = WalletSerializer(wallets, many=True)
-        assert Wallet.objects.all().count() == 3
+        assert Wallet.objects.all().count() == 2
         assert response.status_code == status.HTTP_200_OK
         assert response.data == serializer.data
-        assert len(response.data) == wallets.count() == 2
+        assert len(response.data) == wallets.count() == 1
 
     def test_wallet_list_balance_and_deposits_count(
         self,
@@ -150,8 +143,8 @@ class TestWalletViewSetList:
         THEN: HTTP 200. Response includes balance field for each wallet.
         """
         api_client.force_authenticate(base_user)
-        wallet_1 = wallet_factory(members=[base_user])
-        wallet_2 = wallet_factory(members=[base_user])
+        wallet_1 = wallet_factory(owner=base_user)
+        wallet_2 = wallet_factory(owner=base_user)
         for deposits_count, wallet in enumerate([wallet_1, wallet_2], start=1):
             for deposit_number in range(deposits_count):
                 deposit = deposit_factory(wallet=wallet)
@@ -180,7 +173,7 @@ class TestWalletViewSetList:
         """
         api_client.force_authenticate(base_user)
         currency = Currency.objects.get(name="PLN")
-        wallet_factory(members=[base_user], currency=currency)
+        wallet_factory(owner=base_user, currency=currency)
 
         response = api_client.get(WALLETS_URL)
 
@@ -202,8 +195,8 @@ class TestWalletViewSetList:
         WHEN: WalletViewSet called with fields=balance query parameter.
         THEN: Response includes balance field with correct calculation.
         """
-        wallet_1 = wallet_factory(members=[base_user])
-        wallet_2 = wallet_factory(members=[base_user])
+        wallet_1 = wallet_factory(owner=base_user)
+        wallet_2 = wallet_factory(owner=base_user)
 
         # Wallet 1 transfers
         income_factory(wallet=wallet_1, value=Decimal("200.00"))
@@ -236,8 +229,8 @@ class TestWalletViewSetList:
         WHEN: WalletViewSet called with fields=deposits_count query parameter.
         THEN: Response includes deposits_count field with correct calculation.
         """
-        wallet_1 = wallet_factory(members=[base_user])
-        wallet_2 = wallet_factory(members=[base_user])
+        wallet_1 = wallet_factory(owner=base_user)
+        wallet_2 = wallet_factory(owner=base_user)
 
         # Wallet 1 deposits
         wallet_1_deposits = 3
@@ -272,8 +265,8 @@ class TestWalletViewSetList:
         WHEN: WalletViewSet called with fields=id,balance,deposits_count query parameter.
         THEN: Response includes all fields with correct calculation.
         """
-        wallet_1 = wallet_factory(members=[base_user])
-        wallet_2 = wallet_factory(members=[base_user])
+        wallet_1 = wallet_factory(owner=base_user)
+        wallet_2 = wallet_factory(owner=base_user)
 
         # Wallet 1
         wallet_1_deposit_1 = deposit_factory(wallet=wallet_1)
@@ -311,7 +304,7 @@ class TestWalletViewSetList:
         WHEN: WalletViewSet called without fields query parameter.
         THEN: Response includes all default fields including balance and deposits_count.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit_factory(wallet=wallet)
 
         api_client.force_authenticate(base_user)
@@ -341,7 +334,7 @@ class TestWalletViewSetList:
         WHEN: WalletViewSet called with empty fields query parameter.
         THEN: Response returns empty dicts.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit_factory(wallet=wallet)
 
         api_client.force_authenticate(base_user)
@@ -362,7 +355,7 @@ class TestWalletViewSetList:
         WHEN: WalletViewSet called with invalid field name in fields parameter.
         THEN: Response excludes invalid field and only includes valid requested fields.
         """
-        wallet_factory(members=[base_user])
+        wallet_factory(owner=base_user)
 
         api_client.force_authenticate(base_user)
         response = api_client.get(WALLETS_URL, {"fields": "balance,invalid_field"})
@@ -383,7 +376,7 @@ class TestWalletViewSetList:
         WHEN: WalletViewSet called with fields parameter in different cases.
         THEN: Fields parameter is case-sensitive and only matches exact field names.
         """
-        wallet_factory(members=[base_user])
+        wallet_factory(owner=base_user)
 
         api_client.force_authenticate(base_user)
         # Test with uppercase (should not match)
@@ -406,9 +399,9 @@ class TestWalletViewSetList:
         WHEN: WalletViewSet called with fields=balance and ordering=balance.
         THEN: Response is correctly ordered by balance.
         """
-        wallet_1 = wallet_factory(members=[base_user], name="Wallet 1")
-        wallet_2 = wallet_factory(members=[base_user], name="Wallet 2")
-        wallet_3 = wallet_factory(members=[base_user], name="Wallet 3")
+        wallet_1 = wallet_factory(owner=base_user, name="Wallet 1")
+        wallet_2 = wallet_factory(owner=base_user, name="Wallet 2")
+        wallet_3 = wallet_factory(owner=base_user, name="Wallet 3")
 
         # Create different balances
         income_factory(wallet=wallet_1, value=Decimal("50.00"))
@@ -439,7 +432,7 @@ class TestWalletViewSetList:
         THEN: Paginated response includes requested fields correctly.
         """
         for i in range(5):
-            wallet = wallet_factory(members=[base_user], name=f"Wallet {i}")
+            wallet = wallet_factory(owner=base_user, name=f"Wallet {i}")
             income_factory(wallet=wallet, value=Decimal(f"{(i + 1) * 10}.00"))
 
         api_client.force_authenticate(base_user)
@@ -468,7 +461,7 @@ class TestWalletViewSetList:
         WHEN: WalletViewSet called with fields=balance.
         THEN: Response correctly handles negative balance values.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
 
         income_factory(wallet=wallet, value=Decimal("50.00"))
         expense_factory(wallet=wallet, value=Decimal("100.00"))
@@ -495,9 +488,9 @@ class TestWalletViewSetList:
         WHEN: WalletViewSet called with fields=deposits_count and ordering=-deposits_count.
         THEN: Response is correctly ordered by deposits_count in descending order.
         """
-        wallet_1 = wallet_factory(members=[base_user], name="Wallet 1")
-        wallet_2 = wallet_factory(members=[base_user], name="Wallet 2")
-        wallet_3 = wallet_factory(members=[base_user], name="Wallet 3")
+        wallet_1 = wallet_factory(owner=base_user, name="Wallet 1")
+        wallet_2 = wallet_factory(owner=base_user, name="Wallet 2")
+        wallet_3 = wallet_factory(owner=base_user, name="Wallet 3")
 
         # Create different deposit counts
         for _ in range(2):
@@ -517,58 +510,6 @@ class TestWalletViewSetList:
         assert Decimal(response.data[0]["deposits_count"]) == 5
         assert Decimal(response.data[1]["deposits_count"]) == 3
         assert Decimal(response.data[2]["deposits_count"]) == 2
-
-
-@pytest.mark.django_db
-class TestWalletViewSetMembersList:
-    """Tests for members list view on WalletViewSet."""
-
-    def test_auth_required(self, api_client: APIClient, wallet_factory: FactoryMetaClass):
-        """
-        GIVEN: AnonymousUser as request.user.
-        WHEN: WalletViewSet members endpoint called without authentication.
-        THEN: Unauthorized HTTP 401 returned.
-        """
-        wallet = wallet_factory()
-        url = wallet_members_url(wallet.id)
-        res = api_client.get(url)
-
-        assert res.status_code == status.HTTP_401_UNAUTHORIZED
-
-    def test_auth_with_jwt(self, api_client: APIClient, wallet_factory: FactoryMetaClass):
-        """
-        GIVEN: Users JWT in request headers as HTTP_AUTHORIZATION.
-        WHEN: WalletViewSet members endpoint called.
-        THEN: HTTP 200 returned.
-        """
-        wallet = wallet_factory()
-        url = wallet_members_url(wallet.id)
-        jwt_access_token = get_jwt_access_token()
-        response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
-        assert response.status_code == status.HTTP_200_OK
-
-    def test_retrieve_wallet_members_list(
-        self, api_client: APIClient, user_factory: FactoryMetaClass, wallet_factory: FactoryMetaClass
-    ):
-        """
-        GIVEN: Two Wallets created in database - authenticated User is member of one.
-        WHEN: WalletViewSet members endpoint called by authenticated User.
-        THEN: HTTP 200. List of Wallets returned.
-        """
-        auth_user = user_factory()
-        api_client.force_authenticate(auth_user)
-        wallet = wallet_factory(members=[auth_user, user_factory()])
-        wallet_factory()
-        url = wallet_members_url(wallet.id)
-
-        response = api_client.get(url)
-
-        serializer = UserSerializer(wallet.members.all(), many=True)
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data == serializer.data
-        for member in serializer.data:
-            assert member["id"] == member.get("value")
-            assert member["username"] == member.get("label")
 
 
 @pytest.mark.django_db
@@ -605,21 +546,18 @@ class TestWalletViewSetCreate:
         payload = {
             "name": "Wallet 1",
             "description": "Some wallet",
-            "members": [base_user.id, user_factory().id],
-            "currency": Currency.objects.get(name="PLN").id,
+            "owner": base_user.id,
+            "currency": Currency.objects.get(name="PLN").name,
         }
 
         response = api_client.post(WALLETS_URL, payload)
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert Wallet.objects.filter(members=base_user).count() == 1
+        assert Wallet.objects.filter(owner=base_user).count() == 1
         wallet = Wallet.objects.get(id=response.data["id"])
         for key in payload:
-            if key == "members":
-                members = getattr(wallet, key)
-                assert members.count() == len(payload[key])
-                for member_id in payload[key]:
-                    assert members.filter(id=member_id).exists()
+            if key in ["owner", "currency"]:
+                assert getattr(wallet, key).pk == payload[key]
             elif key == "currency":
                 assert wallet.currency.id == payload[key]
             else:
@@ -637,7 +575,7 @@ class TestWalletViewSetCreate:
         payload = {
             "name": "Some Wallet",
             "description": "Some wallet",
-            "members": [user_factory().id, user_factory().id],
+            "owner": user_factory().id,
         }
 
         response = api_client.post(WALLETS_URL, payload)
@@ -645,7 +583,7 @@ class TestWalletViewSetCreate:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "non_field_errors" in response.data["detail"]
         assert response.data["detail"]["non_field_errors"][0] == "Currency is required."
-        assert not Wallet.objects.filter(members=base_user).exists()
+        assert not Wallet.objects.filter(owner=base_user).exists()
 
     def test_error_name_too_long(self, api_client: APIClient, base_user: User, user_factory: FactoryMetaClass):
         """
@@ -658,7 +596,7 @@ class TestWalletViewSetCreate:
         payload = {
             "name": (max_length + 1) * "a",
             "description": "Some wallet",
-            "members": [user_factory().id, user_factory().id],
+            "owner": user_factory().id,
         }
 
         response = api_client.post(WALLETS_URL, payload)
@@ -666,13 +604,13 @@ class TestWalletViewSetCreate:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "name" in response.data["detail"]
         assert response.data["detail"]["name"][0] == f"Ensure this field has no more than {max_length} characters."
-        assert not Wallet.objects.filter(members=base_user).exists()
+        assert not Wallet.objects.filter(owner=base_user).exists()
 
     def test_create_wallet_includes_request_user_as_member(
         self, api_client: APIClient, base_user: User, user_factory: FactoryMetaClass
     ):
         """
-        GIVEN: Authenticated User as request.user. Valid payload without request user in members.
+        GIVEN: Authenticated User as request.user. Valid payload without request user as owner.
         WHEN: WalletViewSet list endpoint called with POST.
         THEN: HTTP 201 returned. Request user automatically added as wallet member.
         """
@@ -681,16 +619,15 @@ class TestWalletViewSetCreate:
         payload = {
             "name": "Wallet 1",
             "description": "Some wallet",
-            "members": [other_user.id],
-            "currency": Currency.objects.get(name="PLN").id,
+            "owner": other_user.id,
+            "currency": Currency.objects.get(name="PLN").name,
         }
 
         response = api_client.post(WALLETS_URL, payload)
 
         assert response.status_code == status.HTTP_201_CREATED
         wallet = Wallet.objects.get(id=response.data["id"])
-        assert wallet.members.filter(id=base_user.id).exists()
-        assert wallet.members.filter(id=other_user.id).exists()
+        assert wallet.owner == base_user
 
     def test_create_wallet_includes_balance_and_deposits_count(self, api_client: APIClient, base_user: User):
         """
@@ -702,8 +639,8 @@ class TestWalletViewSetCreate:
         payload = {
             "name": "Wallet 1",
             "description": "Some wallet",
-            "members": [base_user.id],
-            "currency": Currency.objects.get(name="PLN").id,
+            "owner": base_user.id,
+            "currency": Currency.objects.get(name="PLN").name,
         }
 
         response = api_client.post(WALLETS_URL, payload)
@@ -725,8 +662,8 @@ class TestWalletViewSetCreate:
         payload = {
             "name": "Wallet 1",
             "description": "Some wallet",
-            "members": [base_user.id],
-            "currency": currency.id,
+            "owner": base_user.id,
+            "currency": currency.name,
         }
 
         response = api_client.post(WALLETS_URL, payload)
@@ -746,7 +683,7 @@ class TestWalletViewSetDetail:
         WHEN: WalletViewSet detail endpoint called without authentication.
         THEN: Unauthorized HTTP 401 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = wallet_detail_url(wallet.id)
 
         response = api_client.get(url)
@@ -759,7 +696,7 @@ class TestWalletViewSetDetail:
         WHEN: WalletViewSet detail endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = wallet_detail_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -772,7 +709,7 @@ class TestWalletViewSetDetail:
         THEN: HTTP 200. Wallet details returned.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = wallet_detail_url(wallet.id)
 
         response = api_client.get(url)
@@ -791,7 +728,7 @@ class TestWalletViewSetDetail:
         """
         user_1 = user_factory()
         user_2 = user_factory()
-        wallet = wallet_factory(members=[user_1])
+        wallet = wallet_factory(owner=user_1)
         api_client.force_authenticate(user_2)
 
         url = wallet_detail_url(wallet.id)
@@ -814,7 +751,7 @@ class TestWalletViewSetDetail:
         THEN: HTTP 200. Response includes balance field for each wallet.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit_1 = deposit_factory(wallet=wallet)
         income_factory(wallet=wallet, deposit=deposit_1, value=Decimal("600.00"))
         income_factory(wallet=wallet, deposit=deposit_1, value=Decimal("400.00"))
@@ -846,7 +783,7 @@ class TestWalletViewSetDetail:
         """
         api_client.force_authenticate(base_user)
         currency = Currency.objects.get(name="EUR")
-        wallet = wallet_factory(members=[base_user], currency=currency)
+        wallet = wallet_factory(owner=base_user, currency=currency)
         url = wallet_detail_url(wallet.id)
 
         response = api_client.get(url)
@@ -864,7 +801,7 @@ class TestWalletViewSetDetail:
         THEN: HTTP 200 returned. Deposits count is 0.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = wallet_detail_url(wallet.id)
 
         response = api_client.get(url)
@@ -881,7 +818,7 @@ class TestWalletViewSetDetail:
         THEN: HTTP 200 returned. Balance is 0.00.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = wallet_detail_url(wallet.id)
 
         response = api_client.get(url)
@@ -903,7 +840,7 @@ class TestWalletViewSetDetail:
         WHEN: WalletViewSet detail endpoint called with fields query parameter.
         THEN: Response includes requested fields with correct calculations.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit_1 = deposit_factory(wallet=wallet)
         deposit_2 = deposit_factory(wallet=wallet)
 
@@ -933,7 +870,7 @@ class TestWalletViewSetDetail:
         WHEN: WalletViewSet detail endpoint called with fields=balance query parameter.
         THEN: Response includes only balance field.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         income_factory(wallet=wallet, value=Decimal("250.00"))
 
         api_client.force_authenticate(base_user)
@@ -955,7 +892,7 @@ class TestWalletViewSetDetail:
         WHEN: WalletViewSet detail endpoint called with fields=id,name.
         THEN: Response includes only id and name fields.
         """
-        wallet = wallet_factory(members=[base_user], name="Test Wallet")
+        wallet = wallet_factory(owner=base_user, name="Test Wallet")
 
         api_client.force_authenticate(base_user)
         url = wallet_detail_url(wallet.id)
@@ -977,7 +914,7 @@ class TestWalletViewSetDetail:
         WHEN: WalletViewSet detail endpoint called without fields query parameter.
         THEN: Response includes all default fields.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
 
         api_client.force_authenticate(base_user)
         url = wallet_detail_url(wallet.id)
@@ -992,7 +929,7 @@ class TestWalletViewSetDetail:
         assert "deposits_count" in response.data
         assert "currency" in response.data
         assert "currency_name" in response.data
-        assert "members" in response.data
+        assert "owner" not in response.data
 
 
 @pytest.mark.django_db
@@ -1006,7 +943,7 @@ class TestWalletViewSetUpdate:
         THEN: Method not allowed. HTTP 405 returned.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = wallet_detail_url(wallet.id)
 
         response = api_client.put(url, {})
@@ -1019,7 +956,7 @@ class TestWalletViewSetUpdate:
         WHEN: WalletViewSet detail endpoint called with PATCH without authentication.
         THEN: Unauthorized HTTP 401 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = wallet_detail_url(wallet.id)
 
         response = api_client.patch(url, data={})
@@ -1032,7 +969,7 @@ class TestWalletViewSetUpdate:
         WHEN: WalletViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = wallet_detail_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.patch(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -1057,7 +994,7 @@ class TestWalletViewSetUpdate:
         """
         api_client.force_authenticate(base_user)
         payload = {"name": "Wallet", "description": "Some wallet", "currency": Currency.objects.get(name="PLN")}
-        wallet = wallet_factory(members=[base_user], **payload)
+        wallet = wallet_factory(owner=base_user, **payload)
         update_payload = {param: value}
         url = wallet_detail_url(wallet.id)
 
@@ -1080,17 +1017,17 @@ class TestWalletViewSetUpdate:
         """
         api_client.force_authenticate(base_user)
         payload = {"name": "Wallet", "description": "Some wallet", "currency": Currency.objects.get(name="PLN")}
-        wallet = wallet_factory(members=[base_user], **payload)
-        update_payload = {"currency": Currency.objects.get(name="USD").id}
+        wallet = wallet_factory(owner=base_user, **payload)
+        update_payload = {"currency": Currency.objects.get(name="USD").name}
         url = wallet_detail_url(wallet.id)
 
         response = api_client.patch(url, update_payload)
 
         assert response.status_code == status.HTTP_200_OK
         wallet.refresh_from_db()
-        assert wallet.currency.id == update_payload["currency"]
+        assert wallet.currency.name == update_payload["currency"]
 
-    def test_update_with_members(
+    def test_update_with_owner(
         self,
         api_client: APIClient,
         base_user: User,
@@ -1098,27 +1035,26 @@ class TestWalletViewSetUpdate:
         wallet_factory: FactoryMetaClass,
     ):
         """
-        GIVEN: Wallet owner as request.user. New members list as update param in payload.
+        GIVEN: Wallet owner as request.user. New owner as update param in payload.
         WHEN: WalletViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned. Wallet updated in database.
         """
-        user_1 = user_factory()
-        user_2 = user_factory()
+        other_user = user_factory()
         api_client.force_authenticate(base_user)
         payload = {
             "name": "Wallet",
             "description": "Some wallet",
-            "members": [base_user.id, user_1.id],
+            "owner": base_user,
         }
         wallet = wallet_factory(**payload)
-        update_payload = {"members": [base_user.id, user_1.id, user_2.id]}
+        update_payload = {"owner": other_user.id}
         url = wallet_detail_url(wallet.id)
 
         response = api_client.patch(url, update_payload)
 
         assert response.status_code == status.HTTP_200_OK
         wallet.refresh_from_db()
-        assert list(wallet.members.all().order_by("id").values_list("id", flat=True)) == update_payload["members"]
+        assert wallet.owner == base_user
 
     def test_wallet_update_many_fields(
         self,
@@ -1132,16 +1068,15 @@ class TestWalletViewSetUpdate:
         WHEN: WalletViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned. Wallet updated in database.
         """
-        user_1 = user_factory()
-        user_2 = user_factory()
+        other_user = user_factory()
         api_client.force_authenticate(base_user)
         payload = {
             "name": "Wallet",
             "description": "Some wallet",
-            "members": [base_user.id, user_1.id],
+            "owner": base_user,
         }
         wallet = wallet_factory(**payload)
-        update_payload = {"name": "UPDATE", "description": "Updated wallet", "members": [user_2.id]}
+        update_payload = {"name": "UPDATE", "description": "Updated wallet", "owner": other_user.id}
         url = wallet_detail_url(wallet.id)
 
         response = api_client.patch(url, update_payload)
@@ -1149,8 +1084,8 @@ class TestWalletViewSetUpdate:
         assert response.status_code == status.HTTP_200_OK
         wallet.refresh_from_db()
         for param, value in update_payload.items():
-            if param == "members":
-                assert list(wallet.members.all().values_list("id", flat=True)) == update_payload["members"]
+            if param == "owner":
+                assert wallet.owner.id == base_user.id
             else:
                 assert getattr(wallet, param) == value
 
@@ -1180,9 +1115,9 @@ class TestWalletViewSetUpdate:
         user_factory()
         api_client.force_authenticate(base_user)
         old_payload = {"name": "Old wallet", "description": "Some wallet"}
-        wallet_factory(members=[base_user], **old_payload)
+        wallet_factory(owner=base_user, **old_payload)
         new_payload = {"name": "New wallet", "description": "Some wallet"}
-        wallet = wallet_factory(members=[base_user], **new_payload)
+        wallet = wallet_factory(owner=base_user, **new_payload)
         old_value = getattr(wallet, param)
         payload = {param: value}
         url = wallet_detail_url(wallet.id)
@@ -1205,9 +1140,9 @@ class TestWalletViewSetUpdate:
         THEN: HTTP 200 returned. Response includes updated currency_name field.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user], currency=Currency.objects.get(name="PLN"))
+        wallet = wallet_factory(owner=base_user, currency=Currency.objects.get(name="PLN"))
         url = wallet_detail_url(wallet.id)
-        update_payload = {"currency": Currency.objects.get(name="EUR").id}
+        update_payload = {"currency": Currency.objects.get(name="EUR").name}
 
         response = api_client.patch(url, update_payload)
 
@@ -1227,7 +1162,7 @@ class TestWalletViewSetUpdate:
         THEN: HTTP 400 returned. Currency validation error returned.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user], currency=Currency.objects.get(name="PLN"))
+        wallet = wallet_factory(owner=base_user, currency=Currency.objects.get(name="PLN"))
         url = wallet_detail_url(wallet.id)
         update_payload = {"currency": ""}
 
@@ -1244,7 +1179,7 @@ class TestWalletViewSetUpdate:
         THEN: HTTP 200 returned. ID not updated (read-only field).
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         original_id = wallet.id
         url = wallet_detail_url(wallet.id)
         update_payload = {"id": 999999}
@@ -1268,7 +1203,7 @@ class TestWalletViewSetDelete:
         WHEN: WalletViewSet detail endpoint called with DELETE without authentication.
         THEN: Unauthorized HTTP 401 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = wallet_detail_url(wallet.id)
 
         response = api_client.delete(url)
@@ -1281,7 +1216,7 @@ class TestWalletViewSetDelete:
         WHEN: WalletViewSet detail endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = wallet_detail_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.delete(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -1294,7 +1229,7 @@ class TestWalletViewSetDelete:
         THEN: HTTP 204 returned. Wallet deleted from database.
         """
         api_client.force_authenticate(base_user)
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = wallet_detail_url(wallet.id)
 
         assert Wallet.objects.all().count() == 1

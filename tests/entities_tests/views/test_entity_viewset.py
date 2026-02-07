@@ -39,7 +39,7 @@ class TestEntityViewSetList:
         WHEN: EntityViewSet list endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = entities_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -57,7 +57,7 @@ class TestEntityViewSetList:
         WHEN: EntityViewSet called by Wallet member without pagination parameters.
         THEN: HTTP 200 - Response with all objects returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         for _ in range(10):
             entity_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -81,7 +81,7 @@ class TestEntityViewSetList:
         WHEN: EntityViewSet called by Wallet member with pagination parameters - page_size and page.
         THEN: HTTP 200 - Paginated response returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         for _ in range(10):
             entity_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -102,7 +102,7 @@ class TestEntityViewSetList:
         """
         wallet_owner = user_factory()
         other_user = user_factory()
-        wallet = wallet_factory(members=[wallet_owner])
+        wallet = wallet_factory(owner=wallet_owner)
         api_client.force_authenticate(other_user)
 
         response = api_client.get(entities_url(wallet.id))
@@ -122,7 +122,7 @@ class TestEntityViewSetList:
         WHEN: EntityViewSet called by Wallet owner.
         THEN: Response with serialized Wallet Entity list returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         for _ in range(2):
             entity_factory(wallet=wallet)
@@ -146,7 +146,7 @@ class TestEntityViewSetList:
         WHEN: EntityViewSet called by one of Wallets owner.
         THEN: Response with serialized Entity list (only from given Wallet) returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         entity = entity_factory(wallet=wallet)
         entity_factory()
         api_client.force_authenticate(base_user)
@@ -173,7 +173,7 @@ class TestEntityViewSetList:
         WHEN: EntityViewSet called by one of Wallets owner.
         THEN: Response with serialized Entity list (only from given Wallet) returned including Deposit.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         entity_factory(wallet=wallet)
         deposit = deposit_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -220,7 +220,7 @@ class TestEntityViewSetCreate:
         WHEN: EntityViewSet list endpoint called with POST.
         THEN: HTTP 400 returned - access granted, but invalid input.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = entities_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.post(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -236,7 +236,7 @@ class TestEntityViewSetCreate:
         """
         wallet_owner = user_factory()
         other_user = user_factory()
-        wallet = wallet_factory(members=[wallet_owner])
+        wallet = wallet_factory(owner=wallet_owner)
         api_client.force_authenticate(other_user)
 
         response = api_client.post(entities_url(wallet.id), data={})
@@ -252,7 +252,7 @@ class TestEntityViewSetCreate:
         WHEN: EntityViewSet called with POST by User belonging to Wallet with valid payload.
         THEN: Entity object created in database with given payload
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
 
         response = api_client.post(entities_url(wallet.id), self.PAYLOAD)
@@ -276,7 +276,7 @@ class TestEntityViewSetCreate:
         WHEN: EntityViewSet called with POST by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. Entity not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         max_length = Entity._meta.get_field(field_name).max_length
         payload = self.PAYLOAD.copy()
@@ -297,7 +297,7 @@ class TestEntityViewSetCreate:
         WHEN: EntityViewSet called twice with POST by User belonging to Wallet with the same payload.
         THEN: Bad request HTTP 400 returned. Only one Entity created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
 
@@ -332,7 +332,7 @@ class TestEntityViewSetDetail:
         WHEN: EntityViewSet detail endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         entity = entity_factory(wallet=wallet)
         url = entity_detail_url(entity.wallet.id, entity.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -353,7 +353,7 @@ class TestEntityViewSetDetail:
         """
         wallet_owner = user_factory()
         other_user = user_factory()
-        wallet = wallet_factory(members=[wallet_owner])
+        wallet = wallet_factory(owner=wallet_owner)
         entity = entity_factory(wallet=wallet)
         api_client.force_authenticate(other_user)
         url = entity_detail_url(entity.wallet.id, entity.id)
@@ -375,7 +375,7 @@ class TestEntityViewSetDetail:
         WHEN: EntityViewSet detail view called by User belonging to Wallet.
         THEN: HTTP 200, Entity details returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         entity = entity_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
         url = entity_detail_url(wallet.id, entity.id)
@@ -416,7 +416,7 @@ class TestEntityViewSetUpdate:
         WHEN: EntityViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         entity = entity_factory(wallet=wallet)
         url = entity_detail_url(entity.wallet.id, entity.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -437,7 +437,7 @@ class TestEntityViewSetUpdate:
         """
         wallet_owner = user_factory()
         other_user = user_factory()
-        wallet = wallet_factory(members=[wallet_owner])
+        wallet = wallet_factory(owner=wallet_owner)
         entity = entity_factory(wallet=wallet)
         api_client.force_authenticate(other_user)
         url = entity_detail_url(entity.wallet.id, entity.id)
@@ -470,7 +470,7 @@ class TestEntityViewSetUpdate:
         WHEN: EntityViewSet detail view called with PATCH by User belonging to Wallet.
         THEN: HTTP 200, Entity updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         entity = entity_factory(wallet=wallet, **self.PAYLOAD)
         update_payload = {param: value}
         api_client.force_authenticate(base_user)
@@ -498,7 +498,7 @@ class TestEntityViewSetUpdate:
         with invalid payload.
         THEN: Bad request HTTP 400, Entity not updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         entity_factory(wallet=wallet, **self.PAYLOAD)
         entity = entity_factory(wallet=wallet)
         old_value = getattr(entity, param)
@@ -524,7 +524,7 @@ class TestEntityViewSetUpdate:
         WHEN: EntityViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned. Entity updated in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         entity = entity_factory(wallet=wallet, **payload)
@@ -568,7 +568,7 @@ class TestEntityViewSetDelete:
         WHEN: EntityViewSet detail endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         entity = entity_factory(wallet=wallet)
         url = entity_detail_url(entity.wallet.id, entity.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -608,7 +608,7 @@ class TestEntityViewSetDelete:
         WHEN: EntityViewSet detail view called with DELETE by User belonging to Wallet.
         THEN: No content HTTP 204, Entity deleted.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         entity = entity_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
         url = entity_detail_url(wallet.id, entity.id)

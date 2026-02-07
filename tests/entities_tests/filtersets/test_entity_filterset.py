@@ -36,12 +36,11 @@ class TestEntityFilterSetOrdering:
         WHEN: The EntityViewSet list view is called with sorting by given param and without any filters.
         THEN: Response must contain all Entity existing in database sorted by given param.
         """
-        member_1 = user_factory(email="bob@bob.com")
-        member_2 = user_factory(email="alice@alice.com")
-        wallet = wallet_factory(members=[member_1, member_2])
+        owner = user_factory(email="bob@bob.com")
+        wallet = wallet_factory(owner=owner)
         for _ in range(3):
             entity_factory(wallet=wallet)
-        api_client.force_authenticate(member_1)
+        api_client.force_authenticate(owner)
 
         response = api_client.get(entities_url(wallet.id), data={"ordering": sort_param})
 
@@ -91,7 +90,7 @@ class TestEntityFilterSetFiltering:
         THEN: Response must contain all Entity existing in database assigned to Wallet containing given
         "name" value in name param.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         matching_entity = entity_factory(wallet=wallet, **{param: "Some entity"})
         entity_factory(wallet=wallet, **{param: "Other one"})
         api_client.force_authenticate(base_user)
@@ -125,7 +124,7 @@ class TestEntityFilterSetFiltering:
         THEN: Response must contain all Entity existing in database assigned to Wallet with
         matching "is_active" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         matching_entity = entity_factory(wallet=wallet, name="Some entity", is_active=filter_value)
         entity_factory(wallet=wallet, name="Other one", is_active=not filter_value)
         api_client.force_authenticate(base_user)
@@ -159,7 +158,7 @@ class TestEntityFilterSetFiltering:
         THEN: Response must contain all Entity existing in database assigned to Wallet with
         matching "is_deposit" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         matching_entity = entity_factory(
             wallet=wallet,
             name="Some entity",

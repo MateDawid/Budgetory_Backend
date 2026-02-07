@@ -44,15 +44,14 @@ class TestDepositFilterSetOrdering:
         WHEN: The DepositViewSet list view is called with sorting by given param and without any filters.
         THEN: Response must contain all Deposit existing in database sorted by given param.
         """
-        member_1 = user_factory(email="bob@bob.com")
-        member_2 = user_factory(email="alice@alice.com")
-        wallet = wallet_factory(members=[member_1, member_2])
+        owner = user_factory(email="bob@bob.com")
+        wallet = wallet_factory(owner=owner)
         for _ in range(3):
             deposit = deposit_factory(wallet=wallet)
             category = transfer_category_factory(wallet=wallet, deposit=deposit)
             for _ in range(3):
                 transfer_factory(wallet=wallet, deposit=deposit, category=category)
-        api_client.force_authenticate(member_1)
+        api_client.force_authenticate(owner)
 
         response = api_client.get(
             deposits_url(wallet.id),
@@ -114,7 +113,7 @@ class TestDepositFilterSetFiltering:
         THEN: Response must contain all Deposit existing in database assigned to Wallet containing given
         "name" value in name param.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         matching_deposit = deposit_factory(wallet=wallet, **{param: "Some deposit"})
         deposit_factory(wallet=wallet, **{param: "Other one"})
         api_client.force_authenticate(base_user)
@@ -148,7 +147,7 @@ class TestDepositFilterSetFiltering:
         THEN: Response must contain all Deposit existing in database assigned to Wallet with
         matching "is_active" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         matching_deposit = deposit_factory(wallet=wallet, name="Some deposit", is_active=filter_value)
         deposit_factory(wallet=wallet, name="Other one", is_active=not filter_value)
         api_client.force_authenticate(base_user)
@@ -182,7 +181,7 @@ class TestDepositFilterSetFiltering:
         THEN: Response must contain all Deposit existing in database assigned to Wallet matching given
         balance.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         balance = "123.45"
         target_deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=target_deposit, category_type=CategoryType.INCOME)
@@ -232,7 +231,7 @@ class TestDepositFilterSetFiltering:
         THEN: Response must contain all Deposit existing in database assigned to Wallet matching given
         Decimal balance_max.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         balance = "123.45"
         target_deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=target_deposit, category_type=CategoryType.INCOME)
@@ -282,7 +281,7 @@ class TestDepositFilterSetFiltering:
         THEN: Response must contain all Deposit existing in database assigned to Wallet matching given
         balance_min value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         balance = "234.56"
         target_deposit = deposit_factory(wallet=wallet)
         category = transfer_category_factory(wallet=wallet, deposit=target_deposit, category_type=CategoryType.INCOME)

@@ -45,9 +45,7 @@ class DemoUserInitialDataService:
         """
         Creates Wallets for demo User.
         """
-        daily_wallet, long_term_wallet = create_wallets()
-        daily_wallet.members.add(self.user)
-        long_term_wallet.members.add(self.user)
+        daily_wallet, long_term_wallet = create_wallets(self.user)
         self.wallets[daily_wallet.name] = daily_wallet
         self.wallets[long_term_wallet.name] = long_term_wallet
 

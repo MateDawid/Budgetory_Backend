@@ -102,7 +102,7 @@ class PeriodViewSet(ModelViewSet):
         wallet_pk = self.kwargs.get("wallet_pk")
         if not wallet_pk:
             return self.queryset.none()  # pragma: no cover
-        qs = self.queryset.filter(wallet__members=user, wallet__pk=wallet_pk).order_by("-date_start").distinct()
+        qs = self.queryset.filter(wallet__owner=user, wallet__pk=wallet_pk).order_by("-date_start").distinct()
         fields = self.request.query_params.get("fields", "").split(",")
         if "incomes_sum" in fields:
             qs = qs.annotate(incomes_sum=sum_period_transfers(CategoryType.INCOME))

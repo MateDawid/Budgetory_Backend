@@ -16,16 +16,14 @@ class TestWalletModel:
         WHEN: Wallet instance create attempt with valid data.
         THEN: Wallet model instance exists in database with given data.
         """
-        members = [user_factory() for _ in range(3)]
         payload = {
             "name": "Home wallet",
             "description": "Wallet with home expenses and incomes",
+            "owner": user_factory(),
         }
         wallet = Wallet.objects.create(**payload)
-        wallet.members.add(*members)
         for param, value in payload.items():
             assert getattr(wallet, param) == value
-        assert wallet.members.all().count() == 3
         assert str(wallet) == wallet.name
 
     @pytest.mark.django_db(transaction=True)

@@ -36,7 +36,7 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
         WHEN: CopyPredictionsFromPreviousPeriodAPIView endpoint called with POST.
         THEN: HTTP 400 returned with appropriate error message.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         previous_period = period_factory(wallet=wallet, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
         current_period = period_factory(
             wallet=wallet, date_start=date(2024, 2, 1), date_end=date(2024, 2, 29), previous_period=previous_period
@@ -70,7 +70,7 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
         WHEN: CopyPredictionsFromPreviousPeriodAPIView endpoint called with POST.
         THEN: HTTP 200 returned and predictions are copied successfully.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         category1 = transfer_category_factory(wallet=wallet)
         category2 = transfer_category_factory(wallet=wallet)
 
@@ -121,7 +121,7 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
         WHEN: CopyPredictionsFromPreviousPeriodAPIView endpoint called with POST.
         THEN: All predictions are copied with correct category associations.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         categories = [transfer_category_factory(wallet=wallet) for _ in range(5)]
 
         previous_period = period_factory(wallet=wallet, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
@@ -171,7 +171,7 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
         THEN: Only predictions from the specified wallet are copied.
         """
         # Target wallet
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         category = transfer_category_factory(wallet=wallet)
 
         # Other wallet
@@ -229,7 +229,7 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
         WHEN: CopyPredictionsFromPreviousPeriodAPIView endpoint called with POST.
         THEN: Predictions with None values are copied correctly.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         category = transfer_category_factory(wallet=wallet)
 
         previous_period = period_factory(wallet=wallet, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
@@ -283,7 +283,7 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
         WHEN: CopyPredictionsFromPreviousPeriodAPIView endpoint called with POST.
         THEN: HTTP 200 returned with no predictions message.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         url = copy_predictions_url(wallet.id, 99999)
 
@@ -310,7 +310,7 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
         """
         mock_bulk_create.side_effect = Exception("Database connection error")
 
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         category = transfer_category_factory(wallet=wallet)
 
         previous_period = period_factory(wallet=wallet, date_start=date(2024, 1, 1), date_end=date(2024, 1, 31))
@@ -341,7 +341,7 @@ class TestCopyPredictionsFromPreviousPeriodAPIView:
         WHEN: CopyPredictionsFromPreviousPeriodAPIView endpoint called with GET/PUT/DELETE.
         THEN: HTTP 405 Method Not Allowed returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         period = period_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
         url = copy_predictions_url(wallet.id, period.id)

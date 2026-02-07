@@ -55,13 +55,12 @@ class TestTransferCategoryFilterSetOrdering:
         WHEN: The TransferCategoryViewSet list view is called with sorting by given param and without any filters.
         THEN: Response must contain all TransferCategory existing in database sorted by given param.
         """
-        member_1 = user_factory(email="bob@bob.com")
-        member_2 = user_factory(email="alice@alice.com")
-        wallet = wallet_factory(members=[member_1, member_2])
+        owner = user_factory(email="bob@bob.com")
+        wallet = wallet_factory(owner=owner)
         transfer_category_factory(wallet=wallet, name="Aaa", priority=CategoryPriority.MOST_IMPORTANT)
         transfer_category_factory(wallet=wallet, name="Bbb", priority=CategoryPriority.OTHERS)
         transfer_category_factory(wallet=wallet, name="Ccc", priority=CategoryPriority.REGULAR)
-        api_client.force_authenticate(member_1)
+        api_client.force_authenticate(owner)
 
         response = api_client.get(categories_url(wallet.id), data={"ordering": sort_param})
 
@@ -113,7 +112,7 @@ class TestTransferCategoryFilterSetFiltering:
         THEN: Response must contain all TransferCategory existing in database assigned to Wallet containing given
         "name" value in name param.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         matching_category = transfer_category_factory(wallet=wallet, **{param: "Some category"})
         transfer_category_factory(wallet=wallet, **{param: "Other one"})
         api_client.force_authenticate(base_user)
@@ -148,7 +147,7 @@ class TestTransferCategoryFilterSetFiltering:
         THEN: Response must contain all TransferCategory existing in database assigned to Wallet with
         matching "deposit" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         matching_category = transfer_category_factory(wallet=wallet, name="Some category", deposit=deposit)
         transfer_category_factory(wallet=wallet, name="Other one")
@@ -185,7 +184,7 @@ class TestTransferCategoryFilterSetFiltering:
         THEN: Response must contain all TransferCategory existing in database assigned to Wallet with
         matching "is_active" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         matching_category = transfer_category_factory(wallet=wallet, name="Some category", is_active=filter_value)
         transfer_category_factory(wallet=wallet, name="Other one", is_active=not filter_value)
         api_client.force_authenticate(base_user)
@@ -219,7 +218,7 @@ class TestTransferCategoryFilterSetFiltering:
         THEN: Response must contain all TransferCategory existing in database assigned to Wallet with
         matching "category_type" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         matching_category = transfer_category_factory(
             wallet=wallet, name="Some category", category_type=CategoryType.EXPENSE
         )
@@ -255,7 +254,7 @@ class TestTransferCategoryFilterSetFiltering:
         THEN: Response must contain all TransferCategory existing in database assigned to Wallet with
         matching "priority" value.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         matching_category = transfer_category_factory(
             wallet=wallet, name="Some category", priority=CategoryPriority.MOST_IMPORTANT
         )

@@ -58,7 +58,7 @@ class TestTransferCategoryViewSetList:
         WHEN: TransferCategoryViewSet list endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = categories_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.get(url, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -76,7 +76,7 @@ class TestTransferCategoryViewSetList:
         WHEN: TransferCategoryViewSet called by Wallet member without pagination parameters.
         THEN: HTTP 200 - Response with all objects returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         for _ in range(10):
             transfer_category_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -100,7 +100,7 @@ class TestTransferCategoryViewSetList:
         WHEN: TransferCategoryViewSet called by Wallet member with pagination parameters - page_size and page.
         THEN: HTTP 200 - Paginated response returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         for _ in range(10):
             transfer_category_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
@@ -121,7 +121,7 @@ class TestTransferCategoryViewSetList:
         """
         wallet_owner = user_factory()
         other_user = user_factory()
-        wallet = wallet_factory(members=[wallet_owner])
+        wallet = wallet_factory(owner=wallet_owner)
         api_client.force_authenticate(other_user)
 
         response = api_client.get(categories_url(wallet.id))
@@ -141,7 +141,7 @@ class TestTransferCategoryViewSetList:
         WHEN: TransferCategoryViewSet called by Wallet owner.
         THEN: Response with serialized Wallet TransferCategory list returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         transfer_category_factory(wallet=wallet)
         transfer_category_factory(wallet=wallet)
@@ -177,7 +177,7 @@ class TestTransferCategoryViewSetList:
         WHEN: TransferCategoryViewSet called by one of Wallets owner.
         THEN: Response with serialized TransferCategory list (only from given Wallet) returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         category = transfer_category_factory(wallet=wallet)
         transfer_category_factory()
         api_client.force_authenticate(base_user)
@@ -225,7 +225,7 @@ class TestTransferCategoryViewSetCreate:
         WHEN: TransferCategoryViewSet list endpoint called with POST.
         THEN: HTTP 400 returned - access granted, but invalid input.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         url = categories_url(wallet.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
         response = api_client.post(url, data={}, HTTP_AUTHORIZATION=f"Bearer {jwt_access_token}")
@@ -241,7 +241,7 @@ class TestTransferCategoryViewSetCreate:
         """
         wallet_owner = user_factory()
         other_user = user_factory()
-        wallet = wallet_factory(members=[wallet_owner])
+        wallet = wallet_factory(owner=wallet_owner)
         api_client.force_authenticate(other_user)
 
         response = api_client.post(categories_url(wallet.id), data={})
@@ -268,7 +268,7 @@ class TestTransferCategoryViewSetCreate:
         payload = self.PAYLOAD.copy()
         payload["category_type"] = category_type
         payload["priority"] = priority
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         closed_period = period_factory(wallet=wallet, status=PeriodStatus.CLOSED)
         active_period = period_factory(wallet=wallet, status=PeriodStatus.ACTIVE)
         draft_period = period_factory(wallet=wallet, status=PeriodStatus.DRAFT)
@@ -315,7 +315,7 @@ class TestTransferCategoryViewSetCreate:
         WHEN: TransferCategoryViewSet called with POST by User belonging to Wallet with invalid payload.
         THEN: Bad request HTTP 400 returned. TransferCategory not created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         max_length = TransferCategory._meta.get_field(field_name).max_length
         payload = self.PAYLOAD.copy()
@@ -340,7 +340,7 @@ class TestTransferCategoryViewSetCreate:
         WHEN: TransferCategoryViewSet called twice with POST by User belonging to Wallet with the same payload.
         THEN: Bad request HTTP 400 returned. Only one TransferCategory created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["deposit"] = deposit_factory(wallet=wallet).id
@@ -371,7 +371,7 @@ class TestTransferCategoryViewSetCreate:
         WHEN: TransferCategoryViewSet called twice with POST by User belonging to Wallet with the same payload.
         THEN: Bad request HTTP 400 returned. Only one TransferCategory created in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         payload["category_type"] = category_type
@@ -416,7 +416,7 @@ class TestTransferCategoryViewSetDetail:
         WHEN: TransferCategoryViewSet detail endpoint called with GET.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         category = transfer_category_factory(wallet=wallet)
         url = category_detail_url(category.wallet.id, category.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -437,7 +437,7 @@ class TestTransferCategoryViewSetDetail:
         """
         wallet_owner = user_factory()
         other_user = user_factory()
-        wallet = wallet_factory(members=[wallet_owner])
+        wallet = wallet_factory(owner=wallet_owner)
         category = transfer_category_factory(wallet=wallet)
         api_client.force_authenticate(other_user)
         url = category_detail_url(category.wallet.id, category.id)
@@ -459,7 +459,7 @@ class TestTransferCategoryViewSetDetail:
         WHEN: TransferCategoryViewSet detail view called by User belonging to Wallet.
         THEN: HTTP 200, TransferCategory details returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         category = transfer_category_factory(wallet=wallet)
         setattr(category, "deposit_display", getattr(getattr(category, "deposit", None), "name", None))
         api_client.force_authenticate(base_user)
@@ -507,7 +507,7 @@ class TestTransferCategoryViewSetUpdate:
         WHEN: TransferCategoryViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         category = transfer_category_factory(wallet=wallet)
         url = category_detail_url(category.wallet.id, category.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -528,7 +528,7 @@ class TestTransferCategoryViewSetUpdate:
         """
         wallet_owner = user_factory()
         other_user = user_factory()
-        wallet = wallet_factory(members=[wallet_owner])
+        wallet = wallet_factory(owner=wallet_owner)
         category = transfer_category_factory(wallet=wallet)
         api_client.force_authenticate(other_user)
         url = category_detail_url(category.wallet.id, category.id)
@@ -562,7 +562,7 @@ class TestTransferCategoryViewSetUpdate:
         WHEN: TransferCategoryViewSet detail view called with PATCH by User belonging to Wallet.
         THEN: HTTP 200, TransferCategory updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         category = transfer_category_factory(wallet=wallet, **self.PAYLOAD)
         update_payload = {param: value}
         api_client.force_authenticate(base_user)
@@ -590,7 +590,7 @@ class TestTransferCategoryViewSetUpdate:
         WHEN: TransferCategoryViewSet detail view called with PATCH by User belonging to Wallet.
         THEN: HTTP 200, TransferCategory updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         category = transfer_category_factory(wallet=wallet, **self.PAYLOAD)
         update_payload = {"category_type": category_type, "priority": priority}
         api_client.force_authenticate(base_user)
@@ -618,7 +618,7 @@ class TestTransferCategoryViewSetUpdate:
         for 'deposit' field.
         THEN: HTTP 200, TransferCategory updated, "deposit" value for Category is updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         category = transfer_category_factory(wallet=wallet, **self.PAYLOAD)
         new_deposit = deposit_factory(wallet=wallet)
         update_payload = {"deposit": new_deposit.id}
@@ -645,7 +645,7 @@ class TestTransferCategoryViewSetUpdate:
         with invalid payload.
         THEN: Bad request HTTP 400, TransferCategory not updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         deposit = deposit_factory(wallet=wallet)
         category_1 = transfer_category_factory(wallet=wallet, deposit=deposit, **self.PAYLOAD)
         category_2 = transfer_category_factory(wallet=wallet, deposit=deposit)
@@ -677,7 +677,7 @@ class TestTransferCategoryViewSetUpdate:
         with invalid payload.
         THEN: Bad request HTTP 400, TransferCategory not updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         category = transfer_category_factory(wallet=wallet)
         old_type, old_priority = getattr(category, "category_type"), getattr(category, "priority")
         update_payload = {"category_type": category_type, "priority": priority}
@@ -705,7 +705,7 @@ class TestTransferCategoryViewSetUpdate:
         with Deposit from different Wallet as "deposit" in payload.
         THEN: Bad request HTTP 400, TransferCategory not updated.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         valid_deposit = deposit_factory(wallet=wallet)
         invalid_deposit = deposit_factory(wallet=wallet_factory())
         category = transfer_category_factory(wallet=wallet, deposit=valid_deposit, **self.PAYLOAD)
@@ -730,7 +730,7 @@ class TestTransferCategoryViewSetUpdate:
         WHEN: TransferCategoryViewSet detail endpoint called with PATCH.
         THEN: HTTP 200 returned. TransferCategory updated in database.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         api_client.force_authenticate(base_user)
         payload = self.PAYLOAD.copy()
         category = transfer_category_factory(wallet=wallet, **payload)
@@ -786,7 +786,7 @@ class TestTransferCategoryViewSetDelete:
         WHEN: TransferCategoryViewSet detail endpoint called with DELETE.
         THEN: HTTP 204 returned.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         category = transfer_category_factory(wallet=wallet)
         url = category_detail_url(category.wallet.id, category.id)
         jwt_access_token = get_jwt_access_token(user=base_user)
@@ -826,7 +826,7 @@ class TestTransferCategoryViewSetDelete:
         WHEN: TransferCategoryViewSet detail view called with DELETE by User belonging to Wallet.
         THEN: No content HTTP 204, TransferCategory deleted.
         """
-        wallet = wallet_factory(members=[base_user])
+        wallet = wallet_factory(owner=base_user)
         category = transfer_category_factory(wallet=wallet)
         api_client.force_authenticate(base_user)
         url = category_detail_url(wallet.id, category.id)

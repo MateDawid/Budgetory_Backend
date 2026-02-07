@@ -1,18 +1,12 @@
 from decimal import Decimal
 
-from django.db import transaction
 from django.db.models import Count, DecimalField, F, Func, OuterRef, QuerySet, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from django_filters import rest_framework as filters
-from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
-from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.request import Request
-from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from app_users.serializers.user_serializer import UserSerializer
 from categories.models.choices.category_type import CategoryType
 from entities.models import Deposit
 from transfers.models import Transfer
@@ -94,7 +88,7 @@ class WalletViewSet(ModelViewSet):
         user = getattr(self.request, "user", None)
         if not (user and user.is_authenticated):
             return self.queryset.none()  # pragma: no cover
-        qs = self.queryset.filter(members=user).order_by("id").distinct()
+        qs = self.queryset.filter(owner=user).order_by("id").distinct()
         fields = self.request.query_params.get("fields", "").split(",")
         if "balance" in fields:
             qs = qs.annotate(
@@ -105,29 +99,11 @@ class WalletViewSet(ModelViewSet):
             qs = qs.annotate(deposits_count=get_wallet_deposits_count())
         return qs
 
-    @action(detail=True, methods=["GET"])
-    def members(self, request: Request, **kwargs: dict) -> Response:
-        """
-        Endpoint returning members list of particular Wallet.
-
-        Args:
-            request [Request]: User request.
-            kwargs [dict]: Keyword arguments.
-
-        Returns:
-            Response: HTTP response with particular Wallet members list.
-        """
-        wallet = get_object_or_404(self.queryset.model, pk=kwargs.get("pk"))
-        serializer = UserSerializer(wallet.members.all(), many=True)
-        return Response(serializer.data)
-
     def perform_create(self, serializer: WalletSerializer) -> None:
         """
-        Adds request User as a member of Wallet model.
+        Adds request User as an owner of Wallet model.
 
         Args:
             serializer [WalletSerializer]: Wallet data serializer.
         """
-        with transaction.atomic():
-            wallet = serializer.save()
-            wallet.members.add(self.request.user)
+        serializer.save(owner=self.request.user)
