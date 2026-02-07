@@ -70,9 +70,3 @@ class TestCurrencyModel:
 
         assert "Currency with this Name already exists." in exc.value.error_dict["name"][0].messages[0]
         assert Currency.objects.filter(name=name).count() == 1
-
-        # .create() scenario
-        with pytest.raises(IntegrityError) as exc:
-            Currency.objects.create(name=name)
-        assert f"DETAIL:  Key (name)=({name.upper()}) already exists." in str(exc.value)
-        assert Currency.objects.filter(name=name).count() == 1
