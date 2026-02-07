@@ -547,7 +547,7 @@ class TestWalletViewSetCreate:
             "name": "Wallet 1",
             "description": "Some wallet",
             "owner": base_user.id,
-            "currency": Currency.objects.get(name="PLN").id,
+            "currency": Currency.objects.get(name="PLN").name,
         }
 
         response = api_client.post(WALLETS_URL, payload)
@@ -557,7 +557,7 @@ class TestWalletViewSetCreate:
         wallet = Wallet.objects.get(id=response.data["id"])
         for key in payload:
             if key in ["owner", "currency"]:
-                assert getattr(wallet, key).id == payload[key]
+                assert getattr(wallet, key).pk == payload[key]
             elif key == "currency":
                 assert wallet.currency.id == payload[key]
             else:
@@ -620,7 +620,7 @@ class TestWalletViewSetCreate:
             "name": "Wallet 1",
             "description": "Some wallet",
             "owner": other_user.id,
-            "currency": Currency.objects.get(name="PLN").id,
+            "currency": Currency.objects.get(name="PLN").name,
         }
 
         response = api_client.post(WALLETS_URL, payload)
@@ -640,7 +640,7 @@ class TestWalletViewSetCreate:
             "name": "Wallet 1",
             "description": "Some wallet",
             "owner": base_user.id,
-            "currency": Currency.objects.get(name="PLN").id,
+            "currency": Currency.objects.get(name="PLN").name,
         }
 
         response = api_client.post(WALLETS_URL, payload)
@@ -663,7 +663,7 @@ class TestWalletViewSetCreate:
             "name": "Wallet 1",
             "description": "Some wallet",
             "owner": base_user.id,
-            "currency": currency.id,
+            "currency": currency.name,
         }
 
         response = api_client.post(WALLETS_URL, payload)
@@ -929,7 +929,7 @@ class TestWalletViewSetDetail:
         assert "deposits_count" in response.data
         assert "currency" in response.data
         assert "currency_name" in response.data
-        assert "owner" in response.data
+        assert "owner" not in response.data
 
 
 @pytest.mark.django_db
@@ -1018,14 +1018,14 @@ class TestWalletViewSetUpdate:
         api_client.force_authenticate(base_user)
         payload = {"name": "Wallet", "description": "Some wallet", "currency": Currency.objects.get(name="PLN")}
         wallet = wallet_factory(owner=base_user, **payload)
-        update_payload = {"currency": Currency.objects.get(name="USD").id}
+        update_payload = {"currency": Currency.objects.get(name="USD").name}
         url = wallet_detail_url(wallet.id)
 
         response = api_client.patch(url, update_payload)
 
         assert response.status_code == status.HTTP_200_OK
         wallet.refresh_from_db()
-        assert wallet.currency.id == update_payload["currency"]
+        assert wallet.currency.name == update_payload["currency"]
 
     def test_update_with_owner(
         self,
@@ -1044,7 +1044,7 @@ class TestWalletViewSetUpdate:
         payload = {
             "name": "Wallet",
             "description": "Some wallet",
-            "owner": base_user.id,
+            "owner": base_user,
         }
         wallet = wallet_factory(**payload)
         update_payload = {"owner": other_user.id}
@@ -1073,7 +1073,7 @@ class TestWalletViewSetUpdate:
         payload = {
             "name": "Wallet",
             "description": "Some wallet",
-            "owner": base_user.id,
+            "owner": base_user,
         }
         wallet = wallet_factory(**payload)
         update_payload = {"name": "UPDATE", "description": "Updated wallet", "owner": other_user.id}
@@ -1142,7 +1142,7 @@ class TestWalletViewSetUpdate:
         api_client.force_authenticate(base_user)
         wallet = wallet_factory(owner=base_user, currency=Currency.objects.get(name="PLN"))
         url = wallet_detail_url(wallet.id)
-        update_payload = {"currency": Currency.objects.get(name="EUR").id}
+        update_payload = {"currency": Currency.objects.get(name="EUR").name}
 
         response = api_client.patch(url, update_payload)
 
