@@ -7,4 +7,4 @@ from wallets.models.wallet_model import Wallet
 class WalletAdmin(admin.ModelAdmin):
     """Custom admin view for Wallet model."""
 
-    list_display = ("name",)
+    list_display = ("name", "owner")
