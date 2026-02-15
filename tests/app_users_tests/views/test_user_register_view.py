@@ -14,7 +14,6 @@ class TestUserRegisterView:
 
     payload = {
         "email": "test@example.com",
-        "username": "Test",
         "password_1": "testpass123",
         "password_2": "testpass123",
     }
