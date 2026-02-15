@@ -11,7 +11,7 @@ from app_users.models import User
 from app_users.services.demo_login_service.demo_user_initial_data_service import DemoUserInitialDataService
 from periods.models.choices.period_status import PeriodStatus
 
-USER_DATA = {"email": "user@budgetory.com", "username": "User", "password": "P@ssw0rd!"}
+USER_DATA = {"email": "user@budgetory.com", "password": "P@ssw0rd!"}
 
 PERIOD_2025_12_DATA = {
     "status": PeriodStatus.CLOSED,
