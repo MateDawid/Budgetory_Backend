@@ -38,13 +38,13 @@ def api_client() -> APIClient:
 @pytest.fixture
 def base_user() -> Any:
     """User with base permissions."""
-    return get_user_model().objects.create_user("user@example.com", "User", "user123!@#")
+    return get_user_model().objects.create_user("user@example.com", "user123!@#")
 
 
 @pytest.fixture
 def superuser() -> Any:
     """User with admin permissions."""
-    return get_user_model().objects.create_superuser("admin@example.com", "Admin", "admin123!@#")
+    return get_user_model().objects.create_superuser("admin@example.com", "admin123!@#")
 
 
 def get_jwt_access_token(user: User | None = None) -> str:
