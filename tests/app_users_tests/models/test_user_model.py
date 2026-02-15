@@ -63,6 +63,6 @@ class TestUserModel:
         WHEN: UserManager.create_superuser() called with given data.
         THEN: User with superuser status created.
         """
-        user = get_user_model().objects.create_superuser("test@example.com", "Admin", "test123")
+        user = get_user_model().objects.create_superuser("test@example.com", "test123")
         assert user.is_superuser is True
         assert user.is_staff is True
