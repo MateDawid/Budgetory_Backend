@@ -13,12 +13,10 @@ class TestUserModel:
         THEN: User created successfully.
         """
         email = "test@example.com"
-        username = "Test"
         password = "testpass123"
-        user = get_user_model().objects.create_user(email=email, username=username, password=password)
+        user = get_user_model().objects.create_user(email=email, password=password)
 
         assert user.email == email
-        assert user.username == username
         assert user.check_password(password)
 
     @pytest.mark.parametrize(
@@ -36,7 +34,7 @@ class TestUserModel:
         WHEN: UserManager.create_user() called with given data.
         THEN: User created with normalized email.
         """
-        user = get_user_model().objects.create_user(email, "Username", "sample123")
+        user = get_user_model().objects.create_user(email, "sample123")
         assert user.email == normalized_email
 
     def test_new_user_without_email_raises_error(self):
@@ -46,18 +44,8 @@ class TestUserModel:
         THEN: ValueError raised.
         """
         with pytest.raises(ValueError) as exc:
-            get_user_model().objects.create_user("", "Username", "test123")
+            get_user_model().objects.create_user("", "test123")
         assert str(exc.value) == "Email address not provided for User."
-
-    def test_new_user_without_username_raises_error(self):
-        """
-        GIVEN: Empty User username.
-        WHEN: UserManager.create_user() called with given data.
-        THEN: ValueError raised.
-        """
-        with pytest.raises(ValueError) as exc:
-            get_user_model().objects.create_user("user@example.com", "", "test123")
-        assert str(exc.value) == "Username not provided for User."
 
     def test_new_user_without_password_raises_error(self):
         """
@@ -66,7 +54,7 @@ class TestUserModel:
         THEN: ValueError raised.
         """
         with pytest.raises(ValueError) as exc:
-            get_user_model().objects.create_user("user@example.com", "Username", "")
+            get_user_model().objects.create_user("user@example.com", "")
         assert str(exc.value) == "Password not provided for User."
 
     def test_create_superuser(self):

@@ -27,13 +27,12 @@ def generate_random_password() -> str:
 class UserManager(BaseUserManager):
     """Manager for user."""
 
-    def create_user(self, email: str, username: str, password: str, **extra_fields: dict) -> AbstractUser:
+    def create_user(self, email: str, password: str, **extra_fields: dict) -> AbstractUser:
         """
         Create, save and return a new user.
 
         Args:
             email [str]: User email.
-            username [str]: User username.
             password [str]: User password.
             extra_fields [dict]: Additional data.
 
@@ -42,11 +41,9 @@ class UserManager(BaseUserManager):
         """
         if not email:
             raise ValueError("Email address not provided for User.")
-        if not username:
-            raise ValueError("Username not provided for User.")
         if not password:
             raise ValueError("Password not provided for User.")
-        user = self.model(email=self.normalize_email(email), username=username, **extra_fields)
+        user = self.model(email=self.normalize_email(email), **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
 
@@ -65,7 +62,6 @@ class UserManager(BaseUserManager):
         for attempt in range(1, MAX_DEMO_USER_CREATE_ATTEMPTS + 1):
             unique_id = uuid.uuid4().hex[:16]
             user_data = {
-                "username": unique_id,
                 "email": f"{unique_id}@budgetory_demo.com",
                 "password": generate_random_password(),
                 "is_demo": True,
@@ -79,20 +75,18 @@ class UserManager(BaseUserManager):
                 continue
         raise IntegrityError("Failed to create demo user after maximum attempts.")
 
-    def create_superuser(self, email: str, password: str, username: str | None = None) -> AbstractUser:
+    def create_superuser(self, email: str, password: str) -> AbstractUser:
         """
         Create and return a new superuser.
 
         Args:
             email [str]: Superuser email.
             password [str]: Superuser password.
-            username [str | None]: Superuser username (optional, defaults to email).
 
         Returns:
             User: Created User model instance.
         """
-        username = username or email
-        user = self.create_user(email, username, password)
+        user = self.create_user(email, password)
         user.is_staff = True
         user.is_superuser = True
         user.save(using=self._db)
