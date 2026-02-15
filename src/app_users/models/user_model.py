@@ -1,5 +1,4 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
-from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 
 from app_users.managers.user_manager import UserManager
@@ -8,14 +7,7 @@ from app_users.managers.user_manager import UserManager
 class User(AbstractBaseUser, PermissionsMixin):
     """App User database model."""
 
-    username_validator = UnicodeUsernameValidator()
-
     email = models.EmailField(max_length=255, unique=True)
-    username = models.CharField(
-        max_length=150,
-        blank=False,
-        null=False,
-    )
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_demo = models.BooleanField(default=False)
