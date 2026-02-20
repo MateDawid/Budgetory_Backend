@@ -26,7 +26,7 @@ RUN pip install "poetry==$POETRY_VERSION"
 RUN poetry config virtualenvs.create false && \
     if [ $DEV = "true" ]; \
     then poetry install; \
-    else poetry install --no-dev; \
+    else poetry install --without dev; \
     fi
 
 # Copy app
