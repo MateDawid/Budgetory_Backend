@@ -5,7 +5,7 @@ services:
     dockerfilePath: ./docker/Dockerfile
     plan: free
     envVars:
-      - key: SECRET_KEY
+      - key: DYNACONF_ENVIRONMENT__SECRET_KEY
         generateValue: true
       - key: DATABASE
         value: postgres
@@ -17,10 +17,14 @@ services:
         fromDatabase:
           name: budgetory-db
           property: port
-      - key: DATABASE_URL
+      - key: DYNACONF_DATABASE__USER
         fromDatabase:
           name: budgetory-db
-          property: connectionString
+          property: user
+      - key: DYNACONF_DATABASE__PASSWORD
+        fromDatabase:
+          name: budgetory-db
+          property: password
       - key: ENV_FOR_DYNACONF
         value: production
 
