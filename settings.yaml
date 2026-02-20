@@ -13,3 +13,11 @@ default:
     PASSWORD: ~
     HOST: db
     PORT: 5432
+
+production:
+  dynaconf_merge: true
+  ENVIRONMENT:
+    DEBUG: false
+    DEBUG_TOOLBAR_ENABLED: false
+    ALLOWED_HOSTS:
+      - .onrender.com

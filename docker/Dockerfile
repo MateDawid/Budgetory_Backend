@@ -1,4 +1,4 @@
-FROM python:3.12.9-slim-bookworm as base-image
+FROM python:3.12.9-slim-bookworm AS base-image
 
 ARG DEV="false"
 
@@ -32,11 +32,11 @@ RUN poetry config virtualenvs.create false && \
 # Copy app
 COPY ./src /app/src
 
-FROM base-image as test-image
+FROM base-image AS test-image
 
 COPY ./tests /app/tests
 
-FROM base-image as release-image
+FROM base-image AS release-image
 
 RUN addgroup --gid 1001 --system app && \
     adduser --no-create-home --shell /bin/false --disabled-password --uid 1001 --system --group app
