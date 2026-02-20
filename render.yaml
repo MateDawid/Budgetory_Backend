@@ -1,7 +1,7 @@
 services:
   - type: web
     name: budgetory-backend
-    runtime: image
+    runtime: docker
     dockerfilePath: ./docker/Dockerfile
     plan: free
     envVars:
