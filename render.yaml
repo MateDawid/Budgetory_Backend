@@ -2,7 +2,6 @@ services:
   - type: web
     name: budgetory-backend
     runtime: image
-    startCommand: gunicorn app_config.wsgi:application --bind 0.0.0.0:$PORT --workers 1
     dockerfilePath: ./docker/Dockerfile
     plan: free
     envVars:
