@@ -2,6 +2,7 @@ services:
   - type: web
     name: budgetory-backend
     runtime: docker
+    startCommand: gunicorn app_config.wsgi:application --bind 0.0.0.0:8000 --workers 1 --access-logfile - --logger-class app_config.loggers.GunicornLogger
     dockerfilePath: ./docker/Dockerfile
     plan: free
     envVars:
@@ -33,6 +34,10 @@ services:
         fromDatabase:
           name: budgetory-db
           property: port
+      - key: DYNACONF_DATABASE__NAME
+        fromDatabase:
+          name: budgetory-db
+          property: database
       - key: ENV_FOR_DYNACONF
         value: production
 

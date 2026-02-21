@@ -9,6 +9,7 @@ services:
       args:
         - DEV=${DEV}
     image: backend:release-image
+    command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ./src:/app/src
       - ./.secrets.yaml:/app/.secrets.yaml

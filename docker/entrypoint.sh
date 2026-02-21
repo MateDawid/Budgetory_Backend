@@ -13,6 +13,5 @@ fi
 
 python manage.py migrate
 python manage.py collectstatic --noinput
-gunicorn app_config.wsgi:application --bind 0.0.0.0:8000 --workers 1 --reload --access-logfile - --logger-class app_config.loggers.GunicornLogger
 
 exec "$@"
