@@ -25,6 +25,14 @@ services:
         fromDatabase:
           name: budgetory-db
           property: password
+      - key: DYNACONF_DATABASE__HOST
+        fromDatabase:
+          name: budgetory-db
+          property: host
+      - key: DYNACONF_DATABASE__PORT
+        fromDatabase:
+          name: budgetory-db
+          property: port
       - key: ENV_FOR_DYNACONF
         value: production
 
