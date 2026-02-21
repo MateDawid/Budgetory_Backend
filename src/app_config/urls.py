@@ -1,7 +1,9 @@
+import re
+
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.static import serve
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
@@ -40,10 +42,10 @@ urlpatterns = [
         "api/predictions/progress_statuses/", PredictionProgressStatusView.as_view(), name="prediction-progress-status"
     ),
     path("api/currencies/", CurrencyViewSet.as_view({"get": "list"}), name="currency"),
+    re_path(
+        r"^%s(?P<path>.*)$" % re.escape(settings.STATIC_URL.lstrip("/")), serve, {"document_root": settings.STATIC_ROOT}
+    ),
 ]
-
-urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG_TOOLBAR_ENABLED:
     urlpatterns += [path("__debug__/", include("debug_toolbar.urls"))]
