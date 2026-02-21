@@ -39,7 +39,8 @@ COPY ./tests /app/tests
 FROM base-image AS release-image
 
 RUN addgroup --gid 1001 --system app && \
-    adduser --no-create-home --shell /bin/false --disabled-password --uid 1001 --system --group app
+    adduser --no-create-home --shell /bin/false --disabled-password --uid 1001 --system --group app && \
+    mkdir -p /app/src/staticfiles && chown -R app:app /app/src
 
 # Prepare entrypoint.sh
 COPY ./docker/entrypoint.sh /entrypoint.sh
