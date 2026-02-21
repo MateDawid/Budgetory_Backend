@@ -21,3 +21,10 @@ production:
     DEBUG_TOOLBAR_ENABLED: false
     ALLOWED_HOSTS:
       - .onrender.com
+  DATABASE:
+    ENGINE: django.db.backends.postgresql
+    NAME: ~
+    USER: ~
+    PASSWORD: ~
+    HOST: ~
+    PORT: ~

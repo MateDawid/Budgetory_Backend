@@ -52,3 +52,5 @@ WORKDIR /app/src
 USER app
 
 ENTRYPOINT ["/entrypoint.sh"]
+CMD ["gunicorn", "app_config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "1", "--access-logfile", "-", "--logger-class", "app_config.loggers.GunicornLogger"]
+
