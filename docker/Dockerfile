@@ -1,4 +1,4 @@
-FROM python:3.12.9-slim-bookworm as base-image
+FROM python:3.12.9-slim-bookworm AS base-image
 
 ARG DEV="false"
 
@@ -26,20 +26,21 @@ RUN pip install "poetry==$POETRY_VERSION"
 RUN poetry config virtualenvs.create false && \
     if [ $DEV = "true" ]; \
     then poetry install; \
-    else poetry install --no-dev; \
+    else poetry install --without dev; \
     fi
 
 # Copy app
 COPY ./src /app/src
 
-FROM base-image as test-image
+FROM base-image AS test-image
 
 COPY ./tests /app/tests
 
-FROM base-image as release-image
+FROM base-image AS release-image
 
 RUN addgroup --gid 1001 --system app && \
-    adduser --no-create-home --shell /bin/false --disabled-password --uid 1001 --system --group app
+    adduser --no-create-home --shell /bin/false --disabled-password --uid 1001 --system --group app && \
+    mkdir -p /app/src/staticfiles && chown -R app:app /app/src
 
 # Prepare entrypoint.sh
 COPY ./docker/entrypoint.sh /entrypoint.sh
@@ -51,3 +52,5 @@ WORKDIR /app/src
 USER app
 
 ENTRYPOINT ["/entrypoint.sh"]
+CMD ["gunicorn", "app_config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "1", "--access-logfile", "-", "--logger-class", "app_config.loggers.GunicornLogger"]
+

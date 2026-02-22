@@ -11,8 +11,7 @@ then
     echo "PostgreSQL started"
 fi
 
-## Uncomment line below to clear database on start
-# python manage.py flush --no-input
 python manage.py migrate
+python manage.py collectstatic --noinput
 
 exec "$@"

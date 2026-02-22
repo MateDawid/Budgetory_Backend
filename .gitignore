@@ -141,3 +141,5 @@ logs
 media
 
 .secrets.yaml
+src/gunicorn.ctl
+src/staticfiles

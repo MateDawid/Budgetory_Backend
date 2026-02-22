@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: budgetory-backend
+    runtime: docker
+    dockerfilePath: ./docker/Dockerfile
+    healthCheckPath: /api/healthcheck
+    plan: free
+    envVars:
+      - key: ENV_FOR_DYNACONF
+        value: production
+      - key: DYNACONF_ENVIRONMENT__SECRET_KEY
+        generateValue: true
+      - key: DATABASE
+        value: postgres
+      - key: SQL_HOST
+        fromDatabase:
+          name: budgetory-db
+          property: host
+      - key: SQL_PORT
+        fromDatabase:
+          name: budgetory-db
+          property: port
+      - key: DYNACONF_DATABASE__USER
+        fromDatabase:
+          name: budgetory-db
+          property: user
+      - key: DYNACONF_DATABASE__PASSWORD
+        fromDatabase:
+          name: budgetory-db
+          property: password
+      - key: DYNACONF_DATABASE__HOST
+        fromDatabase:
+          name: budgetory-db
+          property: host
+      - key: DYNACONF_DATABASE__PORT
+        fromDatabase:
+          name: budgetory-db
+          property: port
+      - key: DYNACONF_DATABASE__NAME
+        fromDatabase:
+          name: budgetory-db
+          property: database
+
+databases:
+  - name: budgetory-db
+    plan: free
