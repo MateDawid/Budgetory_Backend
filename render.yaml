@@ -3,6 +3,7 @@ services:
     name: budgetory-backend
     runtime: docker
     dockerfilePath: ./docker/Dockerfile
+    healthCheckPath: /api/healthcheck
     plan: free
     envVars:
       - key: ENV_FOR_DYNACONF
